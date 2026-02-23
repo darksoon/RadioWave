@@ -1,0 +1,18 @@
+package de.radiowave.core.player
+
+import de.radiowave.core.model.PlayerError
+import de.radiowave.core.model.PlayerState
+import de.radiowave.core.model.Station
+import kotlinx.coroutines.flow.StateFlow
+
+/**
+ * Interface for the audio player controller.
+ */
+interface PlayerController {
+    val playerState: StateFlow<PlayerState>
+    
+    suspend fun playStation(station: Station)
+    fun togglePlayPause()
+    fun stop()
+    fun release()
+}
