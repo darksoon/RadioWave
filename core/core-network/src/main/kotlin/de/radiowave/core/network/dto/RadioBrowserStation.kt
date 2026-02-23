@@ -9,11 +9,11 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class RadioBrowserStation(
     @SerialName("stationuuid")
-    val uuid: String,
-    val name: String,
+    val uuid: String? = null,
+    val name: String? = null,
     @SerialName("url_resolved")
-    val urlResolved: String,
-    val url: String,
+    val urlResolved: String? = null,
+    val url: String? = null,
     val homepage: String? = null,
     val favicon: String? = null,
     val country: String? = null,

@@ -16,19 +16,21 @@ import de.radiowave.core.network.dto.RadioBrowserTag
  */
 
 // Network DTO to Domain Model
-fun RadioBrowserStation.toDomain(): Station = Station(
-    uuid = uuid,
-    name = name,
-    streamUrl = urlResolved,
-    homepageUrl = homepage,
-    faviconUrl = favicon,
-    country = country,
-    countryCode = countryCode,
-    language = language,
-    tags = tags?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList(),
-    codec = codec,
-    bitrate = bitrate,
-)
+fun RadioBrowserStation.toDomain(): Station {
+    return Station(
+        uuid = uuid ?: "",
+        name = name ?: "Unknown Station",
+        streamUrl = urlResolved ?: url ?: "",
+        homepageUrl = homepage,
+        faviconUrl = favicon,
+        country = country,
+        countryCode = countryCode,
+        language = language,
+        tags = tags?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList(),
+        codec = codec,
+        bitrate = bitrate,
+    )
+}
 
 fun RadioBrowserTag.toDomain(): Genre = Genre(
     name = name,

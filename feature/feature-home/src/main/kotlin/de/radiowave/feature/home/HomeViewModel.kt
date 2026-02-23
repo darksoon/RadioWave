@@ -1,5 +1,6 @@
 package de.radiowave.feature.home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,6 +33,7 @@ class HomeViewModel @Inject constructor(
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
+        Log.d("RadioWave", "HomeViewModel initialized - starting to load stations...")
         loadData()
     }
 
@@ -44,9 +46,11 @@ class HomeViewModel @Inject constructor(
             Triple(recent, favorites.take(6), top.take(10))
         }
             .onStart {
+                Log.d("RadioWave", "Starting to load data...")
                 _uiState.update { it.copy(isLoading = true) }
             }
             .onEach { (recent, favorites, top) ->
+                Log.d("RadioWave", "Data loaded successfully: ${recent.size} recent, ${favorites.size} favorites, ${top.size} top stations")
                 _uiState.update {
                     it.copy(
                         recentStations = recent,
@@ -58,10 +62,20 @@ class HomeViewModel @Inject constructor(
                 }
             }
             .catch { error ->
+                Log.e("RadioWave", "API Fehler: ${error.message}", error)
+                val errorMessage = when {
+                    error.message?.contains("UnknownHostException") == true -> 
+                        "DNS Fehler: Server nicht erreichbar. Bitte später erneut versuchen."
+                    error.message?.contains("timeout") == true -> 
+                        "Zeitüberschreitung beim Laden. Bitte versuche es erneut."
+                    error.message?.contains("Unable to resolve host") == true ->
+                        "Keine Internetverbindung oder DNS-Problem."
+                    else -> "API Fehler: ${error.message ?: "Unbekannter Fehler"}"
+                }
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = error.message ?: "Unknown error",
+                        error = errorMessage,
                     )
                 }
             }
