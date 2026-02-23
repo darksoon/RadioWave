@@ -1,0 +1,60 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Local configuration
+local.properties
+
+# Android Studio
+.idea/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Kotlin
+*.class
+*.kotlin_module
+
+# Build outputs
+*.apk
+*.aar
+*.ap_
+*.aab
+output.json
+
+# Signing files
+*.jks
+*.keystore
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*~
+
+# Test results
+/test-results/
+/reports/
+
+# Coverage
+*.ec
+
+# Navigation safe args
+app/schemas/
+
+# Keystore properties
+keystore.properties

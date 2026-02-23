@@ -1,0 +1,63 @@
+PROPRIETÄRE LIZENZ MIT KOMMERZIELLEM NUTZUNGSVERBOT
+
+Copyright (c) 2026 RadioWave Contributors
+
+Alle Rechte vorbehalten.
+
+1. DEFINITIONEN
+
+"Software" bezeichnet alle Dateien, Quellcode, Dokumentation und sonstige 
+Materialien, die unter dieser Lizenz verteilt werden.
+
+"Kommerzielle Nutzung" bezeichnet jede Nutzung der Software, die direkt oder 
+indirekt auf finanziellen Gewinn oder wirtschaftlichen Vorteil abzielt.
+
+2. NUTZUNGSRECHTE
+
+2.1 Private Nutzung
+Die Software darf für private, nicht-kommerzielle Zwecke verwendet, modifiziert 
+und weitergegeben werden, sofern diese Lizenz beibehalten wird.
+
+2.2 Bildungszwecke
+Die Software darf für Bildungs- und Forschungszwecke an Bildungseinrichtungen 
+verwendet werden.
+
+3. VERBOTENE NUTZUNG
+
+3.1 Kommerzielles Verbot
+Jegliche kommerzielle Nutzung der Software ist ausdrücklich untersagt. 
+Dies umfasst insbesondere:
+
+- Verkauf der Software oder abgeleiteter Werke
+- Einbindung in kommerzielle Produkte oder Dienstleistungen
+- Nutzung zur Erzielung von Werbeeinnahmen
+- Nutzung in Unternehmen, Organisationen oder anderen Einrichtungen mit 
+  wirtschaftlicher Zielsetzung
+- Bereitstellung als SaaS (Software as a Service) gegen Entgelt
+
+3.2 Weitergabe
+Die Software darf nicht unter einer anderen Lizenz weitergegeben werden. 
+Jede Weitergabe muss diese Lizenz beinhalten.
+
+4. HAFTUNGSAUSSCHLUSS
+
+DIE SOFTWARE WIRD "WIE BESEHEN" BEREITGESTELLT, OHNE JEGLICHE GEWÄHRLEISTUNG, 
+WEDER AUSDRÜCKLICH NOCH STILLSCHWEIGEND, EINSCHLIESSLICH, ABER NICHT 
+BESCHRÄNKT AUF DIE GEWÄHRLEISTUNG DER MARKTGÄNGIGKEIT, DER EIGNUNG FÜR EINEN 
+BESTIMMTEN ZWECK UND DER NICHTVERLETZUNG VON RECHTEN DRITTER.
+
+IN KEINEM FALL SIND DIE AUTOREN ODER COPYRIGHT-INHABER FÜR ANSPRÜCHE, SCHÄDEN 
+ODER SONSTIGE HAFTUNG VERANTWORTLICH, SEI ES AUS VERTRAG, DELIKT ODER ANDEREN 
+GRÜNDEN, DIE SICH AUS DER SOFTWARE ODER DER NUTZUNG DER SOFTWARE ERGEBEN ODER 
+DAMIT ZUSAMMENHÄNGEN.
+
+5. LIZENZBEENDIGUNG
+
+Diese Lizenz erlischt automatisch bei Verstoß gegen ihre Bestimmungen. 
+Bei Beendigung müssen alle Kopien der Software vernichtet werden.
+
+6. ANWENDBARES RECHT
+
+Diese Lizenz unterliegt dem Recht der Bundesrepublik Deutschland.
+
+Bei Fragen zur Lizenz kontaktieren Sie die Autoren.
