@@ -1,3 +1,4 @@
-&lt;resources&gt;
-    &lt;string name="app_name"&gt;RadioWave&lt;/string&gt;
-&lt;/resources&gt;
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">RadioWave</string>
+</resources>

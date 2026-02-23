@@ -22,7 +22,7 @@ import de.radiowave.core.database.entity.StationEntity
         CustomStationEntity::class,
     ],
     version = 1,
-    exportSchema = true,
+    exportSchema = false,
 )
 abstract class RadioWaveDatabase : RoomDatabase() {
     abstract fun stationDao(): StationDao
