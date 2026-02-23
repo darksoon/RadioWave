@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,12 +36,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import dagger.hilt.android.AndroidEntryPoint
 import de.radiowave.core.model.PlayerState
 import de.radiowave.core.ui.theme.DarkBackground
@@ -139,7 +136,7 @@ fun RadioWaveMainScreen() {
                     FloatingPlayerBar(
                         playerState = playerState,
                         onPlayPauseClick = { homeViewModel.togglePlayPause() },
-                        onBarClick = { /* TODO: Open full player */ },
+                        onBarClick = { },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -155,12 +152,14 @@ fun RadioWaveMainScreen() {
                         NavigationBarItem(
                             selected = selected,
                             onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
+                                if (currentRoute != item.route) {
+                                    navController.navigate(item.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
                                 }
                             },
                             icon = {
@@ -205,19 +204,19 @@ fun RadioWaveMainScreen() {
                     onViewAllFavorites = {
                         navController.navigate(BottomNavItem.Favorites.route) {
                             launchSingleTop = true
+                            restoreState = true
                         }
                     },
                     onNavigateToBrowse = { category ->
-                        navController.navigate("${BottomNavItem.Browse.route}?genre=$category")
+                        homeViewModel.onSearchQueryChange(category)
+                        navController.navigate(BottomNavItem.Browse.route) {
+                            launchSingleTop = true
+                        }
                     },
                 )
             }
-            composable(
-                route = "${BottomNavItem.Browse.route}?genre={genre}",
-                arguments = listOf(navArgument("genre") { defaultValue = ""; type = NavType.StringType })
-            ) { backStackEntry ->
-                val genre = backStackEntry.arguments?.getString("genre") ?: ""
-                BrowseScreen(initialGenre = genre)
+            composable(BottomNavItem.Browse.route) {
+                BrowseScreen()
             }
             composable(BottomNavItem.Favorites.route) {
                 FavoritesScreen()
