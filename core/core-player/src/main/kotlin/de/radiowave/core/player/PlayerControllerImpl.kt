@@ -8,6 +8,7 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import dagger.hilt.android.qualifiers.ApplicationContext
 import de.radiowave.core.model.PlayerError
 import de.radiowave.core.model.PlayerState
 import de.radiowave.core.model.Station
@@ -21,7 +22,7 @@ import javax.inject.Singleton
 
 @Singleton
 class PlayerControllerImpl @Inject constructor(
-    private val context: Context,
+    @ApplicationContext private val context: Context,
 ) : PlayerController {
 
     private var exoPlayer: ExoPlayer? = null
