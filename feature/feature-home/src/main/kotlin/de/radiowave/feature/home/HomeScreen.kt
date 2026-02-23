@@ -1,5 +1,6 @@
 package de.radiowave.feature.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,24 +13,34 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.radiowave.core.model.Station
 import de.radiowave.core.ui.components.ErrorState
 import de.radiowave.core.ui.components.LoadingState
+import de.radiowave.core.ui.theme.DarkBackground
+import de.radiowave.core.ui.theme.DarkCardBackground
+import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
+import de.radiowave.core.ui.theme.DarkSurfaceVariant
+import de.radiowave.core.ui.theme.TealAccent
 
 @Composable
 fun HomeScreen(
@@ -82,35 +93,68 @@ private fun HomeContent(
 
         else -> {
             LazyColumn(
-                modifier = modifier.fillMaxSize(),
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(DarkBackground),
                 contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
+                    start = 0.dp,
+                    end = 0.dp,
                     top = 16.dp,
-                    bottom = 80.dp // Extra space for BottomPlayerBar
+                    bottom = 100.dp,
                 ),
             ) {
-                // Search Bar
+                item {
+                    Text(
+                        text = "RadioWave",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 28.sp,
+                        ),
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                    )
+                }
+
                 item {
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = onSearchQueryChange,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        placeholder = { Text("Sender suchen...") },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        placeholder = {
+                            Text(
+                                "Sender suchen...",
+                                color = DarkOnSurfaceVariant,
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = null,
+                                tint = DarkOnSurfaceVariant,
+                            )
+                        },
                         singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = DarkCardBackground,
+                            unfocusedContainerColor = DarkCardBackground,
+                            focusedBorderColor = TealAccent,
+                            unfocusedBorderColor = DarkSurfaceVariant,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            cursorColor = TealAccent,
+                        ),
                     )
                 }
 
-                // Show error if no stations loaded
                 if (uiState.topStations.isEmpty() && uiState.recentStations.isEmpty() && uiState.favoriteStations.isEmpty()) {
                     item {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .padding(32.dp),
                             contentAlignment = Alignment.Center,
                         ) {
                             Column(
@@ -119,10 +163,17 @@ private fun HomeContent(
                                 Text(
                                     text = "Keine Verbindung zur Radio-Datenbank",
                                     style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.error,
+                                    color = Color.Red.copy(alpha = 0.8f),
                                 )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Button(onClick = onRetry) {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Button(
+                                    onClick = onRetry,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = TealAccent,
+                                        contentColor = Color.Black,
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                ) {
                                     Text("Erneut versuchen")
                                 }
                             }
@@ -130,10 +181,10 @@ private fun HomeContent(
                     }
                 }
 
-                // Recent Stations
                 if (uiState.recentStations.isNotEmpty()) {
                     item {
-                        SectionTitle("Recent Stations")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        SectionTitle("Zuletzt gehört")
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 16.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -148,11 +199,10 @@ private fun HomeContent(
                     }
                 }
 
-                // Favorites
                 if (uiState.favoriteStations.isNotEmpty()) {
                     item {
                         Spacer(modifier = Modifier.height(24.dp))
-                        SectionTitle("Favorites")
+                        SectionTitle("Deine Favoriten")
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 16.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -167,22 +217,17 @@ private fun HomeContent(
                     }
                 }
 
-                // Top Stations
                 if (uiState.topStations.isNotEmpty()) {
                     item {
                         Spacer(modifier = Modifier.height(24.dp))
-                        SectionTitle("Popular Stations")
-                        Column(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            uiState.topStations.take(5).forEach { station ->
-                                StationListItem(
-                                    station = station,
-                                    onClick = { onStationClick(station) },
-                                )
-                            }
-                        }
+                        SectionTitle("Beliebte Sender")
+                    }
+                    
+                    items(uiState.topStations.take(10)) { station ->
+                        StationListItem(
+                            station = station,
+                            onClick = { onStationClick(station) },
+                        )
                     }
                 }
             }
@@ -197,10 +242,13 @@ private fun SectionTitle(
 ) {
     Text(
         text = title,
-        style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.Bold,
+        style = MaterialTheme.typography.titleMedium.copy(
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+        ),
+        color = Color.White,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 20.dp, vertical = 8.dp),
     )
 }
