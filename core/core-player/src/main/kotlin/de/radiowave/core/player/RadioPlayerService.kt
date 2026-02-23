@@ -16,6 +16,8 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.AndroidEntryPoint
 import de.radiowave.core.model.Station
 import javax.inject.Inject
@@ -60,12 +62,13 @@ class RadioPlayerService : MediaSessionService() {
                     mediaSession: MediaSession,
                     controller: MediaSession.ControllerInfo,
                     mediaItems: List<MediaItem>,
-                ): List<MediaItem> {
-                    return mediaItems.map { mediaItem ->
+                ): ListenableFuture<List<MediaItem>> {
+                    val updatedItems = mediaItems.map { mediaItem ->
                         mediaItem.buildUpon()
                             .setUri(mediaItem.requestMetadata.mediaUri)
                             .build()
                     }
+                    return Futures.immediateFuture(updatedItems)
                 }
             })
             .build()
