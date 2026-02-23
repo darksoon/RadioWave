@@ -1,12 +1,14 @@
 package de.radiowave.core.player
 
 import android.content.Context
+import android.util.Log
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.radiowave.core.model.PlayerError
@@ -39,6 +41,16 @@ class PlayerControllerImpl @Inject constructor(
                     .build(),
                 true,
             )
+            .setLoadControl(
+                DefaultLoadControl.Builder()
+                    .setBufferDurationsMs(
+                        15000, // minBufferMs
+                        50000, // maxBufferMs
+                        2500,  // bufferForPlaybackMs
+                        5000   // bufferForPlaybackAfterRebufferMs
+                    )
+                    .build()
+            )
             .setHandleAudioBecomingNoisy(true)
             .build()
             .also { player ->
@@ -54,6 +66,20 @@ class PlayerControllerImpl @Inject constructor(
             }
 
             override fun onPlaybackStateChanged(state: Int) {
+                when (state) {
+                    Player.STATE_BUFFERING -> {
+                        Log.d("RadioWave", "Player: STATE_BUFFERING - buffering audio data")
+                    }
+                    Player.STATE_READY -> {
+                        Log.d("RadioWave", "Player: STATE_READY - ready to play")
+                    }
+                    Player.STATE_ENDED -> {
+                        Log.d("RadioWave", "Player: STATE_ENDED - stream ended")
+                    }
+                    Player.STATE_IDLE -> {
+                        Log.d("RadioWave", "Player: STATE_IDLE - idle state")
+                    }
+                }
                 _playerState.update {
                     it.copy(
                         isBuffering = state == Player.STATE_BUFFERING,

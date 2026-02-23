@@ -9,11 +9,13 @@ import de.radiowave.core.data.repository.RecentRepository
 import de.radiowave.core.data.repository.StationRepository
 import de.radiowave.core.model.Station
 import de.radiowave.core.player.RadioPlayerManager
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
@@ -32,9 +34,58 @@ class HomeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
     init {
         Log.d("RadioWave", "HomeViewModel initialized - starting to load stations...")
         loadData()
+        setupSearch()
+    }
+
+    @OptIn(FlowPreview::class)
+    private fun setupSearch() {
+        _searchQuery
+            .debounce(500) // Wait 500ms after user stops typing
+            .onEach { query ->
+                if (query.isBlank()) {
+                    loadData() // Load default data when search is cleared
+                } else {
+                    searchStations(query)
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    private fun searchStations(query: String) {
+        stationRepository.searchStations(query)
+            .onStart {
+                _uiState.update { it.copy(isLoading = true) }
+            }
+            .onEach { stations ->
+                Log.d("RadioWave", "Search results: ${stations.size} stations for '$query'")
+                _uiState.update {
+                    it.copy(
+                        topStations = stations.take(20),
+                        isLoading = false,
+                        error = null,
+                    )
+                }
+            }
+            .catch { error ->
+                Log.e("RadioWave", "Search error: ${error.message}", error)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "Fehler bei der Suche: ${error.message}"
+                    )
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    fun onSearchQueryChange(query: String) {
+        _searchQuery.value = query
     }
 
     private fun loadData() {

@@ -12,14 +12,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -36,9 +39,12 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
 
     HomeContent(
         uiState = uiState,
+        searchQuery = searchQuery,
+        onSearchQueryChange = viewModel::onSearchQueryChange,
         onStationClick = { station ->
             viewModel.playStation(station)
             onStationClick(station)
@@ -53,6 +59,8 @@ fun HomeScreen(
 @Composable
 private fun HomeContent(
     uiState: HomeUiState,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
     onStationClick: (Station) -> Unit,
     onPlayPauseClick: () -> Unit,
     onViewAllFavorites: () -> Unit,
@@ -77,12 +85,17 @@ private fun HomeContent(
                 modifier = modifier.fillMaxSize(),
                 contentPadding = PaddingValues(vertical = 16.dp),
             ) {
-                // Debug Text
+                // Search Bar
                 item {
-                    Text(
-                        text = "RadioWave Debug Mode",
-                        color = Color.Red,
-                        modifier = Modifier.padding(16.dp),
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = onSearchQueryChange,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        placeholder = { Text("Sender suchen...") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        singleLine = true,
                     )
                 }
 
