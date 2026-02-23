@@ -15,8 +15,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -31,13 +29,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import de.radiowave.core.model.Station
 import de.radiowave.core.ui.theme.DarkCardBackground
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.radiowave.core.ui.theme.TealAccent
-import de.radiowave.core.ui.theme.TealLight
 
 @Composable
 fun StationListItem(
@@ -46,89 +43,81 @@ fun StationListItem(
     modifier: Modifier = Modifier,
     showPlayButton: Boolean = true,
 ) {
-    Card(
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = DarkCardBackground,
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 4.dp,
-        ),
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(DarkCardBackground)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .size(56.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(DarkSurfaceVariant),
         ) {
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(DarkSurfaceVariant),
-            ) {
-                AsyncImage(
-                    model = station.faviconUrl,
-                    contentDescription = station.name,
-                    modifier = Modifier.fillMaxWidth(),
-                    contentScale = ContentScale.Crop,
-                )
-            }
+            SubcomposeAsyncImage(
+                model = station.faviconUrl,
+                contentDescription = station.name,
+                modifier = Modifier.fillMaxWidth(),
+                contentScale = ContentScale.Crop,
+            )
+        }
 
-            Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(14.dp))
 
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center,
-            ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = station.name,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 15.sp,
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = Color.White,
+            )
+
+            val country: String? = station.country
+            val tags: List<String> = station.tags
+            if (country != null || tags.isNotEmpty()) {
                 Text(
-                    text = station.name,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp,
-                    ),
+                    text = buildString {
+                        country?.let { append(it) }
+                        if (country != null && tags.isNotEmpty()) append(" • ")
+                        append(tags.take(2).joinToString(", "))
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = DarkOnSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = Color.White,
+                    modifier = Modifier.padding(top = 2.dp),
                 )
-
-                if (station.country != null || station.tags.isNotEmpty()) {
-                    Text(
-                        text = buildString {
-                            station.country?.let { append(it) }
-                            if (station.country != null && station.tags.isNotEmpty()) append(" • ")
-                            append(station.tags.take(2).joinToString(", "))
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = DarkOnSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
-                }
             }
+        }
 
-            if (showPlayButton) {
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                IconButton(
-                    onClick = onClick,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(TealAccent),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "Play ${station.name}",
-                        tint = Color.Black,
-                        modifier = Modifier.size(28.dp),
-                    )
-                }
+        if (showPlayButton) {
+            Spacer(modifier = Modifier.width(8.dp))
+
+            IconButton(
+                onClick = onClick,
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(TealAccent),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = "Play ${station.name}",
+                    tint = Color.Black,
+                    modifier = Modifier.size(26.dp),
+                )
             }
         }
     }

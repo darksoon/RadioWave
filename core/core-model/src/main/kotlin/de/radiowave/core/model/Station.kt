@@ -22,4 +22,5 @@ data class Station(
     val isFavorite: Boolean = false,
     val lastPlayedAt: Long? = null,
     val addedAt: Long = System.currentTimeMillis(),
+    val clickCount: Int = 0,
 )

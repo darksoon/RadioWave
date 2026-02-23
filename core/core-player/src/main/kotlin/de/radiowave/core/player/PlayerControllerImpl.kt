@@ -15,10 +15,15 @@ import de.radiowave.core.model.PlayerError
 import de.radiowave.core.model.PlayerState
 import de.radiowave.core.model.Station
 import de.radiowave.core.model.StreamMetadata
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -28,6 +33,10 @@ class PlayerControllerImpl @Inject constructor(
 ) : PlayerController {
 
     private var exoPlayer: ExoPlayer? = null
+    private var reconnectJob: Job? = null
+    private var reconnectAttempts = 0
+    private val maxReconnectAttempts = 3
+    private val reconnectDelayMs = 2000L
 
     private val _playerState = MutableStateFlow(PlayerState())
     override val playerState: StateFlow<PlayerState> = _playerState.asStateFlow()
@@ -44,11 +53,12 @@ class PlayerControllerImpl @Inject constructor(
             .setLoadControl(
                 DefaultLoadControl.Builder()
                     .setBufferDurationsMs(
-                        15000, // minBufferMs
-                        50000, // maxBufferMs
-                        2500,  // bufferForPlaybackMs
-                        5000   // bufferForPlaybackAfterRebufferMs
+                        30000,  // minBufferMs - increased for radio
+                        90000,  // maxBufferMs - increased for radio
+                        1000,   // bufferForPlaybackMs - quick start
+                        2000    // bufferForPlaybackAfterRebufferMs
                     )
+                    .setPrioritizeTimeOverSizeThresholds(true)
                     .build()
             )
             .setHandleAudioBecomingNoisy(true)
@@ -72,6 +82,7 @@ class PlayerControllerImpl @Inject constructor(
                     }
                     Player.STATE_READY -> {
                         Log.d("RadioWave", "Player: STATE_READY - ready to play")
+                        reconnectAttempts = 0
                     }
                     Player.STATE_ENDED -> {
                         Log.d("RadioWave", "Player: STATE_ENDED - stream ended")
@@ -89,17 +100,34 @@ class PlayerControllerImpl @Inject constructor(
             }
 
             override fun onPlayerError(error: PlaybackException) {
+                Log.e("RadioWave", "Player error: ${error.errorCode} - ${error.message}")
+                
                 val playerError = when (error.errorCode) {
                     PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED -> PlayerError.NetworkError
                     PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS -> PlayerError.StreamBroken
                     else -> PlayerError.Unknown(error.message ?: "Unknown Error")
                 }
-                _playerState.update {
-                    it.copy(
-                        error = playerError,
-                        isPlaying = false,
-                        isBuffering = false,
-                    )
+                
+                val currentStation = _playerState.value.currentStation
+                if (currentStation != null && reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++
+                    Log.d("RadioWave", "Attempting reconnect ($reconnectAttempts/$maxReconnectAttempts)")
+                    reconnectJob?.cancel()
+                    reconnectJob = CoroutineScope(Dispatchers.Main).launch {
+                        delay(reconnectDelayMs)
+                        _playerState.update { it.copy(error = null, isBuffering = true) }
+                        exoPlayer?.prepare()
+                        exoPlayer?.play()
+                    }
+                } else {
+                    _playerState.update {
+                        it.copy(
+                            error = playerError,
+                            isPlaying = false,
+                            isBuffering = false,
+                        )
+                    }
+                    reconnectAttempts = 0
                 }
             }
 
@@ -118,6 +146,9 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     override suspend fun playStation(station: Station) {
+        reconnectJob?.cancel()
+        reconnectAttempts = 0
+        
         _playerState.update {
             it.copy(
                 currentStation = station,

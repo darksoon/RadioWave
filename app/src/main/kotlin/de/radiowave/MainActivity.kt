@@ -7,7 +7,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,7 +22,6 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -39,7 +37,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -52,18 +49,14 @@ import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import de.radiowave.core.model.PlayerState
 import de.radiowave.core.ui.theme.DarkBackground
-import de.radiowave.core.ui.theme.DarkCardBackground
-import de.radiowave.core.ui.theme.DarkOverlay
 import de.radiowave.core.ui.theme.DarkSurface
-import de.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.radiowave.core.ui.theme.RadioWaveTheme
 import de.radiowave.core.ui.theme.TealAccent
-import de.radiowave.core.ui.theme.TealLight
 import de.radiowave.feature.browse.BrowseScreen
 import de.radiowave.feature.favorites.FavoritesScreen
 import de.radiowave.feature.home.HomeScreen
 import de.radiowave.feature.home.HomeViewModel
-import de.radiowave.feature.player.BottomPlayerBar
+import de.radiowave.feature.player.FloatingPlayerBar
 import de.radiowave.feature.settings.SettingsScreen
 
 @AndroidEntryPoint
@@ -141,29 +134,22 @@ fun RadioWaveMainScreen() {
         containerColor = DarkBackground,
         bottomBar = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                DarkOverlay,
-                            ),
-                        ),
-                    ),
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 if (showPlayerBar) {
-                    BottomPlayerBar(
+                    FloatingPlayerBar(
                         playerState = playerState,
                         onPlayPauseClick = { homeViewModel.togglePlayPause() },
                         onBarClick = { /* TODO: Open full player */ },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
                     )
                 }
 
                 NavigationBar(
-                    containerColor = DarkSurface.copy(alpha = 0.95f),
+                    containerColor = DarkSurface,
                     tonalElevation = 0.dp,
-                    modifier = Modifier.height(72.dp),
                 ) {
                     bottomNavItems.forEachIndexed { index, item ->
                         val selected = selectedNavItem == index
@@ -180,35 +166,17 @@ fun RadioWaveMainScreen() {
                                 }
                             },
                             icon = {
-                                Box(
-                                    modifier = Modifier
-                                        .then(
-                                            if (selected) {
-                                                Modifier
-                                                    .background(
-                                                        TealAccent.copy(alpha = 0.15f),
-                                                        shape = androidx.compose.foundation.shape.CircleShape,
-                                                    )
-                                                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                                            } else {
-                                                Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                                            },
-                                        ),
-                                ) {
-                                    Icon(
-                                        imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-                                        contentDescription = item.title,
-                                        modifier = Modifier.size(24.dp),
-                                        tint = if (selected) TealAccent else Color.Gray,
-                                    )
-                                }
+                                Icon(
+                                    imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                                    contentDescription = item.title,
+                                    modifier = Modifier.size(24.dp),
+                                )
                             },
                             label = {
                                 Text(
                                     text = item.title,
                                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                                     fontSize = 11.sp,
-                                    color = if (selected) TealAccent else Color.Gray,
                                 )
                             },
                             colors = NavigationBarItemDefaults.colors(
@@ -239,6 +207,13 @@ fun RadioWaveMainScreen() {
                     onViewAllFavorites = {
                         selectedNavItem = 2
                         navController.navigate(BottomNavItem.Favorites.route) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onNavigateToBrowse = { category ->
+                        selectedNavItem = 1
+                        homeViewModel.onSearchQueryChange(category)
+                        navController.navigate(BottomNavItem.Browse.route) {
                             launchSingleTop = true
                         }
                     },

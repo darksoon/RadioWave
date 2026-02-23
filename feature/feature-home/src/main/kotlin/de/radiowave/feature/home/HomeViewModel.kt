@@ -39,6 +39,9 @@ class HomeViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    private val _selectedCountry = MutableStateFlow<String?>(null)
+    val selectedCountry: StateFlow<String?> = _selectedCountry.asStateFlow()
+
     init {
         Log.d("RadioWave", "HomeViewModel initialized - starting to load stations...")
         loadData()
@@ -47,13 +50,51 @@ class HomeViewModel @Inject constructor(
 
     @OptIn(FlowPreview::class)
     private fun setupSearch() {
-        _searchQuery
-            .debounce(500) // Wait 500ms after user stops typing
-            .onEach { query ->
-                if (query.isBlank()) {
-                    loadData() // Load default data when search is cleared
+        combine(
+            _searchQuery.debounce(500),
+            _selectedCountry,
+        ) { query, country -> query to country }
+            .onEach { (query, country) ->
+                if (query.isBlank() && country == null) {
+                    loadData()
+                } else if (country != null) {
+                    loadStationsByCountry(country, query)
                 } else {
                     searchStations(query)
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    private fun loadStationsByCountry(countryCode: String, query: String) {
+        stationRepository.getStationsByCountry(countryCode)
+            .onStart {
+                _uiState.update { it.copy(isLoading = true) }
+            }
+            .onEach { stations ->
+                val filtered = if (query.isNotBlank()) {
+                    stations.filter { it.name.contains(query, ignoreCase = true) }
+                } else {
+                    stations
+                }
+                val sorted = sortStations(filtered)
+                Log.d("RadioWave", "Country filter: ${sorted.size} stations for '$countryCode'")
+                _uiState.update {
+                    it.copy(
+                        topStations = sorted.take(50),
+                        searchResultCount = sorted.size,
+                        isLoading = false,
+                        error = null,
+                    )
+                }
+            }
+            .catch { error ->
+                Log.e("RadioWave", "Country filter error: ${error.message}", error)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "Fehler beim Laden: ${error.message}"
+                    )
                 }
             }
             .launchIn(viewModelScope)
@@ -65,10 +106,12 @@ class HomeViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = true) }
             }
             .onEach { stations ->
-                Log.d("RadioWave", "Search results: ${stations.size} stations for '$query'")
+                val sorted = sortStations(stations)
+                Log.d("RadioWave", "Search results: ${sorted.size} stations for '$query'")
                 _uiState.update {
                     it.copy(
-                        topStations = stations.take(20),
+                        topStations = sorted.take(50),
+                        searchResultCount = sorted.size,
                         isLoading = false,
                         error = null,
                     )
@@ -86,8 +129,31 @@ class HomeViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
+    private fun sortStations(stations: List<Station>): List<Station> {
+        val currentSort = _uiState.value.sortOption
+        return when (currentSort) {
+            SortOption.POPULARITY -> stations.sortedByDescending { it.clickCount }
+            SortOption.NAME -> stations.sortedBy { it.name.lowercase() }
+            SortOption.COUNTRY -> stations.sortedBy { it.country?.lowercase() ?: "zzz" }
+        }
+    }
+
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
+    }
+
+    fun onCountrySelected(countryCode: String?) {
+        _selectedCountry.value = countryCode
+        _uiState.update { it.copy(selectedCountry = countryCode) }
+    }
+
+    fun onSortOptionChanged(sortOption: SortOption) {
+        _uiState.update { it.copy(sortOption = sortOption) }
+        val currentStations = _uiState.value.topStations
+        if (currentStations.isNotEmpty()) {
+            val sorted = sortStations(currentStations)
+            _uiState.update { it.copy(topStations = sorted) }
+        }
     }
 
     private fun loadData() {

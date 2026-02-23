@@ -6,8 +6,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -24,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import de.radiowave.core.model.Station
 import de.radiowave.core.ui.theme.DarkCardBackground
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
@@ -36,9 +36,11 @@ fun StationCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val country: String? = station.country
+
     Card(
         modifier = modifier
-            .size(width = 140.dp, height = 180.dp)
+            .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -50,7 +52,7 @@ fun StationCard(
         ),
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = Alignment.Start,
         ) {
             Box(
                 modifier = Modifier
@@ -59,26 +61,26 @@ fun StationCard(
                     .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                     .background(DarkSurfaceVariant),
             ) {
-                AsyncImage(
+                SubcomposeAsyncImage(
                     model = station.faviconUrl,
                     contentDescription = station.name,
                     modifier = Modifier.fillMaxWidth(),
                     contentScale = ContentScale.Crop,
                 )
-                
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.BottomCenter)
+                        .height(40.dp)
                         .background(
                             Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    DarkCardBackground.copy(alpha = 0.8f),
+                                    DarkCardBackground,
                                 ),
                             ),
-                        )
-                        .padding(vertical = 8.dp),
+                        ),
                 )
             }
 
@@ -92,14 +94,13 @@ fun StationCard(
                     text = station.name,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp,
+                        fontSize = 13.sp,
                     ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     color = Color.White,
                 )
-                
-                val country: String? = station.country
+
                 if (country != null) {
                     Text(
                         text = country,
@@ -107,6 +108,7 @@ fun StationCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         color = TealAccent.copy(alpha = 0.8f),
+                        modifier = Modifier.padding(top = 2.dp),
                     )
                 }
             }

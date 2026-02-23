@@ -1,6 +1,6 @@
 # RadioWave - Projektstand & TODO
 
-## ✅ Erledigt (Phase 1-3)
+## ✅ Erledigt (Phase 1-4)
 
 ### Core Layer (Phase 1)
 - ✅ **core-model**: Station, PlayerState, StreamMetadata, Genre, Country, PlayerError (Sealed Class)
@@ -14,10 +14,18 @@
 - ✅ **DI**: PlayerModule mit @Binds und @Provides
 
 ### UI Layer (Phase 3)
-- ✅ **core-ui**: Theme, LoadingState, ErrorState, StationItem (Card-Design)
-- ✅ **feature-home**: HomeScreen mit LazyColumn, Suchleiste (Debounce 500ms), StationCard, StationListItem
-- ✅ **feature-player**: BottomPlayerBar mit Play/Pause, Sender-Info, Metadaten
-- ✅ **MainActivity**: Scaffold mit BottomPlayerBar, Navigation
+- ✅ **core-ui**: Premium Dark Theme, LoadingState, ErrorState
+- ✅ **Premium Color Palette**: DarkBackground (#121212), DarkCardBackground (#252525), TealAccent (#00BCD4)
+- ✅ **feature-home**: TuneIn-Style mit horizontalen Scroll-Listen, Kategorie-Entdecken
+- ✅ **feature-browse**: Suchleiste + Genre-Chips (Techno, Dance, Rock, Jazz, 80s, etc.)
+- ✅ **feature-player**: Floating Player Bar mit Elevation 16dp, Fortschrittsbalken
+- ✅ **StationCard**: 16dp abgerundete Ecken, Gradient-Overlay, Teal-Akzente
+
+### Navigation (Phase 4)
+- ✅ **Bottom Navigation**: Home, Browse, Favorites, Settings Tabs
+- ✅ **Navigation Graph**: NavHost mit allen Routes
+- ✅ **Floating Player**: Schwebt über Content, nicht über Navigation
+- ✅ **Screen-Stubs**: Browse, Favorites, Settings Placeholder-Screens
 
 ### Infrastruktur
 - ✅ **Build-Logic**: Convention Plugins (AndroidApplication, AndroidLibrary, Hilt, Room)
@@ -28,84 +36,122 @@
 
 ---
 
-## 🚧 TODO (Phase 4 - Features)
+## 🚧 TODO (Phase 5 - Features)
 
-### Navigation
-- [ ] **Navigation Graph**: Vollständige Navigation zwischen Screens
-- [ ] **Bottom Navigation**: Home, Browse, Favorites, Settings Tabs
-- [ ] **Player Screen**: Fullscreen Player mit Album Art, Controls, Sleep Timer
+### Favoriten-System
+- [ ] **Favoriten Toggle**: Herz-Button in StationCards/StationListItem
+- [ ] **Favoriten persistieren**: Room Database Integration
+- [ ] **Favoriten Screen**: Drag-to-Reorder, Swipe-to-Remove
+- [ ] **Favoriten-Export/Import**: JSON Backup
 
-### Features
-- [ ] **Favoriten**: Speichern/Laden, Toggle in UI, Drag-to-Reorder
-- [ ] **Recent Stations**: Zuletzt gehört anzeigen
-- [ ] **Browse**: Genres, Länder, Sprachen als Filter
-- [ ] **Suche**: Erweiterte Suche mit Filter (Codec, Bitrate)
-- [ ] **Custom Stations**: Manuelle URL-Eingabe, M3U/PLS Import
-- [ ] **Einstellungen**: Theme (Dark/Light/System), Audio-Qualität, Datennutzung
-- [ ] **Sleep Timer**: Automatisches Stoppen nach X Minuten
-- [ ] **Alarm**: Wecker mit Radiosender
+### Browse & Suche
+- [ ] **Länder-Filter**: Flaggen, alphabetisch sortiert
+- [ ] **Sprachen-Filter**: Deutsch, Englisch, etc.
+- [ ] **Erweiterte Filter**: Codec, Bitrate, Nur funktionierende Streams
+- [ ] **Pull-to-Refresh**: SwipeRefresh in Listen
+
+### Fullscreen Player
+- [ ] **Player Sheet**: Expandable Bottom Sheet
+- [ ] **Album Art**: Großes Cover mit Blur-Background
+- [ ] **Sleep Timer**: Timer-Auswahl (15, 30, 60 min)
+- [ ] **Share Button**: Stream-URL teilen
+- [ ] **Equalizer Animation**: Animierte Bars beim Abspielen
+
+### Custom Stations
+- [ ] **Manuelle URL-Eingabe**: Validierung, Test-Button
+- [ ] **M3U/PLS Import**: Playlist-Dateien parsen
+- [ ] **Custom Station Management**: Edit, Delete
+
+### Einstellungen
+- [ ] **Theme-Umschaltung**: Dark/Light/System
+- [ ] **Audio-Qualität**: Stream-Qualität wählen
+- [ ] **Datennutzung**: Mobile Data Warning
+- [ ] **Cache leeren**: Database, Images
+- [ ] **Über die App**: Version, GitHub-Link, Lizenzen
+
+---
+
+## 🔮 TODO (Phase 6 - Integration)
 
 ### Android Auto
-- [ ] **Auto-Browse-Tree**: MediaLibrarySession Callback
-- [ ] **Auto-Integration**: AndroidManifest Einträge
-- [ ] **Auto-UI**: Browse-Tree für Favoriten, Recent, Genres
+- [ ] **MediaLibraryService**: Browse-Tree implementieren
+- [ ] **Auto Manifest**: automotive_app_desc.xml
+- [ ] **Auto-Browse**: Favoriten, Recent, Genres als Roots
+- [ ] **Auto-Playback**: Steuerung vom Auto aus
 
 ### Chromecast
-- [ ] **Cast-Integration**: Media3 Cast Extension
-- [ ] **Cast-Button**: In Player UI
-- [ ] **Cast-Session**: Sender wechseln
+- [ ] **Cast Extension**: Media3 Cast Integration
+- [ ] **Cast Button**: In Player UI
+- [ ] **Cast Session**: Sender an Cast-Gerät übergeben
 
-### Polish
-- [ ] **Animationen**: Übergänge, Lade-Animationen
-- [ ] **Fehlerbehandlung**: Retry-Logik, Offline-Modus
-- [ ] **Widgets**: Home Screen Widget
-- [ ] **Notifications**: Rich Media Notification
-- [ ] **ProGuard**: Release-Build optimieren
+### Notifications & Widgets
+- [ ] **Media Notification**: Album Art, Play/Pause
+- [ ] **Home Widget**: Favoriten schnell starten
+
+---
+
+## 🎨 TODO (Phase 7 - Polish)
+
+### Animationen
+- [ ] **Screen Transitions**: Slide, Fade zwischen Tabs
+- [ ] **Player Animation**: Expand/Collapse Sheet
+- [ ] **Loading Shimmer**: Skeleton-Loading für Cards
+- [ ] **Card Press Animation**: Scale-Effekt
+
+### Fehlerbehandlung
+- [ ] **Retry-Logik**: Automatischer Reconnect bei Netzwerkfehler
+- [ ] **Offline-Modus**: Cached Stations anzeigen
+- [ ] **Broken Stream Report**: An API melden
 
 ### Testing
-- [ ] **Unit Tests**: ViewModels, Repositories, Use Cases
-- [ ] **UI Tests**: Compose Testing
+- [ ] **Unit Tests**: ViewModels, Repositories
+- [ ] **UI Tests**: Compose Testing mit Turbine
 - [ ] **Integration Tests**: API, Database
 
 ---
 
 ## 🐛 Bekannte Bugs
 
-1. **DNS/Netzwerk**: Manchmal Verbindungsprobleme zur API (all.api.radio-browser.info)
-2. **Audio-Stuttering**: Buffer-Optimierung sollte helfen, aber bei sehr schlechter Verbindung kann es noch krachen
-3. **UI**: Keine Animationen beim Wechsel zwischen Screens
+1. ~~DNS/Netzwerk~~: API funktioniert stabil
+2. **Smart-Casts**: Bei Modul-übergreifenden Properties lokale Kopien nötig
+3. **Station Logos**: Manche URLs sind defekt (normales Internet-Verhalten)
 
 ---
 
 ## 📱 Aktueller Status
 
 **Funktioniert:**
-- App startet
-- Top-Sender werden geladen
-- Suche funktioniert (mit Debounce)
-- Sender können abgespielt werden
-- Bottom Player Bar zeigt aktuellen Sender
-- Play/Pause funktioniert
-- Buffer-Optimierung für stabile Wiedergabe
+- ✅ Premium Dark Theme (Teal/Mint Akzente)
+- ✅ Bottom Navigation (Home, Browse, Favorites, Settings)
+- ✅ Suche mit Debounce (500ms)
+- ✅ Genre-Chips für schnelle Suche
+- ✅ Floating Player Bar mit Progress-Indicator
+- ✅ TuneIn-Style Home Screen
+- ✅ Kategorie-Entdecken (News, Sport, Musik, etc.)
+- ✅ Sender abspielen & streamen
+- ✅ Play/Pause Steuerung
+
+**Teilweise implementiert:**
+- ⚠️ Favoriten: Repository existiert, UI fehlt noch
+- ⚠️ Recent Stations: Werden in DB gespeichert, aber nicht korrekt angezeigt
+- ⚠️ Settings: Placeholder Screen
 
 **Nicht implementiert:**
-- Favoriten-Verwaltung
-- Vollständige Navigation
-- Settings
-- Android Auto
-- Chromecast
-- Sleep Timer
-- Alarm
+- ❌ Android Auto
+- ❌ Chromecast
+- ❌ Sleep Timer
+- ❌ Fullscreen Player
+- ❌ Custom Stations
 
 ---
 
-## 🎯 Nächste Schritte (Empfohlen)
+## 🎯 Nächste Schritte (Priorität)
 
-1. **Favoriten implementieren** - Wichtig für UX
-2. **Settings Screen** - Theme, Audio-Qualität
-3. **Vollständige Navigation** - Bottom Tabs
-4. **Android Auto** - Für Auto-Nutzung
-5. **Testing** - Unit & UI Tests
+1. **Favoriten Toggle** - Herz-Button zum Speichern
+2. **Favoriten Screen** - Liste mit allen Favoriten
+3. **Fullscreen Player** - Expandable Sheet
+4. **Settings Screen** - Basis-Einstellungen
+5. **Android Auto** - Für Auto-Nutzung
 
 ---
 
@@ -115,6 +161,7 @@
 - **Architektur**: Clean Architecture mit MVVM
 - **API**: Radio Browser API (all.api.radio-browser.info)
 - **Min SDK**: 26, Target SDK: 35
+- **Design**: Premium Dark Theme mit Teal/Mint Akzenten
 
 **Letzte Session:** 2026-02-23
-**Status:** Core Features funktionieren, UI ist poliert, bereit für Feature-Erweiterungen
+**Status:** High-End UI fertig, Navigation komplett, bereit für Feature-Implementierung
