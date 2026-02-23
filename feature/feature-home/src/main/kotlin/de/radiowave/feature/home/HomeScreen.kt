@@ -35,7 +35,11 @@ fun HomeScreen(
 
     HomeContent(
         uiState = uiState,
-        onStationClick = onStationClick,
+        onStationClick = { station ->
+            viewModel.playStation(station)
+            onStationClick(station)
+        },
+        onPlayPauseClick = { viewModel.togglePlayPause() },
         onViewAllFavorites = onViewAllFavorites,
         onRetry = { viewModel.refresh() },
         modifier = modifier,
@@ -46,6 +50,7 @@ fun HomeScreen(
 private fun HomeContent(
     uiState: HomeUiState,
     onStationClick: (Station) -> Unit,
+    onPlayPauseClick: () -> Unit,
     onViewAllFavorites: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,

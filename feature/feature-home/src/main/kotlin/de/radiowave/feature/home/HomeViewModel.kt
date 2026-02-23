@@ -6,6 +6,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import de.radiowave.core.data.repository.FavoriteRepository
 import de.radiowave.core.data.repository.RecentRepository
 import de.radiowave.core.data.repository.StationRepository
+import de.radiowave.core.model.Station
+import de.radiowave.core.player.RadioPlayerManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -22,6 +25,7 @@ class HomeViewModel @Inject constructor(
     private val stationRepository: StationRepository,
     private val favoriteRepository: FavoriteRepository,
     private val recentRepository: RecentRepository,
+    private val playerManager: RadioPlayerManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -66,5 +70,15 @@ class HomeViewModel @Inject constructor(
 
     fun refresh() {
         loadData()
+    }
+
+    fun playStation(station: Station) {
+        viewModelScope.launch {
+            playerManager.playStation(station)
+        }
+    }
+
+    fun togglePlayPause() {
+        playerManager.togglePlayPause()
     }
 }
