@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
-                    RadioWaveApp()
+                    RadioWaveMainScreen()
                 }
             }
         }
@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun RadioWaveApp() {
+fun RadioWaveMainScreen() {
     val navController = rememberNavController()
     
     Scaffold(
