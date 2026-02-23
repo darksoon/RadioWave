@@ -5,11 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -22,7 +20,6 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -32,10 +29,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -43,9 +36,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import dagger.hilt.android.AndroidEntryPoint
 import de.radiowave.core.model.PlayerState
 import de.radiowave.core.ui.theme.DarkBackground
@@ -124,10 +121,12 @@ fun RadioWaveMainScreen() {
     val navController = rememberNavController()
     val homeViewModel: HomeViewModel = hiltViewModel()
     val playerState: PlayerState by homeViewModel.playerState.collectAsState()
-    var selectedNavItem by remember { mutableIntStateOf(0) }
 
     val currentStation = playerState.currentStation
     val showPlayerBar = currentStation != null
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -151,14 +150,13 @@ fun RadioWaveMainScreen() {
                     containerColor = DarkSurface,
                     tonalElevation = 0.dp,
                 ) {
-                    bottomNavItems.forEachIndexed { index, item ->
-                        val selected = selectedNavItem == index
+                    bottomNavItems.forEach { item ->
+                        val selected = currentRoute == item.route
                         NavigationBarItem(
                             selected = selected,
                             onClick = {
-                                selectedNavItem = index
                                 navController.navigate(item.route) {
-                                    popUpTo(navController.graph.startDestinationId) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
                                     launchSingleTop = true
@@ -205,22 +203,21 @@ fun RadioWaveMainScreen() {
                         homeViewModel.playStation(station)
                     },
                     onViewAllFavorites = {
-                        selectedNavItem = 2
                         navController.navigate(BottomNavItem.Favorites.route) {
                             launchSingleTop = true
                         }
                     },
                     onNavigateToBrowse = { category ->
-                        selectedNavItem = 1
-                        homeViewModel.onSearchQueryChange(category)
-                        navController.navigate(BottomNavItem.Browse.route) {
-                            launchSingleTop = true
-                        }
+                        navController.navigate("${BottomNavItem.Browse.route}?genre=$category")
                     },
                 )
             }
-            composable(BottomNavItem.Browse.route) {
-                BrowseScreen()
+            composable(
+                route = "${BottomNavItem.Browse.route}?genre={genre}",
+                arguments = listOf(navArgument("genre") { defaultValue = ""; type = NavType.StringType })
+            ) { backStackEntry ->
+                val genre = backStackEntry.arguments?.getString("genre") ?: ""
+                BrowseScreen(initialGenre = genre)
             }
             composable(BottomNavItem.Favorites.route) {
                 FavoritesScreen()

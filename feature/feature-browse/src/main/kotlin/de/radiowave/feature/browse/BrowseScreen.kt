@@ -37,6 +37,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -104,6 +105,7 @@ private val sortOptions = listOf(
 
 @Composable
 fun BrowseScreen(
+    initialGenre: String = "",
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -111,6 +113,13 @@ fun BrowseScreen(
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedCountry by viewModel.selectedCountry.collectAsStateWithLifecycle()
     var selectedGenre by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(initialGenre) {
+        if (initialGenre.isNotEmpty()) {
+            selectedGenre = initialGenre
+            viewModel.onSearchQueryChange(initialGenre)
+        }
+    }
 
     BrowseContent(
         uiState = uiState,

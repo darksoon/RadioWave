@@ -147,9 +147,10 @@ fun FloatingPlayerBar(
                     ) {
                         if (isBuffering) {
                             CircularProgressIndicator(
+                                modifier = Modifier.size(48.dp),
                                 strokeWidth = 2.dp,
                                 color = TealAccent,
-                                modifier = Modifier.size(48.dp),
+                                trackColor = Color.Transparent,
                             )
                         }
 

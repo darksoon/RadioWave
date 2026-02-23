@@ -293,8 +293,8 @@ private fun SquareStationCard(
                             colors = listOf(
                                 Color.Transparent,
                                 Color.Transparent,
-                                Color.Black.copy(alpha = 0.7f),
-                                Color.Black,
+                                Color.Black.copy(alpha = 0.6f),
+                                Color.Black.copy(alpha = 0.9f),
                             ),
                         ),
                     ),
