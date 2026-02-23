@@ -83,7 +83,12 @@ private fun HomeContent(
         else -> {
             LazyColumn(
                 modifier = modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 16.dp),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 16.dp,
+                    bottom = 80.dp // Extra space for BottomPlayerBar
+                ),
             ) {
                 // Search Bar
                 item {
