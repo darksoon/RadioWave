@@ -72,9 +72,9 @@
 ## 🚧 TODO (Phase 6 - Features)
 
 ### Favoriten-System
-- [ ] **Favoriten Toggle**: Herz-Button in StationCards
-- [ ] **Favoriten persistieren**: Room Database Integration (Repository existiert schon)
-- [ ] **Favoriten Screen**: Liste mit allen Favoriten, Swipe-to-Remove
+- [x] **Favoriten Toggle**: Herz-Button in StationCards
+- [x] **Favoriten persistieren**: Room Database Integration (inkl. Station-Snapshot fuer Offline-Anzeige)
+- [x] **Favoriten Screen**: Liste mit allen Favoriten (Play + Remove via Heart)
 - [ ] **Favoriten-Export/Import**: JSON Backup
 
 ### Fullscreen Player

@@ -6,12 +6,10 @@ import de.radiowave.core.database.dao.CustomStationDao
 import de.radiowave.core.database.dao.FavoriteDao
 import de.radiowave.core.database.entity.FavoriteEntity
 import de.radiowave.core.model.Station
-import de.radiowave.core.network.RadioBrowserApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -19,7 +17,6 @@ import javax.inject.Singleton
 class FavoriteRepositoryImpl @Inject constructor(
     private val favoriteDao: FavoriteDao,
     private val customStationDao: CustomStationDao,
-    private val api: RadioBrowserApi,
 ) : FavoriteRepository {
 
     override fun getFavorites(): Flow<List<Station>> {
@@ -33,11 +30,22 @@ class FavoriteRepositoryImpl @Inject constructor(
                     ?.toDomain()
                     ?.copy(isFavorite = true)
                     ?: run {
-                        // Otherwise fetch from API (simplified - in real app cache these)
                         Station(
                             uuid = favorite.stationUuid,
-                            name = "Station ${favorite.stationUuid.take(8)}",
-                            streamUrl = "",
+                            name = favorite.stationName,
+                            streamUrl = favorite.streamUrl,
+                            homepageUrl = favorite.homepageUrl,
+                            faviconUrl = favorite.faviconUrl,
+                            country = favorite.country,
+                            countryCode = favorite.countryCode,
+                            language = favorite.language,
+                            tags = favorite.tags
+                                ?.split(",")
+                                ?.map { tag -> tag.trim() }
+                                ?.filter { tag -> tag.isNotEmpty() }
+                                ?: emptyList(),
+                            codec = favorite.codec,
+                            bitrate = favorite.bitrate,
                             isFavorite = true,
                         )
                     }
@@ -59,8 +67,27 @@ class FavoriteRepositoryImpl @Inject constructor(
     }
 
     override suspend fun reorderFavorites(stationIds: List<String>) {
+        val currentFavorites = favoriteDao.getAllFavorites().firstOrNull().orEmpty()
+        val favoriteByUuid = currentFavorites.associateBy { favorite -> favorite.stationUuid }
         stationIds.forEachIndexed { index, uuid ->
-            favoriteDao.addFavorite(FavoriteEntity(uuid, sortOrder = index))
+            val currentFavorite = favoriteByUuid[uuid] ?: return@forEachIndexed
+            favoriteDao.addFavorite(
+                FavoriteEntity(
+                    stationUuid = uuid,
+                    stationName = currentFavorite.stationName,
+                    streamUrl = currentFavorite.streamUrl,
+                    homepageUrl = currentFavorite.homepageUrl,
+                    faviconUrl = currentFavorite.faviconUrl,
+                    country = currentFavorite.country,
+                    countryCode = currentFavorite.countryCode,
+                    language = currentFavorite.language,
+                    tags = currentFavorite.tags,
+                    codec = currentFavorite.codec,
+                    bitrate = currentFavorite.bitrate,
+                    addedAt = currentFavorite.addedAt,
+                    sortOrder = index,
+                ),
+            )
         }
     }
 }

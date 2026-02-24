@@ -5,3 +5,7 @@ plugins {
 android {
     namespace = "de.radiowave.feature.favorites"
 }
+
+dependencies {
+    implementation(project(":core:core-model"))
+}

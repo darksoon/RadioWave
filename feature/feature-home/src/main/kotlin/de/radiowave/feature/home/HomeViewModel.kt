@@ -212,6 +212,12 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun toggleFavorite(station: Station) {
+        viewModelScope.launch {
+            favoriteRepository.toggleFavorite(station)
+        }
+    }
+
     fun togglePlayPause() {
         playerManager.togglePlayPause()
     }
