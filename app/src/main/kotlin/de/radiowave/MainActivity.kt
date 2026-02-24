@@ -51,6 +51,7 @@ import de.radiowave.core.ui.theme.TealAccent
 import de.radiowave.feature.browse.BrowseScreen
 import de.radiowave.feature.favorites.FavoritesScreen
 import de.radiowave.feature.home.HomeScreen
+import de.radiowave.feature.home.HomePremiumBackground
 import de.radiowave.feature.home.HomeViewModel
 import de.radiowave.feature.player.FloatingPlayerBar
 import de.radiowave.feature.settings.SettingsScreen
@@ -139,7 +140,7 @@ fun RadioWaveMainScreen() {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        containerColor = DarkBackground,
+        containerColor = Color.Transparent,
         bottomBar = {
             NavigationBar(
                 containerColor = DarkSurface,
@@ -181,37 +182,51 @@ fun RadioWaveMainScreen() {
         }
     ) { innerPadding ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+            modifier = Modifier.fillMaxSize(),
         ) {
-            NavHost(
-                navController = navController,
-                startDestination = BottomNavItem.Home.route,
-                modifier = Modifier.fillMaxSize(),
+            val isHomeRoute = currentDestination
+                ?.hierarchy
+                ?.any { destination -> destination.route == BottomNavItem.Home.route } == true
+
+            if (isHomeRoute) {
+                HomePremiumBackground(
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
             ) {
-                composable(BottomNavItem.Home.route) {
-                    HomeScreen(
-                        onStationClick = { station ->
-                            homeViewModel.playStation(station)
-                        },
-                        onViewAllFavorites = {
-                            navigateToTopLevel(BottomNavItem.Favorites.route)
-                        },
-                        onNavigateToBrowse = { category ->
-                            homeViewModel.onSearchQueryChange(category)
-                            navigateToTopLevel(BottomNavItem.Browse.route)
-                        },
-                    )
-                }
-                composable(BottomNavItem.Browse.route) {
-                    BrowseScreen()
-                }
-                composable(BottomNavItem.Favorites.route) {
-                    FavoritesScreen()
-                }
-                composable(BottomNavItem.Settings.route) {
-                    SettingsScreen()
+                NavHost(
+                    navController = navController,
+                    startDestination = BottomNavItem.Home.route,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    composable(BottomNavItem.Home.route) {
+                        HomeScreen(
+                            onStationClick = { station ->
+                                homeViewModel.playStation(station)
+                            },
+                            onViewAllFavorites = {
+                                navigateToTopLevel(BottomNavItem.Favorites.route)
+                            },
+                            onNavigateToBrowse = { category ->
+                                homeViewModel.onSearchQueryChange(category)
+                                navigateToTopLevel(BottomNavItem.Browse.route)
+                            },
+                        )
+                    }
+                    composable(BottomNavItem.Browse.route) {
+                        BrowseScreen()
+                    }
+                    composable(BottomNavItem.Favorites.route) {
+                        FavoritesScreen()
+                    }
+                    composable(BottomNavItem.Settings.route) {
+                        SettingsScreen()
+                    }
                 }
             }
 

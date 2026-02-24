@@ -1,8 +1,15 @@
 package de.radiowave.feature.home
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,15 +43,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.lerp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.SubcomposeAsyncImage
@@ -58,6 +68,9 @@ import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.radiowave.core.ui.theme.MintAccent
 import de.radiowave.core.ui.theme.TealAccent
+import kotlin.math.PI
+import kotlin.math.sin
+import kotlin.random.Random
 
 @Composable
 fun HomeScreen(
@@ -130,13 +143,8 @@ private fun HomeContent(
 
             Box(
                 modifier = modifier
-                    .fillMaxSize()
-                    .background(DarkBackground),
+                    .fillMaxSize(),
             ) {
-                SmoothHomeBackground(
-                    modifier = Modifier.fillMaxSize(),
-                )
-
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -208,65 +216,159 @@ private fun HomeContent(
 }
 
 @Composable
-private fun SmoothHomeBackground(
+fun HomePremiumBackground(
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF101A25),
-                        Color(0xFF101820),
-                        Color(0xFF0E141A),
-                        DarkBackground,
-                    ),
-                ),
+    val transition = rememberInfiniteTransition(label = "premium-bg")
+    val twinkleProgress by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 10_000,
+                easing = LinearEasing,
             ),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "star-twinkle-progress",
+    )
+    val nebulaDrift by transition.animateFloat(
+        initialValue = -0.04f,
+        targetValue = 0.04f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 72_000,
+                easing = LinearEasing,
+            ),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "nebula-drift",
+    )
+
+    Box(
+        modifier = modifier.background(Color(0xFF000514)),
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(430.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            TealAccent.copy(alpha = 0.2f),
-                            MintAccent.copy(alpha = 0.1f),
-                            Color.Transparent,
-                        ),
-                        radius = 860f,
-                    ),
-                ),
+        NebulaLayer(
+            drift = nebulaDrift,
+            modifier = Modifier.fillMaxSize(),
         )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(560.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            Color(0xFF58B9FF).copy(alpha = 0.08f),
-                            Color.Transparent,
-                        ),
-                        radius = 1180f,
-                    ),
-                ),
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            Color.Black.copy(alpha = 0.15f),
-                            Color.Black.copy(alpha = 0.25f),
-                        ),
-                    ),
-                ),
+        StarFieldLayer(
+            twinkleProgress = twinkleProgress,
+            modifier = Modifier.fillMaxSize(),
         )
     }
+}
+
+@Composable
+private fun NebulaLayer(
+    drift: Float,
+    modifier: Modifier = Modifier,
+) {
+    Canvas(
+        modifier = modifier,
+    ) {
+        val horizontalShift = size.width * drift
+        drawRect(
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    Color(0xFF0F001E),
+                    Color(0xFF06031A),
+                    Color(0xFF000514),
+                ),
+            ),
+        )
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    TealAccent.copy(alpha = 0.18f),
+                    MintAccent.copy(alpha = 0.08f),
+                    Color.Transparent,
+                ),
+                center = center.copy(
+                    x = center.x - size.width * 0.34f + horizontalShift,
+                    y = center.y * 0.48f,
+                ),
+                radius = size.maxDimension * 0.9f,
+            ),
+            radius = size.maxDimension * 0.92f,
+            center = center.copy(
+                x = center.x - size.width * 0.34f + horizontalShift,
+                y = center.y * 0.48f,
+            ),
+        )
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    Color(0xFF33C9D4).copy(alpha = 0.13f),
+                    Color.Transparent,
+                ),
+                center = center.copy(
+                    x = center.x + size.width * 0.38f - horizontalShift * 0.6f,
+                    y = center.y * 0.68f,
+                ),
+                radius = size.maxDimension * 0.74f,
+            ),
+            radius = size.maxDimension * 0.76f,
+            center = center.copy(
+                x = center.x + size.width * 0.38f - horizontalShift * 0.6f,
+                y = center.y * 0.68f,
+            ),
+        )
+    }
+}
+
+private data class StarParticle(
+    val xFactor: Float,
+    val yFactor: Float,
+    val radiusPx: Float,
+    val phase: Float,
+    val speed: Float,
+    val minAlpha: Float,
+    val maxAlpha: Float,
+)
+
+@Composable
+private fun StarFieldLayer(
+    twinkleProgress: Float,
+    modifier: Modifier = Modifier,
+) {
+    Canvas(
+        modifier = modifier.drawWithCache {
+            val random = Random(9917)
+            val starCount = random.nextInt(from = 50, until = 81)
+            val stars = List(starCount) {
+                StarParticle(
+                    xFactor = random.nextFloat(),
+                    yFactor = random.nextFloat(),
+                    radiusPx = lerp(
+                        start = 1.dp.toPx(),
+                        stop = 3.dp.toPx(),
+                        fraction = random.nextFloat(),
+                    ),
+                    phase = random.nextFloat() * (2f * PI.toFloat()),
+                    speed = lerp(0.65f, 1.35f, random.nextFloat()),
+                    minAlpha = lerp(0.3f, 0.45f, random.nextFloat()),
+                    maxAlpha = lerp(0.7f, 1.0f, random.nextFloat()),
+                )
+            }
+
+            onDrawBehind {
+                val progressAngle = twinkleProgress * (2f * PI.toFloat())
+                stars.forEach { star ->
+                    val pulse = ((sin(progressAngle * star.speed + star.phase) + 1f) * 0.5f)
+                    val alpha = lerp(star.minAlpha, star.maxAlpha, pulse)
+                    drawCircle(
+                        color = Color.White.copy(alpha = alpha),
+                        radius = star.radiusPx,
+                        center = Offset(
+                            x = size.width * star.xFactor,
+                            y = size.height * star.yFactor,
+                        ),
+                    )
+                }
+            }
+        },
+    ) {}
 }
 
 @Composable
@@ -390,11 +492,11 @@ private fun RecentStationCard(
             .height(132.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF171A20).copy(alpha = 0.92f),
+            containerColor = Color(0xFF111827).copy(alpha = 0.66f),
         ),
         border = BorderStroke(
             width = 1.dp,
-            color = DarkBorder.copy(alpha = 0.9f),
+            color = Color.White.copy(alpha = 0.14f),
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 4.dp,
@@ -541,7 +643,7 @@ private fun EmptyStartCard(
             .padding(horizontal = 24.dp),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = DarkCardBackground.copy(alpha = 0.9f),
+            containerColor = DarkCardBackground.copy(alpha = 0.72f),
         ),
         border = BorderStroke(
             width = 1.dp,

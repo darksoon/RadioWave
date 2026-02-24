@@ -1,6 +1,7 @@
 package de.radiowave.feature.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,7 +50,12 @@ fun StationListItem(
             .clickable(onClick = onClick)
             .padding(horizontal = 20.dp, vertical = 6.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(DarkCardBackground)
+            .background(DarkCardBackground.copy(alpha = 0.68f))
+            .border(
+                width = 1.dp,
+                color = Color.White.copy(alpha = 0.12f),
+                shape = RoundedCornerShape(16.dp),
+            )
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
