@@ -1,12 +1,5 @@
 package de.radiowave.feature.home
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
@@ -41,13 +34,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -122,7 +115,19 @@ private fun HomeContent(
             val favoriteStations = if (uiState.favoriteStations.isNotEmpty()) {
                 uiState.favoriteStations
             } else {
-                uiState.topStations.take(6)
+                uiState.topStations.take(5)
+            }
+            val excludedSuggestionIds = (
+                favoriteStations.map { station -> station.uuid } +
+                    recentStations.map { station -> station.uuid }
+                ).toSet()
+            val suggestionPool = (uiState.topStations + recentStations + favoriteStations)
+                .distinctBy { station -> station.uuid }
+                .filterNot { station -> station.uuid in excludedSuggestionIds }
+            val suggestionStations = remember(
+                key1 = suggestionPool.joinToString(separator = "|") { station -> station.uuid },
+            ) {
+                suggestionPool.shuffled().take(10)
             }
 
             Box(
@@ -142,9 +147,21 @@ private fun HomeContent(
                 ) {
                     HomeHeader()
 
+                    if (favoriteStations.isNotEmpty()) {
+                        SectionTitle(
+                            title = "Favoriten",
+                            actionLabel = "Alle",
+                            onActionClick = onViewAllFavorites,
+                        )
+                        FavoriteStationList(
+                            stations = favoriteStations.take(5),
+                            onStationClick = onStationClick,
+                        )
+                    }
+
                     if (recentStations.isNotEmpty()) {
                         SectionTitle(
-                            title = "Recent Stations",
+                            title = "Zuletzt gehört",
                         )
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 20.dp),
@@ -159,19 +176,28 @@ private fun HomeContent(
                         }
                     }
 
-                    if (favoriteStations.isNotEmpty()) {
+                    if (suggestionStations.isNotEmpty()) {
                         SectionTitle(
-                            title = "Favorites",
-                            actionLabel = "All",
-                            onActionClick = onViewAllFavorites,
+                            title = "Vorschläge",
                         )
-                        FavoriteStationGrid(
-                            stations = favoriteStations.take(6),
-                            onStationClick = onStationClick,
-                        )
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 20.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            items(suggestionStations) { station ->
+                                RecentStationCard(
+                                    station = station,
+                                    onClick = { onStationClick(station) },
+                                )
+                            }
+                        }
                     }
 
-                    if (recentStations.isEmpty() && favoriteStations.isEmpty()) {
+                    if (
+                        recentStations.isEmpty() &&
+                        favoriteStations.isEmpty() &&
+                        suggestionStations.isEmpty()
+                    ) {
                         Spacer(modifier = Modifier.height(18.dp))
                         EmptyStartCard(
                             onNavigateToBrowse = onNavigateToBrowse,
@@ -187,44 +213,6 @@ private fun HomeContent(
 private fun SmoothHomeBackground(
     modifier: Modifier = Modifier,
 ) {
-    val transition = rememberInfiniteTransition(label = "home-bg")
-    val glowX by transition.animateFloat(
-        initialValue = -120f,
-        targetValue = 120f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 18_000,
-                easing = LinearEasing,
-            ),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "home-bg-glow-x",
-    )
-    val glowY by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 90f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 14_000,
-                easing = FastOutSlowInEasing,
-            ),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "home-bg-glow-y",
-    )
-    val pulseAlpha by transition.animateFloat(
-        initialValue = 0.78f,
-        targetValue = 1.08f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 9_000,
-                easing = FastOutSlowInEasing,
-            ),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "home-bg-pulse",
-    )
-
     Box(
         modifier = modifier
             .background(
@@ -242,19 +230,14 @@ private fun SmoothHomeBackground(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(430.dp)
-                .graphicsLayer {
-                    translationX = glowX
-                    translationY = glowY * 0.45f
-                    alpha = pulseAlpha
-                }
                 .background(
                     Brush.radialGradient(
                         colors = listOf(
-                            TealAccent.copy(alpha = 0.26f),
-                            MintAccent.copy(alpha = 0.15f),
+                            TealAccent.copy(alpha = 0.2f),
+                            MintAccent.copy(alpha = 0.1f),
                             Color.Transparent,
                         ),
-                        radius = 980f,
+                        radius = 860f,
                     ),
                 ),
         )
@@ -262,18 +245,13 @@ private fun SmoothHomeBackground(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(560.dp)
-                .graphicsLayer {
-                    translationX = -glowX * 0.35f
-                    translationY = glowY * 0.25f
-                    alpha = pulseAlpha * 0.9f
-                }
                 .background(
                     Brush.radialGradient(
                         colors = listOf(
-                            Color(0xFF58B9FF).copy(alpha = 0.11f),
+                            Color(0xFF58B9FF).copy(alpha = 0.08f),
                             Color.Transparent,
                         ),
-                        radius = 1350f,
+                        radius = 1180f,
                     ),
                 ),
         )
@@ -290,6 +268,25 @@ private fun SmoothHomeBackground(
                     ),
                 ),
         )
+    }
+}
+
+@Composable
+private fun FavoriteStationList(
+    stations: List<Station>,
+    onStationClick: (Station) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        stations.forEach { station ->
+            StationListItem(
+                station = station,
+                onClick = { onStationClick(station) },
+                showPlayButton = true,
+            )
+        }
     }
 }
 
@@ -462,102 +459,6 @@ private fun RecentStationCard(
 }
 
 @Composable
-private fun FavoriteStationGrid(
-    stations: List<Station>,
-    onStationClick: (Station) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        stations.chunked(3).forEach { rowStations ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                rowStations.forEach { station ->
-                    FavoriteStationTile(
-                        station = station,
-                        onClick = { onStationClick(station) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                repeat(3 - rowStations.size) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun FavoriteStationTile(
-    station: Station,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier.aspectRatio(1f),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = DarkCardBackground,
-        ),
-        border = BorderStroke(
-            width = 1.dp,
-            color = DarkBorder.copy(alpha = 0.9f),
-        ),
-        onClick = onClick,
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            StationArtwork(
-                imageUrl = station.faviconUrl,
-                stationName = station.name,
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-                fallbackColors = favoriteFallbackColors(station),
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Black.copy(alpha = 0.25f),
-                                Color.Black.copy(alpha = 0.72f),
-                            ),
-                        ),
-                    ),
-            )
-
-            Surface(
-                shape = CircleShape,
-                color = Color(0xFFEF5350),
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(6.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Favorite,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier
-                        .size(14.dp)
-                        .padding(2.dp),
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun StationArtwork(
     imageUrl: String?,
     stationName: String,
@@ -630,22 +531,6 @@ private val defaultFallbackColors = listOf(
     TealAccent.copy(alpha = 0.4f),
     Color(0xFF1A1F2B),
 )
-
-private val favoriteFallbackPalettes = listOf(
-    listOf(Color(0xFF3EC7C2), Color(0xFF142B39)),
-    listOf(Color(0xFF6A5CFF), Color(0xFF221B45)),
-    listOf(Color(0xFF65E4A3), Color(0xFF173B2D)),
-    listOf(Color(0xFFFF8A65), Color(0xFF412525)),
-    listOf(Color(0xFF57B5FF), Color(0xFF1A3042)),
-    listOf(Color(0xFFE573FF), Color(0xFF3B1E44)),
-)
-
-private fun favoriteFallbackColors(station: Station): List<Color> {
-    val index = station.uuid.hashCode().mod(favoriteFallbackPalettes.size).let { safeIndex ->
-        if (safeIndex < 0) safeIndex + favoriteFallbackPalettes.size else safeIndex
-    }
-    return favoriteFallbackPalettes[index]
-}
 
 @Composable
 private fun EmptyStartCard(
