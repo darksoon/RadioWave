@@ -87,21 +87,21 @@ sealed class BottomNavItem(
 
     object Browse : BottomNavItem(
         route = "browse",
-        title = "Browse",
+        title = "Suchen",
         selectedIcon = Icons.Filled.Search,
         unselectedIcon = Icons.Outlined.Search,
     )
 
     object Favorites : BottomNavItem(
         route = "favorites",
-        title = "Favorites",
+        title = "Favoriten",
         selectedIcon = Icons.Filled.Favorite,
         unselectedIcon = Icons.Outlined.FavoriteBorder,
     )
 
     object Settings : BottomNavItem(
         route = "settings",
-        title = "Settings",
+        title = "Einstellungen",
         selectedIcon = Icons.Filled.Settings,
         unselectedIcon = Icons.Outlined.Settings,
     )
@@ -150,7 +150,7 @@ fun RadioWaveMainScreen() {
                         onBarClick = { },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
                     )
                 }
 
@@ -178,7 +178,7 @@ fun RadioWaveMainScreen() {
                                 Text(
                                     text = item.title,
                                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                                    fontSize = 11.sp,
+                                    fontSize = 10.sp,
                                 )
                             },
                             colors = NavigationBarItemDefaults.colors(
@@ -186,7 +186,7 @@ fun RadioWaveMainScreen() {
                                 selectedTextColor = TealAccent,
                                 unselectedIconColor = Color.Gray,
                                 unselectedTextColor = Color.Gray,
-                                indicatorColor = Color.Transparent,
+                                indicatorColor = TealAccent.copy(alpha = 0.18f),
                             ),
                         )
                     }
