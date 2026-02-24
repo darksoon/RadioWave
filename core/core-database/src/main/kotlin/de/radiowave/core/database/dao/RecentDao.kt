@@ -14,6 +14,9 @@ interface RecentDao {
     @Query("SELECT * FROM recent_stations ORDER BY lastPlayedAt DESC LIMIT :limit")
     fun getRecent(limit: Int = 50): Flow<List<RecentEntity>>
 
+    @Query("SELECT * FROM recent_stations WHERE stationUuid = :uuid LIMIT 1")
+    suspend fun getByUuid(uuid: String): RecentEntity?
+
     @Upsert
     suspend fun upsertRecent(recent: RecentEntity)
 

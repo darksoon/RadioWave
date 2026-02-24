@@ -21,7 +21,7 @@ import de.radiowave.core.database.entity.StationEntity
         RecentEntity::class,
         CustomStationEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = false,
 )
 abstract class RadioWaveDatabase : RoomDatabase() {

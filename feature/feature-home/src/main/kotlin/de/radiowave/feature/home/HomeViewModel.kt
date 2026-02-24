@@ -207,6 +207,7 @@ class HomeViewModel @Inject constructor(
 
     fun playStation(station: Station) {
         viewModelScope.launch {
+            recentRepository.addRecentStation(station)
             playerManager.playStation(station)
         }
     }

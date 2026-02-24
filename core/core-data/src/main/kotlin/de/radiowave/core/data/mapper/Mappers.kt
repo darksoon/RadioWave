@@ -81,6 +81,16 @@ fun Station.toFavoriteEntity(sortOrder: Int = 0): FavoriteEntity = FavoriteEntit
 
 fun Station.toRecentEntity(): RecentEntity = RecentEntity(
     stationUuid = uuid,
+    stationName = name,
+    streamUrl = streamUrl,
+    homepageUrl = homepageUrl,
+    faviconUrl = faviconUrl,
+    country = country,
+    countryCode = countryCode,
+    language = language,
+    tags = tags.joinToString(",").takeIf { it.isNotBlank() },
+    codec = codec,
+    bitrate = bitrate,
     lastPlayedAt = System.currentTimeMillis(),
 )
 

@@ -8,5 +8,6 @@ import kotlinx.coroutines.flow.Flow
  */
 interface RecentRepository {
     fun getRecentStations(limit: Int = 50): Flow<List<Station>>
+    suspend fun addRecentStation(station: Station)
     suspend fun clearHistory()
 }

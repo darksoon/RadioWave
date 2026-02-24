@@ -122,7 +122,7 @@ private fun HomeContent(
             val recentStations = if (uiState.recentStations.isNotEmpty()) {
                 uiState.recentStations
             } else {
-                uiState.topStations.take(10)
+                emptyList()
             }
             val favoriteStations = if (uiState.favoriteStations.isNotEmpty()) {
                 uiState.favoriteStations
