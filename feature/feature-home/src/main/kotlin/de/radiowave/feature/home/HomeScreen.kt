@@ -239,24 +239,76 @@ fun HomePremiumBackground(
         ),
         label = "star-twinkle-progress",
     )
-    val nebulaDrift by transition.animateFloat(
-        initialValue = -0.04f,
-        targetValue = 0.04f,
+    val nebulaFarDriftX by transition.animateFloat(
+        initialValue = -0.05f,
+        targetValue = 0.05f,
         animationSpec = infiniteRepeatable(
             animation = tween(
-                durationMillis = 72_000,
+                durationMillis = 140_000,
                 easing = LinearEasing,
             ),
             repeatMode = RepeatMode.Reverse,
         ),
-        label = "nebula-drift",
+        label = "nebula-far-drift-x",
+    )
+    val nebulaFarDriftY by transition.animateFloat(
+        initialValue = -0.03f,
+        targetValue = 0.03f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 110_000,
+                easing = LinearEasing,
+            ),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "nebula-far-drift-y",
+    )
+    val nebulaNearDriftX by transition.animateFloat(
+        initialValue = 0.04f,
+        targetValue = -0.04f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 90_000,
+                easing = LinearEasing,
+            ),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "nebula-near-drift-x",
+    )
+    val nebulaNearDriftY by transition.animateFloat(
+        initialValue = -0.02f,
+        targetValue = 0.02f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 76_000,
+                easing = LinearEasing,
+            ),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "nebula-near-drift-y",
+    )
+    val nebulaBreath by transition.animateFloat(
+        initialValue = 0.92f,
+        targetValue = 1.08f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 48_000,
+                easing = LinearEasing,
+            ),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "nebula-breath",
     )
 
     Box(
         modifier = modifier.background(Color(0xFF000514)),
     ) {
         NebulaLayer(
-            drift = nebulaDrift,
+            farDriftX = nebulaFarDriftX,
+            farDriftY = nebulaFarDriftY,
+            nearDriftX = nebulaNearDriftX,
+            nearDriftY = nebulaNearDriftY,
+            breath = nebulaBreath,
             modifier = Modifier.fillMaxSize(),
         )
         StarFieldLayer(
@@ -268,13 +320,21 @@ fun HomePremiumBackground(
 
 @Composable
 private fun NebulaLayer(
-    drift: Float,
+    farDriftX: Float,
+    farDriftY: Float,
+    nearDriftX: Float,
+    nearDriftY: Float,
+    breath: Float,
     modifier: Modifier = Modifier,
 ) {
     Canvas(
         modifier = modifier,
     ) {
-        val horizontalShift = size.width * drift
+        val farShiftX = size.width * farDriftX
+        val farShiftY = size.height * farDriftY
+        val nearShiftX = size.width * nearDriftX
+        val nearShiftY = size.height * nearDriftY
+
         drawRect(
             brush = Brush.radialGradient(
                 colors = listOf(
@@ -283,8 +343,8 @@ private fun NebulaLayer(
                     Color(0xFF000514),
                 ),
                 center = center.copy(
-                    x = center.x + horizontalShift,
-                    y = center.y * 0.55f,
+                    x = center.x + farShiftX,
+                    y = center.y * 0.55f + farShiftY,
                 ),
                 radius = size.maxDimension * 0.95f,
             ),
@@ -292,38 +352,65 @@ private fun NebulaLayer(
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    TealAccent.copy(alpha = 0.14f),
-                    MintAccent.copy(alpha = 0.08f),
+                    TealAccent.copy(alpha = 0.14f * breath),
+                    MintAccent.copy(alpha = 0.08f * breath),
                     Color.Transparent,
                 ),
                 center = center.copy(
-                    x = center.x - size.width * 0.43f + horizontalShift * 0.35f,
-                    y = center.y * 0.25f,
+                    x = center.x - size.width * 0.43f + farShiftX * 0.35f + nearShiftX * 0.22f,
+                    y = center.y * 0.25f + farShiftY * 0.45f + nearShiftY * 0.18f,
                 ),
                 radius = size.maxDimension * 0.58f,
             ),
             radius = size.maxDimension * 0.62f,
             center = center.copy(
-                x = center.x - size.width * 0.43f + horizontalShift * 0.35f,
-                y = center.y * 0.25f,
+                x = center.x - size.width * 0.43f + farShiftX * 0.35f + nearShiftX * 0.22f,
+                y = center.y * 0.25f + farShiftY * 0.45f + nearShiftY * 0.18f,
             ),
         )
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    Color(0xFF6E43D6).copy(alpha = 0.12f),
+                    Color(0xFF6E43D6).copy(alpha = 0.12f * breath),
                     Color.Transparent,
                 ),
                 center = center.copy(
-                    x = center.x + size.width * 0.44f - horizontalShift * 0.3f,
-                    y = center.y * 0.72f,
+                    x = center.x + size.width * 0.44f - farShiftX * 0.3f + nearShiftX * 0.4f,
+                    y = center.y * 0.72f - farShiftY * 0.35f + nearShiftY * 0.25f,
                 ),
                 radius = size.maxDimension * 0.54f,
             ),
             radius = size.maxDimension * 0.56f,
             center = center.copy(
-                x = center.x + size.width * 0.44f - horizontalShift * 0.3f,
-                y = center.y * 0.72f,
+                x = center.x + size.width * 0.44f - farShiftX * 0.3f + nearShiftX * 0.4f,
+                y = center.y * 0.72f - farShiftY * 0.35f + nearShiftY * 0.25f,
+            ),
+        )
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    Color(0xFF5ED3D6).copy(alpha = 0.08f * breath),
+                    Color.Transparent,
+                ),
+                center = center.copy(
+                    x = center.x + size.width * 0.04f + nearShiftX * 0.3f,
+                    y = center.y * 0.16f + nearShiftY * 0.4f,
+                ),
+                radius = size.maxDimension * 0.42f,
+            ),
+            radius = size.maxDimension * 0.45f,
+            center = center.copy(
+                x = center.x + size.width * 0.04f + nearShiftX * 0.3f,
+                y = center.y * 0.16f + nearShiftY * 0.4f,
+            ),
+        )
+        drawRect(
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    Color.Transparent,
+                    Color.Black.copy(alpha = 0.12f),
+                    Color.Black.copy(alpha = 0.22f),
+                ),
             ),
         )
     }
