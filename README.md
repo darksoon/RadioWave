@@ -53,9 +53,25 @@ RadioWave/
 # Gesamtes Projekt bauen
 ./gradlew build
 
+# Lint
+./gradlew lint
+
+# Unit Tests
+./gradlew test
+
 # Debug APK installieren
 ./gradlew installDebug
 ```
+
+## Audit-Status (2026-02-24)
+
+- `./gradlew :build-logic:build` erfolgreich
+- `./gradlew build` erfolgreich
+- `./gradlew lint` erfolgreich
+- `./gradlew test` erfolgreich
+- `ktlintCheck` Task ist aktuell nicht im Projekt konfiguriert
+
+Details: siehe `AUDIT_2026-02-24.md`.
 
 ## Lizenz
 

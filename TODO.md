@@ -1,6 +1,20 @@
 # RadioWave - Projektstand & TODO
 
-## ✅ Erledigt (Phase 1-4)
+## Audit & Stabilisierung (2026-02-24)
+
+### Erledigt
+- [x] Build-Blocker behoben: Compose BOM fuer transitive Compose-Abhaengigkeiten (Material3) stabilisiert
+- [x] Lint-Blocker behoben: Media3 UnstableApi Opt-in in core-player ergaenzt
+- [x] Lint-Blocker behoben: Backup-Regeln in app/src/main/res/xml/data_extraction_rules.xml korrigiert
+- [x] Test-Pipeline stabilisiert: Test-Tasks laufen nur bei vorhandenen src/test oder src/androidTest
+- [x] Deprecated Compose Live Literals aus Convention Plugin entfernt
+- [x] Validierung erfolgreich: :build-logic:build, build, lint, test
+
+### Offen / Follow-up
+- [ ] Ktlint im Projekt konfigurieren (Task ktlintCheck existiert aktuell nicht)
+- [ ] Echte Unit- und UI-Tests ergaenzen (aktuell werden viele Test-Tasks ohne Testquellen uebersprungen)
+
+## ✅ Erledigt (Phase 1-5)
 
 ### Core Layer (Phase 1)
 - ✅ **core-model**: Station, PlayerState, StreamMetadata, Genre, Country, PlayerError (Sealed Class)
@@ -10,68 +24,67 @@
 
 ### Player Layer (Phase 2)
 - ✅ **core-player**: PlayerController, PlayerControllerImpl, RadioPlayerService (MediaSession), RadioPlayerManager
-- ✅ **Buffer-Optimierung**: DefaultLoadControl mit 15s/50s Buffern, Logging für alle Player-Zustände
+- ✅ **Buffer-Optimierung**: 30s min / 90s max Buffer, Reconnect-Logik (3 Versuche, 2s Delay)
 - ✅ **DI**: PlayerModule mit @Binds und @Provides
 
 ### UI Layer (Phase 3)
 - ✅ **core-ui**: Premium Dark Theme, LoadingState, ErrorState
 - ✅ **Premium Color Palette**: DarkBackground (#121212), DarkCardBackground (#252525), TealAccent (#00BCD4)
-- ✅ **feature-home**: TuneIn-Style mit horizontalen Scroll-Listen, Kategorie-Entdecken
-- ✅ **feature-browse**: Suchleiste + Genre-Chips (Techno, Dance, Rock, Jazz, 80s, etc.)
-- ✅ **feature-player**: Floating Player Bar mit Elevation 16dp, Fortschrittsbalken
-- ✅ **StationCard**: 16dp abgerundete Ecken, Gradient-Overlay, Teal-Akzente
+- ✅ **feature-home**: TuneIn-Style mit horizontalen LazyRow-Sektionen (Entdecken, Zuletzt gehört, Favoriten)
+- ✅ **feature-browse**: Suchleiste + Genre-Chips (Techno, Dance, Rock, Jazz, 80s, etc.), 2-spaltiges Grid
+- ✅ **feature-player**: Floating Player Bar mit Elevation 16dp, Progress-Indicator, Buffer-Animation
+- ✅ **StationCard**: 140x140dp, 16dp abgerundete Ecken, Gradient-Overlay (Transparent → Schwarz)
 
 ### Navigation (Phase 4)
 - ✅ **Bottom Navigation**: Home, Browse, Favorites, Settings Tabs
-- ✅ **Navigation Graph**: NavHost mit allen Routes
-- ✅ **Floating Player**: Schwebt über Content, nicht über Navigation
-- ✅ **Screen-Stubs**: Browse, Favorites, Settings Placeholder-Screens
+- ✅ **Navigation Graph**: NavHost mit Google Standard Pattern (popUpTo, launchSingleTop, restoreState)
+- ✅ **Floating Player**: Schwebt über Content, korrektes Layering
+- ✅ **Genre-Redirect**: Klick auf Entdecken-Kategorie → Browse mit automatischer Suche
+- ✅ **Back-Handling**: Zurück-Button führt immer zurück zu Home
+
+### Browse & Suche (Phase 5)
+- ✅ **Genre-Chips**: 10 Kategorien (Techno, Dance, Rock, Jazz, 80s, Pop, Classical, Hip Hop, Chill, House)
+- ✅ **Länder-Filter**: Top 10 mit Flaggen (🇩🇪🇺🇸🇬🇧🇫🇷🇮🇹🇪🇸🇳🇱🇵🇱🇦🇹🇨🇭)
+- ✅ **Ergebnis-Anzeige**: 2-spaltiges Grid mit Sender-Logo, Name, Land
+- ✅ **Empty-State**: "Keine Sender gefunden" mit Vorschlägen
+- ✅ **Debounce**: 500ms für Suche
 
 ### Infrastruktur
 - ✅ **Build-Logic**: Convention Plugins (AndroidApplication, AndroidLibrary, Hilt, Room)
 - ✅ **Gradle**: Alle Module mit korrekten Dependencies
-- ✅ **Manifest**: Permissions (Internet, ForegroundService), NetworkSecurityConfig
+- ✅ **Manifest**: Permissions, NetworkSecurityConfig, enableOnBackInvokedCallback=true
 - ✅ **Icons**: Launcher Icons (ic_launcher, ic_launcher_round)
 - ✅ **Git**: Repository auf GitHub (darksoon/RadioWave)
 
 ---
 
-## 🚧 TODO (Phase 5 - Features)
+## 🚧 TODO (Phase 6 - Features)
 
 ### Favoriten-System
-- [ ] **Favoriten Toggle**: Herz-Button in StationCards/StationListItem
-- [ ] **Favoriten persistieren**: Room Database Integration
-- [ ] **Favoriten Screen**: Drag-to-Reorder, Swipe-to-Remove
+- [ ] **Favoriten Toggle**: Herz-Button in StationCards
+- [ ] **Favoriten persistieren**: Room Database Integration (Repository existiert schon)
+- [ ] **Favoriten Screen**: Liste mit allen Favoriten, Swipe-to-Remove
 - [ ] **Favoriten-Export/Import**: JSON Backup
-
-### Browse & Suche
-- [ ] **Länder-Filter**: Flaggen, alphabetisch sortiert
-- [ ] **Sprachen-Filter**: Deutsch, Englisch, etc.
-- [ ] **Erweiterte Filter**: Codec, Bitrate, Nur funktionierende Streams
-- [ ] **Pull-to-Refresh**: SwipeRefresh in Listen
 
 ### Fullscreen Player
 - [ ] **Player Sheet**: Expandable Bottom Sheet
 - [ ] **Album Art**: Großes Cover mit Blur-Background
 - [ ] **Sleep Timer**: Timer-Auswahl (15, 30, 60 min)
 - [ ] **Share Button**: Stream-URL teilen
-- [ ] **Equalizer Animation**: Animierte Bars beim Abspielen
 
 ### Custom Stations
 - [ ] **Manuelle URL-Eingabe**: Validierung, Test-Button
 - [ ] **M3U/PLS Import**: Playlist-Dateien parsen
-- [ ] **Custom Station Management**: Edit, Delete
 
 ### Einstellungen
 - [ ] **Theme-Umschaltung**: Dark/Light/System
 - [ ] **Audio-Qualität**: Stream-Qualität wählen
-- [ ] **Datennutzung**: Mobile Data Warning
 - [ ] **Cache leeren**: Database, Images
 - [ ] **Über die App**: Version, GitHub-Link, Lizenzen
 
 ---
 
-## 🔮 TODO (Phase 6 - Integration)
+## 🔮 TODO (Phase 7 - Integration)
 
 ### Android Auto
 - [ ] **MediaLibraryService**: Browse-Tree implementieren
@@ -82,7 +95,6 @@
 ### Chromecast
 - [ ] **Cast Extension**: Media3 Cast Integration
 - [ ] **Cast Button**: In Player UI
-- [ ] **Cast Session**: Sender an Cast-Gerät übergeben
 
 ### Notifications & Widgets
 - [ ] **Media Notification**: Album Art, Play/Pause
@@ -90,50 +102,37 @@
 
 ---
 
-## 🎨 TODO (Phase 7 - Polish)
+## 🎨 TODO (Phase 8 - Polish)
 
 ### Animationen
 - [ ] **Screen Transitions**: Slide, Fade zwischen Tabs
 - [ ] **Player Animation**: Expand/Collapse Sheet
 - [ ] **Loading Shimmer**: Skeleton-Loading für Cards
-- [ ] **Card Press Animation**: Scale-Effekt
-
-### Fehlerbehandlung
-- [ ] **Retry-Logik**: Automatischer Reconnect bei Netzwerkfehler
-- [ ] **Offline-Modus**: Cached Stations anzeigen
-- [ ] **Broken Stream Report**: An API melden
 
 ### Testing
 - [ ] **Unit Tests**: ViewModels, Repositories
-- [ ] **UI Tests**: Compose Testing mit Turbine
-- [ ] **Integration Tests**: API, Database
-
----
-
-## 🐛 Bekannte Bugs
-
-1. ~~DNS/Netzwerk~~: API funktioniert stabil
-2. **Smart-Casts**: Bei Modul-übergreifenden Properties lokale Kopien nötig
-3. **Station Logos**: Manche URLs sind defekt (normales Internet-Verhalten)
+- [ ] **UI Tests**: Compose Testing
 
 ---
 
 ## 📱 Aktueller Status
 
 **Funktioniert:**
-- ✅ Premium Dark Theme (Teal/Mint Akzente)
-- ✅ Bottom Navigation (Home, Browse, Favorites, Settings)
+- ✅ Premium Dark Theme mit Teal/Mint Akzenten
+- ✅ Bottom Navigation (perfekt synchronisiert)
 - ✅ Suche mit Debounce (500ms)
 - ✅ Genre-Chips für schnelle Suche
-- ✅ Floating Player Bar mit Progress-Indicator
-- ✅ TuneIn-Style Home Screen
-- ✅ Kategorie-Entdecken (News, Sport, Musik, etc.)
+- ✅ Länder-Filter mit Flaggen
+- ✅ Floating Player Bar mit Buffer-Animation
+- ✅ TuneIn-Style Home Screen (3 LazyRow-Sektionen)
+- ✅ Kategorie-Entdecken → automatische Suche
 - ✅ Sender abspielen & streamen
-- ✅ Play/Pause Steuerung
+- ✅ Play/Pause mit visuellem Feedback
+- ✅ Back-Button führt zu Home
 
 **Teilweise implementiert:**
-- ⚠️ Favoriten: Repository existiert, UI fehlt noch
-- ⚠️ Recent Stations: Werden in DB gespeichert, aber nicht korrekt angezeigt
+- ⚠️ Favoriten: Repository & DAO existieren, UI fehlt noch
+- ⚠️ Recent Stations: Werden in DB gespeichert
 - ⚠️ Settings: Placeholder Screen
 
 **Nicht implementiert:**
@@ -163,5 +162,8 @@
 - **Min SDK**: 26, Target SDK: 35
 - **Design**: Premium Dark Theme mit Teal/Mint Akzenten
 
-**Letzte Session:** 2026-02-23
-**Status:** High-End UI fertig, Navigation komplett, bereit für Feature-Implementierung
+**Letzte Session:** 2026-02-24
+**Status:** Audit-Pipeline gruen (build/lint/test), bereit fuer Feature-Umsetzung
+
+
+
