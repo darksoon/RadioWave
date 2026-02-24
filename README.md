@@ -44,6 +44,20 @@ RadioWave/
 └── auto/                  # Android Auto
 ```
 
+## Quick Start
+
+```bash
+# 1) Clone
+git clone https://github.com/darksoon/RadioWave.git
+cd RadioWave
+
+# 2) Build-Logic
+./gradlew :build-logic:build
+
+# 3) App bauen
+./gradlew assembleDebug
+```
+
 ## Build
 
 ```bash
@@ -62,6 +76,14 @@ RadioWave/
 # Debug APK installieren
 ./gradlew installDebug
 ```
+
+## Manual Build via GitHub Actions
+
+Im Repository unter **Actions → Manual Android Build → Run workflow**.
+
+- Standard-Task: `assembleDebug`
+- Optional z. B. `assembleRelease` oder `build`
+- APK/AAB findest du nach dem Lauf unter **Artifacts**
 
 ## Audit-Status (2026-02-24)
 
