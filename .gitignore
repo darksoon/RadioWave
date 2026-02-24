@@ -59,6 +59,9 @@ app/schemas/
 # Keystore properties
 keystore.properties
 
+# Local signing material
+/.local-secrets/
+
 # Local agent/session files (not for public repo)
 /AGENTS.md
 /.agents/
