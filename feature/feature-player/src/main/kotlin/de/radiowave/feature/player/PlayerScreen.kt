@@ -32,6 +32,11 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -93,6 +98,16 @@ fun PlayerScreen(
     }
 
     val runtimeLabel = formatRuntime((nowElapsedMs - sessionStart).coerceAtLeast(0L))
+    val liveBarTransition = rememberInfiniteTransition(label = "liveBar")
+    val liveBarAlpha by liveBarTransition.animateFloat(
+        initialValue = 0.72f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1400),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "liveBarAlpha",
+    )
 
     Box(
         modifier = modifier
@@ -219,12 +234,12 @@ fun PlayerScreen(
             Spacer(modifier = Modifier.height(18.dp))
 
             LinearProgressIndicator(
-                progress = { 0.22f },
+                progress = { 1f },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(4.dp)
                     .clip(RoundedCornerShape(2.dp)),
-                color = Color.White.copy(alpha = 0.82f),
+                color = Color.White.copy(alpha = liveBarAlpha),
                 trackColor = Color.White.copy(alpha = 0.22f),
             )
             Row(
