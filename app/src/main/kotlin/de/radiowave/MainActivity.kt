@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -140,89 +141,90 @@ fun RadioWaveMainScreen() {
         modifier = Modifier.fillMaxSize(),
         containerColor = DarkBackground,
         bottomBar = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
+            NavigationBar(
+                containerColor = DarkSurface,
+                tonalElevation = 0.dp,
             ) {
-                if (showPlayerBar) {
-                    FloatingPlayerBar(
-                        playerState = playerState,
-                        onPlayPauseClick = { homeViewModel.togglePlayPause() },
-                        onBarClick = { },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                bottomNavItems.forEach { item ->
+                    val selected = currentDestination
+                        ?.hierarchy
+                        ?.any { it.route == item.route } == true
+                    NavigationBarItem(
+                        selected = selected,
+                        onClick = {
+                            navigateToTopLevel(item.route)
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                                contentDescription = item.title,
+                                modifier = Modifier.size(24.dp),
+                            )
+                        },
+                        label = {
+                            Text(
+                                text = item.title,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 10.sp,
+                            )
+                        },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = TealAccent,
+                            selectedTextColor = TealAccent,
+                            unselectedIconColor = Color.Gray,
+                            unselectedTextColor = Color.Gray,
+                            indicatorColor = TealAccent.copy(alpha = 0.18f),
+                        ),
                     )
-                }
-
-                NavigationBar(
-                    containerColor = DarkSurface,
-                    tonalElevation = 0.dp,
-                ) {
-                    bottomNavItems.forEach { item ->
-                        val selected = currentDestination
-                            ?.hierarchy
-                            ?.any { it.route == item.route } == true
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                navigateToTopLevel(item.route)
-                            },
-                            icon = {
-                                Icon(
-                                    imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-                                    contentDescription = item.title,
-                                    modifier = Modifier.size(24.dp),
-                                )
-                            },
-                            label = {
-                                Text(
-                                    text = item.title,
-                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                                    fontSize = 10.sp,
-                                )
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = TealAccent,
-                                selectedTextColor = TealAccent,
-                                unselectedIconColor = Color.Gray,
-                                unselectedTextColor = Color.Gray,
-                                indicatorColor = TealAccent.copy(alpha = 0.18f),
-                            ),
-                        )
-                    }
                 }
             }
         }
     ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = BottomNavItem.Home.route,
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
         ) {
-            composable(BottomNavItem.Home.route) {
-                HomeScreen(
-                    onStationClick = { station ->
-                        homeViewModel.playStation(station)
-                    },
-                    onViewAllFavorites = {
-                        navigateToTopLevel(BottomNavItem.Favorites.route)
-                    },
-                    onNavigateToBrowse = { category ->
-                        homeViewModel.onSearchQueryChange(category)
-                        navigateToTopLevel(BottomNavItem.Browse.route)
-                    },
+            NavHost(
+                navController = navController,
+                startDestination = BottomNavItem.Home.route,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                composable(BottomNavItem.Home.route) {
+                    HomeScreen(
+                        onStationClick = { station ->
+                            homeViewModel.playStation(station)
+                        },
+                        onViewAllFavorites = {
+                            navigateToTopLevel(BottomNavItem.Favorites.route)
+                        },
+                        onNavigateToBrowse = { category ->
+                            homeViewModel.onSearchQueryChange(category)
+                            navigateToTopLevel(BottomNavItem.Browse.route)
+                        },
+                    )
+                }
+                composable(BottomNavItem.Browse.route) {
+                    BrowseScreen()
+                }
+                composable(BottomNavItem.Favorites.route) {
+                    FavoritesScreen()
+                }
+                composable(BottomNavItem.Settings.route) {
+                    SettingsScreen()
+                }
+            }
+
+            if (showPlayerBar) {
+                FloatingPlayerBar(
+                    playerState = playerState,
+                    onPlayPauseClick = { homeViewModel.togglePlayPause() },
+                    onBarClick = { },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
                 )
-            }
-            composable(BottomNavItem.Browse.route) {
-                BrowseScreen()
-            }
-            composable(BottomNavItem.Favorites.route) {
-                FavoritesScreen()
-            }
-            composable(BottomNavItem.Settings.route) {
-                SettingsScreen()
             }
         }
     }
