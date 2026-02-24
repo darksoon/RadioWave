@@ -1,6 +1,17 @@
 # RadioWave
 
 <div align="center">
+  <a href="https://github.com/darksoon/RadioWave/actions/workflows/pr-ci.yml">
+    <img src="https://github.com/darksoon/RadioWave/actions/workflows/pr-ci.yml/badge.svg?branch=main" alt="PR CI" />
+  </a>
+  <a href="https://github.com/darksoon/RadioWave/actions/workflows/manual-build.yml">
+    <img src="https://github.com/darksoon/RadioWave/actions/workflows/manual-build.yml/badge.svg?branch=main" alt="Manual Build" />
+  </a>
+  <img src="https://img.shields.io/badge/Kotlin-2.1.0-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin 2.1.0" />
+  <a href="./LICENSE.txt">
+    <img src="https://img.shields.io/badge/License-Proprietary-red" alt="License Proprietary" />
+  </a>
+
   <p><strong>Moderne, werbefreie Internet-Radio-App für Android.</strong></p>
   <p>⚡ Schnell · 🔒 Privacy-first · 🚫 Ohne Tracking · 🎧 45.000+ Sender</p>
 </div>
