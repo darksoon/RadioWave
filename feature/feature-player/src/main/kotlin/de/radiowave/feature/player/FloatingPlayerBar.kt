@@ -123,114 +123,113 @@ fun FloatingPlayerBar(
                             radius = 420f,
                         ),
                     ),
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(72.dp)
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(72.dp)
-                        .padding(horizontal = 10.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(DarkSurfaceVariant),
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(DarkSurfaceVariant),
-                    ) {
-                        AsyncImage(
-                            model = faviconUrl,
-                            contentDescription = stationName,
-                            modifier = Modifier.fillMaxWidth(),
-                            contentScale = ContentScale.Crop,
-                        )
+                    AsyncImage(
+                        model = faviconUrl,
+                        contentDescription = stationName,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentScale = ContentScale.Crop,
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(
+                        text = stationName,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp,
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = Color.White,
+                    )
+
+                    val showMetadataLine = isBuffering || compactMetadata != null || sessionDurationLabel.isNotBlank()
+                    val secondaryLine = when {
+                        isBuffering -> "Wird geladen..."
+                        else -> compactMetadata
                     }
+                    val secondaryColor = if (isBuffering) TealAccent else DarkOnSurfaceVariant
 
-                    Spacer(modifier = Modifier.width(10.dp))
-
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Text(
-                            text = stationName,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp,
-                            ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            color = Color.White,
-                        )
-
-                        val showMetadataLine = isBuffering || compactMetadata != null || sessionDurationLabel.isNotBlank()
-                        val secondaryLine = when {
-                            isBuffering -> "Wird geladen..."
-                            else -> compactMetadata
-                        }
-                        val secondaryColor = if (isBuffering) TealAccent else DarkOnSurfaceVariant
-
-                        if (showMetadataLine) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 1.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                if (secondaryLine != null) {
-                                    Text(
-                                        text = secondaryLine,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = secondaryColor,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                } else {
-                                    Spacer(modifier = Modifier.weight(1f))
-                                }
-
-                                StreamDurationBadge(
-                                    text = sessionDurationLabel,
-                                    modifier = Modifier.padding(start = 8.dp),
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(2.dp))
-
-                    Box(
-                        modifier = Modifier.padding(end = 2.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        if (isBuffering) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(40.dp),
-                                strokeWidth = 1.25.dp,
-                                color = TealAccent.copy(alpha = 0.95f),
-                                trackColor = Color.White.copy(alpha = 0.2f),
-                            )
-                        }
-
-                        Surface(
-                            onClick = onPlayPauseClick,
-                            shape = CircleShape,
-                            color = Color.White.copy(alpha = 0.16f),
-                            border = BorderStroke(
-                                width = 1.dp,
-                                color = Color.White.copy(alpha = 0.24f),
-                            ),
-                            enabled = !isBuffering,
+                    if (showMetadataLine) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 1.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Icon(
-                                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = if (isPlaying) "Pause" else "Play",
-                                tint = Color.White,
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .padding(6.dp),
+                            if (secondaryLine != null) {
+                                Text(
+                                    text = secondaryLine,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = secondaryColor,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            } else {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+
+                            StreamDurationBadge(
+                                text = sessionDurationLabel,
+                                modifier = Modifier.padding(start = 8.dp),
                             )
                         }
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(2.dp))
+
+                Box(
+                    modifier = Modifier.padding(end = 2.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (isBuffering) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(40.dp),
+                            strokeWidth = 1.25.dp,
+                            color = TealAccent.copy(alpha = 0.95f),
+                            trackColor = Color.White.copy(alpha = 0.2f),
+                        )
+                    }
+
+                    Surface(
+                        onClick = onPlayPauseClick,
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.16f),
+                        border = BorderStroke(
+                            width = 1.dp,
+                            color = Color.White.copy(alpha = 0.24f),
+                        ),
+                        enabled = !isBuffering,
+                    ) {
+                        Icon(
+                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            contentDescription = if (isPlaying) "Pause" else "Play",
+                            tint = Color.White,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .padding(6.dp),
+                        )
                     }
                 }
             }
