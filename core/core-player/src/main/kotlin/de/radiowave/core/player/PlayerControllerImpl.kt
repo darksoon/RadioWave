@@ -51,14 +51,22 @@ class PlayerControllerImpl @Inject constructor(
 
     private var exoPlayer: ExoPlayer? = null
     private var reconnectJob: Job? = null
+    private var bufferingWatchdogJob: Job? = null
+    private var playbackLostRecoveryJob: Job? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
     private var reconnectAttempts = 0
+    private var playbackLostRecoveryAttempts = 0
+    private var userPausedPlayback = false
+    private var isStopping = false
     private val maxReconnectAttempts = 8
+    private val maxPlaybackLostRecoveryAttempts = 3
     private val initialReconnectDelayMs = 1_500L
     private val maxReconnectDelayMs = 25_000L
     private val networkRecoveryDelayMs = 350L
     private val networkRecoveryCooldownMs = 1_500L
+    private val playbackLostRecoveryDelayMs = 450L
+    private val bufferingStallThresholdMs = 18_000L
     private val controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val connectivityManager: ConnectivityManager? =
         context.getSystemService(ConnectivityManager::class.java)
@@ -199,6 +207,22 @@ class PlayerControllerImpl @Inject constructor(
                         error = if (isPlaying) null else it.error,
                     )
                 }
+                if (isPlaying) {
+                    userPausedPlayback = false
+                    playbackLostRecoveryAttempts = 0
+                    playbackLostRecoveryJob?.cancel()
+                } else if (
+                    !userPausedPlayback &&
+                    !isStopping &&
+                    _playerState.value.currentStation != null &&
+                    player.playWhenReady &&
+                    player.playbackState == Player.STATE_READY
+                ) {
+                    triggerPlaybackLostRecovery(
+                        station = _playerState.value.currentStation ?: return,
+                        reason = "unexpected-not-playing",
+                    )
+                }
                 updatePlaybackLocks(player)
             }
 
@@ -206,20 +230,28 @@ class PlayerControllerImpl @Inject constructor(
                 when (state) {
                     Player.STATE_BUFFERING -> {
                         Log.d("RadioWave", "Player: STATE_BUFFERING")
+                        startBufferingWatchdog(player)
                     }
 
                     Player.STATE_READY -> {
                         Log.d("RadioWave", "Player: STATE_READY")
                         reconnectAttempts = 0
+                        playbackLostRecoveryAttempts = 0
                         reconnectJob?.cancel()
+                        bufferingWatchdogJob?.cancel()
+                        playbackLostRecoveryJob?.cancel()
                     }
 
                     Player.STATE_ENDED -> {
                         Log.d("RadioWave", "Player: STATE_ENDED")
+                        bufferingWatchdogJob?.cancel()
+                        maybeRecoverFromLostState(player, reason = "state-ended")
                     }
 
                     Player.STATE_IDLE -> {
                         Log.d("RadioWave", "Player: STATE_IDLE")
+                        bufferingWatchdogJob?.cancel()
+                        maybeRecoverFromLostState(player, reason = "state-idle")
                     }
                 }
 
@@ -238,6 +270,7 @@ class PlayerControllerImpl @Inject constructor(
                     "RadioWave",
                     "Player error ${error.errorCode}: ${error.message}",
                 )
+                bufferingWatchdogJob?.cancel()
 
                 if (station != null && reconnectAttempts < maxReconnectAttempts) {
                     scheduleReconnect(station)
@@ -285,6 +318,75 @@ class PlayerControllerImpl @Inject constructor(
                 applyStreamTitle(streamTitle)
             }
         })
+    }
+
+    private fun maybeRecoverFromLostState(player: ExoPlayer, reason: String) {
+        if (isStopping || userPausedPlayback) return
+        if (!player.playWhenReady) return
+        val station = _playerState.value.currentStation ?: return
+        triggerPlaybackLostRecovery(station, reason)
+    }
+
+    private fun startBufferingWatchdog(player: ExoPlayer) {
+        bufferingWatchdogJob?.cancel()
+        val stationUuid = _playerState.value.currentStation?.uuid ?: return
+
+        bufferingWatchdogJob = controllerScope.launch {
+            delay(bufferingStallThresholdMs)
+
+            val currentStation = _playerState.value.currentStation ?: return@launch
+            if (currentStation.uuid != stationUuid) return@launch
+            if (isStopping || userPausedPlayback) return@launch
+            if (!player.playWhenReady) return@launch
+            if (player.playbackState != Player.STATE_BUFFERING) return@launch
+
+            Log.w("RadioWave", "Buffering stall detected after ${bufferingStallThresholdMs}ms")
+            triggerPlaybackLostRecovery(currentStation, reason = "buffer-stall")
+        }
+    }
+
+    private fun triggerPlaybackLostRecovery(station: Station, reason: String) {
+        if (playbackLostRecoveryJob?.isActive == true) return
+        if (reconnectJob?.isActive == true) return
+        if (isStopping || userPausedPlayback) return
+
+        if (playbackLostRecoveryAttempts >= maxPlaybackLostRecoveryAttempts) {
+            Log.e("RadioWave", "Playback lost recovery exhausted: $reason")
+            _playerState.update {
+                it.copy(
+                    isPlaying = false,
+                    isBuffering = false,
+                    isLoading = false,
+                    error = PlayerError.NetworkError,
+                )
+            }
+            return
+        }
+
+        playbackLostRecoveryAttempts++
+        Log.w(
+            "RadioWave",
+            "Playback lost recovery $playbackLostRecoveryAttempts/$maxPlaybackLostRecoveryAttempts ($reason)",
+        )
+
+        playbackLostRecoveryJob = controllerScope.launch {
+            _playerState.update {
+                it.copy(
+                    error = null,
+                    isBuffering = true,
+                    isLoading = true,
+                )
+            }
+
+            delay(playbackLostRecoveryDelayMs)
+
+            val player = exoPlayer ?: return@launch
+            val currentStation = _playerState.value.currentStation ?: return@launch
+            if (currentStation.uuid != station.uuid) return@launch
+            if (isStopping || userPausedPlayback) return@launch
+
+            restartStream(player, station)
+        }
     }
 
     private fun extractStreamTitle(metadata: Metadata): String? {
@@ -397,6 +499,7 @@ class PlayerControllerImpl @Inject constructor(
         delayOverrideMs: Long? = null,
         countAttempt: Boolean = true,
     ) {
+        bufferingWatchdogJob?.cancel()
         if (countAttempt) {
             reconnectAttempts++
         }
@@ -470,7 +573,12 @@ class PlayerControllerImpl @Inject constructor(
 
     override suspend fun playStation(station: Station) {
         reconnectJob?.cancel()
+        bufferingWatchdogJob?.cancel()
+        playbackLostRecoveryJob?.cancel()
         reconnectAttempts = 0
+        playbackLostRecoveryAttempts = 0
+        userPausedPlayback = false
+        isStopping = false
 
         _playerState.update {
             it.copy(
@@ -490,9 +598,13 @@ class PlayerControllerImpl @Inject constructor(
     override fun togglePlayPause() {
         exoPlayer?.let { player ->
             if (player.isPlaying) {
+                userPausedPlayback = true
                 reconnectJob?.cancel()
+                bufferingWatchdogJob?.cancel()
+                playbackLostRecoveryJob?.cancel()
                 player.pause()
             } else {
+                userPausedPlayback = false
                 player.playWhenReady = true
                 player.play()
             }
@@ -500,16 +612,27 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     override fun stop() {
+        isStopping = true
         reconnectJob?.cancel()
+        bufferingWatchdogJob?.cancel()
+        playbackLostRecoveryJob?.cancel()
         reconnectAttempts = 0
+        playbackLostRecoveryAttempts = 0
+        userPausedPlayback = false
         exoPlayer?.stop()
         releasePlaybackLocks()
         _playerState.update { PlayerState() }
+        isStopping = false
     }
 
     override fun release() {
+        isStopping = true
         reconnectJob?.cancel()
+        bufferingWatchdogJob?.cancel()
+        playbackLostRecoveryJob?.cancel()
         reconnectAttempts = 0
+        playbackLostRecoveryAttempts = 0
+        userPausedPlayback = false
         unregisterNetworkCallbackIfNeeded()
         releasePlaybackLocks()
         exoPlayer?.release()
@@ -517,6 +640,7 @@ class PlayerControllerImpl @Inject constructor(
         wakeLock = null
         wifiLock = null
         _playerState.update { PlayerState() }
+        isStopping = false
     }
 }
 
