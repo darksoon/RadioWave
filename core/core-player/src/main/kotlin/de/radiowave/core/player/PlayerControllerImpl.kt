@@ -118,6 +118,11 @@ class PlayerControllerImpl @Inject constructor(
                 _playerState.update {
                     it.copy(
                         isPlaying = isPlaying,
+                        sessionStartedAtElapsedMs = when {
+                            it.sessionStartedAtElapsedMs != null -> it.sessionStartedAtElapsedMs
+                            isPlaying -> SystemClock.elapsedRealtime()
+                            else -> null
+                        },
                         error = if (isPlaying) null else it.error,
                     )
                 }
@@ -319,6 +324,7 @@ class PlayerControllerImpl @Inject constructor(
                 error = null,
                 isLoading = true,
                 isBuffering = true,
+                sessionStartedAtElapsedMs = SystemClock.elapsedRealtime(),
             )
         }
 

@@ -1,5 +1,6 @@
 package de.radiowave.feature.player
 
+import android.os.SystemClock
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,7 +28,12 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -46,6 +52,7 @@ import de.radiowave.core.ui.theme.DarkCardBackground
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.radiowave.core.ui.theme.TealAccent
+import kotlinx.coroutines.delay
 
 @Composable
 fun FloatingPlayerBar(
@@ -58,10 +65,26 @@ fun FloatingPlayerBar(
     val isPlaying: Boolean = playerState.isPlaying
     val isBuffering: Boolean = playerState.isBuffering
     val metadataTitle: String? = playerState.metadata?.title
+    val sessionStartedAtMs: Long? = playerState.sessionStartedAtElapsedMs
 
     if (currentStation != null) {
         val stationName: String = currentStation.name
         val faviconUrl: String? = currentStation.faviconUrl
+        var nowElapsedMs by remember(sessionStartedAtMs) {
+            mutableLongStateOf(SystemClock.elapsedRealtime())
+        }
+
+        LaunchedEffect(sessionStartedAtMs, isPlaying, isBuffering) {
+            if (sessionStartedAtMs == null) return@LaunchedEffect
+            while (isPlaying || isBuffering) {
+                nowElapsedMs = SystemClock.elapsedRealtime()
+                delay(1_000L)
+            }
+        }
+
+        val sessionDurationLabel = sessionStartedAtMs?.let { startedAt ->
+            formatStreamDuration((nowElapsedMs - startedAt).coerceAtLeast(0L))
+        }
 
         Card(
             modifier = modifier
@@ -73,10 +96,10 @@ fun FloatingPlayerBar(
             ),
             border = BorderStroke(
                 width = 1.dp,
-                color = Color.White.copy(alpha = 0.42f),
+                color = Color.White.copy(alpha = 0.24f),
             ),
             elevation = CardDefaults.cardElevation(
-                defaultElevation = 18.dp,
+                defaultElevation = 12.dp,
             ),
         ) {
             Box(
@@ -85,9 +108,9 @@ fun FloatingPlayerBar(
                     .background(
                         Brush.linearGradient(
                             colors = listOf(
-                                Color.White.copy(alpha = 0.28f),
-                                Color(0xC0455B70),
-                                DarkCardBackground.copy(alpha = 0.62f),
+                                Color.White.copy(alpha = 0.12f),
+                                Color(0xCC212B37),
+                                DarkCardBackground.copy(alpha = 0.86f),
                             ),
                         ),
                     ),
@@ -99,8 +122,8 @@ fun FloatingPlayerBar(
                         .background(
                             Brush.radialGradient(
                                 colors = listOf(
-                                    Color.White.copy(alpha = 0.32f),
-                                    Color(0x99A8F1FF),
+                                    Color.White.copy(alpha = 0.14f),
+                                    Color(0x553E9AB8),
                                     Color.Transparent,
                                 ),
                                 radius = 420f,
@@ -113,7 +136,7 @@ fun FloatingPlayerBar(
                         .background(
                             Brush.radialGradient(
                                 colors = listOf(
-                                    TealAccent.copy(alpha = 0.2f),
+                                    TealAccent.copy(alpha = 0.1f),
                                     Color.Transparent,
                                 ),
                                 radius = 260f,
@@ -126,9 +149,9 @@ fun FloatingPlayerBar(
                         .background(
                             Brush.linearGradient(
                                 colors = listOf(
-                                    Color.White.copy(alpha = 0.16f),
-                                    Color.Transparent,
                                     Color.White.copy(alpha = 0.08f),
+                                    Color.Transparent,
+                                    Color.White.copy(alpha = 0.04f),
                                 ),
                             ),
                         ),
@@ -140,7 +163,7 @@ fun FloatingPlayerBar(
                         .border(
                             border = BorderStroke(
                                 width = 1.dp,
-                                color = Color.White.copy(alpha = 0.24f),
+                                color = Color.White.copy(alpha = 0.14f),
                             ),
                             shape = RoundedCornerShape(13.dp),
                         ),
@@ -149,7 +172,7 @@ fun FloatingPlayerBar(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(1.dp)
-                        .background(Color.White.copy(alpha = 0.48f)),
+                        .background(Color.White.copy(alpha = 0.26f)),
                 )
 
                 Column(
@@ -197,6 +220,17 @@ fun FloatingPlayerBar(
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.Center,
                         ) {
+                            val secondaryLine = if (isBuffering) {
+                                "Wird geladen..."
+                            } else {
+                                metadataTitle ?: "Live Stream"
+                            }
+                            val secondaryColor = if (isBuffering) {
+                                TealAccent
+                            } else {
+                                DarkOnSurfaceVariant
+                            }
+
                             Text(
                                 text = stationName,
                                 style = MaterialTheme.typography.bodyMedium.copy(
@@ -208,23 +242,27 @@ fun FloatingPlayerBar(
                                 color = Color.White,
                             )
 
-                            if (isBuffering) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 1.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
                                 Text(
-                                    text = "Wird geladen...",
+                                    text = secondaryLine,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = TealAccent,
-                                    maxLines = 1,
-                                    modifier = Modifier.padding(top = 1.dp),
-                                )
-                            } else {
-                                Text(
-                                    text = metadataTitle ?: "Live Stream",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = DarkOnSurfaceVariant,
+                                    color = secondaryColor,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.padding(top = 1.dp),
+                                    modifier = Modifier.weight(1f),
                                 )
+
+                                if (sessionDurationLabel != null) {
+                                    StreamDurationBadge(
+                                        text = sessionDurationLabel,
+                                        modifier = Modifier.padding(start = 8.dp),
+                                    )
+                                }
                             }
                         }
 
@@ -246,10 +284,10 @@ fun FloatingPlayerBar(
                             Surface(
                                 onClick = onPlayPauseClick,
                                 shape = CircleShape,
-                                color = Color.White.copy(alpha = 0.3f),
+                                color = Color.White.copy(alpha = 0.18f),
                                 border = BorderStroke(
                                     width = 1.dp,
-                                    color = Color.White.copy(alpha = 0.5f),
+                                    color = Color.White.copy(alpha = 0.28f),
                                 ),
                                 enabled = !isBuffering,
                             ) {
@@ -267,5 +305,44 @@ fun FloatingPlayerBar(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun StreamDurationBadge(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        color = Color.Black.copy(alpha = 0.26f),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(
+            width = 1.dp,
+            color = Color.White.copy(alpha = 0.16f),
+        ),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Medium,
+            ),
+            color = Color.White.copy(alpha = 0.9f),
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+        )
+    }
+}
+
+private fun formatStreamDuration(durationMs: Long): String {
+    val totalSeconds = durationMs / 1000L
+    val hours = totalSeconds / 3600L
+    val minutes = (totalSeconds % 3600L) / 60L
+    val seconds = totalSeconds % 60L
+
+    return if (hours > 0) {
+        "%d:%02d:%02d".format(hours, minutes, seconds)
+    } else {
+        "%02d:%02d".format(minutes, seconds)
     }
 }
