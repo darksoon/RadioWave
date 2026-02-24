@@ -11,8 +11,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -34,8 +36,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -43,10 +45,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import de.radiowave.core.model.PlayerState
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
-import de.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.radiowave.core.ui.theme.TealAccent
 import kotlinx.coroutines.delay
 
@@ -62,9 +63,20 @@ fun PlayerScreen(
     val station = playerState.currentStation ?: return
     val isPlaying = playerState.isPlaying
     val isBuffering = playerState.isBuffering
-    val metaTitle = playerState.metadata?.title?.takeIf { !it.isNullOrBlank() }
-    val metaArtist = playerState.metadata?.artist?.takeIf { !it.isNullOrBlank() }
-    val artworkUrl = playerState.metadata?.albumArtUrl?.takeIf { !it.isNullOrBlank() } ?: station.faviconUrl
+    val metadataTitle = playerState.metadata?.title?.trim().takeUnless { it.isNullOrBlank() }
+    val metadataArtist = playerState.metadata?.artist?.trim().takeUnless { it.isNullOrBlank() }
+    val coverUrl = playerState.metadata?.albumArtUrl?.trim().takeUnless { it.isNullOrBlank() }
+    val fallbackLogoUrl = station.faviconUrl?.trim().takeUnless { it.isNullOrBlank() }
+    val artworkUrl = coverUrl ?: fallbackLogoUrl
+
+    val primaryLine = metadataTitle ?: station.name
+    val secondaryLine = when {
+        isBuffering -> "Wird geladen..."
+        metadataArtist != null -> metadataArtist
+        metadataTitle != null -> station.name
+        else -> "Live Stream"
+    }
+
     val sessionStart = playerState.sessionStartedAtElapsedMs ?: remember(station.uuid) {
         SystemClock.elapsedRealtime()
     }
@@ -79,7 +91,7 @@ fun PlayerScreen(
         }
     }
 
-    val runtimeLabel = formatPlayerRuntime((nowElapsedMs - sessionStart).coerceAtLeast(0L))
+    val runtimeLabel = formatRuntime((nowElapsedMs - sessionStart).coerceAtLeast(0L))
 
     Box(
         modifier = modifier
@@ -87,25 +99,25 @@ fun PlayerScreen(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xF00B1120),
-                        Color(0xF6141E31),
-                        Color(0xF0080D17),
+                        Color(0xFF070A12),
+                        Color(0xFF0E1220),
+                        Color(0xFF06090F),
                     ),
                 ),
             ),
-            contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .blur(32.dp)
+                .matchParentSize()
+                .blur(42.dp)
                 .background(
                     Brush.radialGradient(
                         colors = listOf(
-                            TealAccent.copy(alpha = 0.16f),
+                            TealAccent.copy(alpha = 0.26f),
+                            Color(0xFF6E43D6).copy(alpha = 0.16f),
                             Color.Transparent,
                         ),
-                        radius = 850f,
+                        radius = 1300f,
                     ),
                 ),
         )
@@ -113,14 +125,16 @@ fun PlayerScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 22.dp),
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(horizontal = 24.dp, vertical = 14.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Now Playing",
+                    text = "Wiedergabe",
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold,
                     ),
@@ -131,7 +145,7 @@ fun PlayerScreen(
                     onClick = onDismiss,
                     shape = CircleShape,
                     color = Color.White.copy(alpha = 0.1f),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.22f)),
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
@@ -144,70 +158,93 @@ fun PlayerScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(26.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(320.dp)
-                    .clip(RoundedCornerShape(30.dp))
-                    .background(DarkSurfaceVariant),
+                    .height(348.dp)
+                    .clip(RoundedCornerShape(32.dp))
+                    .background(Color(0xFF171C2B)),
+                contentAlignment = Alignment.Center,
             ) {
-                AsyncImage(
+                SubcomposeAsyncImage(
                     model = artworkUrl,
                     contentDescription = station.name,
-                    contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    loading = {
+                        ArtworkFallbackLetter(text = station.name)
+                    },
+                    error = {
+                        ArtworkFallbackLetter(text = station.name)
+                    },
                 )
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .matchParentSize()
                         .background(
                             Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    Color.Black.copy(alpha = 0.2f),
-                                    Color.Black.copy(alpha = 0.45f),
+                                    Color.Black.copy(alpha = 0.16f),
+                                    Color.Black.copy(alpha = 0.42f),
                                 ),
                             ),
                         ),
                 )
             }
 
-            Spacer(modifier = Modifier.height(22.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = station.name,
+                text = primaryLine,
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 33.sp,
+                    fontSize = 32.sp,
                 ),
                 color = Color.White,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (metaTitle != null || metaArtist != null || isBuffering) {
-                Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = secondaryLine,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (isBuffering) TealAccent else DarkOnSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    color = Color.White.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f)),
+                ) {
+                    Text(
+                        text = "LIVE",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.sp,
+                        ),
+                        color = Color.White.copy(alpha = 0.92f),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                    )
+                }
+
+                Spacer(modifier = Modifier.size(8.dp))
+
                 Text(
-                    text = when {
-                        isBuffering -> "Wird geladen..."
-                        metaArtist != null && metaTitle != null -> "$metaArtist - $metaTitle"
-                        metaTitle != null -> metaTitle
-                        else -> metaArtist ?: ""
-                    },
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (isBuffering) TealAccent else DarkOnSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
+                    text = runtimeLabel,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color.White.copy(alpha = 0.86f),
                 )
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = runtimeLabel,
-                style = MaterialTheme.typography.labelLarge,
-                color = Color.White.copy(alpha = 0.84f),
-            )
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -222,7 +259,7 @@ fun PlayerScreen(
                     color = Color.White.copy(alpha = if (isFavorite) 0.2f else 0.1f),
                     border = BorderStroke(
                         width = 1.dp,
-                        color = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.25f),
+                        color = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.2f),
                     ),
                 ) {
                     Icon(
@@ -230,26 +267,27 @@ fun PlayerScreen(
                         contentDescription = null,
                         tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White,
                         modifier = Modifier
-                            .size(52.dp)
+                            .size(54.dp)
                             .padding(12.dp),
                     )
                 }
 
-                Spacer(modifier = Modifier.size(22.dp))
+                Spacer(modifier = Modifier.size(24.dp))
 
                 Box(contentAlignment = Alignment.Center) {
                     if (isBuffering) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(76.dp),
-                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(82.dp),
+                            strokeWidth = 2.1.dp,
                             color = TealAccent,
                             trackColor = Color.White.copy(alpha = 0.2f),
                         )
                     }
+
                     Surface(
                         onClick = onPlayPauseClick,
                         shape = CircleShape,
-                        color = TealAccent.copy(alpha = 0.92f),
+                        color = TealAccent.copy(alpha = 0.94f),
                         enabled = !isBuffering,
                     ) {
                         Icon(
@@ -257,23 +295,44 @@ fun PlayerScreen(
                             contentDescription = if (isPlaying) "Pause" else "Play",
                             tint = Color.Black,
                             modifier = Modifier
-                                .size(76.dp)
-                                .padding(18.dp),
+                                .size(82.dp)
+                                .padding(20.dp),
                         )
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(18.dp))
         }
     }
 }
 
-private fun formatPlayerRuntime(durationMs: Long): String {
+@Composable
+private fun ArtworkFallbackLetter(text: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFF3D6B7E),
+                        Color(0xFF1E2636),
+                    ),
+                ),
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text.firstOrNull()?.uppercase() ?: "?",
+            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
+            color = Color.White.copy(alpha = 0.95f),
+        )
+    }
+}
+
+private fun formatRuntime(durationMs: Long): String {
     val totalSeconds = durationMs / 1000L
     val hours = totalSeconds / 3600L
     val minutes = (totalSeconds % 3600L) / 60L
     val seconds = totalSeconds % 60L
-
     return if (hours > 0) {
         "%d:%02d:%02d".format(hours, minutes, seconds)
     } else {

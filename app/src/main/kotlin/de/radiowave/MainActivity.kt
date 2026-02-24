@@ -54,6 +54,8 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import dagger.hilt.android.AndroidEntryPoint
 import de.radiowave.core.model.AppSettings
 import de.radiowave.core.model.PlayerState
@@ -333,27 +335,37 @@ fun RadioWaveMainScreen() {
             }
 
             if (showPlayerBar && showFullscreenPlayer) {
-                PlayerScreen(
-                    playerState = playerState,
-                    isFavorite = isCurrentFavorite,
-                    onFavoriteClick = {
-                        currentStation?.let { station ->
-                            val willBeFavorite = !isCurrentFavorite
-                            homeViewModel.toggleFavorite(station)
-                            if (showQuickToasts) {
-                                val message = if (willBeFavorite) {
-                                    "Zu Favoriten hinzugefuegt"
-                                } else {
-                                    "Aus Favoriten entfernt"
+                Dialog(
+                    onDismissRequest = { showFullscreenPlayer = false },
+                    properties = DialogProperties(
+                        dismissOnBackPress = true,
+                        dismissOnClickOutside = false,
+                        usePlatformDefaultWidth = false,
+                        decorFitsSystemWindows = false,
+                    ),
+                ) {
+                    PlayerScreen(
+                        playerState = playerState,
+                        isFavorite = isCurrentFavorite,
+                        onFavoriteClick = {
+                            currentStation?.let { station ->
+                                val willBeFavorite = !isCurrentFavorite
+                                homeViewModel.toggleFavorite(station)
+                                if (showQuickToasts) {
+                                    val message = if (willBeFavorite) {
+                                        "Zu Favoriten hinzugefuegt"
+                                    } else {
+                                        "Aus Favoriten entfernt"
+                                    }
+                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                                 }
-                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                             }
-                        }
-                    },
-                    onPlayPauseClick = { homeViewModel.togglePlayPause() },
-                    onDismiss = { showFullscreenPlayer = false },
-                    modifier = Modifier.fillMaxSize(),
-                )
+                        },
+                        onPlayPauseClick = { homeViewModel.togglePlayPause() },
+                        onDismiss = { showFullscreenPlayer = false },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
             }
         }
     }
