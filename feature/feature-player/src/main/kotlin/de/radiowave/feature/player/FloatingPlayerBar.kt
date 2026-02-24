@@ -74,21 +74,21 @@ fun FloatingPlayerBar(
     if (currentStation != null) {
         val stationName: String = currentStation.name
         val faviconUrl: String? = currentStation.faviconUrl
-        var nowElapsedMs by remember(sessionStartedAtMs) {
+        val effectiveSessionStartMs = sessionStartedAtMs ?: remember(currentStation.uuid) {
+            SystemClock.elapsedRealtime()
+        }
+        var nowElapsedMs by remember(effectiveSessionStartMs) {
             mutableLongStateOf(SystemClock.elapsedRealtime())
         }
 
-        LaunchedEffect(sessionStartedAtMs, isPlaying, isBuffering) {
-            if (sessionStartedAtMs == null) return@LaunchedEffect
+        LaunchedEffect(effectiveSessionStartMs, isPlaying, isBuffering) {
             while (isPlaying || isBuffering) {
                 nowElapsedMs = SystemClock.elapsedRealtime()
                 delay(1_000L)
             }
         }
 
-        val sessionDurationLabel = sessionStartedAtMs?.let { startedAt ->
-            formatStreamDuration((nowElapsedMs - startedAt).coerceAtLeast(0L))
-        }
+        val sessionDurationLabel = formatStreamDuration((nowElapsedMs - effectiveSessionStartMs).coerceAtLeast(0L))
 
         Card(
             modifier = modifier
@@ -235,7 +235,7 @@ fun FloatingPlayerBar(
                                 color = Color.White,
                             )
 
-                            val showMetadataLine = isBuffering || compactMetadata != null || sessionDurationLabel != null
+                            val showMetadataLine = isBuffering || compactMetadata != null || sessionDurationLabel.isNotBlank()
                             val secondaryLine = when {
                                 isBuffering -> "Wird geladen..."
                                 else -> compactMetadata
@@ -262,12 +262,10 @@ fun FloatingPlayerBar(
                                         Spacer(modifier = Modifier.weight(1f))
                                     }
 
-                                    if (sessionDurationLabel != null) {
-                                        StreamDurationBadge(
-                                            text = sessionDurationLabel,
-                                            modifier = Modifier.padding(start = 8.dp),
-                                        )
-                                    }
+                                    StreamDurationBadge(
+                                        text = sessionDurationLabel,
+                                        modifier = Modifier.padding(start = 8.dp),
+                                    )
                                 }
                             }
                         }

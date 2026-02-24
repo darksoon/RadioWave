@@ -9,12 +9,14 @@ import android.util.Log
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Metadata
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
+import androidx.media3.extractor.metadata.icy.IcyInfo
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -181,17 +183,96 @@ class PlayerControllerImpl @Inject constructor(
             }
 
             override fun onMediaMetadataChanged(metadata: MediaMetadata) {
+                val stationName = _playerState.value.currentStation?.name?.trim()
+                val title = metadata.title?.toString()?.trim()
+                val artist = metadata.artist?.toString()?.trim()
+                val albumArtUrl = metadata.artworkUri?.toString()
+                val hasUsefulMetadata = (!title.isNullOrBlank() && !title.equals(stationName, ignoreCase = true)) ||
+                    !artist.isNullOrBlank() ||
+                    !albumArtUrl.isNullOrBlank()
+
+                if (!hasUsefulMetadata) {
+                    return
+                }
+
                 _playerState.update {
+                    val previous = it.metadata ?: StreamMetadata()
                     it.copy(
-                        metadata = StreamMetadata(
-                            title = metadata.title?.toString(),
-                            artist = metadata.artist?.toString(),
-                            albumArtUrl = metadata.artworkUri?.toString(),
+                        metadata = previous.copy(
+                            title = title ?: previous.title,
+                            artist = artist ?: previous.artist,
+                            albumArtUrl = albumArtUrl ?: previous.albumArtUrl,
                         ),
                     )
                 }
             }
+
+            override fun onMetadata(metadata: Metadata) {
+                val streamTitle = extractStreamTitle(metadata) ?: return
+                applyStreamTitle(streamTitle)
+            }
         })
+    }
+
+    private fun extractStreamTitle(metadata: Metadata): String? {
+        for (index in 0 until metadata.length()) {
+            val entry = metadata[index]
+
+            if (entry is IcyInfo) {
+                val title = entry.title?.trim()
+                if (!title.isNullOrBlank()) {
+                    return title
+                }
+                val fromRaw = extractStreamTitleFromMetadataText(entry.toString())
+                if (!fromRaw.isNullOrBlank()) {
+                    return fromRaw
+                }
+            }
+
+            val fallback = extractStreamTitleFromMetadataText(entry.toString())
+            if (!fallback.isNullOrBlank()) {
+                return fallback
+            }
+        }
+        return null
+    }
+
+    private fun extractStreamTitleFromMetadataText(text: String): String? {
+        val streamTitleRegex = Regex("(?i)StreamTitle='([^']*)'")
+        val streamTitleMatch = streamTitleRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
+        if (!streamTitleMatch.isNullOrBlank()) {
+            return streamTitleMatch
+        }
+
+        val titleRegex = Regex("(?i)title=([^,}]+)")
+        val titleMatch = titleRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
+        return titleMatch?.trim('"', '\'')
+    }
+
+    private fun applyStreamTitle(rawTitle: String) {
+        val titleText = rawTitle.trim().takeUnless { it.isBlank() } ?: return
+        val stationName = _playerState.value.currentStation?.name?.trim()
+        if (stationName != null && titleText.equals(stationName, ignoreCase = true)) {
+            return
+        }
+
+        val splitPattern = Regex("\\s[-–|]\\s")
+        val parts = splitPattern.split(titleText, limit = 2)
+        val parsedArtist = parts.getOrNull(0)?.trim().takeUnless { it.isNullOrBlank() }
+        val parsedTitle = when {
+            parts.size >= 2 -> parts[1].trim()
+            else -> titleText
+        }.takeUnless { it.isBlank() }
+
+        _playerState.update {
+            val previous = it.metadata ?: StreamMetadata()
+            it.copy(
+                metadata = previous.copy(
+                    title = parsedTitle ?: previous.title,
+                    artist = parsedArtist ?: previous.artist,
+                ),
+            )
+        }
     }
 
     private fun registerNetworkCallbackIfNeeded() {
@@ -325,6 +406,7 @@ class PlayerControllerImpl @Inject constructor(
                 isLoading = true,
                 isBuffering = true,
                 sessionStartedAtElapsedMs = SystemClock.elapsedRealtime(),
+                metadata = null,
             )
         }
 
