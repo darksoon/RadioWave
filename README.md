@@ -12,22 +12,22 @@
     <img src="https://img.shields.io/badge/License-Proprietary-red" alt="License Proprietary" />
   </a>
 
-  <p><strong>Moderne, werbefreie Internet-Radio-App für Android.</strong></p>
-  <p>⚡ Schnell · 🔒 Privacy-first · 🚫 Ohne Tracking · 🎧 45.000+ Sender</p>
+  <h3>Die moderne, werbefreie Internet-Radio-App für Android.</h3>
+  <p>⚡ Schnell · 🔒 Privacy-first · 🚫 Kein Tracking · 🎧 45.000+ Sender</p>
 </div>
 
-Eine moderne, werbefreie Internet-Radio App für Android.
+---
 
-## Features
+## ✨ Highlights
 
-- **Kein Account nötig** - Alle Daten lokal auf dem Gerät
-- **Keine Werbung** - Komplett werbefrei, kein Tracking
-- **45.000+ Sender** - Über die Radio Browser API
-- **Android Auto** - Vollständige Auto-Unterstützung
-- **Chromecast** - Stream an Smart Speaker senden
-- **Material You** - Dynamic Colors & modernes Design
+- **Kein Account nötig** – alles lokal auf dem Gerät
+- **Komplett werbefrei** – kein Tracking, keine Analytics
+- **45.000+ Sender** über Radio Browser
+- **Android Auto** Support
+- **Chromecast** Support
+- **Material You** UI mit modernem Dark Look
 
-## Screenshots
+## 📸 Screenshots
 
 | Home | Entdecken |
 |---|---|
@@ -37,126 +37,90 @@ Eine moderne, werbefreie Internet-Radio App für Android.
 |---|---|---|
 | ![Favoriten](docs/screenshots/favorites.jpg) | ![Player](docs/screenshots/player.jpg) | ![Einstellungen](docs/screenshots/settings.jpg) |
 
-## Tech Stack
+## 🧱 Tech Stack
 
-- **Language**: Kotlin 2.1.0
-- **UI**: Jetpack Compose + Material 3
-- **Architecture**: Clean Architecture mit MVVM
-- **DI**: Hilt
-- **Audio**: Media3 / ExoPlayer
-- **Database**: Room
-- **Network**: Retrofit + Kotlinx Serialization
+- **Kotlin 2.1.0**
+- **Jetpack Compose + Material 3**
+- **Clean Architecture + MVVM**
+- **Hilt**
+- **Media3 / ExoPlayer**
+- **Room**
+- **Retrofit + Kotlinx Serialization**
 
-## Projektstruktur
-
-```
-RadioWave/
-├── app/                    # Haupt-App Modul
-├── core/
-│   ├── core-model/        # Datenmodelle
-│   ├── core-database/     # Room Database
-│   ├── core-network/      # API Client
-│   ├── core-data/         # Repositories
-│   ├── core-player/       # Audio Player
-│   ├── core-cast/         # Chromecast
-│   └── core-ui/           # UI Komponenten
-├── feature/
-│   ├── feature-home/      # Startbildschirm
-│   ├── feature-browse/    # Durchsuchen
-│   ├── feature-favorites/ # Favoriten
-│   ├── feature-player/    # Player UI
-│   ├── feature-custom-stations/ # Eigene Sender
-│   └── feature-settings/  # Einstellungen
-└── auto/                  # Android Auto
-```
-
-## Quick Start
+## 🚀 Quick Start
 
 ```bash
-# 1) Clone
 git clone https://github.com/darksoon/RadioWave.git
 cd RadioWave
-
-# 2) Build-Logic
+chmod +x gradlew
 ./gradlew :build-logic:build
-
-# 3) App bauen
 ./gradlew assembleDebug
 ```
 
-## Build
+## 🛠️ Lokale Builds
 
 ```bash
-# Build-Logic zuerst bauen
-./gradlew :build-logic:build
-
-# Gesamtes Projekt bauen
+# Full build
 ./gradlew build
 
-# Lint
+# Lint + Tests
 ./gradlew lint
-
-# Unit Tests
 ./gradlew test
 
 # Debug APK installieren
 ./gradlew installDebug
 ```
 
-## Manual Build via GitHub Actions
+## 🤖 GitHub Actions
 
+### Manual Android Build
 Im Repository unter **Actions → Manual Android Build → Run workflow**.
 
 - Standard-Task: `assembleDebug`
-- Optional z. B. `assembleRelease` oder `build`
-- APK/AAB findest du nach dem Lauf unter **Artifacts**
+- Optional: `assembleRelease` oder `build`
+- APK/AAB nach dem Lauf unter **Artifacts**
 
-## Audit-Status (2026-02-24)
+### PR CI
+- Läuft automatisch bei **Pull Requests** auf `main`
+- Zusätzlich manuell startbar über **workflow_dispatch**
+- Kein Auto-Run mehr bei jedem Push auf `main`
 
-- `./gradlew :build-logic:build` erfolgreich
-- `./gradlew build` erfolgreich
-- `./gradlew lint` erfolgreich
-- `./gradlew test` erfolgreich
-- `ktlintCheck` Task ist aktuell nicht im Projekt konfiguriert
-- Neuer Audit-Report wird in der naechsten Session erstellt.
+## 📦 Projektstruktur
 
-## Produkt-Update (2026-02-24)
+```text
+RadioWave/
+├── app/                    # Haupt-App Modul
+├── core/
+│   ├── core-model/
+│   ├── core-database/
+│   ├── core-network/
+│   ├── core-data/
+│   ├── core-player/
+│   ├── core-cast/
+│   └── core-ui/
+├── feature/
+│   ├── feature-home/
+│   ├── feature-browse/
+│   ├── feature-favorites/
+│   ├── feature-player/
+│   ├── feature-custom-stations/
+│   └── feature-settings/
+└── auto/
+```
 
-- Home-Screen deutlich auf TuneIn-Style poliert (kompaktere Karten, bessere Typografie, klarere Sektionen)
-- Home-Hintergrund jetzt dezent animiert (sanfte Glow-Bewegung statt statischer harter Flaechen)
-- Floating Mini-Player als echtes Overlay ueber dem Content (Transparenz wirkt beim Scrollen sichtbar)
-- Mini-Player Glass-Look verbessert und danach fuer Lesbarkeit bewusst abgedunkelt
-- Mini-Player zeigt jetzt Stream-Laufzeit (`mm:ss` / `hh:mm:ss`)
-- Player-Netzwerkrobustheit verbessert: groessere Buffer, HTTP-Timeouts, Retry-Policy mit Backoff
-- Auto-Recovery bei kurzer Netzunterbrechung via `ConnectivityManager` Network Callback
-- Zusaetzliche Permission fuer Recovery-Logik: `ACCESS_NETWORK_STATE`
-- Favoriten-System produktiv: echte Favoritenliste, Persistenz mit Station-Snapshot in Room, Remove direkt per Heart
-- Favorisieren ist jetzt bewusst getrennt: Home nur Play, Favoriten nur in Suche und Player
-- Mini-Player zeigt klareres Favoriten-Feedback (sichtbarer Heart-State + direkte Add/Remove-Rueckmeldung)
-- Background-Playback gehaertet: `WAKE_LOCK` + Wifi-Lock waehrend Playback/Buffering
-- Playback-Lost-Guard in `core-player`: Buffer-Stall-Watchdog + automatische Recovery bei unerwartetem Stop
-- Fullscreen-Player erweitert: Mute/Unmute, Random-Station und Previous-Station direkt ueber die Control-Leiste
-- Fullscreen-Backhandling gehaertet: Android Back schliesst zuerst das Player-Overlay
-- LIVE-Zeitbalken im Fullscreen-Player: voll ausgefuellter Balken mit dezenter Puls-Animation
-
-## Build-Artefakte
-
-- Generierte Dateien aus `build-logic/.gradle` und `build-logic/build` sind aus Git entfernt.
-- Lokale Agent-/Session-Dateien und Root-Mockup-Bilder sind in `.gitignore` ausgeschlossen.
-
-## Lizenz
-
-Dieses Projekt ist unter einer proprietären Lizenz mit kommerziellem Nutzungsverbot lizenziert.
-Siehe LICENSE.txt für Details.
-
-## Datenschutz
+## 🔐 Datenschutz
 
 - Keine Datenerhebung
 - Keine Analytics
 - Keine Werbung
 - Alle Daten bleiben lokal auf dem Gerät
 
-## Credits
+## 📜 Lizenz
+
+Proprietäre Lizenz mit kommerziellem Nutzungsverbot.  
+Siehe [LICENSE.txt](./LICENSE.txt).
+
+## 🙌 Credits
 
 - Sender-Daten: [Radio Browser API](https://www.radio-browser.info/)
 - Icons: Material Design Icons
