@@ -1,6 +1,7 @@
 package de.radiowave.feature.browse
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,11 +20,14 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -35,6 +39,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -146,6 +151,9 @@ fun BrowseScreen(
         onStationClick = { station ->
             viewModel.playStation(station)
         },
+        onToggleFavorite = { station ->
+            viewModel.toggleFavorite(station)
+        },
         modifier = modifier,
     )
 }
@@ -162,8 +170,10 @@ private fun BrowseContent(
     onSortOptionChanged: (SortOption) -> Unit,
     onRefresh: () -> Unit,
     onStationClick: (Station) -> Unit,
+    onToggleFavorite: (Station) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val favoriteIds = uiState.favoriteStations.map { station -> station.uuid }.toSet()
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -435,6 +445,8 @@ private fun BrowseContent(
                     items(uiState.topStations) { station ->
                         StationGridCard(
                             station = station,
+                            isFavorite = station.uuid in favoriteIds,
+                            onToggleFavorite = { onToggleFavorite(station) },
                             onClick = { onStationClick(station) },
                         )
                     }
@@ -522,14 +534,15 @@ private fun EmptyState(
 @Composable
 private fun StationGridCard(
     station: Station,
+    isFavorite: Boolean,
+    onToggleFavorite: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick),
+            .clip(RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = DarkCardBackground,
@@ -539,50 +552,73 @@ private fun StationGridCard(
         ),
         onClick = onClick,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Box(
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Column(
                 modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(DarkSurfaceVariant),
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                SubcomposeAsyncImage(
-                    model = station.faviconUrl,
-                    contentDescription = station.name,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text(
-                text = station.name,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp,
-                ),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                color = Color.White,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            station.country?.let { country ->
-                Text(
-                    text = country,
-                    style = MaterialTheme.typography.labelSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = TealAccent.copy(alpha = 0.8f),
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 2.dp),
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(DarkSurfaceVariant),
+                ) {
+                    SubcomposeAsyncImage(
+                        model = station.faviconUrl,
+                        contentDescription = station.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = station.name,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                    ),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    color = Color.White,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                station.country?.let { country ->
+                    Text(
+                        text = country,
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = TealAccent.copy(alpha = 0.8f),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 2.dp),
+                    )
+                }
+            }
+            Surface(
+                onClick = onToggleFavorite,
+                shape = CircleShape,
+                color = Color.Black.copy(alpha = 0.34f),
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = Color.White.copy(alpha = 0.2f),
+                ),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 8.dp, end = 8.dp),
+            ) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    contentDescription = null,
+                    tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.84f),
+                    modifier = Modifier
+                        .size(24.dp)
+                        .padding(4.dp),
                 )
             }
         }

@@ -130,11 +130,7 @@ private fun HomeContent(
             } else {
                 emptyList()
             }
-            val favoriteStations = if (uiState.favoriteStations.isNotEmpty()) {
-                uiState.favoriteStations
-            } else {
-                uiState.topStations.take(5)
-            }
+            val favoriteStations = uiState.favoriteStations
             val excludedSuggestionIds = (
                 favoriteStations.map { station -> station.uuid } +
                     recentStations.map { station -> station.uuid }
