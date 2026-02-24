@@ -1,5 +1,12 @@
 package de.radiowave.feature.home
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
@@ -40,6 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -179,6 +187,44 @@ private fun HomeContent(
 private fun SmoothHomeBackground(
     modifier: Modifier = Modifier,
 ) {
+    val transition = rememberInfiniteTransition(label = "home-bg")
+    val glowX by transition.animateFloat(
+        initialValue = -120f,
+        targetValue = 120f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 18_000,
+                easing = LinearEasing,
+            ),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "home-bg-glow-x",
+    )
+    val glowY by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 90f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 14_000,
+                easing = FastOutSlowInEasing,
+            ),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "home-bg-glow-y",
+    )
+    val pulseAlpha by transition.animateFloat(
+        initialValue = 0.78f,
+        targetValue = 1.08f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 9_000,
+                easing = FastOutSlowInEasing,
+            ),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "home-bg-pulse",
+    )
+
     Box(
         modifier = modifier
             .background(
@@ -196,6 +242,11 @@ private fun SmoothHomeBackground(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(430.dp)
+                .graphicsLayer {
+                    translationX = glowX
+                    translationY = glowY * 0.45f
+                    alpha = pulseAlpha
+                }
                 .background(
                     Brush.radialGradient(
                         colors = listOf(
@@ -211,6 +262,11 @@ private fun SmoothHomeBackground(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(560.dp)
+                .graphicsLayer {
+                    translationX = -glowX * 0.35f
+                    translationY = glowY * 0.25f
+                    alpha = pulseAlpha * 0.9f
+                }
                 .background(
                     Brush.radialGradient(
                         colors = listOf(

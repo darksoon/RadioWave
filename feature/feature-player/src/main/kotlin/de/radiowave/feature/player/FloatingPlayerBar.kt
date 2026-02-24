@@ -2,6 +2,7 @@ package de.radiowave.feature.player
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -71,10 +73,10 @@ fun FloatingPlayerBar(
             ),
             border = BorderStroke(
                 width = 1.dp,
-                color = Color.White.copy(alpha = 0.18f),
+                color = Color.White.copy(alpha = 0.28f),
             ),
             elevation = CardDefaults.cardElevation(
-                defaultElevation = 10.dp,
+                defaultElevation = 14.dp,
             ),
         ) {
             Box(
@@ -83,18 +85,43 @@ fun FloatingPlayerBar(
                     .background(
                         Brush.linearGradient(
                             colors = listOf(
-                                Color.White.copy(alpha = 0.11f),
-                                Color(0xAA26313D),
-                                DarkCardBackground.copy(alpha = 0.9f),
+                                Color.White.copy(alpha = 0.2f),
+                                Color(0xC0323D49),
+                                DarkCardBackground.copy(alpha = 0.78f),
                             ),
                         ),
                     ),
             ) {
                 Box(
                     modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    TealAccent.copy(alpha = 0.14f),
+                                    Color.Transparent,
+                                ),
+                                radius = 260f,
+                            ),
+                        ),
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(1.dp)
+                        .border(
+                            border = BorderStroke(
+                                width = 1.dp,
+                                color = Color.White.copy(alpha = 0.16f),
+                            ),
+                            shape = RoundedCornerShape(13.dp),
+                        ),
+                )
+                Box(
+                    modifier = Modifier
                         .fillMaxWidth()
                         .height(1.dp)
-                        .background(Color.White.copy(alpha = 0.22f)),
+                        .background(Color.White.copy(alpha = 0.33f)),
                 )
 
                 Column(
@@ -191,10 +218,10 @@ fun FloatingPlayerBar(
                             Surface(
                                 onClick = onPlayPauseClick,
                                 shape = CircleShape,
-                                color = Color.White.copy(alpha = 0.14f),
+                                color = Color.White.copy(alpha = 0.22f),
                                 border = BorderStroke(
                                     width = 1.dp,
-                                    color = Color.White.copy(alpha = 0.2f),
+                                    color = Color.White.copy(alpha = 0.36f),
                                 ),
                                 enabled = !isBuffering,
                             ) {
