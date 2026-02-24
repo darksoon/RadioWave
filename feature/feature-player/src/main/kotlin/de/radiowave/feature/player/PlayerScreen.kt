@@ -119,7 +119,6 @@ fun PlayerScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
-                .navigationBarsPadding()
                 .padding(horizontal = 24.dp, vertical = 12.dp),
         ) {
             Row(
@@ -246,7 +245,7 @@ fun PlayerScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(28.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -278,7 +277,8 @@ fun PlayerScreen(
                     onClick = onRandomStationClick,
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.navigationBarsPadding())
         }
     }
 }
