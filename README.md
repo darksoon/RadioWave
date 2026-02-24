@@ -11,6 +11,16 @@ Eine moderne, werbefreie Internet-Radio App für Android.
 - **Chromecast** - Stream an Smart Speaker senden
 - **Material You** - Dynamic Colors & modernes Design
 
+## Screenshots
+
+| Home | Entdecken |
+|---|---|
+| ![Home](docs/screenshots/home.jpg) | ![Entdecken](docs/screenshots/discover.jpg) |
+
+| Favoriten | Fullscreen Player | Einstellungen |
+|---|---|---|
+| ![Favoriten](docs/screenshots/favorites.jpg) | ![Player](docs/screenshots/player.jpg) | ![Einstellungen](docs/screenshots/settings.jpg) |
+
 ## Tech Stack
 
 - **Language**: Kotlin 2.1.0
