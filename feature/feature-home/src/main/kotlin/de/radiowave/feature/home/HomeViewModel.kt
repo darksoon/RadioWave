@@ -30,6 +30,8 @@ class HomeViewModel @Inject constructor(
     private val recentRepository: RecentRepository,
     private val playerManager: RadioPlayerManager,
 ) : ViewModel() {
+    private val playbackHistory = ArrayDeque<Station>()
+    private val maxPlaybackHistorySize = 40
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -206,9 +208,52 @@ class HomeViewModel @Inject constructor(
     }
 
     fun playStation(station: Station) {
+        playStationInternal(station, addCurrentToHistory = true)
+    }
+
+    fun playPreviousStation() {
+        val previousStation = playbackHistory.removeLastOrNull() ?: return
+        playStationInternal(previousStation, addCurrentToHistory = false)
+    }
+
+    fun playRandomStation() {
+        val state = _uiState.value
+        val currentUuid = playerState.value.currentStation?.uuid
+        val pool = (state.favoriteStations + state.recentStations + state.topStations)
+            .distinctBy { it.uuid }
+            .filter { it.streamUrl.isNotBlank() }
+        if (pool.isEmpty()) return
+
+        val candidates = pool.filterNot { it.uuid == currentUuid }
+        val station = if (candidates.isNotEmpty()) {
+            candidates.random()
+        } else {
+            pool.random()
+        }
+        playStationInternal(station, addCurrentToHistory = true)
+    }
+
+    private fun playStationInternal(
+        station: Station,
+        addCurrentToHistory: Boolean,
+    ) {
         viewModelScope.launch {
+            if (addCurrentToHistory) {
+                rememberCurrentStationForBackNavigation(nextStation = station)
+            }
             recentRepository.addRecentStation(station)
             playerManager.playStation(station)
+        }
+    }
+
+    private fun rememberCurrentStationForBackNavigation(nextStation: Station) {
+        val currentStation = playerState.value.currentStation ?: return
+        if (currentStation.uuid == nextStation.uuid) return
+        if (playbackHistory.lastOrNull()?.uuid == currentStation.uuid) return
+
+        playbackHistory.addLast(currentStation)
+        while (playbackHistory.size > maxPlaybackHistorySize) {
+            playbackHistory.removeFirst()
         }
     }
 
@@ -220,5 +265,9 @@ class HomeViewModel @Inject constructor(
 
     fun togglePlayPause() {
         playerManager.togglePlayPause()
+    }
+
+    fun toggleMute() {
+        playerManager.toggleMute()
     }
 }

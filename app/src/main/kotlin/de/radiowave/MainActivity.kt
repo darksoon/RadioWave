@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
@@ -154,6 +155,10 @@ fun RadioWaveMainScreen() {
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_QUICK_TOASTS, true))
     }
     var showFullscreenPlayer by rememberSaveable { mutableStateOf(false) }
+
+    BackHandler(enabled = showFullscreenPlayer) {
+        showFullscreenPlayer = false
+    }
 
     DisposableEffect(prefs) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -362,6 +367,9 @@ fun RadioWaveMainScreen() {
                             }
                         },
                         onPlayPauseClick = { homeViewModel.togglePlayPause() },
+                        onPreviousStationClick = { homeViewModel.playPreviousStation() },
+                        onVolumeToggle = { homeViewModel.toggleMute() },
+                        onRandomStationClick = { homeViewModel.playRandomStation() },
                         onDismiss = { showFullscreenPlayer = false },
                         modifier = Modifier.fillMaxSize(),
                     )

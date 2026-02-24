@@ -6,6 +6,7 @@ package de.radiowave.core.model
 data class PlayerState(
     val currentStation: Station? = null,
     val isPlaying: Boolean = false,
+    val isMuted: Boolean = false,
     val isBuffering: Boolean = false,
     val isLoading: Boolean = false,
     val sessionStartedAtElapsedMs: Long? = null,

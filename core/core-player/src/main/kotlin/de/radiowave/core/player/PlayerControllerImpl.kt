@@ -88,6 +88,7 @@ class PlayerControllerImpl @Inject constructor(
             setupPlayerListeners(player)
             registerNetworkCallbackIfNeeded()
             initializePlaybackLocks()
+            player.volume = if (_playerState.value.isMuted) 0f else 1f
             exoPlayer = player
         }
     }
@@ -609,6 +610,13 @@ class PlayerControllerImpl @Inject constructor(
                 player.play()
             }
         }
+    }
+
+    override fun toggleMute() {
+        val player = exoPlayer ?: return
+        val shouldMute = !_playerState.value.isMuted
+        player.volume = if (shouldMute) 0f else 1f
+        _playerState.update { it.copy(isMuted = shouldMute) }
     }
 
     override fun stop() {

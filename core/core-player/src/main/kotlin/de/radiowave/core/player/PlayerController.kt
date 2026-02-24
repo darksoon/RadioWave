@@ -13,6 +13,7 @@ interface PlayerController {
     
     suspend fun playStation(station: Station)
     fun togglePlayPause()
+    fun toggleMute()
     fun stop()
     fun release()
 }

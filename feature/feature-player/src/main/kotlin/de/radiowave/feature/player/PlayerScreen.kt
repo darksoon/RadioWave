@@ -18,12 +18,13 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Shuffle
 import androidx.compose.material3.Icon
@@ -59,7 +60,10 @@ fun PlayerScreen(
     isFavorite: Boolean,
     onDismiss: () -> Unit,
     onFavoriteClick: () -> Unit,
+    onPreviousStationClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
+    onVolumeToggle: () -> Unit,
+    onRandomStationClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val station = playerState.currentStation ?: return
@@ -257,21 +261,21 @@ fun PlayerScreen(
                 PlayerIconButton(
                     icon = Icons.Filled.SkipPrevious,
                     tint = Color.White.copy(alpha = 0.78f),
-                    onClick = {},
+                    onClick = onPreviousStationClick,
                 )
                 MainPlaybackButton(
                     isPlaying = isPlaying,
                     onClick = onPlayPauseClick,
                 )
                 PlayerIconButton(
-                    icon = Icons.Filled.VolumeUp,
-                    tint = Color.White.copy(alpha = 0.78f),
-                    onClick = {},
+                    icon = if (playerState.isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+                    tint = if (playerState.isMuted) Color.White.copy(alpha = 0.58f) else Color.White.copy(alpha = 0.78f),
+                    onClick = onVolumeToggle,
                 )
                 PlayerIconButton(
                     icon = Icons.Outlined.Shuffle,
                     tint = Color.White.copy(alpha = 0.72f),
-                    onClick = {},
+                    onClick = onRandomStationClick,
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
