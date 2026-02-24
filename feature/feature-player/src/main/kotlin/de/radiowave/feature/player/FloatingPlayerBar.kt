@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -72,10 +73,10 @@ fun FloatingPlayerBar(
             ),
             border = BorderStroke(
                 width = 1.dp,
-                color = Color.White.copy(alpha = 0.28f),
+                color = Color.White.copy(alpha = 0.42f),
             ),
             elevation = CardDefaults.cardElevation(
-                defaultElevation = 14.dp,
+                defaultElevation = 18.dp,
             ),
         ) {
             Box(
@@ -84,9 +85,9 @@ fun FloatingPlayerBar(
                     .background(
                         Brush.linearGradient(
                             colors = listOf(
-                                Color.White.copy(alpha = 0.2f),
-                                Color(0xC0323D49),
-                                DarkCardBackground.copy(alpha = 0.78f),
+                                Color.White.copy(alpha = 0.28f),
+                                Color(0xC0455B70),
+                                DarkCardBackground.copy(alpha = 0.62f),
                             ),
                         ),
                     ),
@@ -94,13 +95,41 @@ fun FloatingPlayerBar(
                 Box(
                     modifier = Modifier
                         .matchParentSize()
+                        .blur(22.dp)
                         .background(
                             Brush.radialGradient(
                                 colors = listOf(
-                                    TealAccent.copy(alpha = 0.14f),
+                                    Color.White.copy(alpha = 0.32f),
+                                    Color(0x99A8F1FF),
+                                    Color.Transparent,
+                                ),
+                                radius = 420f,
+                            ),
+                        ),
+                )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    TealAccent.copy(alpha = 0.2f),
                                     Color.Transparent,
                                 ),
                                 radius = 260f,
+                            ),
+                        ),
+                )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = 0.16f),
+                                    Color.Transparent,
+                                    Color.White.copy(alpha = 0.08f),
+                                ),
                             ),
                         ),
                 )
@@ -111,7 +140,7 @@ fun FloatingPlayerBar(
                         .border(
                             border = BorderStroke(
                                 width = 1.dp,
-                                color = Color.White.copy(alpha = 0.16f),
+                                color = Color.White.copy(alpha = 0.24f),
                             ),
                             shape = RoundedCornerShape(13.dp),
                         ),
@@ -120,7 +149,7 @@ fun FloatingPlayerBar(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(1.dp)
-                        .background(Color.White.copy(alpha = 0.33f)),
+                        .background(Color.White.copy(alpha = 0.48f)),
                 )
 
                 Column(
@@ -217,10 +246,10 @@ fun FloatingPlayerBar(
                             Surface(
                                 onClick = onPlayPauseClick,
                                 shape = CircleShape,
-                                color = Color.White.copy(alpha = 0.22f),
+                                color = Color.White.copy(alpha = 0.3f),
                                 border = BorderStroke(
                                     width = 1.dp,
-                                    color = Color.White.copy(alpha = 0.36f),
+                                    color = Color.White.copy(alpha = 0.5f),
                                 ),
                                 enabled = !isBuffering,
                             ) {
