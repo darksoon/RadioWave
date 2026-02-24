@@ -58,3 +58,14 @@ app/schemas/
 
 # Keystore properties
 keystore.properties
+
+# Local agent/session files (not for public repo)
+/AGENTS.md
+/.agents/
+/SESSION_START.md
+
+# Local mockups / ad-hoc images in repo root
+/*.png
+/*.jpg
+/*.jpeg
+/*.webp
