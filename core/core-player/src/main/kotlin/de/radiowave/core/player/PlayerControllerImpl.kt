@@ -4,6 +4,8 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.Uri
+import android.net.wifi.WifiManager
+import android.os.PowerManager
 import android.os.SystemClock
 import android.util.Log
 import androidx.media3.common.AudioAttributes
@@ -49,6 +51,8 @@ class PlayerControllerImpl @Inject constructor(
 
     private var exoPlayer: ExoPlayer? = null
     private var reconnectJob: Job? = null
+    private var wakeLock: PowerManager.WakeLock? = null
+    private var wifiLock: WifiManager.WifiLock? = null
     private var reconnectAttempts = 0
     private val maxReconnectAttempts = 8
     private val initialReconnectDelayMs = 1_500L
@@ -75,7 +79,74 @@ class PlayerControllerImpl @Inject constructor(
         return exoPlayer ?: createPlayer().also { player ->
             setupPlayerListeners(player)
             registerNetworkCallbackIfNeeded()
+            initializePlaybackLocks()
             exoPlayer = player
+        }
+    }
+
+    private fun initializePlaybackLocks() {
+        if (wakeLock == null) {
+            val powerManager = context.getSystemService(PowerManager::class.java)
+            wakeLock = powerManager?.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK,
+                "RadioWave:PlayerWakeLock",
+            )?.apply {
+                setReferenceCounted(false)
+            }
+        }
+
+        if (wifiLock == null) {
+            val wifiManager = context.applicationContext.getSystemService(WifiManager::class.java)
+            wifiLock = wifiManager?.createWifiLock(
+                WifiManager.WIFI_MODE_FULL_HIGH_PERF,
+                "RadioWave:PlayerWifiLock",
+            )?.apply {
+                setReferenceCounted(false)
+            }
+        }
+    }
+
+    private fun updatePlaybackLocks(player: ExoPlayer?) {
+        val currentPlayer = player ?: return
+        val keepAwake = currentPlayer.playWhenReady &&
+            (currentPlayer.isPlaying || currentPlayer.playbackState == Player.STATE_BUFFERING)
+
+        if (keepAwake) {
+            try {
+                if (wakeLock?.isHeld != true) {
+                    wakeLock?.acquire(30 * 60 * 1000L)
+                }
+            } catch (error: SecurityException) {
+                Log.w("RadioWave", "WakeLock acquire failed: ${error.message}")
+            }
+
+            try {
+                if (wifiLock?.isHeld != true) {
+                    wifiLock?.acquire()
+                }
+            } catch (error: SecurityException) {
+                Log.w("RadioWave", "WifiLock acquire failed: ${error.message}")
+            }
+        } else {
+            releasePlaybackLocks()
+        }
+    }
+
+    private fun releasePlaybackLocks() {
+        try {
+            if (wakeLock?.isHeld == true) {
+                wakeLock?.release()
+            }
+        } catch (error: RuntimeException) {
+            Log.w("RadioWave", "WakeLock release failed: ${error.message}")
+        }
+
+        try {
+            if (wifiLock?.isHeld == true) {
+                wifiLock?.release()
+            }
+        } catch (error: RuntimeException) {
+            Log.w("RadioWave", "WifiLock release failed: ${error.message}")
         }
     }
 
@@ -128,6 +199,7 @@ class PlayerControllerImpl @Inject constructor(
                         error = if (isPlaying) null else it.error,
                     )
                 }
+                updatePlaybackLocks(player)
             }
 
             override fun onPlaybackStateChanged(state: Int) {
@@ -157,6 +229,7 @@ class PlayerControllerImpl @Inject constructor(
                         isLoading = state == Player.STATE_BUFFERING,
                     )
                 }
+                updatePlaybackLocks(player)
             }
 
             override fun onPlayerError(error: PlaybackException) {
@@ -430,6 +503,7 @@ class PlayerControllerImpl @Inject constructor(
         reconnectJob?.cancel()
         reconnectAttempts = 0
         exoPlayer?.stop()
+        releasePlaybackLocks()
         _playerState.update { PlayerState() }
     }
 
@@ -437,8 +511,11 @@ class PlayerControllerImpl @Inject constructor(
         reconnectJob?.cancel()
         reconnectAttempts = 0
         unregisterNetworkCallbackIfNeeded()
+        releasePlaybackLocks()
         exoPlayer?.release()
         exoPlayer = null
+        wakeLock = null
+        wifiLock = null
         _playerState.update { PlayerState() }
     }
 }
