@@ -1,5 +1,7 @@
 # RadioWave - Projektstand & TODO
 
+Hinweis: Kompakter Phasenstatus in `PHASEN.md`.
+
 ## Audit & Stabilisierung (2026-02-24)
 
 ### Erledigt

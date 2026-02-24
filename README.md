@@ -70,8 +70,7 @@ RadioWave/
 - `./gradlew lint` erfolgreich
 - `./gradlew test` erfolgreich
 - `ktlintCheck` Task ist aktuell nicht im Projekt konfiguriert
-
-Details: siehe `AUDIT_2026-02-24.md`.
+- Neuer Audit-Report wird in der naechsten Session erstellt.
 
 ## Produkt-Update (2026-02-24)
 
