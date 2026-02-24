@@ -1,5 +1,10 @@
 # RadioWave
 
+<div align="center">
+  <p><strong>Moderne, werbefreie Internet-Radio-App für Android.</strong></p>
+  <p>⚡ Schnell · 🔒 Privacy-first · 🚫 Ohne Tracking · 🎧 45.000+ Sender</p>
+</div>
+
 Eine moderne, werbefreie Internet-Radio App für Android.
 
 ## Features
