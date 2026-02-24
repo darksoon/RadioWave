@@ -18,8 +18,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -53,6 +55,8 @@ import kotlinx.coroutines.delay
 @Composable
 fun FloatingPlayerBar(
     playerState: PlayerState,
+    isFavorite: Boolean,
+    onFavoriteClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
     onBarClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -199,37 +203,66 @@ fun FloatingPlayerBar(
 
                 Spacer(modifier = Modifier.width(2.dp))
 
-                Box(
+                Row(
                     modifier = Modifier.padding(end = 2.dp),
-                    contentAlignment = Alignment.Center,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (isBuffering) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(40.dp),
-                            strokeWidth = 1.25.dp,
-                            color = TealAccent.copy(alpha = 0.95f),
-                            trackColor = Color.White.copy(alpha = 0.2f),
+                    Surface(
+                        onClick = onFavoriteClick,
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = if (isFavorite) 0.24f else 0.12f),
+                        border = BorderStroke(
+                            width = 1.dp,
+                            color = if (isFavorite) {
+                                Color(0xFFFF5A7A).copy(alpha = 0.75f)
+                            } else {
+                                Color.White.copy(alpha = 0.2f)
+                            },
+                        ),
+                    ) {
+                        Icon(
+                            imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                            contentDescription = if (isFavorite) "Favorit entfernen" else "Zu Favoriten",
+                            tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.92f),
+                            modifier = Modifier
+                                .size(32.dp)
+                                .padding(7.dp),
                         )
                     }
 
-                    Surface(
-                        onClick = onPlayPauseClick,
-                        shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.16f),
-                        border = BorderStroke(
-                            width = 1.dp,
-                            color = Color.White.copy(alpha = 0.24f),
-                        ),
-                        enabled = !isBuffering,
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Box(
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Icon(
-                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = if (isPlaying) "Pause" else "Play",
-                            tint = Color.White,
-                            modifier = Modifier
-                                .size(32.dp)
-                                .padding(6.dp),
-                        )
+                        if (isBuffering) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(40.dp),
+                                strokeWidth = 1.25.dp,
+                                color = TealAccent.copy(alpha = 0.95f),
+                                trackColor = Color.White.copy(alpha = 0.2f),
+                            )
+                        }
+
+                        Surface(
+                            onClick = onPlayPauseClick,
+                            shape = CircleShape,
+                            color = Color.White.copy(alpha = 0.16f),
+                            border = BorderStroke(
+                                width = 1.dp,
+                                color = Color.White.copy(alpha = 0.24f),
+                            ),
+                            enabled = !isBuffering,
+                        ) {
+                            Icon(
+                                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = if (isPlaying) "Pause" else "Play",
+                                tint = Color.White,
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .padding(6.dp),
+                            )
+                        }
                     }
                 }
             }

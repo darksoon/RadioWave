@@ -1,6 +1,7 @@
 package de.radiowave
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -29,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -122,11 +124,16 @@ val bottomNavItems = listOf(
 @Composable
 fun RadioWaveMainScreen() {
     val navController = rememberNavController()
+    val context = LocalContext.current
     val homeViewModel: HomeViewModel = hiltViewModel()
     val playerState: PlayerState by homeViewModel.playerState.collectAsState()
+    val homeUiState by homeViewModel.uiState.collectAsState()
 
     val currentStation = playerState.currentStation
     val showPlayerBar = currentStation != null
+    val isCurrentFavorite = currentStation?.uuid?.let { stationUuid ->
+        homeUiState.favoriteStations.any { station -> station.uuid == stationUuid }
+    } ?: false
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -236,6 +243,19 @@ fun RadioWaveMainScreen() {
             if (showPlayerBar) {
                 FloatingPlayerBar(
                     playerState = playerState,
+                    isFavorite = isCurrentFavorite,
+                    onFavoriteClick = {
+                        currentStation?.let { station ->
+                            val willBeFavorite = !isCurrentFavorite
+                            homeViewModel.toggleFavorite(station)
+                            val message = if (willBeFavorite) {
+                                "Zu Favoriten hinzugefuegt"
+                            } else {
+                                "Aus Favoriten entfernt"
+                            }
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        }
+                    },
                     onPlayPauseClick = { homeViewModel.togglePlayPause() },
                     onBarClick = { },
                     modifier = Modifier
