@@ -1,0 +1,45 @@
+name: Manual Android Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      gradle_task:
+        description: "Gradle task to run (e.g. assembleDebug, assembleRelease, build)"
+        required: true
+        default: "assembleDebug"
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Run manual Gradle task
+        run: ./gradlew ${{ github.event.inputs.gradle_task }} --stacktrace
+
+      - name: Upload APK/AAB artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build-artifacts
+          path: |
+            **/build/outputs/**/*.apk
+            **/build/outputs/**/*.aab
+          if-no-files-found: warn
