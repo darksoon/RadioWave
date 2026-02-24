@@ -64,7 +64,11 @@ fun FloatingPlayerBar(
     val currentStation: Station? = playerState.currentStation
     val isPlaying: Boolean = playerState.isPlaying
     val isBuffering: Boolean = playerState.isBuffering
-    val metadataTitle: String? = playerState.metadata?.title
+    val compactMetadata: String? = buildCompactMetadata(
+        stationName = currentStation?.name,
+        metadataTitle = playerState.metadata?.title,
+        metadataArtist = playerState.metadata?.artist,
+    )
     val sessionStartedAtMs: Long? = playerState.sessionStartedAtElapsedMs
 
     if (currentStation != null) {
@@ -220,17 +224,6 @@ fun FloatingPlayerBar(
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.Center,
                         ) {
-                            val secondaryLine = if (isBuffering) {
-                                "Wird geladen..."
-                            } else {
-                                metadataTitle ?: "Live Stream"
-                            }
-                            val secondaryColor = if (isBuffering) {
-                                TealAccent
-                            } else {
-                                DarkOnSurfaceVariant
-                            }
-
                             Text(
                                 text = stationName,
                                 style = MaterialTheme.typography.bodyMedium.copy(
@@ -242,26 +235,39 @@ fun FloatingPlayerBar(
                                 color = Color.White,
                             )
 
+                            val showMetadataLine = isBuffering || compactMetadata != null || sessionDurationLabel != null
+                            val secondaryLine = when {
+                                isBuffering -> "Wird geladen..."
+                                else -> compactMetadata
+                            }
+                            val secondaryColor = if (isBuffering) TealAccent else DarkOnSurfaceVariant
+
+                            if (showMetadataLine) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(top = 1.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Text(
-                                    text = secondaryLine,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = secondaryColor,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f),
-                                )
+                                    if (secondaryLine != null) {
+                                        Text(
+                                            text = secondaryLine,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = secondaryColor,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                    } else {
+                                        Spacer(modifier = Modifier.weight(1f))
+                                    }
 
-                                if (sessionDurationLabel != null) {
-                                    StreamDurationBadge(
-                                        text = sessionDurationLabel,
-                                        modifier = Modifier.padding(start = 8.dp),
-                                    )
+                                    if (sessionDurationLabel != null) {
+                                        StreamDurationBadge(
+                                            text = sessionDurationLabel,
+                                            modifier = Modifier.padding(start = 8.dp),
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -344,5 +350,33 @@ private fun formatStreamDuration(durationMs: Long): String {
         "%d:%02d:%02d".format(hours, minutes, seconds)
     } else {
         "%02d:%02d".format(minutes, seconds)
+    }
+}
+
+private fun buildCompactMetadata(
+    stationName: String?,
+    metadataTitle: String?,
+    metadataArtist: String?,
+): String? {
+    val cleanedTitle = metadataTitle?.trim().takeUnless { it.isNullOrBlank() }
+    val cleanedArtist = metadataArtist?.trim().takeUnless { it.isNullOrBlank() }
+    val cleanedStation = stationName?.trim().takeUnless { it.isNullOrBlank() }
+
+    val normalizedStation = cleanedStation?.lowercase()
+    val normalizedTitle = cleanedTitle?.lowercase()
+    val normalizedArtist = cleanedArtist?.lowercase()
+
+    val effectiveTitle = cleanedTitle?.takeUnless {
+        normalizedStation != null && normalizedTitle == normalizedStation
+    }
+    val effectiveArtist = cleanedArtist?.takeUnless {
+        normalizedStation != null && normalizedArtist == normalizedStation
+    }
+
+    return when {
+        effectiveArtist != null && effectiveTitle != null -> "$effectiveArtist - $effectiveTitle"
+        effectiveTitle != null -> effectiveTitle
+        effectiveArtist != null -> effectiveArtist
+        else -> null
     }
 }
