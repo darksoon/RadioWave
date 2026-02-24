@@ -11,6 +11,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -135,10 +136,16 @@ private fun HomeContent(
             val suggestionPool = (uiState.topStations + recentStations + favoriteStations)
                 .distinctBy { station -> station.uuid }
                 .filterNot { station -> station.uuid in excludedSuggestionIds }
-            val suggestionStations = remember(
-                key1 = suggestionPool.joinToString(separator = "|") { station -> station.uuid },
+            val discoverPool = uiState.topStations
+                .distinctBy { station -> station.uuid }
+            val discoverStations = remember(
+                key1 = (discoverPool + suggestionPool).joinToString(separator = "|") { station -> station.uuid },
             ) {
-                suggestionPool.shuffled().take(10)
+                when {
+                    suggestionPool.isNotEmpty() -> suggestionPool.shuffled().take(10)
+                    discoverPool.isNotEmpty() -> discoverPool.shuffled().take(10)
+                    else -> emptyList()
+                }
             }
 
             Box(
@@ -159,17 +166,10 @@ private fun HomeContent(
                             actionLabel = "Alle",
                             onActionClick = onViewAllFavorites,
                         )
-                        LazyRow(
-                            contentPadding = PaddingValues(horizontal = 20.dp),
-                            horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        ) {
-                            items(favoriteStations.take(10)) { station ->
-                                FavoriteHeroCard(
-                                    station = station,
-                                    onClick = { onStationClick(station) },
-                                )
-                            }
-                        }
+                        FavoriteStationGrid(
+                            stations = favoriteStations.take(6),
+                            onStationClick = onStationClick,
+                        )
                     }
 
                     if (recentStations.isNotEmpty()) {
@@ -189,15 +189,15 @@ private fun HomeContent(
                         }
                     }
 
-                    if (suggestionStations.isNotEmpty()) {
+                    if (discoverStations.isNotEmpty()) {
                         SectionTitle(
-                            title = "Vorschlaege",
+                            title = "Entdecken",
                         )
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 20.dp),
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
-                            items(suggestionStations) { station ->
+                            items(discoverStations) { station ->
                                 RecentStationCard(
                                     station = station,
                                     onClick = { onStationClick(station) },
@@ -209,7 +209,7 @@ private fun HomeContent(
                     if (
                         recentStations.isEmpty() &&
                         favoriteStations.isEmpty() &&
-                        suggestionStations.isEmpty()
+                        discoverStations.isEmpty()
                     ) {
                         Spacer(modifier = Modifier.height(18.dp))
                         EmptyStartCard(
@@ -390,8 +390,9 @@ private fun FavoriteHeroCard(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier.size(160.dp),
-        shape = RoundedCornerShape(24.dp),
+        modifier = modifier
+            .aspectRatio(1f),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.22f)),
         onClick = onClick,
@@ -420,7 +421,7 @@ private fun FavoriteHeroCard(
             StationArtwork(
                 imageUrl = station.faviconUrl,
                 stationName = station.name,
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(20.dp),
                 modifier = Modifier.fillMaxSize(),
             )
             Box(
@@ -448,6 +449,38 @@ private fun FavoriteHeroCard(
                     .align(Alignment.BottomStart)
                     .padding(horizontal = 12.dp, vertical = 12.dp),
             )
+        }
+    }
+}
+
+@Composable
+private fun FavoriteStationGrid(
+    stations: List<Station>,
+    onStationClick: (Station) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        stations.chunked(3).take(2).forEach { rowStations ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                rowStations.forEach { station ->
+                    FavoriteHeroCard(
+                        station = station,
+                        onClick = { onStationClick(station) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                repeat(3 - rowStations.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
         }
     }
 }

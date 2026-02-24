@@ -240,7 +240,11 @@ fun RadioWaveMainScreen() {
                     onBarClick = { },
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
+                        .padding(
+                            start = 16.dp,
+                            end = 16.dp,
+                            bottom = innerPadding.calculateBottomPadding() + 12.dp,
+                        )
                         .fillMaxWidth()
                         .height(72.dp)
                         .clip(RoundedCornerShape(32.dp)),
