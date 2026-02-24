@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,7 +24,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -161,7 +159,7 @@ private fun HomeContent(
 
                     if (recentStations.isNotEmpty()) {
                         SectionTitle(
-                            title = "Zuletzt gehört",
+                            title = "Zuletzt gehoert",
                         )
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 20.dp),
@@ -178,7 +176,7 @@ private fun HomeContent(
 
                     if (suggestionStations.isNotEmpty()) {
                         SectionTitle(
-                            title = "Vorschläge",
+                            title = "Vorschlaege",
                         )
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 20.dp),
