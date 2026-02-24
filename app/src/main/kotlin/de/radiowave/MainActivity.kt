@@ -36,9 +36,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import de.radiowave.core.model.PlayerState
@@ -123,7 +124,17 @@ fun RadioWaveMainScreen() {
     val showPlayerBar = currentStation != null
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+    val currentDestination = navBackStackEntry?.destination
+
+    val navigateToTopLevel: (String) -> Unit = { route ->
+        navController.navigate(route) {
+            popUpTo(navController.graph.findStartDestination().id) {
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -148,19 +159,13 @@ fun RadioWaveMainScreen() {
                     tonalElevation = 0.dp,
                 ) {
                     bottomNavItems.forEach { item ->
-                        val selected = currentRoute == item.route
+                        val selected = currentDestination
+                            ?.hierarchy
+                            ?.any { it.route == item.route } == true
                         NavigationBarItem(
                             selected = selected,
                             onClick = {
-                                if (currentRoute != item.route) {
-                                    navController.navigate(item.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                }
+                                navigateToTopLevel(item.route)
                             },
                             icon = {
                                 Icon(
@@ -202,16 +207,11 @@ fun RadioWaveMainScreen() {
                         homeViewModel.playStation(station)
                     },
                     onViewAllFavorites = {
-                        navController.navigate(BottomNavItem.Favorites.route) {
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                        navigateToTopLevel(BottomNavItem.Favorites.route)
                     },
                     onNavigateToBrowse = { category ->
                         homeViewModel.onSearchQueryChange(category)
-                        navController.navigate(BottomNavItem.Browse.route) {
-                            launchSingleTop = true
-                        }
+                        navigateToTopLevel(BottomNavItem.Browse.route)
                     },
                 )
             }
