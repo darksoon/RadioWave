@@ -9,6 +9,7 @@
 - [x] Test-Pipeline stabilisiert: Test-Tasks laufen nur bei vorhandenen src/test oder src/androidTest
 - [x] Deprecated Compose Live Literals aus Convention Plugin entfernt
 - [x] Validierung erfolgreich: :build-logic:build, build, lint, test
+- [x] Navigation-Bug behoben: Ruecksprung auf Home via Bottom Navigation nach Entdecken->Browse funktioniert wieder
 
 ### Offen / Follow-up
 - [ ] Ktlint im Projekt konfigurieren (Task ktlintCheck existiert aktuell nicht)
