@@ -71,6 +71,29 @@ chmod +x gradlew
 ./gradlew installDebug
 ```
 
+## 🔐 Release Signing (optional, recommended)
+
+Create a release keystore once:
+
+```bash
+keytool -genkeypair \
+  -v \
+  -keystore radiowave-release.keystore \
+  -alias radiowave \
+  -keyalg RSA \
+  -keysize 4096 \
+  -validity 3650
+```
+
+Then configure local signing:
+
+```bash
+cp keystore.properties.example keystore.properties
+# edit values in keystore.properties
+```
+
+`keystore.properties` is ignored by Git. If present, release builds are signed automatically.
+
 ## 🤖 GitHub Actions
 
 ### Manual Android Build
