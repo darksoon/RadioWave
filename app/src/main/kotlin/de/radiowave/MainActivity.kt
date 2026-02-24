@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -30,6 +31,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -55,6 +57,7 @@ import de.radiowave.feature.home.HomePremiumBackground
 import de.radiowave.feature.home.HomeViewModel
 import de.radiowave.feature.player.FloatingPlayerBar
 import de.radiowave.feature.settings.SettingsScreen
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -237,8 +240,10 @@ fun RadioWaveMainScreen() {
                     onBarClick = { },
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
+                        .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
                         .fillMaxWidth()
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                        .height(72.dp)
+                        .clip(RoundedCornerShape(32.dp)),
                 )
             }
         }

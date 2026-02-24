@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -44,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -61,8 +63,6 @@ import coil.compose.SubcomposeAsyncImage
 import de.radiowave.core.model.Station
 import de.radiowave.core.ui.components.ErrorState
 import de.radiowave.core.ui.components.LoadingState
-import de.radiowave.core.ui.theme.DarkBackground
-import de.radiowave.core.ui.theme.DarkBorder
 import de.radiowave.core.ui.theme.DarkCardBackground
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
@@ -159,10 +159,17 @@ private fun HomeContent(
                             actionLabel = "Alle",
                             onActionClick = onViewAllFavorites,
                         )
-                        FavoriteStationList(
-                            stations = favoriteStations.take(5),
-                            onStationClick = onStationClick,
-                        )
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 20.dp),
+                            horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        ) {
+                            items(favoriteStations.take(10)) { station ->
+                                FavoriteHeroCard(
+                                    station = station,
+                                    onClick = { onStationClick(station) },
+                                )
+                            }
+                        }
                     }
 
                     if (recentStations.isNotEmpty()) {
@@ -269,49 +276,54 @@ private fun NebulaLayer(
     ) {
         val horizontalShift = size.width * drift
         drawRect(
-            brush = Brush.verticalGradient(
+            brush = Brush.radialGradient(
                 colors = listOf(
                     Color(0xFF0F001E),
-                    Color(0xFF06031A),
+                    Color(0xFF07021A),
                     Color(0xFF000514),
                 ),
+                center = center.copy(
+                    x = center.x + horizontalShift,
+                    y = center.y * 0.55f,
+                ),
+                radius = size.maxDimension * 0.95f,
             ),
         )
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    TealAccent.copy(alpha = 0.18f),
+                    TealAccent.copy(alpha = 0.14f),
                     MintAccent.copy(alpha = 0.08f),
                     Color.Transparent,
                 ),
                 center = center.copy(
-                    x = center.x - size.width * 0.34f + horizontalShift,
-                    y = center.y * 0.48f,
+                    x = center.x - size.width * 0.43f + horizontalShift * 0.35f,
+                    y = center.y * 0.25f,
                 ),
-                radius = size.maxDimension * 0.9f,
+                radius = size.maxDimension * 0.58f,
             ),
-            radius = size.maxDimension * 0.92f,
+            radius = size.maxDimension * 0.62f,
             center = center.copy(
-                x = center.x - size.width * 0.34f + horizontalShift,
-                y = center.y * 0.48f,
+                x = center.x - size.width * 0.43f + horizontalShift * 0.35f,
+                y = center.y * 0.25f,
             ),
         )
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    Color(0xFF33C9D4).copy(alpha = 0.13f),
+                    Color(0xFF6E43D6).copy(alpha = 0.12f),
                     Color.Transparent,
                 ),
                 center = center.copy(
-                    x = center.x + size.width * 0.38f - horizontalShift * 0.6f,
-                    y = center.y * 0.68f,
+                    x = center.x + size.width * 0.44f - horizontalShift * 0.3f,
+                    y = center.y * 0.72f,
                 ),
-                radius = size.maxDimension * 0.74f,
+                radius = size.maxDimension * 0.54f,
             ),
-            radius = size.maxDimension * 0.76f,
+            radius = size.maxDimension * 0.56f,
             center = center.copy(
-                x = center.x + size.width * 0.38f - horizontalShift * 0.6f,
-                y = center.y * 0.68f,
+                x = center.x + size.width * 0.44f - horizontalShift * 0.3f,
+                y = center.y * 0.72f,
             ),
         )
     }
@@ -335,7 +347,7 @@ private fun StarFieldLayer(
     Canvas(
         modifier = modifier.drawWithCache {
             val random = Random(9917)
-            val starCount = random.nextInt(from = 50, until = 81)
+            val starCount = 60
             val stars = List(starCount) {
                 StarParticle(
                     xFactor = random.nextFloat(),
@@ -372,19 +384,69 @@ private fun StarFieldLayer(
 }
 
 @Composable
-private fun FavoriteStationList(
-    stations: List<Station>,
-    onStationClick: (Station) -> Unit,
+private fun FavoriteHeroCard(
+    station: Station,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
+    Card(
+        modifier = modifier.size(160.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.22f)),
+        onClick = onClick,
     ) {
-        stations.forEach { station ->
-            StationListItem(
-                station = station,
-                onClick = { onStationClick(station) },
-                showPlayButton = true,
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White.copy(alpha = 0.1f)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .offset(x = (-8).dp, y = (-10).dp)
+                    .blur(24.dp)
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.16f),
+                                TealAccent.copy(alpha = 0.1f),
+                                Color.Transparent,
+                            ),
+                            radius = 320f,
+                        ),
+                    ),
+            )
+            StationArtwork(
+                imageUrl = station.faviconUrl,
+                stationName = station.name,
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.fillMaxSize(),
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.8f),
+                            ),
+                        ),
+                    ),
+            )
+            Text(
+                text = station.name,
+                color = Color.White,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.titleSmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
             )
         }
     }
@@ -491,9 +553,7 @@ private fun RecentStationCard(
             .width(94.dp)
             .height(132.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF111827).copy(alpha = 0.66f),
-        ),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         border = BorderStroke(
             width = 1.dp,
             color = Color.White.copy(alpha = 0.14f),
@@ -503,56 +563,76 @@ private fun RecentStationCard(
         ),
         onClick = onClick,
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .background(Color.White.copy(alpha = 0.1f)),
         ) {
             Box(
                 modifier = Modifier
-                    .size(50.dp)
-                    .clip(CircleShape)
-                    .border(
-                        width = 1.5.dp,
-                        color = Color(0xFFFF7043),
-                        shape = CircleShape,
-                    )
-                    .background(DarkSurfaceVariant),
-                contentAlignment = Alignment.Center,
-            ) {
-                StationArtwork(
-                    imageUrl = station.faviconUrl,
-                    stationName = station.name,
-                    shape = CircleShape,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(3.dp),
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = station.name,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 13.sp,
-                ),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                color = Color.White,
-                minLines = 2,
-            )
-            station.country?.let { country ->
-                Spacer(modifier = Modifier.height(3.dp))
-                Text(
-                    text = country,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 9.sp,
+                    .matchParentSize()
+                    .blur(16.dp)
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.1f),
+                                Color.Transparent,
+                            ),
+                            radius = 180f,
+                        ),
                     ),
-                    maxLines = 1,
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape)
+                        .border(
+                            width = 1.5.dp,
+                            color = Color(0xFFFF7043),
+                            shape = CircleShape,
+                        )
+                        .background(DarkSurfaceVariant),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    StationArtwork(
+                        imageUrl = station.faviconUrl,
+                        stationName = station.name,
+                        shape = CircleShape,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(3.dp),
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = station.name,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp,
+                    ),
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = DarkOnSurfaceVariant,
+                    color = Color.White,
+                    minLines = 2,
                 )
+                station.country?.let { country ->
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        text = country,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 9.sp,
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = DarkOnSurfaceVariant,
+                    )
+                }
             }
         }
     }

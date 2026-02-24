@@ -20,11 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -48,7 +45,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import de.radiowave.core.model.PlayerState
 import de.radiowave.core.model.Station
-import de.radiowave.core.ui.theme.DarkCardBackground
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.radiowave.core.ui.theme.TealAccent
@@ -90,220 +86,150 @@ fun FloatingPlayerBar(
 
         val sessionDurationLabel = formatStreamDuration((nowElapsedMs - effectiveSessionStartMs).coerceAtLeast(0L))
 
-        Card(
+        val playerShape = RoundedCornerShape(32.dp)
+        Box(
             modifier = modifier
-                .fillMaxWidth()
-                .clickable(onClick = onBarClick),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.Transparent,
-            ),
-            border = BorderStroke(
-                width = 1.dp,
-                color = Color.White.copy(alpha = 0.24f),
-            ),
-            elevation = CardDefaults.cardElevation(
-                defaultElevation = 12.dp,
-            ),
+                .clickable(onClick = onBarClick)
+                .clip(playerShape)
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xE0202C3A),
+                            Color(0xCC161C2A),
+                        ),
+                    ),
+                )
+                .border(
+                    width = 1.dp,
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            TealAccent.copy(alpha = 0.72f),
+                            Color(0xFF7A56FF).copy(alpha = 0.72f),
+                        ),
+                    ),
+                    shape = playerShape,
+                ),
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .matchParentSize()
+                    .blur(18.dp)
                     .background(
-                        Brush.linearGradient(
+                        Brush.radialGradient(
                             colors = listOf(
                                 Color.White.copy(alpha = 0.12f),
-                                Color(0xCC212B37),
-                                DarkCardBackground.copy(alpha = 0.86f),
+                                Color.Transparent,
                             ),
+                            radius = 420f,
                         ),
                     ),
             ) {
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .blur(22.dp)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(
-                                    Color.White.copy(alpha = 0.14f),
-                                    Color(0x553E9AB8),
-                                    Color.Transparent,
-                                ),
-                                radius = 420f,
-                            ),
-                        ),
-                )
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(
-                                    TealAccent.copy(alpha = 0.1f),
-                                    Color.Transparent,
-                                ),
-                                radius = 260f,
-                            ),
-                        ),
-                )
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(
-                                    Color.White.copy(alpha = 0.08f),
-                                    Color.Transparent,
-                                    Color.White.copy(alpha = 0.04f),
-                                ),
-                            ),
-                        ),
-                )
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .padding(1.dp)
-                        .border(
-                            border = BorderStroke(
-                                width = 1.dp,
-                                color = Color.White.copy(alpha = 0.14f),
-                            ),
-                            shape = RoundedCornerShape(13.dp),
-                        ),
-                )
-                Box(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(1.dp)
-                        .background(Color.White.copy(alpha = 0.26f)),
-                )
-
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
+                        .height(72.dp)
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    LinearProgressIndicator(
-                        progress = {
-                            when {
-                                isBuffering -> 0.45f
-                                isPlaying -> 1f
-                                else -> 0f
-                            }
-                        },
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
-                            .height(2.dp),
-                        color = TealAccent.copy(alpha = 0.9f),
-                        trackColor = Color.Transparent,
-                    )
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 10.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(DarkSurfaceVariant),
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(DarkSurfaceVariant),
-                        ) {
-                            AsyncImage(
-                                model = faviconUrl,
-                                contentDescription = stationName,
-                                modifier = Modifier.fillMaxWidth(),
-                                contentScale = ContentScale.Crop,
-                            )
+                        AsyncImage(
+                            model = faviconUrl,
+                            contentDescription = stationName,
+                            modifier = Modifier.fillMaxWidth(),
+                            contentScale = ContentScale.Crop,
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Text(
+                            text = stationName,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            color = Color.White,
+                        )
+
+                        val showMetadataLine = isBuffering || compactMetadata != null || sessionDurationLabel.isNotBlank()
+                        val secondaryLine = when {
+                            isBuffering -> "Wird geladen..."
+                            else -> compactMetadata
                         }
+                        val secondaryColor = if (isBuffering) TealAccent else DarkOnSurfaceVariant
 
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.Center,
-                        ) {
-                            Text(
-                                text = stationName,
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 14.sp,
-                                ),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                color = Color.White,
-                            )
-
-                            val showMetadataLine = isBuffering || compactMetadata != null || sessionDurationLabel.isNotBlank()
-                            val secondaryLine = when {
-                                isBuffering -> "Wird geladen..."
-                                else -> compactMetadata
-                            }
-                            val secondaryColor = if (isBuffering) TealAccent else DarkOnSurfaceVariant
-
-                            if (showMetadataLine) {
+                        if (showMetadataLine) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(top = 1.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                    if (secondaryLine != null) {
-                                        Text(
-                                            text = secondaryLine,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = secondaryColor,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            modifier = Modifier.weight(1f),
-                                        )
-                                    } else {
-                                        Spacer(modifier = Modifier.weight(1f))
-                                    }
-
-                                    StreamDurationBadge(
-                                        text = sessionDurationLabel,
-                                        modifier = Modifier.padding(start = 8.dp),
+                                if (secondaryLine != null) {
+                                    Text(
+                                        text = secondaryLine,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = secondaryColor,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f),
                                     )
+                                } else {
+                                    Spacer(modifier = Modifier.weight(1f))
                                 }
+
+                                StreamDurationBadge(
+                                    text = sessionDurationLabel,
+                                    modifier = Modifier.padding(start = 8.dp),
+                                )
                             }
                         }
+                    }
 
-                        Spacer(modifier = Modifier.width(2.dp))
+                    Spacer(modifier = Modifier.width(2.dp))
 
-                        Box(
-                            modifier = Modifier.padding(end = 2.dp),
-                            contentAlignment = Alignment.Center,
+                    Box(
+                        modifier = Modifier.padding(end = 2.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (isBuffering) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(40.dp),
+                                strokeWidth = 1.25.dp,
+                                color = TealAccent.copy(alpha = 0.95f),
+                                trackColor = Color.White.copy(alpha = 0.2f),
+                            )
+                        }
+
+                        Surface(
+                            onClick = onPlayPauseClick,
+                            shape = CircleShape,
+                            color = Color.White.copy(alpha = 0.16f),
+                            border = BorderStroke(
+                                width = 1.dp,
+                                color = Color.White.copy(alpha = 0.24f),
+                            ),
+                            enabled = !isBuffering,
                         ) {
-                            if (isBuffering) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(32.dp),
-                                    strokeWidth = 2.dp,
-                                    color = TealAccent,
-                                    trackColor = Color.Transparent,
-                                )
-                            }
-
-                            Surface(
-                                onClick = onPlayPauseClick,
-                                shape = CircleShape,
-                                color = Color.White.copy(alpha = 0.18f),
-                                border = BorderStroke(
-                                    width = 1.dp,
-                                    color = Color.White.copy(alpha = 0.28f),
-                                ),
-                                enabled = !isBuffering,
-                            ) {
-                                Icon(
-                                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                    contentDescription = if (isPlaying) "Pause" else "Play",
-                                    tint = Color.White,
-                                    modifier = Modifier
-                                        .size(30.dp)
-                                        .padding(6.dp),
-                                )
-                            }
+                            Icon(
+                                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = if (isPlaying) "Pause" else "Play",
+                                tint = Color.White,
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .padding(6.dp),
+                            )
                         }
                     }
                 }
