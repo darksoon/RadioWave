@@ -87,6 +87,14 @@ RadioWave/
 - Mini-Player zeigt klareres Favoriten-Feedback (sichtbarer Heart-State + direkte Add/Remove-Rueckmeldung)
 - Background-Playback gehaertet: `WAKE_LOCK` + Wifi-Lock waehrend Playback/Buffering
 - Playback-Lost-Guard in `core-player`: Buffer-Stall-Watchdog + automatische Recovery bei unerwartetem Stop
+- Fullscreen-Player erweitert: Mute/Unmute, Random-Station und Previous-Station direkt ueber die Control-Leiste
+- Fullscreen-Backhandling gehaertet: Android Back schliesst zuerst das Player-Overlay
+- LIVE-Zeitbalken im Fullscreen-Player: voll ausgefuellter Balken mit dezenter Puls-Animation
+
+## Build-Artefakte
+
+- Generierte Dateien aus `build-logic/.gradle` und `build-logic/build` sind aus Git entfernt.
+- Lokale Agent-/Session-Dateien und Root-Mockup-Bilder sind in `.gitignore` ausgeschlossen.
 
 ## Lizenz
 

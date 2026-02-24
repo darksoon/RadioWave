@@ -54,6 +54,9 @@ Stand: 2026-02-24
   - Favoriten-Screen (Liste + Remove)
   - Settings-Basisfunktionen (persistierte Toggles)
   - Fullscreen-Player (opening via Mini-Player)
+  - Fullscreen-Player Controls: Mute/Unmute, Random-Station, Previous-Station
+  - Fullscreen-Player LIVE-Bar mit dezenter Animation
+  - Explizites Back-Verhalten im Fullscreen-Overlay
   - Home Header bereinigt (kein Account-Icon)
 - Offen:
   - Favoriten Export/Import (JSON)
