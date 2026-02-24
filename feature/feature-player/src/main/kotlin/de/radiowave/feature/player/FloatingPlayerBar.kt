@@ -56,6 +56,7 @@ import kotlinx.coroutines.delay
 fun FloatingPlayerBar(
     playerState: PlayerState,
     isFavorite: Boolean,
+    showMetadata: Boolean,
     onFavoriteClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
     onBarClick: () -> Unit,
@@ -166,10 +167,11 @@ fun FloatingPlayerBar(
                         color = Color.White,
                     )
 
-                    val showMetadataLine = isBuffering || compactMetadata != null || sessionDurationLabel.isNotBlank()
+                    val showMetadataLine = isBuffering || (showMetadata && compactMetadata != null) || sessionDurationLabel.isNotBlank()
                     val secondaryLine = when {
                         isBuffering -> "Wird geladen..."
-                        else -> compactMetadata
+                        showMetadata -> compactMetadata
+                        else -> null
                     }
                     val secondaryColor = if (isBuffering) TealAccent else DarkOnSurfaceVariant
 

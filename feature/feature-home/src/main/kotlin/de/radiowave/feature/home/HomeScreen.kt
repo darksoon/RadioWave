@@ -31,7 +31,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -586,24 +585,6 @@ private fun HomeHeader(
             ),
             color = Color.White,
         )
-        Spacer(modifier = Modifier.weight(1f))
-        Surface(
-            shape = CircleShape,
-            color = Color.White.copy(alpha = 0.08f),
-            border = BorderStroke(
-                width = 1.dp,
-                color = Color.White.copy(alpha = 0.12f),
-            ),
-        ) {
-            Icon(
-                imageVector = Icons.Default.AccountCircle,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier
-                    .size(42.dp)
-                    .padding(5.dp),
-            )
-        }
     }
 }
 

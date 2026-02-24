@@ -1,5 +1,6 @@
 package de.radiowave
 
+import android.content.Context
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -28,8 +29,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +55,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
+import de.radiowave.core.model.AppSettings
 import de.radiowave.core.model.PlayerState
 import de.radiowave.core.ui.theme.DarkBackground
 import de.radiowave.core.ui.theme.DarkSurface
@@ -58,6 +67,7 @@ import de.radiowave.feature.home.HomeScreen
 import de.radiowave.feature.home.HomePremiumBackground
 import de.radiowave.feature.home.HomeViewModel
 import de.radiowave.feature.player.FloatingPlayerBar
+import de.radiowave.feature.player.PlayerScreen
 import de.radiowave.feature.settings.SettingsScreen
 import androidx.compose.foundation.shape.RoundedCornerShape
 
@@ -125,15 +135,63 @@ val bottomNavItems = listOf(
 fun RadioWaveMainScreen() {
     val navController = rememberNavController()
     val context = LocalContext.current
+    val view = LocalView.current
     val homeViewModel: HomeViewModel = hiltViewModel()
     val playerState: PlayerState by homeViewModel.playerState.collectAsState()
     val homeUiState by homeViewModel.uiState.collectAsState()
+    val prefs = remember(context) {
+        context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
+    }
+    var showMiniPlayerMetadata by remember {
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_MINIPLAYER_METADATA, true))
+    }
+    var keepScreenOnFullscreen by remember {
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_KEEP_SCREEN_ON_FULLSCREEN, false))
+    }
+    var showQuickToasts by remember {
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_QUICK_TOASTS, true))
+    }
+    var showFullscreenPlayer by rememberSaveable { mutableStateOf(false) }
+
+    DisposableEffect(prefs) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            when (key) {
+                AppSettings.KEY_SHOW_MINIPLAYER_METADATA -> {
+                    showMiniPlayerMetadata = prefs.getBoolean(AppSettings.KEY_SHOW_MINIPLAYER_METADATA, true)
+                }
+                AppSettings.KEY_KEEP_SCREEN_ON_FULLSCREEN -> {
+                    keepScreenOnFullscreen = prefs.getBoolean(AppSettings.KEY_KEEP_SCREEN_ON_FULLSCREEN, false)
+                }
+                AppSettings.KEY_SHOW_QUICK_TOASTS -> {
+                    showQuickToasts = prefs.getBoolean(AppSettings.KEY_SHOW_QUICK_TOASTS, true)
+                }
+            }
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose {
+            prefs.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }
+
+    DisposableEffect(showFullscreenPlayer, keepScreenOnFullscreen, view) {
+        val previousValue = view.keepScreenOn
+        view.keepScreenOn = previousValue || (showFullscreenPlayer && keepScreenOnFullscreen)
+        onDispose {
+            view.keepScreenOn = previousValue
+        }
+    }
 
     val currentStation = playerState.currentStation
     val showPlayerBar = currentStation != null
     val isCurrentFavorite = currentStation?.uuid?.let { stationUuid ->
         homeUiState.favoriteStations.any { station -> station.uuid == stationUuid }
     } ?: false
+
+    LaunchedEffect(showPlayerBar) {
+        if (!showPlayerBar) {
+            showFullscreenPlayer = false
+        }
+    }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -244,20 +302,23 @@ fun RadioWaveMainScreen() {
                 FloatingPlayerBar(
                     playerState = playerState,
                     isFavorite = isCurrentFavorite,
+                    showMetadata = showMiniPlayerMetadata,
                     onFavoriteClick = {
                         currentStation?.let { station ->
                             val willBeFavorite = !isCurrentFavorite
                             homeViewModel.toggleFavorite(station)
-                            val message = if (willBeFavorite) {
-                                "Zu Favoriten hinzugefuegt"
-                            } else {
-                                "Aus Favoriten entfernt"
+                            if (showQuickToasts) {
+                                val message = if (willBeFavorite) {
+                                    "Zu Favoriten hinzugefuegt"
+                                } else {
+                                    "Aus Favoriten entfernt"
+                                }
+                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                             }
-                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                         }
                     },
                     onPlayPauseClick = { homeViewModel.togglePlayPause() },
-                    onBarClick = { },
+                    onBarClick = { showFullscreenPlayer = true },
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(
@@ -268,6 +329,30 @@ fun RadioWaveMainScreen() {
                         .fillMaxWidth()
                         .height(72.dp)
                         .clip(RoundedCornerShape(32.dp)),
+                )
+            }
+
+            if (showPlayerBar && showFullscreenPlayer) {
+                PlayerScreen(
+                    playerState = playerState,
+                    isFavorite = isCurrentFavorite,
+                    onFavoriteClick = {
+                        currentStation?.let { station ->
+                            val willBeFavorite = !isCurrentFavorite
+                            homeViewModel.toggleFavorite(station)
+                            if (showQuickToasts) {
+                                val message = if (willBeFavorite) {
+                                    "Zu Favoriten hinzugefuegt"
+                                } else {
+                                    "Aus Favoriten entfernt"
+                                }
+                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    onPlayPauseClick = { homeViewModel.togglePlayPause() },
+                    onDismiss = { showFullscreenPlayer = false },
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
         }
