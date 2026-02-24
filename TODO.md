@@ -15,6 +15,16 @@
 - [ ] Ktlint im Projekt konfigurieren (Task ktlintCheck existiert aktuell nicht)
 - [ ] Echte Unit- und UI-Tests ergaenzen (aktuell werden viele Test-Tasks ohne Testquellen uebersprungen)
 
+### Session-Update (2026-02-24)
+- [x] Home-Screen visuell stark ueberarbeitet (TuneIn-Style, engere Karten/Abstaende, klarerer Look)
+- [x] Home-Background mit dezenter Animation (langsamer Glow/Drift statt statischer Farbblende)
+- [x] Floating Mini-Player als echtes Overlay ueber Content positioniert
+- [x] Mini-Player Glass-Design iteriert und fuer bessere Lesbarkeit abgedunkelt
+- [x] Mini-Player Laufzeitanzeige ergaenzt (`mm:ss` / `hh:mm:ss`)
+- [x] Buffer/Recovery in `core-player` gehaertet (groessere Buffer + Retry/Backoff)
+- [x] Auto-Recovery bei kurzer Netzunterbrechung via Network-Callback umgesetzt
+- [x] Manifest um `ACCESS_NETWORK_STATE` erweitert
+
 ## ✅ Erledigt (Phase 1-5)
 
 ### Core Layer (Phase 1)

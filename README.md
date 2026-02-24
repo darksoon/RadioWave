@@ -73,6 +73,17 @@ RadioWave/
 
 Details: siehe `AUDIT_2026-02-24.md`.
 
+## Produkt-Update (2026-02-24)
+
+- Home-Screen deutlich auf TuneIn-Style poliert (kompaktere Karten, bessere Typografie, klarere Sektionen)
+- Home-Hintergrund jetzt dezent animiert (sanfte Glow-Bewegung statt statischer harter Flaechen)
+- Floating Mini-Player als echtes Overlay ueber dem Content (Transparenz wirkt beim Scrollen sichtbar)
+- Mini-Player Glass-Look verbessert und danach fuer Lesbarkeit bewusst abgedunkelt
+- Mini-Player zeigt jetzt Stream-Laufzeit (`mm:ss` / `hh:mm:ss`)
+- Player-Netzwerkrobustheit verbessert: groessere Buffer, HTTP-Timeouts, Retry-Policy mit Backoff
+- Auto-Recovery bei kurzer Netzunterbrechung via `ConnectivityManager` Network Callback
+- Zusaetzliche Permission fuer Recovery-Logik: `ACCESS_NETWORK_STATE`
+
 ## Lizenz
 
 Dieses Projekt ist unter einer proprietären Lizenz mit kommerziellem Nutzungsverbot lizenziert.
