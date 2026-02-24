@@ -8,6 +8,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -28,6 +29,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
+@UnstableApi
 class PlayerControllerImpl @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : PlayerController {

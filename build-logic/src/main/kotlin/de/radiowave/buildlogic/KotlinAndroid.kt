@@ -32,9 +32,6 @@ internal fun Project.configureKotlinAndroid(
         testOptions {
             unitTests {
                 isIncludeAndroidResources = true
-                all {
-                    it.useJUnitPlatform()
-                }
             }
         }
 

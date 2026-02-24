@@ -5,6 +5,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import androidx.media3.common.util.UnstableApi
 import de.radiowave.core.player.PlayerController
 import de.radiowave.core.player.PlayerControllerImpl
 import de.radiowave.core.player.RadioPlayerManager
@@ -15,6 +16,7 @@ import javax.inject.Singleton
 abstract class PlayerModule {
 
     @Binds
+    @UnstableApi
     abstract fun bindPlayerController(
         impl: PlayerControllerImpl,
     ): PlayerController

@@ -6,7 +6,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -88,18 +87,16 @@ class RadioPlayerService : MediaSessionService() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Radio Playback",
-                NotificationManager.IMPORTANCE_LOW,
-            ).apply {
-                description = "Shows the currently playing radio station"
-            }
-            
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Radio Playback",
+            NotificationManager.IMPORTANCE_LOW,
+        ).apply {
+            description = "Shows the currently playing radio station"
         }
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
     }
 
     private fun buildNotification(): Notification {
@@ -138,12 +135,8 @@ class RadioPlayerService : MediaSessionService() {
                 putExtra(EXTRA_STATION_NAME, station.name)
                 putExtra(EXTRA_STATION_LOGO, station.faviconUrl)
             }
-            
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
+
+            context.startForegroundService(intent)
         }
         
         private const val ACTION_PLAY = "de.radiowave.player.ACTION_PLAY"

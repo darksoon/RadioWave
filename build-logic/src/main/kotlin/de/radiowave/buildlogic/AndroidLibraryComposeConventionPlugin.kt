@@ -16,14 +16,11 @@ class AndroidLibraryComposeConventionPlugin : Plugin<Project> {
                 buildFeatures {
                     compose = true
                 }
-
-                composeOptions {
-                    useLiveLiterals = true
-                }
             }
 
             dependencies {
                 val bom = libs.findLibrary("androidx-compose-bom").get()
+                add("api", platform(bom))
                 add("implementation", platform(bom))
                 add("androidTestImplementation", platform(bom))
 

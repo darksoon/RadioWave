@@ -2,6 +2,5 @@
 <data-extraction-rules>
     <cloud-backup>
         <include domain="sharedpref" path="."/>
-        <exclude domain="root" path="."/>
     </cloud-backup>
 </data-extraction-rules>

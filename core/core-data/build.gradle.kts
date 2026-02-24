@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.testing.Test
+
 plugins {
     id("radiowave.android.library")
     id("radiowave.hilt")
@@ -13,4 +15,10 @@ dependencies {
     implementation(project(":core:core-network"))
     
     implementation(libs.kotlinx.coroutines.android)
+}
+
+tasks.withType<Test>().configureEach {
+    onlyIf {
+        project.file("src/test").exists() || project.file("src/androidTest").exists()
+    }
 }
