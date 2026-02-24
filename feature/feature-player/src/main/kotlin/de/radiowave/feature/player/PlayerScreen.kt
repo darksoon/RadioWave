@@ -18,13 +18,16 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.outlined.Shuffle
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -48,7 +51,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
 import de.radiowave.core.model.PlayerState
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
-import de.radiowave.core.ui.theme.TealAccent
 import kotlinx.coroutines.delay
 
 @Composable
@@ -62,20 +64,15 @@ fun PlayerScreen(
 ) {
     val station = playerState.currentStation ?: return
     val isPlaying = playerState.isPlaying
-    val isBuffering = playerState.isBuffering
     val metadataTitle = playerState.metadata?.title?.trim().takeUnless { it.isNullOrBlank() }
     val metadataArtist = playerState.metadata?.artist?.trim().takeUnless { it.isNullOrBlank() }
     val coverUrl = playerState.metadata?.albumArtUrl?.trim().takeUnless { it.isNullOrBlank() }
     val fallbackLogoUrl = station.faviconUrl?.trim().takeUnless { it.isNullOrBlank() }
     val artworkUrl = coverUrl ?: fallbackLogoUrl
 
-    val primaryLine = metadataTitle ?: station.name
-    val secondaryLine = when {
-        isBuffering -> "Wird geladen..."
-        metadataArtist != null -> metadataArtist
-        metadataTitle != null -> station.name
-        else -> "Live Stream"
-    }
+    val titleLine = metadataTitle ?: station.name
+    val artistLine = metadataArtist ?: "Live"
+    val stationLine = station.name
 
     val sessionStart = playerState.sessionStartedAtElapsedMs ?: remember(station.uuid) {
         SystemClock.elapsedRealtime()
@@ -84,8 +81,8 @@ fun PlayerScreen(
         mutableLongStateOf(SystemClock.elapsedRealtime())
     }
 
-    LaunchedEffect(sessionStart, isPlaying, isBuffering) {
-        while (isPlaying || isBuffering) {
+    LaunchedEffect(sessionStart, isPlaying, playerState.isBuffering) {
+        while (isPlaying || playerState.isBuffering) {
             nowElapsedMs = SystemClock.elapsedRealtime()
             delay(1_000L)
         }
@@ -96,28 +93,20 @@ fun PlayerScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF070A12),
-                        Color(0xFF0E1220),
-                        Color(0xFF06090F),
-                    ),
-                ),
-            ),
+            .background(Color(0xFF11131A)),
     ) {
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .blur(42.dp)
+                .blur(34.dp)
                 .background(
                     Brush.radialGradient(
                         colors = listOf(
-                            TealAccent.copy(alpha = 0.26f),
-                            Color(0xFF6E43D6).copy(alpha = 0.16f),
+                            Color(0xFF3FE6D0).copy(alpha = 0.24f),
+                            Color(0xFFCA4D95).copy(alpha = 0.14f),
                             Color.Transparent,
                         ),
-                        radius = 1300f,
+                        radius = 1200f,
                     ),
                 ),
         )
@@ -127,46 +116,46 @@ fun PlayerScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 14.dp),
+                .padding(horizontal = 24.dp, vertical = 12.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                Surface(
+                    onClick = onDismiss,
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = 0.06f),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.KeyboardArrowDown,
+                        contentDescription = "Schliessen",
+                        tint = Color.White.copy(alpha = 0.9f),
+                        modifier = Modifier
+                            .size(30.dp)
+                            .padding(3.dp),
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = "Wiedergabe",
-                    style = MaterialTheme.typography.titleLarge.copy(
+                    text = "Fullscreen Player",
+                    style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                     ),
                     color = Color.White,
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                Surface(
-                    onClick = onDismiss,
-                    shape = CircleShape,
-                    color = Color.White.copy(alpha = 0.1f),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.22f)),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Schliessen",
-                        tint = Color.White,
-                        modifier = Modifier
-                            .size(34.dp)
-                            .padding(7.dp),
-                    )
-                }
+                Spacer(modifier = Modifier.size(30.dp))
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(348.dp)
-                    .clip(RoundedCornerShape(32.dp))
-                    .background(Color(0xFF171C2B)),
-                contentAlignment = Alignment.Center,
+                    .height(330.dp)
+                    .clip(RoundedCornerShape(26.dp))
+                    .background(Color(0xFF1A1E27)),
             ) {
                 SubcomposeAsyncImage(
                     model = artworkUrl,
@@ -174,10 +163,10 @@ fun PlayerScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
                     loading = {
-                        ArtworkFallbackLetter(text = station.name)
+                        ArtworkFallback(station.name)
                     },
                     error = {
-                        ArtworkFallbackLetter(text = station.name)
+                        ArtworkFallback(station.name)
                     },
                 )
                 Box(
@@ -187,62 +176,69 @@ fun PlayerScreen(
                             Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    Color.Black.copy(alpha = 0.16f),
-                                    Color.Black.copy(alpha = 0.42f),
+                                    Color.Black.copy(alpha = 0.2f),
+                                    Color.Black.copy(alpha = 0.4f),
                                 ),
                             ),
                         ),
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
-                text = primaryLine,
-                style = MaterialTheme.typography.headlineSmall.copy(
+                text = titleLine,
+                style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 32.sp,
+                    fontSize = 45.sp,
                 ),
                 color = Color.White,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
+            Spacer(modifier = Modifier.height(3.dp))
+            Text(
+                text = artistLine,
+                style = MaterialTheme.typography.titleLarge,
+                color = DarkOnSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = secondaryLine,
+                text = stationLine,
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (isBuffering) TealAccent else DarkOnSurfaceVariant,
+                color = Color.White.copy(alpha = 0.7f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
+            LinearProgressIndicator(
+                progress = { 0.22f },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp)),
+                color = Color.White.copy(alpha = 0.82f),
+                trackColor = Color.White.copy(alpha = 0.22f),
+            )
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp),
             ) {
-                Surface(
-                    color = Color.White.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f)),
-                ) {
-                    Text(
-                        text = "LIVE",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 10.sp,
-                        ),
-                        color = Color.White.copy(alpha = 0.92f),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                    )
-                }
-
-                Spacer(modifier = Modifier.size(8.dp))
-
                 Text(
                     text = runtimeLabel,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = Color.White.copy(alpha = 0.86f),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.68f),
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = "LIVE",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.68f),
                 )
             }
 
@@ -250,71 +246,113 @@ fun PlayerScreen(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
+                horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Surface(
+                PlayerIconButton(
+                    icon = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.9f),
                     onClick = onFavoriteClick,
-                    shape = CircleShape,
-                    color = Color.White.copy(alpha = if (isFavorite) 0.2f else 0.1f),
-                    border = BorderStroke(
-                        width = 1.dp,
-                        color = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.2f),
+                )
+                PlayerIconButton(
+                    icon = Icons.Filled.SkipPrevious,
+                    tint = Color.White.copy(alpha = 0.78f),
+                    onClick = {},
+                )
+                MainPlaybackButton(
+                    isPlaying = isPlaying,
+                    onClick = onPlayPauseClick,
+                )
+                PlayerIconButton(
+                    icon = Icons.Filled.VolumeUp,
+                    tint = Color.White.copy(alpha = 0.78f),
+                    onClick = {},
+                )
+                PlayerIconButton(
+                    icon = Icons.Outlined.Shuffle,
+                    tint = Color.White.copy(alpha = 0.72f),
+                    onClick = {},
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun MainPlaybackButton(
+    isPlaying: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = Color.Transparent,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(84.dp)
+                .clip(CircleShape)
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF52E3D9),
+                            Color(0xFFC94F99),
+                        ),
                     ),
-                ) {
-                    Icon(
-                        imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                        contentDescription = null,
-                        tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White,
-                        modifier = Modifier
-                            .size(54.dp)
-                            .padding(12.dp),
-                    )
-                }
-
-                Spacer(modifier = Modifier.size(24.dp))
-
-                Box(contentAlignment = Alignment.Center) {
-                    if (isBuffering) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(82.dp),
-                            strokeWidth = 2.1.dp,
-                            color = TealAccent,
-                            trackColor = Color.White.copy(alpha = 0.2f),
-                        )
-                    }
-
-                    Surface(
-                        onClick = onPlayPauseClick,
-                        shape = CircleShape,
-                        color = TealAccent.copy(alpha = 0.94f),
-                        enabled = !isBuffering,
-                    ) {
-                        Icon(
-                            imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                            contentDescription = if (isPlaying) "Pause" else "Play",
-                            tint = Color.Black,
-                            modifier = Modifier
-                                .size(82.dp)
-                                .padding(20.dp),
-                        )
-                    }
-                }
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(70.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF1A1D26)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                    contentDescription = if (isPlaying) "Pause" else "Play",
+                    tint = Color.White,
+                    modifier = Modifier.size(34.dp),
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ArtworkFallbackLetter(text: String) {
+private fun PlayerIconButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    tint: Color,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = Color.Transparent,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier
+                .size(42.dp)
+                .padding(8.dp),
+        )
+    }
+}
+
+@Composable
+private fun ArtworkFallback(text: String) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.linearGradient(
                     colors = listOf(
-                        Color(0xFF3D6B7E),
-                        Color(0xFF1E2636),
+                        Color(0xFF294252),
+                        Color(0xFF1A2234),
                     ),
                 ),
             ),
@@ -322,8 +360,10 @@ private fun ArtworkFallbackLetter(text: String) {
     ) {
         Text(
             text = text.firstOrNull()?.uppercase() ?: "?",
-            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-            color = Color.White.copy(alpha = 0.95f),
+            style = MaterialTheme.typography.displaySmall.copy(
+                fontWeight = FontWeight.Bold,
+            ),
+            color = Color.White,
         )
     }
 }
@@ -336,6 +376,6 @@ private fun formatRuntime(durationMs: Long): String {
     return if (hours > 0) {
         "%d:%02d:%02d".format(hours, minutes, seconds)
     } else {
-        "%02d:%02d".format(minutes, seconds)
+        "%01d:%02d".format(minutes, seconds)
     }
 }
