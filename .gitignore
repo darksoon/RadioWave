@@ -69,3 +69,9 @@ keystore.properties
 /*.jpg
 /*.jpeg
 /*.webp
+
+# Local-only planning/notes
+/MARKTANALYSE.md
+/PHASEN.md
+/TODO.md
+/bug.txt
