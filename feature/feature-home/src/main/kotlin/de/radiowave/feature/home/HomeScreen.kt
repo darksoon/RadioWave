@@ -33,8 +33,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -91,9 +89,6 @@ fun HomeScreen(
             viewModel.playStation(station)
             onStationClick(station)
         },
-        onToggleFavorite = { station ->
-            viewModel.toggleFavorite(station)
-        },
         onViewAllFavorites = onViewAllFavorites,
         onNavigateToBrowse = onNavigateToBrowse,
         onRetry = { viewModel.refresh() },
@@ -105,7 +100,6 @@ fun HomeScreen(
 private fun HomeContent(
     uiState: HomeUiState,
     onStationClick: (Station) -> Unit,
-    onToggleFavorite: (Station) -> Unit,
     onViewAllFavorites: () -> Unit,
     onNavigateToBrowse: (String) -> Unit,
     onRetry: () -> Unit,
@@ -140,7 +134,6 @@ private fun HomeContent(
                 .filterNot { station -> station.uuid in excludedSuggestionIds }
             val discoverPool = uiState.topStations
                 .distinctBy { station -> station.uuid }
-            val favoriteIds = uiState.favoriteStations.map { station -> station.uuid }.toSet()
             val discoverStations = remember(
                 key1 = (discoverPool + suggestionPool).joinToString(separator = "|") { station -> station.uuid },
             ) {
@@ -172,8 +165,6 @@ private fun HomeContent(
                         FavoriteStationGrid(
                             stations = favoriteStations.take(6),
                             onStationClick = onStationClick,
-                            onToggleFavorite = onToggleFavorite,
-                            favoriteIds = favoriteIds,
                         )
                     }
 
@@ -188,8 +179,6 @@ private fun HomeContent(
                             items(recentStations) { station ->
                                 RecentStationCard(
                                     station = station,
-                                    isFavorite = station.uuid in favoriteIds,
-                                    onToggleFavorite = { onToggleFavorite(station) },
                                     onClick = { onStationClick(station) },
                                 )
                             }
@@ -207,8 +196,6 @@ private fun HomeContent(
                             items(discoverStations) { station ->
                                 RecentStationCard(
                                     station = station,
-                                    isFavorite = station.uuid in favoriteIds,
-                                    onToggleFavorite = { onToggleFavorite(station) },
                                     onClick = { onStationClick(station) },
                                 )
                             }
@@ -482,8 +469,6 @@ private fun StarFieldLayer(
 @Composable
 private fun FavoriteHeroCard(
     station: Station,
-    isFavorite: Boolean,
-    onToggleFavorite: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -547,27 +532,6 @@ private fun FavoriteHeroCard(
                     .align(Alignment.BottomStart)
                     .padding(horizontal = 12.dp, vertical = 12.dp),
             )
-            Surface(
-                onClick = onToggleFavorite,
-                shape = CircleShape,
-                color = Color.Black.copy(alpha = 0.35f),
-                border = BorderStroke(
-                    width = 1.dp,
-                    color = Color.White.copy(alpha = 0.22f),
-                ),
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(10.dp),
-            ) {
-                Icon(
-                    imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                    contentDescription = null,
-                    tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.8f),
-                    modifier = Modifier
-                        .size(28.dp)
-                        .padding(6.dp),
-                )
-            }
         }
     }
 }
@@ -576,8 +540,6 @@ private fun FavoriteHeroCard(
 private fun FavoriteStationGrid(
     stations: List<Station>,
     onStationClick: (Station) -> Unit,
-    onToggleFavorite: (Station) -> Unit,
-    favoriteIds: Set<String>,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -594,8 +556,6 @@ private fun FavoriteStationGrid(
                 rowStations.forEach { station ->
                     FavoriteHeroCard(
                         station = station,
-                        isFavorite = station.uuid in favoriteIds,
-                        onToggleFavorite = { onToggleFavorite(station) },
                         onClick = { onStationClick(station) },
                         modifier = Modifier.weight(1f),
                     )
@@ -701,8 +661,6 @@ private fun SectionTitle(
 @Composable
 private fun RecentStationCard(
     station: Station,
-    isFavorite: Boolean,
-    onToggleFavorite: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -726,27 +684,6 @@ private fun RecentStationCard(
                 .fillMaxSize()
                 .background(Color.White.copy(alpha = 0.1f)),
         ) {
-            Surface(
-                onClick = onToggleFavorite,
-                shape = CircleShape,
-                color = Color.Black.copy(alpha = 0.32f),
-                border = BorderStroke(
-                    width = 1.dp,
-                    color = Color.White.copy(alpha = 0.18f),
-                ),
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 6.dp, end = 6.dp),
-            ) {
-                Icon(
-                    imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                    contentDescription = null,
-                    tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.78f),
-                    modifier = Modifier
-                        .size(22.dp)
-                        .padding(4.dp),
-                )
-            }
             Box(
                 modifier = Modifier
                     .matchParentSize()
