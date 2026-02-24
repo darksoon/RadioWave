@@ -83,6 +83,11 @@ Details: siehe `AUDIT_2026-02-24.md`.
 - Player-Netzwerkrobustheit verbessert: groessere Buffer, HTTP-Timeouts, Retry-Policy mit Backoff
 - Auto-Recovery bei kurzer Netzunterbrechung via `ConnectivityManager` Network Callback
 - Zusaetzliche Permission fuer Recovery-Logik: `ACCESS_NETWORK_STATE`
+- Favoriten-System produktiv: echte Favoritenliste, Persistenz mit Station-Snapshot in Room, Remove direkt per Heart
+- Favorisieren ist jetzt bewusst getrennt: Home nur Play, Favoriten nur in Suche und Player
+- Mini-Player zeigt klareres Favoriten-Feedback (sichtbarer Heart-State + direkte Add/Remove-Rueckmeldung)
+- Background-Playback gehaertet: `WAKE_LOCK` + Wifi-Lock waehrend Playback/Buffering
+- Playback-Lost-Guard in `core-player`: Buffer-Stall-Watchdog + automatische Recovery bei unerwartetem Stop
 
 ## Lizenz
 

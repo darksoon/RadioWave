@@ -24,6 +24,11 @@
 - [x] Buffer/Recovery in `core-player` gehaertet (groessere Buffer + Retry/Backoff)
 - [x] Auto-Recovery bei kurzer Netzunterbrechung via Network-Callback umgesetzt
 - [x] Manifest um `ACCESS_NETWORK_STATE` erweitert
+- [x] Favoriten-System fertiggestellt (Toggle in Suche/Player, echte Favoritenansicht, Persistenz in Room)
+- [x] Home-Favoritenlogik geschaerft (kein Auto-Favorisieren, Home-Karten nur Play)
+- [x] Mini-Player Favoriten-Feedback verbessert (klarer Heart-State + Add/Remove-Hinweis)
+- [x] Background-Playback stabilisiert (`WAKE_LOCK` + Wifi-Lock)
+- [x] Playback-Lost-Guard in `core-player` (Stall-Watchdog + Recovery bei unerwartetem Stop)
 
 ## ✅ Erledigt (Phase 1-5)
 
@@ -142,8 +147,7 @@
 - ✅ Back-Button führt zu Home
 
 **Teilweise implementiert:**
-- ⚠️ Favoriten: Repository & DAO existieren, UI fehlt noch
-- ⚠️ Recent Stations: Werden in DB gespeichert
+- ⚠️ Recent Stations: Werden in DB gespeichert (ohne explizite Historie-Management-UI)
 - ⚠️ Settings: Placeholder Screen
 
 **Nicht implementiert:**
@@ -157,11 +161,11 @@
 
 ## 🎯 Nächste Schritte (Priorität)
 
-1. **Favoriten Toggle** - Herz-Button zum Speichern
-2. **Favoriten Screen** - Liste mit allen Favoriten
-3. **Fullscreen Player** - Expandable Sheet
-4. **Settings Screen** - Basis-Einstellungen
-5. **Android Auto** - Für Auto-Nutzung
+1. **Fullscreen Player** - Expandable Sheet mit Song-Cover
+2. **Favoriten Export/Import** - JSON Backup/Restore
+3. **Settings Screen** - Basis-Einstellungen
+4. **Android Auto** - MediaLibraryService + Browse-Tree
+5. **Chromecast** - Cast Extension + UI Button
 
 ---
 
@@ -175,6 +179,7 @@
 
 **Letzte Session:** 2026-02-24
 **Status:** Audit-Pipeline gruen (build/lint/test), bereit fuer Feature-Umsetzung
+
 
 
 
