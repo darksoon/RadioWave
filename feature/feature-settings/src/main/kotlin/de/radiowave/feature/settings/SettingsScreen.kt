@@ -52,6 +52,9 @@ fun SettingsScreen(
     var showQuickToasts by rememberSaveable {
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_QUICK_TOASTS, true))
     }
+    var showInsecureStreams by rememberSaveable {
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_INSECURE_STREAMS, false))
+    }
 
     LazyColumn(
         modifier = modifier
@@ -112,6 +115,16 @@ fun SettingsScreen(
                         onCheckedChange = { checked ->
                             showQuickToasts = checked
                             prefs.edit().putBoolean(AppSettings.KEY_SHOW_QUICK_TOASTS, checked).apply()
+                        },
+                    )
+                    HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                    SettingToggleRow(
+                        title = "Unsichere HTTP-Streams anzeigen",
+                        subtitle = "Wenn aus, werden HTTP-Sender in Suche/Entdecken ausgeblendet.",
+                        checked = showInsecureStreams,
+                        onCheckedChange = { checked ->
+                            showInsecureStreams = checked
+                            prefs.edit().putBoolean(AppSettings.KEY_SHOW_INSECURE_STREAMS, checked).apply()
                         },
                     )
                 }

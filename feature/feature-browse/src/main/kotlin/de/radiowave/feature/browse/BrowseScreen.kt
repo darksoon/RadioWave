@@ -1,5 +1,6 @@
 ﻿package de.radiowave.feature.browse
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -54,6 +55,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -79,6 +81,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import de.radiowave.core.model.AppSettings
 import de.radiowave.core.model.Station
 import de.radiowave.core.ui.theme.DarkBackground
 import de.radiowave.core.ui.theme.DarkCardBackground
@@ -174,7 +177,26 @@ fun BrowseScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedCountry by viewModel.selectedCountry.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val prefs = remember(context) {
+        context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
+    }
     var selectedGenre by remember { mutableStateOf<String?>(null) }
+    var showInsecureStreams by remember {
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_INSECURE_STREAMS, false))
+    }
+
+    DisposableEffect(prefs) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == AppSettings.KEY_SHOW_INSECURE_STREAMS) {
+                showInsecureStreams = prefs.getBoolean(AppSettings.KEY_SHOW_INSECURE_STREAMS, false)
+            }
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose {
+            prefs.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }
 
     LaunchedEffect(initialGenre) {
         if (initialGenre.isNotEmpty()) {
@@ -188,6 +210,7 @@ fun BrowseScreen(
         searchQuery = searchQuery,
         selectedCountry = selectedCountry,
         selectedGenre = selectedGenre,
+        showInsecureStreams = showInsecureStreams,
         onSearchQueryChange = { query ->
             selectedGenre = null
             viewModel.onSearchQueryChange(query)
@@ -221,6 +244,7 @@ private fun BrowseContent(
     searchQuery: String,
     selectedCountry: String?,
     selectedGenre: String?,
+    showInsecureStreams: Boolean,
     onSearchQueryChange: (String) -> Unit,
     onGenreSelected: (String?) -> Unit,
     onCountrySelected: (String?) -> Unit,
@@ -231,6 +255,13 @@ private fun BrowseContent(
     modifier: Modifier = Modifier,
 ) {
     val favoriteIds = uiState.favoriteStations.map { station -> station.uuid }.toSet()
+    val visibleStations = remember(uiState.topStations, showInsecureStreams) {
+        if (showInsecureStreams) {
+            uiState.topStations
+        } else {
+            uiState.topStations.filterNot { station -> station.streamUrl.isInsecureHttpStream() }
+        }
+    }
     val stationGridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
     var advancedFiltersExpanded by remember { mutableStateOf(false) }
@@ -459,7 +490,7 @@ private fun BrowseContent(
             ) {
                 Text(
                     text = if (uiState.searchResultCount > 0) {
-                        "${uiState.searchResultCount} Sender gefunden"
+                        "${visibleStations.size} Sender gefunden"
                     } else if (searchQuery.isBlank() && selectedCountry == null) {
                         "Top Sender"
                     } else {
@@ -532,7 +563,7 @@ private fun BrowseContent(
                         )
                     }
                 }
-                uiState.topStations.isEmpty() && searchQuery.isBlank() && selectedCountry == null -> {
+                visibleStations.isEmpty() && searchQuery.isBlank() && selectedCountry == null -> {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -547,7 +578,7 @@ private fun BrowseContent(
                         )
                     }
                 }
-                uiState.topStations.isEmpty() -> {
+                visibleStations.isEmpty() -> {
                     EmptyState(
                         searchQuery = searchQuery,
                         selectedCountry = selectedCountry,
@@ -574,12 +605,13 @@ private fun BrowseContent(
                         modifier = Modifier.weight(1f),
                     ) {
                         items(
-                            items = uiState.topStations,
+                            items = visibleStations,
                             key = { station -> station.uuid },
                             contentType = { "station" },
                         ) { station ->
                             StationGridCard(
                                 station = station,
+                                showInsecureBadge = showInsecureStreams,
                                 isFavorite = station.uuid in favoriteIds,
                                 onToggleFavorite = { onToggleFavorite(station) },
                                 onClick = { onStationClick(station) },
@@ -591,7 +623,7 @@ private fun BrowseContent(
         }
 
         AnimatedVisibility(
-            visible = showScrollToTopButton && uiState.topStations.isNotEmpty(),
+            visible = showScrollToTopButton && visibleStations.isNotEmpty(),
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier
@@ -747,6 +779,7 @@ private fun EmptyState(
 @Composable
 private fun StationGridCard(
     station: Station,
+    showInsecureBadge: Boolean,
     isFavorite: Boolean,
     onToggleFavorite: () -> Unit,
     onClick: () -> Unit,
@@ -821,6 +854,28 @@ private fun StationGridCard(
                     )
                 }
             }
+            if (showInsecureBadge && station.streamUrl.isInsecureHttpStream()) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color(0xFFE65100).copy(alpha = 0.92f),
+                    border = BorderStroke(
+                        width = 1.dp,
+                        color = Color.White.copy(alpha = 0.2f),
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(top = 8.dp, start = 8.dp),
+                ) {
+                    Text(
+                        text = "HTTP",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
+            }
             Surface(
                 onClick = onToggleFavorite,
                 shape = CircleShape,
@@ -845,4 +900,9 @@ private fun StationGridCard(
         }
     }
 }
+
+private fun String.isInsecureHttpStream(): Boolean {
+    return startsWith("http://", ignoreCase = true)
+}
+
 
