@@ -72,6 +72,7 @@ class PlayerControllerImpl @Inject constructor(
         context.getSystemService(ConnectivityManager::class.java)
     private var isNetworkCallbackRegistered = false
     private var lastNetworkRecoveryAt = 0L
+    private var isForegroundServiceRunning = false
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             controllerScope.launch {
@@ -212,6 +213,7 @@ class PlayerControllerImpl @Inject constructor(
                     userPausedPlayback = false
                     playbackLostRecoveryAttempts = 0
                     playbackLostRecoveryJob?.cancel()
+                    ensureForegroundPlaybackServiceRunning()
                 } else if (
                     !userPausedPlayback &&
                     !isStopping &&
@@ -223,6 +225,8 @@ class PlayerControllerImpl @Inject constructor(
                         station = _playerState.value.currentStation ?: return,
                         reason = "unexpected-not-playing",
                     )
+                } else if (userPausedPlayback || isStopping) {
+                    stopForegroundPlaybackServiceIfRunning()
                 }
                 updatePlaybackLocks(player)
             }
@@ -312,6 +316,12 @@ class PlayerControllerImpl @Inject constructor(
                         ),
                     )
                 }
+
+                val currentStationName = _playerState.value.currentStation?.name.orEmpty()
+                updateForegroundPlaybackNotification(
+                    stationName = currentStationName,
+                    subtitle = listOfNotNull(artist, title).joinToString(" - ").ifBlank { "Live stream playing" },
+                )
             }
 
             override fun onMetadata(metadata: Metadata) {
@@ -593,6 +603,10 @@ class PlayerControllerImpl @Inject constructor(
         }
 
         val player = getOrCreatePlayer()
+        ensureForegroundPlaybackServiceRunning(
+            stationName = station.name,
+            subtitle = "Buffering...",
+        )
         restartStream(player, station)
     }
 
@@ -628,6 +642,7 @@ class PlayerControllerImpl @Inject constructor(
         playbackLostRecoveryAttempts = 0
         userPausedPlayback = false
         exoPlayer?.stop()
+        stopForegroundPlaybackServiceIfRunning()
         releasePlaybackLocks()
         _playerState.update { PlayerState() }
         isStopping = false
@@ -642,6 +657,7 @@ class PlayerControllerImpl @Inject constructor(
         playbackLostRecoveryAttempts = 0
         userPausedPlayback = false
         unregisterNetworkCallbackIfNeeded()
+        stopForegroundPlaybackServiceIfRunning()
         releasePlaybackLocks()
         exoPlayer?.release()
         exoPlayer = null
@@ -649,6 +665,44 @@ class PlayerControllerImpl @Inject constructor(
         wifiLock = null
         _playerState.update { PlayerState() }
         isStopping = false
+    }
+
+    private fun ensureForegroundPlaybackServiceRunning(
+        stationName: String = _playerState.value.currentStation?.name.orEmpty(),
+        subtitle: String = "Live stream playing",
+    ) {
+        try {
+            PlaybackForegroundService.start(
+                context = context,
+                stationName = stationName,
+                subtitle = subtitle,
+            )
+            isForegroundServiceRunning = true
+        } catch (error: Exception) {
+            Log.w("RadioWave", "Unable to start playback foreground service: ${error.message}")
+        }
+    }
+
+    private fun updateForegroundPlaybackNotification(
+        stationName: String,
+        subtitle: String,
+    ) {
+        if (!isForegroundServiceRunning) return
+        ensureForegroundPlaybackServiceRunning(
+            stationName = stationName,
+            subtitle = subtitle,
+        )
+    }
+
+    private fun stopForegroundPlaybackServiceIfRunning() {
+        if (!isForegroundServiceRunning) return
+        try {
+            PlaybackForegroundService.stop(context)
+        } catch (error: Exception) {
+            Log.w("RadioWave", "Unable to stop playback foreground service: ${error.message}")
+        } finally {
+            isForegroundServiceRunning = false
+        }
     }
 }
 

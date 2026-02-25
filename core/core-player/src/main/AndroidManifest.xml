@@ -9,6 +9,12 @@
 
     <application>
         <service
+            android:name=".PlaybackForegroundService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <service
             android:name=".RadioPlayerService"
             android:enabled="true"
             android:exported="false"
