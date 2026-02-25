@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.grid.GridCells.Adaptive
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
@@ -92,29 +92,19 @@ private fun FavoritesContent(
     modifier: Modifier = Modifier,
 ) {
     LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+        columns = Adaptive(minSize = 116.dp),
+        modifier = modifier
+            .fillMaxSize()
+            .statusBarsPadding(),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = 12.dp,
+            bottom = 24.dp,
+        ),
         verticalArrangement = Arrangement.spacedBy(10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            Text(
-                text = "Deine Favoriten",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                ),
-                color = Color.White,
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "${stations.size} Sender gespeichert",
-                style = MaterialTheme.typography.bodyMedium,
-                color = DarkOnSurfaceVariant,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
         items(stations, key = { station -> station.uuid }) { station ->
             FavoriteStationCard(
                 station = station,
