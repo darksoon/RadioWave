@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-alpha.2] - 2026-02-25
+
+### Fixed
+- Stabilized background playback with dedicated `PlaybackForegroundService`.
+- Improved screen-off playback behavior and lifecycle handling.
+- Kept browse search state stable when toggling favorites.
+
+### Improved
+- Reworked browse UI with quick genre chips and collapsible filter section.
+- Updated README/support/install documentation and release-signing workflow reliability.
+
 ## [0.1.0-alpha.1] - 2026-02-25
 
 ### Added
@@ -33,4 +44,5 @@ All notable changes to this project will be documented in this file.
 ### Security/Infra
 - Added `ACCESS_NETWORK_STATE` permission declaration in `core-player` to satisfy lint and ensure network callback safety.
 
+[0.1.0-alpha.2]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.2
 [0.1.0-alpha.1]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.1
