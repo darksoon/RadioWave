@@ -25,9 +25,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Piano
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Waves
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -50,7 +61,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -100,6 +113,40 @@ private val popularGenres = listOf(
     "Hip Hop" to "hip hop",
     "Chill" to "chill",
     "House" to "house",
+)
+
+private data class QuickGenreItem(
+    val label: String,
+    val tag: String,
+    val icon: ImageVector,
+    val gradient: List<Color>,
+)
+
+private val quickGenres = listOf(
+    QuickGenreItem(
+        label = "Techno",
+        tag = "techno",
+        icon = Icons.Filled.Memory,
+        gradient = listOf(Color(0xFF5B4BFF), Color(0xFFB948FF)),
+    ),
+    QuickGenreItem(
+        label = "Rock",
+        tag = "rock",
+        icon = Icons.Filled.MusicNote,
+        gradient = listOf(Color(0xFF9F1C2B), Color(0xFFFF4D64)),
+    ),
+    QuickGenreItem(
+        label = "Jazz",
+        tag = "jazz",
+        icon = Icons.Filled.Piano,
+        gradient = listOf(Color(0xFF8A4E10), Color(0xFFFFB347)),
+    ),
+    QuickGenreItem(
+        label = "Chillout",
+        tag = "chill",
+        icon = Icons.Filled.Waves,
+        gradient = listOf(Color(0xFF0C666B), Color(0xFF2EE6D6)),
+    ),
 )
 
 private val sortOptions = listOf(
@@ -186,10 +233,10 @@ private fun BrowseContent(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Entdecken",
+                text = "Entdecken & Suche",
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 28.sp,
+                    fontSize = 26.sp,
                 ),
                 color = Color.White,
                 modifier = Modifier.weight(1f),
@@ -238,7 +285,7 @@ private fun BrowseContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Nach Land",
+            text = "Quick Genres",
             style = MaterialTheme.typography.titleSmall.copy(
                 fontWeight = FontWeight.SemiBold,
             ),
@@ -250,71 +297,118 @@ private fun BrowseContent(
 
         LazyRow(
             contentPadding = PaddingValues(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            items(topCountries) { country ->
-                val isSelected = selectedCountry == country.code
-                FilterChip(
-                    selected = isSelected,
+            items(quickGenres) { item ->
+                QuickGenreCard(
+                    item = item,
+                    isSelected = selectedGenre == item.tag,
                     onClick = {
-                        onCountrySelected(if (isSelected) null else country.code)
+                        onGenreSelected(if (selectedGenre == item.tag) null else item.tag)
                     },
-                    label = {
-                        Text(
-                            text = "${country.flag} ${country.name}",
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 13.sp,
-                        )
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = TealAccent,
-                        selectedLabelColor = Color.Black,
-                        containerColor = DarkSurfaceVariant,
-                        labelColor = Color.White,
-                    ),
-                    shape = RoundedCornerShape(20.dp),
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        Text(
-            text = "Nach Genre",
-            style = MaterialTheme.typography.titleSmall.copy(
-                fontWeight = FontWeight.SemiBold,
-            ),
-            color = DarkOnSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 20.dp),
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        var advancedFiltersExpanded by remember { mutableStateOf(false) }
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 20.dp)
+                .fillMaxWidth()
+                .animateContentSize(),
         ) {
-            items(popularGenres) { (displayName, tag) ->
-                val isSelected = selectedGenre == tag
-                FilterChip(
-                    selected = isSelected,
-                    onClick = {
-                        onGenreSelected(if (isSelected) null else tag)
-                    },
-                    label = {
-                        Text(
-                            text = displayName,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        )
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = TealAccent,
-                        selectedLabelColor = Color.Black,
-                        containerColor = DarkSurfaceVariant,
-                        labelColor = Color.White,
-                    ),
-                    shape = RoundedCornerShape(20.dp),
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(DarkCardBackground)
+                    .clickable { advancedFiltersExpanded = !advancedFiltersExpanded }
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Weitere Filter",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color.White,
+                    modifier = Modifier.weight(1f),
                 )
+                Icon(
+                    imageVector = if (advancedFiltersExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = DarkOnSurfaceVariant,
+                )
+            }
+
+            AnimatedVisibility(
+                visible = advancedFiltersExpanded,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically(),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(DarkCardBackground.copy(alpha = 0.9f))
+                        .padding(vertical = 10.dp),
+                ) {
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(topCountries) { country ->
+                            val isSelected = selectedCountry == country.code
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = { onCountrySelected(if (isSelected) null else country.code) },
+                                label = {
+                                    Text(
+                                        text = "${country.flag} ${country.name}",
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        fontSize = 13.sp,
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = TealAccent,
+                                    selectedLabelColor = Color.Black,
+                                    containerColor = DarkSurfaceVariant,
+                                    labelColor = Color.White,
+                                ),
+                                shape = RoundedCornerShape(20.dp),
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(popularGenres) { (displayName, tag) ->
+                            val isSelected = selectedGenre == tag
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = { onGenreSelected(if (isSelected) null else tag) },
+                                label = {
+                                    Text(
+                                        text = displayName,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = TealAccent,
+                                    selectedLabelColor = Color.Black,
+                                    containerColor = DarkSurfaceVariant,
+                                    labelColor = Color.White,
+                                ),
+                                shape = RoundedCornerShape(20.dp),
+                            )
+                        }
+                    }
+                }
             }
         }
 
@@ -452,6 +546,53 @@ private fun BrowseContent(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun QuickGenreCard(
+    item: QuickGenreItem,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+) {
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent,
+        ),
+        border = BorderStroke(
+            width = if (isSelected) 1.6.dp else 1.dp,
+            color = if (isSelected) TealAccent else Color.White.copy(alpha = 0.14f),
+        ),
+        modifier = Modifier
+            .width(86.dp)
+            .height(82.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Brush.linearGradient(item.gradient))
+                .padding(horizontal = 8.dp, vertical = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Icon(
+                imageVector = item.icon,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.96f),
+                modifier = Modifier.size(22.dp),
+            )
+            Text(
+                text = item.label,
+                color = Color.White,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
