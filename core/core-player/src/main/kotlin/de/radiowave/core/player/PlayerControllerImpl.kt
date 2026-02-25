@@ -1,8 +1,12 @@
 package de.radiowave.core.player
 
+import android.media.AudioAttributes as PlatformAudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.PowerManager
@@ -25,6 +29,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy
 import androidx.media3.exoplayer.upstream.LoadErrorHandlingPolicy
 import dagger.hilt.android.qualifiers.ApplicationContext
+import de.radiowave.core.model.AppSettings
 import de.radiowave.core.model.PlayerError
 import de.radiowave.core.model.PlayerState
 import de.radiowave.core.model.Station
@@ -39,6 +44,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.cancel
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.min
@@ -71,13 +77,37 @@ class PlayerControllerImpl @Inject constructor(
     private val controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val connectivityManager: ConnectivityManager? =
         context.getSystemService(ConnectivityManager::class.java)
+    private val settingsPrefs by lazy {
+        context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
+    }
     private var isNetworkCallbackRegistered = false
     private var networkLossObserved = false
     private var lastNetworkRecoveryAt = 0L
     private var isForegroundServiceRunning = false
     private var isInternalRestartInProgress = false
+    private var shouldResumeAfterAudioFocusGain = false
+    private var activeBufferProfile: String? = null
+    private val audioManager: AudioManager? = context.getSystemService(AudioManager::class.java)
     private val isDebuggableApp: Boolean by lazy {
         (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+    }
+    private val audioFocusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+        controllerScope.launch {
+            handleAudioFocusChange(focusChange)
+        }
+    }
+    private val audioFocusRequest: AudioFocusRequest by lazy {
+        AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(
+                PlatformAudioAttributes.Builder()
+                    .setContentType(PlatformAudioAttributes.CONTENT_TYPE_MUSIC)
+                    .setUsage(PlatformAudioAttributes.USAGE_MEDIA)
+                    .build(),
+            )
+            .setAcceptsDelayedFocusGain(false)
+            .setWillPauseWhenDucked(true)
+            .setOnAudioFocusChangeListener(audioFocusChangeListener)
+            .build()
     }
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
@@ -95,7 +125,7 @@ class PlayerControllerImpl @Inject constructor(
     override val playerState: StateFlow<PlayerState> = _playerState.asStateFlow()
 
     private fun getOrCreatePlayer(): ExoPlayer {
-        return exoPlayer ?: createPlayer().also { player ->
+        return exoPlayer ?: createPlayer(getSelectedBufferProfile()).also { player ->
             setupPlayerListeners(player)
             registerNetworkCallbackIfNeeded()
             initializePlaybackLocks()
@@ -170,12 +200,13 @@ class PlayerControllerImpl @Inject constructor(
         }
     }
 
-    private fun createPlayer(): ExoPlayer {
+    private fun createPlayer(bufferProfile: String): ExoPlayer {
         val httpDataSourceFactory = DefaultHttpDataSource.Factory()
             .setUserAgent("RadioWave/1.0")
             .setConnectTimeoutMs(12_000)
             .setReadTimeoutMs(20_000)
             .setAllowCrossProtocolRedirects(true)
+        val bufferDurations = resolveBufferDurations(bufferProfile)
 
         return ExoPlayer.Builder(context)
             .setAudioAttributes(
@@ -188,10 +219,10 @@ class PlayerControllerImpl @Inject constructor(
             .setLoadControl(
                 DefaultLoadControl.Builder()
                     .setBufferDurationsMs(
-                        45_000,  // minBufferMs
-                        180_000, // maxBufferMs
-                        2_500,   // bufferForPlaybackMs
-                        5_000,   // bufferForPlaybackAfterRebufferMs
+                        bufferDurations.minBufferMs,
+                        bufferDurations.maxBufferMs,
+                        bufferDurations.bufferForPlaybackMs,
+                        bufferDurations.bufferForPlaybackAfterRebufferMs,
                     )
                     .setPrioritizeTimeOverSizeThresholds(true)
                     .build(),
@@ -203,6 +234,71 @@ class PlayerControllerImpl @Inject constructor(
             )
             .setHandleAudioBecomingNoisy(true)
             .build()
+            .also { activeBufferProfile = bufferProfile }
+    }
+
+    private fun getSelectedBufferProfile(): String {
+        val value = settingsPrefs.getString(
+            AppSettings.KEY_BUFFER_PROFILE,
+            AppSettings.BUFFER_MEDIUM,
+        )
+        return when (value) {
+            AppSettings.BUFFER_SMALL,
+            AppSettings.BUFFER_MEDIUM,
+            AppSettings.BUFFER_LARGE,
+            -> value
+
+            else -> AppSettings.BUFFER_MEDIUM
+        }
+    }
+
+    private fun isPlaybackBlockedByMobileDataPolicy(): Boolean {
+        val allowMobileData = settingsPrefs.getBoolean(AppSettings.KEY_ALLOW_MOBILE_DATA, true)
+        if (allowMobileData) return false
+
+        val manager = connectivityManager ?: return false
+        val activeNetwork = manager.activeNetwork ?: return false
+        val capabilities = manager.getNetworkCapabilities(activeNetwork) ?: return false
+
+        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) return false
+        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) return false
+        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) return true
+        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) return false
+
+        return true
+    }
+
+    private fun resolveBufferDurations(profile: String): BufferDurations {
+        return when (profile) {
+            AppSettings.BUFFER_SMALL -> BufferDurations(
+                minBufferMs = 20_000,
+                maxBufferMs = 90_000,
+                bufferForPlaybackMs = 1_500,
+                bufferForPlaybackAfterRebufferMs = 3_000,
+            )
+
+            AppSettings.BUFFER_LARGE -> BufferDurations(
+                minBufferMs = 60_000,
+                maxBufferMs = 240_000,
+                bufferForPlaybackMs = 3_000,
+                bufferForPlaybackAfterRebufferMs = 6_500,
+            )
+
+            else -> BufferDurations(
+                minBufferMs = 45_000,
+                maxBufferMs = 180_000,
+                bufferForPlaybackMs = 2_500,
+                bufferForPlaybackAfterRebufferMs = 5_000,
+            )
+        }
+    }
+
+    private fun recreatePlayerForBufferProfileIfNeeded() {
+        val selectedProfile = getSelectedBufferProfile()
+        if (activeBufferProfile == null || activeBufferProfile == selectedProfile) return
+
+        exoPlayer?.release()
+        exoPlayer = null
     }
 
     private fun setupPlayerListeners(player: ExoPlayer) {
@@ -601,6 +697,55 @@ class PlayerControllerImpl @Inject constructor(
         }
     }
 
+    private suspend fun handleAudioFocusChange(focusChange: Int) {
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                pausePlaybackForAudioFocus(resumeWhenFocusReturns = false)
+                abandonAudioFocus()
+            }
+
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK,
+            -> pausePlaybackForAudioFocus(resumeWhenFocusReturns = true)
+
+            AudioManager.AUDIOFOCUS_GAIN -> resumePlaybackAfterAudioFocusGainIfNeeded()
+        }
+    }
+
+    private fun pausePlaybackForAudioFocus(resumeWhenFocusReturns: Boolean) {
+        val player = exoPlayer ?: return
+        val wasPlaying = player.isPlaying
+        reconnectJob?.cancel()
+        bufferingWatchdogJob?.cancel()
+        playbackLostRecoveryJob?.cancel()
+        player.pause()
+        shouldResumeAfterAudioFocusGain = resumeWhenFocusReturns && wasPlaying && !userPausedPlayback
+    }
+
+    private fun resumePlaybackAfterAudioFocusGainIfNeeded() {
+        if (!shouldResumeAfterAudioFocusGain) return
+        shouldResumeAfterAudioFocusGain = false
+
+        val player = exoPlayer ?: return
+        if (_playerState.value.currentStation == null) return
+        if (userPausedPlayback) return
+
+        player.playWhenReady = true
+        player.play()
+    }
+
+    private fun requestAudioFocus(): Boolean {
+        val manager = audioManager ?: return true
+        val result = manager.requestAudioFocus(audioFocusRequest)
+        return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    }
+
+    private fun abandonAudioFocus() {
+        val manager = audioManager ?: return
+        shouldResumeAfterAudioFocusGain = false
+        manager.abandonAudioFocusRequest(audioFocusRequest)
+    }
+
     override suspend fun playStation(station: Station) {
         reconnectJob?.cancel()
         bufferingWatchdogJob?.cancel()
@@ -611,6 +756,33 @@ class PlayerControllerImpl @Inject constructor(
         networkLossObserved = false
         userPausedPlayback = false
         isStopping = false
+
+        if (isPlaybackBlockedByMobileDataPolicy()) {
+            _playerState.update {
+                it.copy(
+                    currentStation = station,
+                    error = PlayerError.Unknown("WLAN erforderlich (Mobile Daten deaktiviert)"),
+                    isPlaying = false,
+                    isLoading = false,
+                    isBuffering = false,
+                )
+            }
+            return
+        }
+
+        if (!requestAudioFocus()) {
+            _playerState.update {
+                it.copy(
+                    currentStation = station,
+                    error = PlayerError.Unknown("Audio focus not available"),
+                    isPlaying = false,
+                    isLoading = false,
+                    isBuffering = false,
+                )
+            }
+            return
+        }
+        recreatePlayerForBufferProfileIfNeeded()
 
         _playerState.update {
             it.copy(
@@ -635,11 +807,24 @@ class PlayerControllerImpl @Inject constructor(
         exoPlayer?.let { player ->
             if (player.isPlaying) {
                 userPausedPlayback = true
+                shouldResumeAfterAudioFocusGain = false
                 reconnectJob?.cancel()
                 bufferingWatchdogJob?.cancel()
                 playbackLostRecoveryJob?.cancel()
                 player.pause()
+                abandonAudioFocus()
             } else {
+                if (!requestAudioFocus()) {
+                    _playerState.update {
+                        it.copy(
+                            error = PlayerError.Unknown("Audio focus not available"),
+                            isPlaying = false,
+                            isLoading = false,
+                            isBuffering = false,
+                        )
+                    }
+                    return
+                }
                 userPausedPlayback = false
                 player.playWhenReady = true
                 player.play()
@@ -664,15 +849,18 @@ class PlayerControllerImpl @Inject constructor(
         playbackLostRecoveryAttempts = 0
         networkLossObserved = false
         userPausedPlayback = false
+        shouldResumeAfterAudioFocusGain = false
         exoPlayer?.stop()
         stopForegroundPlaybackServiceIfRunning()
         releasePlaybackLocks()
+        abandonAudioFocus()
         _playerState.update { PlayerState() }
         isStopping = false
     }
 
     override fun release() {
         isStopping = true
+        controllerScope.cancel()
         reconnectJob?.cancel()
         bufferingWatchdogJob?.cancel()
         playbackLostRecoveryJob?.cancel()
@@ -680,11 +868,14 @@ class PlayerControllerImpl @Inject constructor(
         playbackLostRecoveryAttempts = 0
         networkLossObserved = false
         userPausedPlayback = false
+        shouldResumeAfterAudioFocusGain = false
         unregisterNetworkCallbackIfNeeded()
         stopForegroundPlaybackServiceIfRunning()
         releasePlaybackLocks()
+        abandonAudioFocus()
         exoPlayer?.release()
         exoPlayer = null
+        activeBufferProfile = null
         wakeLock = null
         wifiLock = null
         _playerState.update { PlayerState() }
@@ -755,6 +946,13 @@ class PlayerControllerImpl @Inject constructor(
         const val APP_LOG_TAG = "RadioWave"
     }
 }
+
+private data class BufferDurations(
+    val minBufferMs: Int,
+    val maxBufferMs: Int,
+    val bufferForPlaybackMs: Int,
+    val bufferForPlaybackAfterRebufferMs: Int,
+)
 
 @UnstableApi
 private class RadioLoadErrorHandlingPolicy : DefaultLoadErrorHandlingPolicy() {

@@ -9,11 +9,16 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 /**
  * Lightweight foreground service to keep playback process alive in background/screen-off state.
  */
+@AndroidEntryPoint
 class PlaybackForegroundService : Service() {
+    @Inject
+    lateinit var playerController: PlayerController
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         createNotificationChannel()
@@ -35,6 +40,11 @@ class PlaybackForegroundService : Service() {
         }
 
         return START_STICKY
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        playerController.stop()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

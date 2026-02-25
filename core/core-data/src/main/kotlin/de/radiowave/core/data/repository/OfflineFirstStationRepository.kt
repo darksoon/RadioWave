@@ -20,57 +20,27 @@ class OfflineFirstStationRepository @Inject constructor(
 ) : StationRepository {
 
     override fun searchStations(query: String): Flow<List<Station>> = flow {
-        try {
-            val stations = api.searchByName(query).map { it.toDomain() }
-            emit(stations)
-        } catch (e: Exception) {
-            emit(emptyList())
-        }
+        emit(api.searchByName(query).map { it.toDomain() })
     }
 
     override fun getTopStations(): Flow<List<Station>> = flow {
-        try {
-            val stations = api.getTopStations(100).map { it.toDomain() }
-            emit(stations)
-        } catch (e: Exception) {
-            emit(emptyList())
-        }
+        emit(api.getTopStations(100).map { it.toDomain() })
     }
 
     override fun getStationsByCountry(countryCode: String): Flow<List<Station>> = flow {
-        try {
-            val stations = api.searchByCountry(countryCode).map { it.toDomain() }
-            emit(stations)
-        } catch (e: Exception) {
-            emit(emptyList())
-        }
+        emit(api.searchByCountry(countryCode).map { it.toDomain() })
     }
 
     override fun getStationsByTag(tag: String): Flow<List<Station>> = flow {
-        try {
-            val stations = api.searchByTag(tag).map { it.toDomain() }
-            emit(stations)
-        } catch (e: Exception) {
-            emit(emptyList())
-        }
+        emit(api.searchByTag(tag).map { it.toDomain() })
     }
 
     override fun getTags(): Flow<List<Genre>> = flow {
-        try {
-            val tags = api.getTags().map { it.toDomain() }
-            emit(tags)
-        } catch (e: Exception) {
-            emit(emptyList())
-        }
+        emit(api.getTags().map { it.toDomain() })
     }
 
     override fun getCountries(): Flow<List<Country>> = flow {
-        try {
-            val countries = api.getCountries().map { it.toDomain() }
-            emit(countries)
-        } catch (e: Exception) {
-            emit(emptyList())
-        }
+        emit(api.getCountries().map { it.toDomain() })
     }
 
     override suspend fun registerClick(stationUuid: String) {
