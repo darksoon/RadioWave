@@ -86,6 +86,7 @@ class PlayerControllerImpl @Inject constructor(
     private var isForegroundServiceRunning = false
     private var isInternalRestartInProgress = false
     private var shouldResumeAfterAudioFocusGain = false
+    private var wasDuckedForAudioFocus = false
     private var activeBufferProfile: String? = null
     private val audioManager: AudioManager? = context.getSystemService(AudioManager::class.java)
     private val isDebuggableApp: Boolean by lazy {
@@ -214,7 +215,7 @@ class PlayerControllerImpl @Inject constructor(
                     .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
                     .setUsage(C.USAGE_MEDIA)
                     .build(),
-                true,
+                false,
             )
             .setLoadControl(
                 DefaultLoadControl.Builder()
@@ -706,7 +707,8 @@ class PlayerControllerImpl @Inject constructor(
 
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK,
-            -> pausePlaybackForAudioFocus(resumeWhenFocusReturns = true)
+            ->
+                duckPlaybackForAudioFocus()
 
             AudioManager.AUDIOFOCUS_GAIN -> resumePlaybackAfterAudioFocusGainIfNeeded()
         }
@@ -714,20 +716,35 @@ class PlayerControllerImpl @Inject constructor(
 
     private fun pausePlaybackForAudioFocus(resumeWhenFocusReturns: Boolean) {
         val player = exoPlayer ?: return
-        val wasPlaying = player.isPlaying
+        val shouldResume = resumeWhenFocusReturns &&
+            !userPausedPlayback &&
+            _playerState.value.currentStation != null &&
+            (player.isPlaying || player.playWhenReady)
         reconnectJob?.cancel()
         bufferingWatchdogJob?.cancel()
         playbackLostRecoveryJob?.cancel()
         player.pause()
         unregisterNetworkCallbackIfNeeded()
-        shouldResumeAfterAudioFocusGain = resumeWhenFocusReturns && wasPlaying && !userPausedPlayback
+        shouldResumeAfterAudioFocusGain = shouldResume
+        wasDuckedForAudioFocus = false
+    }
+
+    private fun duckPlaybackForAudioFocus() {
+        val player = exoPlayer ?: return
+        if (_playerState.value.isMuted) return
+        player.volume = 0.25f
+        wasDuckedForAudioFocus = true
     }
 
     private fun resumePlaybackAfterAudioFocusGainIfNeeded() {
+        val player = exoPlayer ?: return
+        if (wasDuckedForAudioFocus) {
+            player.volume = if (_playerState.value.isMuted) 0f else 1f
+            wasDuckedForAudioFocus = false
+        }
         if (!shouldResumeAfterAudioFocusGain) return
         shouldResumeAfterAudioFocusGain = false
 
-        val player = exoPlayer ?: return
         if (_playerState.value.currentStation == null) return
         if (userPausedPlayback) return
 
@@ -745,6 +762,7 @@ class PlayerControllerImpl @Inject constructor(
     private fun abandonAudioFocus() {
         val manager = audioManager ?: return
         shouldResumeAfterAudioFocusGain = false
+        wasDuckedForAudioFocus = false
         manager.abandonAudioFocusRequest(audioFocusRequest)
     }
 
@@ -810,6 +828,7 @@ class PlayerControllerImpl @Inject constructor(
             if (player.isPlaying) {
                 userPausedPlayback = true
                 shouldResumeAfterAudioFocusGain = false
+                wasDuckedForAudioFocus = false
                 reconnectJob?.cancel()
                 bufferingWatchdogJob?.cancel()
                 playbackLostRecoveryJob?.cancel()
@@ -854,6 +873,7 @@ class PlayerControllerImpl @Inject constructor(
         networkLossObserved = false
         userPausedPlayback = false
         shouldResumeAfterAudioFocusGain = false
+        wasDuckedForAudioFocus = false
         exoPlayer?.stop()
         unregisterNetworkCallbackIfNeeded()
         stopForegroundPlaybackServiceIfRunning()
@@ -874,6 +894,7 @@ class PlayerControllerImpl @Inject constructor(
         networkLossObserved = false
         userPausedPlayback = false
         shouldResumeAfterAudioFocusGain = false
+        wasDuckedForAudioFocus = false
         unregisterNetworkCallbackIfNeeded()
         stopForegroundPlaybackServiceIfRunning()
         releasePlaybackLocks()
