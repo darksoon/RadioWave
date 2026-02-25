@@ -94,16 +94,19 @@ private data class CountryItem(
 )
 
 private val topCountries = listOf(
-    CountryItem("DE", "Deutschland", "ðŸ‡©ðŸ‡ª"),
-    CountryItem("US", "USA", "ðŸ‡ºðŸ‡¸"),
-    CountryItem("GB", "UK", "ðŸ‡¬ðŸ‡§"),
-    CountryItem("FR", "Frankreich", "ðŸ‡«ðŸ‡·"),
-    CountryItem("IT", "Italien", "ðŸ‡®ðŸ‡¹"),
-    CountryItem("ES", "Spanien", "ðŸ‡ªðŸ‡¸"),
-    CountryItem("NL", "Niederlande", "ðŸ‡³ðŸ‡±"),
-    CountryItem("PL", "Polen", "ðŸ‡µðŸ‡±"),
-    CountryItem("AT", "Ã–sterreich", "ðŸ‡¦ðŸ‡¹"),
-    CountryItem("CH", "Schweiz", "ðŸ‡¨ðŸ‡­"),
+    CountryItem("DE", "Deutschland", "\uD83C\uDDE9\uD83C\uDDEA"),
+    CountryItem("US", "USA", "\uD83C\uDDFA\uD83C\uDDF8"),
+    CountryItem("GB", "UK", "\uD83C\uDDEC\uD83C\uDDE7"),
+    CountryItem("FR", "Frankreich", "\uD83C\uDDEB\uD83C\uDDF7"),
+    CountryItem("IT", "Italien", "\uD83C\uDDEE\uD83C\uDDF9"),
+    CountryItem("ES", "Spanien", "\uD83C\uDDEA\uD83C\uDDF8"),
+    CountryItem("NL", "Niederlande", "\uD83C\uDDF3\uD83C\uDDF1"),
+    CountryItem("PL", "Polen", "\uD83C\uDDF5\uD83C\uDDF1"),
+    CountryItem("AT", "Oesterreich", "\uD83C\uDDE6\uD83C\uDDF9"),
+    CountryItem("CH", "Schweiz", "\uD83C\uDDE8\uD83C\uDDED"),
+    CountryItem("JP", "Japan", "\uD83C\uDDEF\uD83C\uDDF5"),
+    CountryItem("KR", "Suedkorea", "\uD83C\uDDF0\uD83C\uDDF7"),
+    CountryItem("CA", "Kanada", "\uD83C\uDDE8\uD83C\uDDE6"),
 )
 
 private val popularGenres = listOf(
@@ -556,7 +559,7 @@ private fun BrowseContent(
                 else -> {
                     LazyVerticalGrid(
                         state = stationGridState,
-                        columns = GridCells.Fixed(2),
+                        columns = GridCells.Fixed(3),
                         contentPadding = PaddingValues(
                             start = 16.dp,
                             end = 16.dp,
@@ -764,7 +767,7 @@ private fun StationGridCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(80.dp)
+                        .size(64.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(DarkSurfaceVariant),
                 ) {
@@ -782,7 +785,7 @@ private fun StationGridCard(
                     text = station.name,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp,
+                        fontSize = 13.sp,
                     ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,

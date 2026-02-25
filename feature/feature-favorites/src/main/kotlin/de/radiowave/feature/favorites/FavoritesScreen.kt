@@ -1,4 +1,4 @@
-package de.radiowave.feature.favorites
+﻿package de.radiowave.feature.favorites
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -89,12 +91,14 @@ private fun FavoritesContent(
     onToggleFavorite: (Station) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LazyColumn(
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        item {
+        item(span = { GridItemSpan(maxLineSpan) }) {
             Text(
                 text = "Deine Favoriten",
                 style = MaterialTheme.typography.headlineSmall.copy(
@@ -112,7 +116,7 @@ private fun FavoritesContent(
         }
 
         items(stations, key = { station -> station.uuid }) { station ->
-            FavoriteStationRow(
+            FavoriteStationCard(
                 station = station,
                 onPlayClick = { onPlayClick(station) },
                 onToggleFavorite = { onToggleFavorite(station) },
@@ -122,7 +126,7 @@ private fun FavoritesContent(
 }
 
 @Composable
-private fun FavoriteStationRow(
+private fun FavoriteStationCard(
     station: Station,
     onPlayClick: () -> Unit,
     onToggleFavorite: () -> Unit,
@@ -130,81 +134,87 @@ private fun FavoriteStationRow(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f)),
         onClick = onPlayClick,
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.White.copy(alpha = 0.08f))
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .padding(horizontal = 10.dp, vertical = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             StationLogo(
                 imageUrl = station.faviconUrl,
                 stationName = station.name,
-                modifier = Modifier.size(52.dp),
+                modifier = Modifier.size(64.dp),
             )
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 12.dp, end = 8.dp),
-            ) {
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = station.name,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                color = Color.White,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            val subtitle = listOfNotNull(
+                station.country?.takeIf { it.isNotBlank() },
+                station.language?.takeIf { it.isNotBlank() },
+            ).joinToString(separator = " • ")
+
+            if (subtitle.isNotBlank()) {
                 Text(
-                    text = station.name,
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-                    color = Color.White,
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = DarkOnSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                val subtitle = listOfNotNull(
-                    station.country?.takeIf { it.isNotBlank() },
-                    station.language?.takeIf { it.isNotBlank() },
-                ).joinToString(separator = "  •  ")
-                if (subtitle.isNotBlank()) {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = DarkOnSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    onClick = onPlayClick,
+                    shape = CircleShape,
+                    color = Color.Black.copy(alpha = 0.28f),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.PlayArrow,
+                        contentDescription = null,
+                        tint = TealAccent,
+                        modifier = Modifier
+                            .size(30.dp)
+                            .padding(5.dp),
                     )
                 }
-            }
-            Surface(
-                onClick = onPlayClick,
-                shape = CircleShape,
-                color = Color.Black.copy(alpha = 0.28f),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)),
-                modifier = Modifier.padding(end = 8.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.PlayArrow,
-                    contentDescription = null,
-                    tint = TealAccent,
-                    modifier = Modifier
-                        .size(30.dp)
-                        .padding(5.dp),
-                )
-            }
-            Surface(
-                onClick = onToggleFavorite,
-                shape = CircleShape,
-                color = Color.Black.copy(alpha = 0.28f),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Favorite,
-                    contentDescription = null,
-                    tint = Color(0xFFFF5A7A),
-                    modifier = Modifier
-                        .size(30.dp)
-                        .padding(6.dp),
-                )
+                Surface(
+                    onClick = onToggleFavorite,
+                    shape = CircleShape,
+                    color = Color.Black.copy(alpha = 0.28f),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Favorite,
+                        contentDescription = null,
+                        tint = Color(0xFFFF5A7A),
+                        modifier = Modifier
+                            .size(30.dp)
+                            .padding(6.dp),
+                    )
+                }
             }
         }
     }
@@ -303,3 +313,4 @@ private fun EmptyFavorites(
         }
     }
 }
+
