@@ -13,7 +13,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Fullscreen-Player Controls: Play/Pause, Mute, Random, Previous, Favorite
 - LIVE-Fortschritt im Fullscreen-Player (UI-Animation)
 - Home/Browse/Favorites UI-Polish (Glass-Look, bessere Karten, Performance-Tuning)
-- Security-Basis gehaertet (`allowBackup=false`, `cleartextTrafficPermitted=false`)
+- Security-Basis gehaertet (`allowBackup=false`, HTTP-Streams kompatibel fuer breite Senderabdeckung)
 - Optional sichtbare HTTP-Kennzeichnung in Browse + Settings-Toggle fuer unsichere Streams
 
 ## In Arbeit
@@ -33,7 +33,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Settings Info-Links: GitHub Repo, GitHub Issues, Website, Support/Buy a Coffee
 
 ## Spaeter
-- Android Auto Ausbau (MediaLibraryService + Browse-Tree)
+- Android Auto Ausbau (MediaLibraryService + Browse-Tree, bewusst nach Alpha)
 - Chromecast Ausbau
 - Widget fuer schnellen Playback-Zugriff
 - Weitere Animationen/Transitions/Shimmer
