@@ -19,9 +19,12 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Settings-Optionen: Theme (System/Dark/Light), Dynamic Colors, Standard-Qualitaet, Buffer-Profil
 - Settings-Datenaktionen: Sender-Cache leeren, Verlauf loeschen
 - Settings-Info: App-Version, GitHub Repo, Issues, Website, Buy a Coffee
+- Audio Focus Verhalten bei Unterbrechungen stabilisiert (kein sofortiges Stop/Pause mehr)
+- Mobile-Daten-Policy und Buffer-Profil technisch im Player wirksam
+- Room-Migrationen aktiv (kein `fallbackToDestructiveMigration` mehr)
+- Unit-Tests erweitert fuer Player-Recovery und Repository-Flows
 
 ## In Arbeit
-- Audio Focus Verhalten bei Unterbrechungen (Sprachnachrichten/Anrufe)
 - Notification Media Controls (Play/Pause/Next/Stop)
 - Mini-Player Metadaten als Marquee bei langen Titeln
 - Stream-Qualitaet im Fullscreen-Player anzeigen
@@ -31,7 +34,6 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Share Action im Fullscreen-Player
 - Favoriten Export/Import (JSON)
 - Custom Stations (manuelle URL) + M3U/PLS Import
-- Mobile-Daten-Policy technisch im Player erzwingen (Settings-Schalter ist bereits vorhanden)
 - Datennutzung sichtbar machen (geschaetzt ueber Bitrate)
 
 ## Spaeter

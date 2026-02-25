@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- Playback no longer keeps running after app removal from recents (`onTaskRemoved` stop path in foreground playback service).
+- Removed dead/unused `RadioPlayerService` branch to avoid parallel playback architecture drift.
+- Replaced destructive Room fallback with explicit migrations (`1->2`, `2->3`) and enabled schema export/versioning.
+- Stabilized audio focus behavior to prevent instant stop/pause loops on play.
+
+### Improved
+- Network callback lifecycle now pause-aware in player control flow.
+- API client timeout tuned down for faster failure feedback.
+- HTTP logging interceptor now debug-only wiring.
+- Added targeted unit tests for player recovery paths (`scheduleReconnect`, playback-lost recovery, buffering watchdog).
+- Added targeted repository flow tests for favorites merge/toggle/reorder and station DTO mapping behavior.
+
 ## [0.1.0-alpha.3] - 2026-02-25
 
 ### Added
