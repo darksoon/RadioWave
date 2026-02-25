@@ -15,6 +15,8 @@ dependencies {
     implementation(project(":core:core-network"))
     
     implementation(libs.kotlinx.coroutines.android)
+
+    testImplementation(libs.junit)
 }
 
 tasks.withType<Test>().configureEach {
