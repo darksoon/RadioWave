@@ -183,13 +183,13 @@ fun BrowseScreen(
     }
     var selectedGenre by remember { mutableStateOf<String?>(null) }
     var showInsecureStreams by remember {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_INSECURE_STREAMS, false))
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_INSECURE_STREAMS, true))
     }
 
     DisposableEffect(prefs) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == AppSettings.KEY_SHOW_INSECURE_STREAMS) {
-                showInsecureStreams = prefs.getBoolean(AppSettings.KEY_SHOW_INSECURE_STREAMS, false)
+                showInsecureStreams = prefs.getBoolean(AppSettings.KEY_SHOW_INSECURE_STREAMS, true)
             }
         }
         prefs.registerOnSharedPreferenceChangeListener(listener)

@@ -53,7 +53,7 @@ fun SettingsScreen(
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_QUICK_TOASTS, true))
     }
     var showInsecureStreams by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_INSECURE_STREAMS, false))
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_INSECURE_STREAMS, true))
     }
 
     LazyColumn(
