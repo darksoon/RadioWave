@@ -172,14 +172,25 @@ class HomeViewModel @Inject constructor(
             }
             .onEach { (recent, favorites, top) ->
                 Log.d("RadioWave", "Data loaded successfully: ${recent.size} recent, ${favorites.size} favorites, ${top.size} top stations")
+                val hasActiveFilter = _searchQuery.value.isNotBlank() || _selectedCountry.value != null
                 _uiState.update {
-                    it.copy(
-                        recentStations = recent,
-                        favoriteStations = favorites,
-                        topStations = top,
-                        isLoading = false,
-                        error = null,
-                    )
+                    if (hasActiveFilter) {
+                        // Keep current browse/search result list stable while favorites/recents update.
+                        it.copy(
+                            recentStations = recent,
+                            favoriteStations = favorites,
+                            isLoading = false,
+                            error = null,
+                        )
+                    } else {
+                        it.copy(
+                            recentStations = recent,
+                            favoriteStations = favorites,
+                            topStations = top,
+                            isLoading = false,
+                            error = null,
+                        )
+                    }
                 }
             }
             .catch { error ->
