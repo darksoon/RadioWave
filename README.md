@@ -11,6 +11,9 @@
   <a href="./LICENSE.txt">
     <img src="https://img.shields.io/badge/License-Proprietary-red" alt="License Proprietary" />
   </a>
+  <a href="https://buymeacoffee.com/darksoon">
+    <img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-Support%20the%20project-FFDD00?logo=buymeacoffee&logoColor=000000" alt="Buy Me a Coffee" />
+  </a>
 
   <h3>Die moderne, werbefreie Internet-Radio-App für Android.</h3>
   <p>⚡ Schnell · 🔒 Privacy-first · 🚫 Kein Tracking · 🎧 45.000+ Sender</p>
@@ -142,6 +145,12 @@ RadioWave/
 
 Proprietäre Lizenz mit kommerziellem Nutzungsverbot.  
 Siehe [LICENSE.txt](./LICENSE.txt).
+
+## ❤️ Support
+
+Wenn dir RadioWave gefällt und du die Entwicklung unterstützen willst:
+
+☕ **Buy Me a Coffee:** https://buymeacoffee.com/darksoon
 
 ## 🙌 Credits
 
