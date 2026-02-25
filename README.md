@@ -17,6 +17,7 @@
 
   <h3>Die moderne, werbefreie Internet-Radio-App für Android.</h3>
   <p>⚡ Schnell · 🔒 Privacy-first · 🚫 Kein Tracking · 🎧 45.000+ Sender</p>
+  <p>🌐 Entwickler-Website: <a href="https://sven-neurath.de">sven-neurath.de</a></p>
 </div>
 
 ---
