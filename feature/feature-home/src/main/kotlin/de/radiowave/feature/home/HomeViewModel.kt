@@ -10,6 +10,7 @@ import de.radiowave.core.data.repository.StationRepository
 import de.radiowave.core.model.Station
 import de.radiowave.core.player.RadioPlayerManager
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,6 +33,8 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
     private val playbackHistory = ArrayDeque<Station>()
     private val maxPlaybackHistorySize = 40
+    private var dataLoadJob: Job? = null
+    private var browseResultsJob: Job? = null
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -69,7 +72,8 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun loadStationsByCountry(countryCode: String, query: String) {
-        stationRepository.getStationsByCountry(countryCode)
+        browseResultsJob?.cancel()
+        browseResultsJob = stationRepository.getStationsByCountry(countryCode)
             .onStart {
                 _uiState.update { it.copy(isLoading = true) }
             }
@@ -103,7 +107,8 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun searchStations(query: String) {
-        stationRepository.searchStations(query)
+        browseResultsJob?.cancel()
+        browseResultsJob = stationRepository.searchStations(query)
             .onStart {
                 _uiState.update { it.copy(isLoading = true) }
             }
@@ -159,7 +164,9 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun loadData() {
-        combine(
+        browseResultsJob?.cancel()
+        dataLoadJob?.cancel()
+        dataLoadJob = combine(
             recentRepository.getRecentStations(limit = 10),
             favoriteRepository.getFavorites(),
             stationRepository.getTopStations(),

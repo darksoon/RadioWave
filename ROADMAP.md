@@ -13,6 +13,8 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Fullscreen-Player Controls: Play/Pause, Mute, Random, Previous, Favorite
 - LIVE-Fortschritt im Fullscreen-Player (UI-Animation)
 - Home/Browse/Favorites UI-Polish (Glass-Look, bessere Karten, Performance-Tuning)
+- Security-Basis gehaertet (`allowBackup=false`, `cleartextTrafficPermitted=false`)
+- Optional sichtbare HTTP-Kennzeichnung in Browse + Settings-Toggle fuer unsichere Streams
 
 ## In Arbeit
 - Audio Focus Verhalten bei Unterbrechungen (Sprachnachrichten/Anrufe)

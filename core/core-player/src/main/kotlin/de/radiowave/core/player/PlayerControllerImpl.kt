@@ -53,6 +53,7 @@ class PlayerControllerImpl @Inject constructor(
     private var reconnectJob: Job? = null
     private var bufferingWatchdogJob: Job? = null
     private var playbackLostRecoveryJob: Job? = null
+    private var restartGuardJob: Job? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
     private var reconnectAttempts = 0
@@ -73,6 +74,7 @@ class PlayerControllerImpl @Inject constructor(
     private var isNetworkCallbackRegistered = false
     private var lastNetworkRecoveryAt = 0L
     private var isForegroundServiceRunning = false
+    private var isInternalRestartInProgress = false
     private val isDebuggableApp: Boolean by lazy {
         (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
     }
@@ -220,6 +222,7 @@ class PlayerControllerImpl @Inject constructor(
                 } else if (
                     !userPausedPlayback &&
                     !isStopping &&
+                    !isInternalRestartInProgress &&
                     _playerState.value.currentStation != null &&
                     player.playWhenReady &&
                     player.playbackState == Player.STATE_READY
@@ -237,11 +240,15 @@ class PlayerControllerImpl @Inject constructor(
             override fun onPlaybackStateChanged(state: Int) {
                 when (state) {
                     Player.STATE_BUFFERING -> {
+                        isInternalRestartInProgress = false
+                        restartGuardJob?.cancel()
                         logDebug("Player: STATE_BUFFERING")
                         startBufferingWatchdog(player)
                     }
 
                     Player.STATE_READY -> {
+                        isInternalRestartInProgress = false
+                        restartGuardJob?.cancel()
                         logDebug("Player: STATE_READY")
                         reconnectAttempts = 0
                         playbackLostRecoveryAttempts = 0
@@ -333,6 +340,7 @@ class PlayerControllerImpl @Inject constructor(
 
     private fun maybeRecoverFromLostState(player: ExoPlayer, reason: String) {
         if (isStopping || userPausedPlayback) return
+        if (isInternalRestartInProgress) return
         if (!player.playWhenReady) return
         val station = _playerState.value.currentStation ?: return
         triggerPlaybackLostRecovery(station, reason)
@@ -360,6 +368,7 @@ class PlayerControllerImpl @Inject constructor(
         if (playbackLostRecoveryJob?.isActive == true) return
         if (reconnectJob?.isActive == true) return
         if (isStopping || userPausedPlayback) return
+        if (isInternalRestartInProgress) return
 
         if (playbackLostRecoveryAttempts >= maxPlaybackLostRecoveryAttempts) {
             logError("Playback lost recovery exhausted: $reason")
@@ -555,6 +564,12 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private fun restartStream(player: ExoPlayer, station: Station) {
+        isInternalRestartInProgress = true
+        restartGuardJob?.cancel()
+        restartGuardJob = controllerScope.launch {
+            delay(2_000L)
+            isInternalRestartInProgress = false
+        }
         player.stop()
         player.setMediaItem(createMediaItem(station))
         player.prepare()
@@ -582,6 +597,7 @@ class PlayerControllerImpl @Inject constructor(
         reconnectJob?.cancel()
         bufferingWatchdogJob?.cancel()
         playbackLostRecoveryJob?.cancel()
+        restartGuardJob?.cancel()
         reconnectAttempts = 0
         playbackLostRecoveryAttempts = 0
         userPausedPlayback = false
@@ -634,6 +650,7 @@ class PlayerControllerImpl @Inject constructor(
         reconnectJob?.cancel()
         bufferingWatchdogJob?.cancel()
         playbackLostRecoveryJob?.cancel()
+        restartGuardJob?.cancel()
         reconnectAttempts = 0
         playbackLostRecoveryAttempts = 0
         userPausedPlayback = false
@@ -697,8 +714,9 @@ class PlayerControllerImpl @Inject constructor(
         } catch (error: Exception) {
             logWarning("Unable to stop playback foreground service: ${error.message}")
         } finally {
-            isForegroundServiceRunning = false
-        }
+        isForegroundServiceRunning = false
+        isInternalRestartInProgress = false
+    }
     }
 
     private fun logDebug(message: String) {
