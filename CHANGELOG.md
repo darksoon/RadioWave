@@ -23,6 +23,7 @@ All notable changes to this project will be documented in this file.
 - Auto-recovery on short network interruptions via network callback.
 - Background playback hardening with wake lock and Wi-Fi lock.
 - Playback stall watchdog with automatic recovery.
+- Added dedicated playback foreground service lifecycle to keep audio stable with screen off.
 
 ### Favorites & UX
 - Production-ready favorites with Room persistence.

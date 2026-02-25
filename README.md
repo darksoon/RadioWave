@@ -113,6 +113,11 @@ cp keystore.properties.example keystore.properties
 - Lade die APK nur von der offiziellen GitHub-Release-Seite.
 - Prüfe bei Bedarf die Release-Notes und Dateigröße vor der Installation.
 
+## 🎧 Playback Hinweis (2026-02-25)
+
+- Background-Playback wurde für Screen-Off stabilisiert.
+- Kernänderung: dedizierter Foreground-Service-Lifecycle für laufendes Streaming.
+
 ## 🤖 GitHub Actions
 
 ### Manual Android Build
