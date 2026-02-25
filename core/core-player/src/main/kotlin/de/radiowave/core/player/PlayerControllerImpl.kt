@@ -73,6 +73,9 @@ class PlayerControllerImpl @Inject constructor(
     private var isNetworkCallbackRegistered = false
     private var lastNetworkRecoveryAt = 0L
     private var isForegroundServiceRunning = false
+    private val isDebuggableApp: Boolean by lazy {
+        (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+    }
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             controllerScope.launch {
@@ -127,7 +130,7 @@ class PlayerControllerImpl @Inject constructor(
                     wakeLock?.acquire(30 * 60 * 1000L)
                 }
             } catch (error: SecurityException) {
-                Log.w("RadioWave", "WakeLock acquire failed: ${error.message}")
+                logWarning("WakeLock acquire failed: ${error.message}")
             }
 
             try {
@@ -135,7 +138,7 @@ class PlayerControllerImpl @Inject constructor(
                     wifiLock?.acquire()
                 }
             } catch (error: SecurityException) {
-                Log.w("RadioWave", "WifiLock acquire failed: ${error.message}")
+                logWarning("WifiLock acquire failed: ${error.message}")
             }
         } else {
             releasePlaybackLocks()
@@ -148,7 +151,7 @@ class PlayerControllerImpl @Inject constructor(
                 wakeLock?.release()
             }
         } catch (error: RuntimeException) {
-            Log.w("RadioWave", "WakeLock release failed: ${error.message}")
+            logWarning("WakeLock release failed: ${error.message}")
         }
 
         try {
@@ -156,7 +159,7 @@ class PlayerControllerImpl @Inject constructor(
                 wifiLock?.release()
             }
         } catch (error: RuntimeException) {
-            Log.w("RadioWave", "WifiLock release failed: ${error.message}")
+            logWarning("WifiLock release failed: ${error.message}")
         }
     }
 
@@ -234,12 +237,12 @@ class PlayerControllerImpl @Inject constructor(
             override fun onPlaybackStateChanged(state: Int) {
                 when (state) {
                     Player.STATE_BUFFERING -> {
-                        Log.d("RadioWave", "Player: STATE_BUFFERING")
+                        logDebug("Player: STATE_BUFFERING")
                         startBufferingWatchdog(player)
                     }
 
                     Player.STATE_READY -> {
-                        Log.d("RadioWave", "Player: STATE_READY")
+                        logDebug("Player: STATE_READY")
                         reconnectAttempts = 0
                         playbackLostRecoveryAttempts = 0
                         reconnectJob?.cancel()
@@ -248,13 +251,13 @@ class PlayerControllerImpl @Inject constructor(
                     }
 
                     Player.STATE_ENDED -> {
-                        Log.d("RadioWave", "Player: STATE_ENDED")
+                        logDebug("Player: STATE_ENDED")
                         bufferingWatchdogJob?.cancel()
                         maybeRecoverFromLostState(player, reason = "state-ended")
                     }
 
                     Player.STATE_IDLE -> {
-                        Log.d("RadioWave", "Player: STATE_IDLE")
+                        logDebug("Player: STATE_IDLE")
                         bufferingWatchdogJob?.cancel()
                         maybeRecoverFromLostState(player, reason = "state-idle")
                     }
@@ -271,10 +274,7 @@ class PlayerControllerImpl @Inject constructor(
 
             override fun onPlayerError(error: PlaybackException) {
                 val station = _playerState.value.currentStation
-                Log.e(
-                    "RadioWave",
-                    "Player error ${error.errorCode}: ${error.message}",
-                )
+                logError("Player error ${error.errorCode}: ${error.message}", error)
                 bufferingWatchdogJob?.cancel()
 
                 if (station != null && reconnectAttempts < maxReconnectAttempts) {
@@ -351,7 +351,7 @@ class PlayerControllerImpl @Inject constructor(
             if (!player.playWhenReady) return@launch
             if (player.playbackState != Player.STATE_BUFFERING) return@launch
 
-            Log.w("RadioWave", "Buffering stall detected after ${bufferingStallThresholdMs}ms")
+            logWarning("Buffering stall detected after ${bufferingStallThresholdMs}ms")
             triggerPlaybackLostRecovery(currentStation, reason = "buffer-stall")
         }
     }
@@ -362,7 +362,7 @@ class PlayerControllerImpl @Inject constructor(
         if (isStopping || userPausedPlayback) return
 
         if (playbackLostRecoveryAttempts >= maxPlaybackLostRecoveryAttempts) {
-            Log.e("RadioWave", "Playback lost recovery exhausted: $reason")
+            logError("Playback lost recovery exhausted: $reason")
             _playerState.update {
                 it.copy(
                     isPlaying = false,
@@ -375,8 +375,7 @@ class PlayerControllerImpl @Inject constructor(
         }
 
         playbackLostRecoveryAttempts++
-        Log.w(
-            "RadioWave",
+        logWarning(
             "Playback lost recovery $playbackLostRecoveryAttempts/$maxPlaybackLostRecoveryAttempts ($reason)",
         )
 
@@ -469,7 +468,7 @@ class PlayerControllerImpl @Inject constructor(
             manager.registerDefaultNetworkCallback(networkCallback)
             isNetworkCallbackRegistered = true
         } catch (error: Exception) {
-            Log.w("RadioWave", "Unable to register network callback: ${error.message}")
+            logWarning("Unable to register network callback: ${error.message}")
         }
     }
 
@@ -480,7 +479,7 @@ class PlayerControllerImpl @Inject constructor(
         try {
             manager.unregisterNetworkCallback(networkCallback)
         } catch (error: Exception) {
-            Log.w("RadioWave", "Unable to unregister network callback: ${error.message}")
+            logWarning("Unable to unregister network callback: ${error.message}")
         } finally {
             isNetworkCallbackRegistered = false
         }
@@ -500,7 +499,7 @@ class PlayerControllerImpl @Inject constructor(
         val shouldRecover = state.error is PlayerError.NetworkError || state.isLoading || state.isBuffering
         if (!shouldRecover) return
 
-        Log.d("RadioWave", "Network restored. Triggering fast stream recovery.")
+        logDebug("Network restored. Triggering fast stream recovery.")
         reconnectAttempts = 0
         scheduleReconnect(station, delayOverrideMs = networkRecoveryDelayMs, countAttempt = false)
     }
@@ -518,10 +517,7 @@ class PlayerControllerImpl @Inject constructor(
         val delayMs = delayOverrideMs ?: computeReconnectDelayMs(effectiveAttempt)
         reconnectJob?.cancel()
 
-        Log.d(
-            "RadioWave",
-            "Reconnect $effectiveAttempt/$maxReconnectAttempts in ${delayMs}ms",
-        )
+        logDebug("Reconnect $effectiveAttempt/$maxReconnectAttempts in ${delayMs}ms")
 
         reconnectJob = controllerScope.launch {
             _playerState.update {
@@ -679,7 +675,7 @@ class PlayerControllerImpl @Inject constructor(
             )
             isForegroundServiceRunning = true
         } catch (error: Exception) {
-            Log.w("RadioWave", "Unable to start playback foreground service: ${error.message}")
+            logWarning("Unable to start playback foreground service: ${error.message}")
         }
     }
 
@@ -699,10 +695,35 @@ class PlayerControllerImpl @Inject constructor(
         try {
             PlaybackForegroundService.stop(context)
         } catch (error: Exception) {
-            Log.w("RadioWave", "Unable to stop playback foreground service: ${error.message}")
+            logWarning("Unable to stop playback foreground service: ${error.message}")
         } finally {
             isForegroundServiceRunning = false
         }
+    }
+
+    private fun logDebug(message: String) {
+        if (isDebuggableApp) {
+            Log.d(APP_LOG_TAG, message)
+        }
+    }
+
+    private fun logWarning(message: String) {
+        if (isDebuggableApp) {
+            Log.w(APP_LOG_TAG, message)
+        }
+    }
+
+    private fun logError(message: String, throwable: Throwable? = null) {
+        if (!isDebuggableApp) return
+        if (throwable == null) {
+            Log.e(APP_LOG_TAG, message)
+        } else {
+            Log.e(APP_LOG_TAG, message, throwable)
+        }
+    }
+
+    private companion object {
+        const val APP_LOG_TAG = "RadioWave"
     }
 }
 
