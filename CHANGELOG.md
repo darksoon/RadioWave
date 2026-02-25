@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-alpha.3] - 2026-02-25
+
+### Added
+- Extended settings architecture with dedicated `SettingsViewModel`.
+- New settings options including insecure streams toggle and improved user controls.
+- HTTP badge/visibility improvements in browse results.
+
+### Fixed
+- Restored HTTP stream compatibility and station visibility issues.
+- Stabilized playback start and reduced idle-loop/logging overhead.
+- Decoupled startup recovery from initial load for more reliable app start behavior.
+- Cleanup in home collectors to reduce duplicate updates.
+
+### Improved
+- Settings screen expanded and reorganized for better UX.
+- Browse/Search flow refined (quick genres + filter behavior polish).
+- Security hardening updates (backup/cleartext/debug log gating).
+- Public roadmap/readme updates for release transparency.
+
 ## [0.1.0-alpha.2] - 2026-02-25
 
 ### Fixed
@@ -44,5 +63,6 @@ All notable changes to this project will be documented in this file.
 ### Security/Infra
 - Added `ACCESS_NETWORK_STATE` permission declaration in `core-player` to satisfy lint and ensure network callback safety.
 
+[0.1.0-alpha.3]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.3
 [0.1.0-alpha.2]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.2
 [0.1.0-alpha.1]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.1
