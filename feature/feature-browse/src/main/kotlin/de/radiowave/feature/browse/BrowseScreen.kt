@@ -68,6 +68,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -75,7 +76,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.SubcomposeAsyncImage
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import de.radiowave.core.model.Station
 import de.radiowave.core.ui.theme.DarkBackground
 import de.radiowave.core.ui.theme.DarkCardBackground
@@ -570,7 +573,11 @@ private fun BrowseContent(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.weight(1f),
                     ) {
-                        items(uiState.topStations) { station ->
+                        items(
+                            items = uiState.topStations,
+                            key = { station -> station.uuid },
+                            contentType = { "station" },
+                        ) { station ->
                             StationGridCard(
                                 station = station,
                                 isFavorite = station.uuid in favoriteIds,
@@ -745,16 +752,16 @@ private fun StationGridCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     Card(
         modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp)),
+            .fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = DarkCardBackground,
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 4.dp,
+            defaultElevation = 2.dp,
         ),
         onClick = onClick,
     ) {
@@ -771,8 +778,16 @@ private fun StationGridCard(
                         .clip(RoundedCornerShape(12.dp))
                         .background(DarkSurfaceVariant),
                 ) {
-                    SubcomposeAsyncImage(
-                        model = station.faviconUrl,
+                    val imageRequest = ImageRequest.Builder(context)
+                        .data(station.faviconUrl)
+                        .crossfade(false)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .networkCachePolicy(CachePolicy.ENABLED)
+                        .allowHardware(true)
+                        .build()
+                    AsyncImage(
+                        model = imageRequest,
                         contentDescription = station.name,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop,
