@@ -6,6 +6,9 @@ plugins {
 
 android {
     namespace = "de.radiowave.core.network"
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {

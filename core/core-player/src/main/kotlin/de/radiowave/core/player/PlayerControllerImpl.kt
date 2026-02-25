@@ -719,6 +719,7 @@ class PlayerControllerImpl @Inject constructor(
         bufferingWatchdogJob?.cancel()
         playbackLostRecoveryJob?.cancel()
         player.pause()
+        unregisterNetworkCallbackIfNeeded()
         shouldResumeAfterAudioFocusGain = resumeWhenFocusReturns && wasPlaying && !userPausedPlayback
     }
 
@@ -730,6 +731,7 @@ class PlayerControllerImpl @Inject constructor(
         if (_playerState.value.currentStation == null) return
         if (userPausedPlayback) return
 
+        registerNetworkCallbackIfNeeded()
         player.playWhenReady = true
         player.play()
     }
@@ -812,6 +814,7 @@ class PlayerControllerImpl @Inject constructor(
                 bufferingWatchdogJob?.cancel()
                 playbackLostRecoveryJob?.cancel()
                 player.pause()
+                unregisterNetworkCallbackIfNeeded()
                 abandonAudioFocus()
             } else {
                 if (!requestAudioFocus()) {
@@ -826,6 +829,7 @@ class PlayerControllerImpl @Inject constructor(
                     return
                 }
                 userPausedPlayback = false
+                registerNetworkCallbackIfNeeded()
                 player.playWhenReady = true
                 player.play()
             }
@@ -851,6 +855,7 @@ class PlayerControllerImpl @Inject constructor(
         userPausedPlayback = false
         shouldResumeAfterAudioFocusGain = false
         exoPlayer?.stop()
+        unregisterNetworkCallbackIfNeeded()
         stopForegroundPlaybackServiceIfRunning()
         releasePlaybackLocks()
         abandonAudioFocus()
