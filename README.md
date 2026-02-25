@@ -97,6 +97,22 @@ cp keystore.properties.example keystore.properties
 
 `keystore.properties` is ignored by Git. If present, release builds are signed automatically.
 
+## 📲 Installation (ohne Play Store)
+
+1. Öffne die aktuelle Release-Seite:  
+   **https://github.com/darksoon/RadioWave/releases/latest**
+2. Lade die Datei **`app-release.apk`** herunter.
+3. Falls nötig: „Installation aus unbekannten Quellen“ für deinen Browser/Dateimanager erlauben.
+4. APK öffnen und installieren.
+
+### Update-Hinweis
+- Updates kannst du einfach über neue Releases installieren.
+- Wichtig: Die APK muss mit demselben Signatur-Key gebaut sein (ist hier der Fall).
+
+### Sicherheit
+- Lade die APK nur von der offiziellen GitHub-Release-Seite.
+- Prüfe bei Bedarf die Release-Notes und Dateigröße vor der Installation.
+
 ## 🤖 GitHub Actions
 
 ### Manual Android Build
