@@ -1,4 +1,4 @@
-package de.radiowave.feature.browse
+﻿package de.radiowave.feature.browse
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
@@ -54,10 +55,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -82,6 +85,7 @@ import de.radiowave.core.ui.theme.TealAccent
 import de.radiowave.feature.home.HomeUiState
 import de.radiowave.feature.home.HomeViewModel
 import de.radiowave.feature.home.SortOption
+import kotlinx.coroutines.launch
 
 private data class CountryItem(
     val code: String,
@@ -90,16 +94,16 @@ private data class CountryItem(
 )
 
 private val topCountries = listOf(
-    CountryItem("DE", "Deutschland", "🇩🇪"),
-    CountryItem("US", "USA", "🇺🇸"),
-    CountryItem("GB", "UK", "🇬🇧"),
-    CountryItem("FR", "Frankreich", "🇫🇷"),
-    CountryItem("IT", "Italien", "🇮🇹"),
-    CountryItem("ES", "Spanien", "🇪🇸"),
-    CountryItem("NL", "Niederlande", "🇳🇱"),
-    CountryItem("PL", "Polen", "🇵🇱"),
-    CountryItem("AT", "Österreich", "🇦🇹"),
-    CountryItem("CH", "Schweiz", "🇨🇭"),
+    CountryItem("DE", "Deutschland", "ðŸ‡©ðŸ‡ª"),
+    CountryItem("US", "USA", "ðŸ‡ºðŸ‡¸"),
+    CountryItem("GB", "UK", "ðŸ‡¬ðŸ‡§"),
+    CountryItem("FR", "Frankreich", "ðŸ‡«ðŸ‡·"),
+    CountryItem("IT", "Italien", "ðŸ‡®ðŸ‡¹"),
+    CountryItem("ES", "Spanien", "ðŸ‡ªðŸ‡¸"),
+    CountryItem("NL", "Niederlande", "ðŸ‡³ðŸ‡±"),
+    CountryItem("PL", "Polen", "ðŸ‡µðŸ‡±"),
+    CountryItem("AT", "Ã–sterreich", "ðŸ‡¦ðŸ‡¹"),
+    CountryItem("CH", "Schweiz", "ðŸ‡¨ðŸ‡­"),
 )
 
 private val popularGenres = listOf(
@@ -221,329 +225,387 @@ private fun BrowseContent(
     modifier: Modifier = Modifier,
 ) {
     val favoriteIds = uiState.favoriteStations.map { station -> station.uuid }.toSet()
-    Column(
+    val stationGridState = rememberLazyGridState()
+    val coroutineScope = rememberCoroutineScope()
+    var advancedFiltersExpanded by remember { mutableStateOf(false) }
+    val showDiscoverChrome by remember {
+        derivedStateOf {
+            stationGridState.firstVisibleItemIndex == 0 &&
+                stationGridState.firstVisibleItemScrollOffset < 24
+        }
+    }
+    val showScrollToTopButton by remember {
+        derivedStateOf {
+            stationGridState.firstVisibleItemIndex > 0 ||
+                stationGridState.firstVisibleItemScrollOffset > 220
+        }
+    }
+
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(DarkBackground),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "Entdecken & Suche",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 26.sp,
-                ),
-                color = Color.White,
-                modifier = Modifier.weight(1f),
-            )
-            IconButton(onClick = onRefresh) {
-                Icon(
-                    Icons.Default.Refresh,
-                    contentDescription = "Aktualisieren",
-                    tint = DarkOnSurfaceVariant,
-                )
-            }
-        }
-
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = onSearchQueryChange,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-            placeholder = {
-                Text(
-                    "Sender, Genre, Land...",
-                    color = DarkOnSurfaceVariant,
-                )
-            },
-            leadingIcon = {
-                Icon(
-                    Icons.Default.Search,
-                    contentDescription = null,
-                    tint = DarkOnSurfaceVariant,
-                )
-            },
-            singleLine = true,
-            shape = RoundedCornerShape(16.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = DarkCardBackground,
-                unfocusedContainerColor = DarkCardBackground,
-                focusedBorderColor = TealAccent,
-                unfocusedBorderColor = DarkSurfaceVariant,
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                cursorColor = TealAccent,
-            ),
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Quick Genres",
-            style = MaterialTheme.typography.titleSmall.copy(
-                fontWeight = FontWeight.SemiBold,
-            ),
-            color = DarkOnSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 20.dp),
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            items(quickGenres) { item ->
-                QuickGenreCard(
-                    item = item,
-                    isSelected = selectedGenre == item.tag,
-                    onClick = {
-                        onGenreSelected(if (selectedGenre == item.tag) null else item.tag)
-                    },
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        var advancedFiltersExpanded by remember { mutableStateOf(false) }
         Column(
-            modifier = Modifier
-                .padding(horizontal = 20.dp)
-                .fillMaxWidth()
-                .animateContentSize(),
+            modifier = Modifier.fillMaxSize(),
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(DarkCardBackground)
-                    .clickable { advancedFiltersExpanded = !advancedFiltersExpanded }
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Weitere Filter",
-                    style = MaterialTheme.typography.labelLarge,
+                    text = "Entdecken & Suche",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 26.sp,
+                    ),
                     color = Color.White,
                     modifier = Modifier.weight(1f),
                 )
-                Icon(
-                    imageVector = if (advancedFiltersExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = DarkOnSurfaceVariant,
-                )
+                IconButton(onClick = onRefresh) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = "Aktualisieren",
+                        tint = DarkOnSurfaceVariant,
+                    )
+                }
             }
 
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                placeholder = {
+                    Text(
+                        "Sender, Genre, Land...",
+                        color = DarkOnSurfaceVariant,
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = null,
+                        tint = DarkOnSurfaceVariant,
+                    )
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = DarkCardBackground,
+                    unfocusedContainerColor = DarkCardBackground,
+                    focusedBorderColor = TealAccent,
+                    unfocusedBorderColor = DarkSurfaceVariant,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    cursorColor = TealAccent,
+                ),
+            )
+
             AnimatedVisibility(
-                visible = advancedFiltersExpanded,
+                visible = showDiscoverChrome,
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically(),
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(DarkCardBackground.copy(alpha = 0.9f))
-                        .padding(vertical = 10.dp),
-                ) {
+                Column {
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Quick Genres",
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                        color = DarkOnSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     LazyRow(
-                        contentPadding = PaddingValues(horizontal = 10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        items(topCountries) { country ->
-                            val isSelected = selectedCountry == country.code
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = { onCountrySelected(if (isSelected) null else country.code) },
-                                label = {
-                                    Text(
-                                        text = "${country.flag} ${country.name}",
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        fontSize = 13.sp,
-                                    )
+                        items(quickGenres) { item ->
+                            QuickGenreCard(
+                                item = item,
+                                isSelected = selectedGenre == item.tag,
+                                onClick = {
+                                    onGenreSelected(if (selectedGenre == item.tag) null else item.tag)
                                 },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = TealAccent,
-                                    selectedLabelColor = Color.Black,
-                                    containerColor = DarkSurfaceVariant,
-                                    labelColor = Color.White,
-                                ),
-                                shape = RoundedCornerShape(20.dp),
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    Column(
+                        modifier = Modifier
+                            .padding(horizontal = 20.dp)
+                            .fillMaxWidth()
+                            .animateContentSize(),
                     ) {
-                        items(popularGenres) { (displayName, tag) ->
-                            val isSelected = selectedGenre == tag
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = { onGenreSelected(if (isSelected) null else tag) },
-                                label = {
-                                    Text(
-                                        text = displayName,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    )
-                                },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = TealAccent,
-                                    selectedLabelColor = Color.Black,
-                                    containerColor = DarkSurfaceVariant,
-                                    labelColor = Color.White,
-                                ),
-                                shape = RoundedCornerShape(20.dp),
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(DarkCardBackground)
+                                .clickable { advancedFiltersExpanded = !advancedFiltersExpanded }
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "Weitere Filter",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = Color.White,
+                                modifier = Modifier.weight(1f),
                             )
+                            Icon(
+                                imageVector = if (advancedFiltersExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                                contentDescription = null,
+                                tint = DarkOnSurfaceVariant,
+                            )
+                        }
+
+                        AnimatedVisibility(
+                            visible = advancedFiltersExpanded,
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically(),
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 10.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(DarkCardBackground.copy(alpha = 0.9f))
+                                    .padding(vertical = 10.dp),
+                            ) {
+                                LazyRow(
+                                    contentPadding = PaddingValues(horizontal = 10.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    items(topCountries) { country ->
+                                        val isSelected = selectedCountry == country.code
+                                        FilterChip(
+                                            selected = isSelected,
+                                            onClick = { onCountrySelected(if (isSelected) null else country.code) },
+                                            label = {
+                                                Text(
+                                                    text = "${country.flag} ${country.name}",
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                    fontSize = 13.sp,
+                                                )
+                                            },
+                                            colors = FilterChipDefaults.filterChipColors(
+                                                selectedContainerColor = TealAccent,
+                                                selectedLabelColor = Color.Black,
+                                                containerColor = DarkSurfaceVariant,
+                                                labelColor = Color.White,
+                                            ),
+                                            shape = RoundedCornerShape(20.dp),
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                LazyRow(
+                                    contentPadding = PaddingValues(horizontal = 10.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    items(popularGenres) { (displayName, tag) ->
+                                        val isSelected = selectedGenre == tag
+                                        FilterChip(
+                                            selected = isSelected,
+                                            onClick = { onGenreSelected(if (isSelected) null else tag) },
+                                            label = {
+                                                Text(
+                                                    text = displayName,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                )
+                                            },
+                                            colors = FilterChipDefaults.filterChipColors(
+                                                selectedContainerColor = TealAccent,
+                                                selectedLabelColor = Color.Black,
+                                                containerColor = DarkSurfaceVariant,
+                                                labelColor = Color.White,
+                                            ),
+                                            shape = RoundedCornerShape(20.dp),
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                text = if (uiState.searchResultCount > 0) {
-                    "${uiState.searchResultCount} Sender gefunden"
-                } else if (searchQuery.isBlank() && selectedCountry == null) {
-                    "Top Sender"
-                } else {
-                    "Sender"
-                },
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontWeight = FontWeight.SemiBold,
-                ),
-                color = DarkOnSurfaceVariant,
-            )
-
-            var sortMenuExpanded by remember { mutableStateOf(false) }
-            Box {
-                Row(
-                    modifier = Modifier
-                        .clickable { sortMenuExpanded = true }
-                        .padding(4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    val currentSortLabel = sortOptions.find { it.first == uiState.sortOption }?.second ?: "Beliebtheit"
-                    Text(
-                        text = "Sort: $currentSortLabel",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = TealAccent,
-                    )
-                    Icon(
-                        Icons.Default.KeyboardArrowDown,
-                        contentDescription = "Sortierung wählen",
-                        tint = TealAccent,
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
-                DropdownMenu(
-                    expanded = sortMenuExpanded,
-                    onDismissRequest = { sortMenuExpanded = false },
-                    containerColor = DarkCardBackground,
-                ) {
-                    sortOptions.forEach { (option, label) ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = label,
-                                    color = if (uiState.sortOption == option) TealAccent else Color.White,
-                                    fontWeight = if (uiState.sortOption == option) FontWeight.Bold else FontWeight.Normal,
-                                )
-                            },
-                            onClick = {
-                                onSortOptionChanged(option)
-                                sortMenuExpanded = false
-                            },
-                        )
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        when {
-            uiState.isLoading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "Lade Sender...",
-                        color = DarkOnSurfaceVariant,
-                    )
-                }
-            }
-            uiState.topStations.isEmpty() && searchQuery.isBlank() && selectedCountry == null -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "Gib einen Suchbegriff ein\noder wähle ein Genre/Land",
-                        color = DarkOnSurfaceVariant,
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-            uiState.topStations.isEmpty() -> {
-                EmptyState(
-                    searchQuery = searchQuery,
-                    selectedCountry = selectedCountry,
-                    onSuggestionClick = { suggestion ->
-                        onSearchQueryChange(suggestion)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = if (uiState.searchResultCount > 0) {
+                        "${uiState.searchResultCount} Sender gefunden"
+                    } else if (searchQuery.isBlank() && selectedCountry == null) {
+                        "Top Sender"
+                    } else {
+                        "Sender"
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                )
-            }
-            else -> {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(
-                        start = 16.dp,
-                        end = 16.dp,
-                        top = 8.dp,
-                        bottom = 140.dp,
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = FontWeight.SemiBold,
                     ),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.weight(1f),
-                ) {
-                    items(uiState.topStations) { station ->
-                        StationGridCard(
-                            station = station,
-                            isFavorite = station.uuid in favoriteIds,
-                            onToggleFavorite = { onToggleFavorite(station) },
-                            onClick = { onStationClick(station) },
+                    color = DarkOnSurfaceVariant,
+                )
+
+                var sortMenuExpanded by remember { mutableStateOf(false) }
+                Box {
+                    Row(
+                        modifier = Modifier
+                            .clickable { sortMenuExpanded = true }
+                            .padding(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        val currentSortLabel = sortOptions.find { it.first == uiState.sortOption }?.second ?: "Beliebtheit"
+                        Text(
+                            text = "Sort: $currentSortLabel",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = TealAccent,
+                        )
+                        Icon(
+                            Icons.Default.KeyboardArrowDown,
+                            contentDescription = "Sortierung wählen",
+                            tint = TealAccent,
+                            modifier = Modifier.size(18.dp),
                         )
                     }
+                    DropdownMenu(
+                        expanded = sortMenuExpanded,
+                        onDismissRequest = { sortMenuExpanded = false },
+                        containerColor = DarkCardBackground,
+                    ) {
+                        sortOptions.forEach { (option, label) ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = label,
+                                        color = if (uiState.sortOption == option) TealAccent else Color.White,
+                                        fontWeight = if (uiState.sortOption == option) FontWeight.Bold else FontWeight.Normal,
+                                    )
+                                },
+                                onClick = {
+                                    onSortOptionChanged(option)
+                                    sortMenuExpanded = false
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            when {
+                uiState.isLoading -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = "Lade Sender...",
+                            color = DarkOnSurfaceVariant,
+                        )
+                    }
+                }
+                uiState.topStations.isEmpty() && searchQuery.isBlank() && selectedCountry == null -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = "Gib einen Suchbegriff ein\noder wähle ein Genre/Land",
+                            color = DarkOnSurfaceVariant,
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+                uiState.topStations.isEmpty() -> {
+                    EmptyState(
+                        searchQuery = searchQuery,
+                        selectedCountry = selectedCountry,
+                        onSuggestionClick = { suggestion ->
+                            onSearchQueryChange(suggestion)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                    )
+                }
+                else -> {
+                    LazyVerticalGrid(
+                        state = stationGridState,
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(
+                            start = 16.dp,
+                            end = 16.dp,
+                            top = 8.dp,
+                            bottom = 140.dp,
+                        ),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        items(uiState.topStations) { station ->
+                            StationGridCard(
+                                station = station,
+                                isFavorite = station.uuid in favoriteIds,
+                                onToggleFavorite = { onToggleFavorite(station) },
+                                onClick = { onStationClick(station) },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        AnimatedVisibility(
+            visible = showScrollToTopButton && uiState.topStations.isNotEmpty(),
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 20.dp, bottom = 152.dp),
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = DarkCardBackground.copy(alpha = 0.92f),
+                border = BorderStroke(1.dp, TealAccent.copy(alpha = 0.5f)),
+                modifier = Modifier
+                    .size(44.dp)
+                    .clickable {
+                        coroutineScope.launch {
+                            stationGridState.animateScrollToItem(0)
+                        }
+                    },
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Filled.KeyboardArrowUp,
+                        contentDescription = "Nach oben",
+                        tint = TealAccent,
+                    )
                 }
             }
         }
@@ -624,9 +686,9 @@ private fun EmptyState(
         val contextText = when {
             searchQuery.isNotBlank() && selectedCountry != null -> {
                 val countryName = topCountries.find { it.code == selectedCountry }?.name ?: selectedCountry
-                "Für \"$searchQuery\" in $countryName"
+                "FÃ¼r \"$searchQuery\" in $countryName"
             }
-            searchQuery.isNotBlank() -> "Für \"$searchQuery\""
+            searchQuery.isNotBlank() -> "FÃ¼r \"$searchQuery\""
             selectedCountry != null -> {
                 val countryName = topCountries.find { it.code == selectedCountry }?.name ?: selectedCountry
                 "In $countryName"
@@ -644,7 +706,7 @@ private fun EmptyState(
         }
         
         Text(
-            text = "Vorschläge:",
+            text = "VorschlÃ¤ge:",
             color = DarkOnSurfaceVariant,
             style = MaterialTheme.typography.labelMedium,
         )
@@ -765,3 +827,4 @@ private fun StationGridCard(
         }
     }
 }
+

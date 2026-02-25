@@ -164,7 +164,7 @@ class HomeViewModel @Inject constructor(
             favoriteRepository.getFavorites(),
             stationRepository.getTopStations(),
         ) { recent, favorites, top ->
-            Triple(recent, favorites.take(6), top.take(10))
+            Triple(recent, favorites.take(6), top.take(30))
         }
             .onStart {
                 Log.d("RadioWave", "Starting to load data...")
