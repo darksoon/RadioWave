@@ -8,6 +8,10 @@ android {
     namespace = "de.radiowave.core.database"
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     implementation(project(":core:core-model"))
     

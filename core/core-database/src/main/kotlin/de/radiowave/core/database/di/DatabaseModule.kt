@@ -7,6 +7,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import de.radiowave.core.database.DatabaseMigrations
 import de.radiowave.core.database.RadioWaveDatabase
 import de.radiowave.core.database.dao.CustomStationDao
 import de.radiowave.core.database.dao.FavoriteDao
@@ -28,7 +29,10 @@ object DatabaseModule {
             RadioWaveDatabase::class.java,
             "radiowave_database",
         )
-            .fallbackToDestructiveMigration()
+            .addMigrations(
+                DatabaseMigrations.MIGRATION_1_2,
+                DatabaseMigrations.MIGRATION_2_3,
+            )
             .build()
     }
 
