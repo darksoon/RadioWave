@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -80,7 +81,49 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            RadioWaveTheme {
+            val context = LocalContext.current
+            val prefs = remember(context) {
+                context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
+            }
+            var themeMode by remember {
+                mutableStateOf(
+                    prefs.getString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_SYSTEM)
+                        ?: AppSettings.THEME_SYSTEM,
+                )
+            }
+            var dynamicColors by remember {
+                mutableStateOf(prefs.getBoolean(AppSettings.KEY_DYNAMIC_COLORS, false))
+            }
+            val systemDarkTheme = isSystemInDarkTheme()
+            val useDarkTheme = when (themeMode) {
+                AppSettings.THEME_LIGHT -> false
+                AppSettings.THEME_DARK -> true
+                else -> systemDarkTheme
+            }
+
+            DisposableEffect(prefs) {
+                val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                    when (key) {
+                        AppSettings.KEY_THEME_MODE -> {
+                            themeMode = prefs.getString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_SYSTEM)
+                                ?: AppSettings.THEME_SYSTEM
+                        }
+
+                        AppSettings.KEY_DYNAMIC_COLORS -> {
+                            dynamicColors = prefs.getBoolean(AppSettings.KEY_DYNAMIC_COLORS, false)
+                        }
+                    }
+                }
+                prefs.registerOnSharedPreferenceChangeListener(listener)
+                onDispose {
+                    prefs.unregisterOnSharedPreferenceChangeListener(listener)
+                }
+            }
+
+            RadioWaveTheme(
+                darkTheme = useDarkTheme,
+                dynamicColor = dynamicColors,
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = DarkBackground,

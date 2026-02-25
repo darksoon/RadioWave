@@ -15,11 +15,14 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Home/Browse/Favorites UI-Polish (Glass-Look, bessere Karten, Performance-Tuning)
 - Security-Basis gehaertet (`allowBackup=false`, HTTP-Streams kompatibel fuer breite Senderabdeckung)
 - Optional sichtbare HTTP-Kennzeichnung in Browse + Settings-Toggle fuer unsichere Streams
+- Settings Rework als Card-Sektionen (`Allgemein`, `Sound`, `Speicher & Daten`, `Info`)
+- Settings-Optionen: Theme (System/Dark/Light), Dynamic Colors, Standard-Qualitaet, Buffer-Profil
+- Settings-Datenaktionen: Sender-Cache leeren, Verlauf loeschen
+- Settings-Info: App-Version, GitHub Repo, Issues, Website, Buy a Coffee
 
 ## In Arbeit
 - Audio Focus Verhalten bei Unterbrechungen (Sprachnachrichten/Anrufe)
 - Notification Media Controls (Play/Pause/Next/Stop)
-- Settings Rework als Card-Sektionen (`Allgemein`, `Sound`, `Speicher & Daten`, `Info`)
 - Mini-Player Metadaten als Marquee bei langen Titeln
 - Stream-Qualitaet im Fullscreen-Player anzeigen
 
@@ -28,9 +31,8 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Share Action im Fullscreen-Player
 - Favoriten Export/Import (JSON)
 - Custom Stations (manuelle URL) + M3U/PLS Import
-- Mobile-Daten-Policy (nur WLAN / mobile Daten erlauben)
+- Mobile-Daten-Policy technisch im Player erzwingen (Settings-Schalter ist bereits vorhanden)
 - Datennutzung sichtbar machen (geschaetzt ueber Bitrate)
-- Settings Info-Links: GitHub Repo, GitHub Issues, Website, Support/Buy a Coffee
 
 ## Spaeter
 - Android Auto Ausbau (MediaLibraryService + Browse-Tree, bewusst nach Alpha)
