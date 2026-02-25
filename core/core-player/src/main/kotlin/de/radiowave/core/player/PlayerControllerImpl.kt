@@ -72,6 +72,7 @@ class PlayerControllerImpl @Inject constructor(
     private val connectivityManager: ConnectivityManager? =
         context.getSystemService(ConnectivityManager::class.java)
     private var isNetworkCallbackRegistered = false
+    private var networkLossObserved = false
     private var lastNetworkRecoveryAt = 0L
     private var isForegroundServiceRunning = false
     private var isInternalRestartInProgress = false
@@ -83,6 +84,10 @@ class PlayerControllerImpl @Inject constructor(
             controllerScope.launch {
                 attemptRecoveryAfterNetworkReturn()
             }
+        }
+
+        override fun onLost(network: Network) {
+            networkLossObserved = true
         }
     }
 
@@ -495,6 +500,8 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private suspend fun attemptRecoveryAfterNetworkReturn() {
+        if (!networkLossObserved) return
+
         val now = SystemClock.elapsedRealtime()
         if (now - lastNetworkRecoveryAt < networkRecoveryCooldownMs) return
         lastNetworkRecoveryAt = now
@@ -508,6 +515,7 @@ class PlayerControllerImpl @Inject constructor(
         val shouldRecover = state.error is PlayerError.NetworkError || state.isLoading || state.isBuffering
         if (!shouldRecover) return
 
+        networkLossObserved = false
         logDebug("Network restored. Triggering fast stream recovery.")
         reconnectAttempts = 0
         scheduleReconnect(station, delayOverrideMs = networkRecoveryDelayMs, countAttempt = false)
@@ -600,6 +608,7 @@ class PlayerControllerImpl @Inject constructor(
         restartGuardJob?.cancel()
         reconnectAttempts = 0
         playbackLostRecoveryAttempts = 0
+        networkLossObserved = false
         userPausedPlayback = false
         isStopping = false
 
@@ -653,6 +662,7 @@ class PlayerControllerImpl @Inject constructor(
         restartGuardJob?.cancel()
         reconnectAttempts = 0
         playbackLostRecoveryAttempts = 0
+        networkLossObserved = false
         userPausedPlayback = false
         exoPlayer?.stop()
         stopForegroundPlaybackServiceIfRunning()
@@ -668,6 +678,7 @@ class PlayerControllerImpl @Inject constructor(
         playbackLostRecoveryJob?.cancel()
         reconnectAttempts = 0
         playbackLostRecoveryAttempts = 0
+        networkLossObserved = false
         userPausedPlayback = false
         unregisterNetworkCallbackIfNeeded()
         stopForegroundPlaybackServiceIfRunning()

@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
@@ -59,6 +60,7 @@ class HomeViewModel @Inject constructor(
             _searchQuery.debounce(500),
             _selectedCountry,
         ) { query, country -> query to country }
+            .drop(1)
             .onEach { (query, country) ->
                 if (query.isBlank() && country == null) {
                     loadData()
