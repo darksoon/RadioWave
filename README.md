@@ -21,6 +21,14 @@
 
 ---
 
+## 🗺️ Roadmap
+
+Die öffentliche Roadmap findest du hier: **[ROADMAP.md](./ROADMAP.md)**
+
+- Fokus: Stabilität + Nutzerwert
+- Stand wird laufend mit Releases/Hotfixes aktualisiert
+- Vorschläge/Feedback gerne über Issues
+
 ## ✨ Highlights
 
 - **Kein Account nötig** – alles lokal auf dem Gerät
