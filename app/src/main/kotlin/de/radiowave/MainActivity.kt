@@ -291,10 +291,11 @@ fun RadioWaveMainScreen() {
                                 homeViewModel.onSearchQueryChange(category)
                                 navigateToTopLevel(BottomNavItem.Browse.route)
                             },
+                            viewModel = homeViewModel,
                         )
                     }
                     composable(BottomNavItem.Browse.route) {
-                        BrowseScreen()
+                        BrowseScreen(viewModel = homeViewModel)
                     }
                     composable(BottomNavItem.Favorites.route) {
                         FavoritesScreen()

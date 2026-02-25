@@ -84,10 +84,7 @@ fun HomeScreen(
 
     HomeContent(
         uiState = uiState,
-        onStationClick = { station ->
-            viewModel.playStation(station)
-            onStationClick(station)
-        },
+        onStationClick = onStationClick,
         onViewAllFavorites = onViewAllFavorites,
         onNavigateToBrowse = onNavigateToBrowse,
         onRetry = { viewModel.refresh() },
