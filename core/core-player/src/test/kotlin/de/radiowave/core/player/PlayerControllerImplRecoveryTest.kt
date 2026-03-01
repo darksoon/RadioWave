@@ -1,9 +1,8 @@
 package de.radiowave.core.player
 
-import android.content.ContextWrapper
-import android.content.pm.ApplicationInfo
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.test.core.app.ApplicationProvider
 import de.radiowave.core.model.PlayerError
 import de.radiowave.core.model.PlayerState
 import de.radiowave.core.model.Station
@@ -17,15 +16,20 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import java.lang.reflect.Proxy
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import java.lang.reflect.Proxy
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34])
 class PlayerControllerImplRecoveryTest {
 
     @get:Rule
@@ -115,15 +119,7 @@ class PlayerControllerImplRecoveryTest {
     }
 
     private fun createController(): PlayerControllerImpl {
-        val context = object : ContextWrapper(null) {
-            private val debugInfo = ApplicationInfo().apply {
-                flags = ApplicationInfo.FLAG_DEBUGGABLE
-            }
-
-            override fun <T : Any?> getSystemService(serviceClass: Class<T>): T? = null
-
-            override fun getApplicationInfo(): ApplicationInfo = debugInfo
-        }
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         return PlayerControllerImpl(context)
     }
 
@@ -200,7 +196,7 @@ class PlayerControllerImplRecoveryTest {
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-private class MainDispatcherRule(
+class MainDispatcherRule(
     private val dispatcher: TestDispatcher = StandardTestDispatcher(),
 ) : TestWatcher() {
     override fun starting(description: Description) {

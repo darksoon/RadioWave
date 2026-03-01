@@ -9,6 +9,13 @@ All notable changes to this project will be documented in this file.
 - Removed dead/unused `RadioPlayerService` branch to avoid parallel playback architecture drift.
 - Replaced destructive Room fallback with explicit migrations (`1->2`, `2->3`) and enabled schema export/versioning.
 - Stabilized audio focus behavior to prevent instant stop/pause loops on play.
+- Fixed unit test compilation errors in `PlayerControllerImplRecoveryTest`:
+  - Changed `MainDispatcherRule` from `private class` to `public class` to match public property visibility.
+  - Removed invalid override of final `getSystemService` method in anonymous `ContextWrapper`.
+- Fixed unit test runtime error "Method getSystemService in android.content.Context not mocked":
+  - Added Robolectric test framework for Android context simulation in unit tests.
+  - Added `@RunWith(RobolectricTestRunner::class)` and `@Config(sdk = [34])` annotations.
+  - Replaced manual `ContextWrapper` mock with `ApplicationProvider.getApplicationContext()`.
 
 ### Improved
 - Network callback lifecycle now pause-aware in player control flow.
@@ -16,6 +23,10 @@ All notable changes to this project will be documented in this file.
 - HTTP logging interceptor now debug-only wiring.
 - Added targeted unit tests for player recovery paths (`scheduleReconnect`, playback-lost recovery, buffering watchdog).
 - Added targeted repository flow tests for favorites merge/toggle/reorder and station DTO mapping behavior.
+
+### Dependencies
+- Added Robolectric 4.14.1 for Android unit testing support.
+- Added androidx.test:core 1.6.1 for `ApplicationProvider` in tests.
 
 ## [0.1.0-alpha.3] - 2026-02-25
 
