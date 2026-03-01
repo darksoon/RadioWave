@@ -231,8 +231,14 @@ fun RadioWaveMainScreen() {
         }
     }
 
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+    val isSettingsRoute = currentDestination
+        ?.hierarchy
+        ?.any { destination -> destination.route == BottomNavItem.Settings.route } == true
+
     val currentStation = playerState.currentStation
-    val showPlayerBar = currentStation != null
+    val showPlayerBar = currentStation != null && !isSettingsRoute
     val isCurrentFavorite = currentStation?.uuid?.let { stationUuid ->
         homeUiState.favoriteStations.any { station -> station.uuid == stationUuid }
     } ?: false
@@ -242,9 +248,6 @@ fun RadioWaveMainScreen() {
             showFullscreenPlayer = false
         }
     }
-
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
 
     val navigateToTopLevel: (String) -> Unit = { route ->
         navController.navigate(route) {
