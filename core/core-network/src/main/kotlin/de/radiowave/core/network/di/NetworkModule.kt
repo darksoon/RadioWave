@@ -5,6 +5,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import de.radiowave.core.network.BuildConfig
+import de.radiowave.core.network.ITunesSearchApi
 import de.radiowave.core.network.RadioBrowserApi
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -13,6 +14,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Named
 import javax.inject.Singleton
 
 /**
@@ -23,6 +25,7 @@ import javax.inject.Singleton
 object NetworkModule {
 
     private const val BASE_URL = "https://all.api.radio-browser.info/"
+    private const val ITUNES_BASE_URL = "https://itunes.apple.com/"
 
     @Provides
     @Singleton
@@ -51,7 +54,8 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(
+    @Named("radioBrowser")
+    fun provideRadioBrowserRetrofit(
         okHttpClient: OkHttpClient,
         json: Json,
     ): Retrofit {
@@ -64,7 +68,27 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRadioBrowserApi(retrofit: Retrofit): RadioBrowserApi {
+    fun provideRadioBrowserApi(@Named("radioBrowser") retrofit: Retrofit): RadioBrowserApi {
         return retrofit.create(RadioBrowserApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    @Named("iTunes")
+    fun provideITunesRetrofit(
+        okHttpClient: OkHttpClient,
+        json: Json,
+    ): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(ITUNES_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideITunesSearchApi(@Named("iTunes") retrofit: Retrofit): ITunesSearchApi {
+        return retrofit.create(ITunesSearchApi::class.java)
     }
 }

@@ -4,6 +4,8 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import de.radiowave.core.data.repository.CoverArtRepository
+import de.radiowave.core.data.repository.CoverArtRepositoryImpl
 import de.radiowave.core.data.repository.FavoriteRepository
 import de.radiowave.core.data.repository.FavoriteRepositoryImpl
 import de.radiowave.core.data.repository.OfflineFirstStationRepository
@@ -29,4 +31,9 @@ abstract class RepositoryModule {
     abstract fun bindRecentRepository(
         impl: RecentRepositoryImpl,
     ): RecentRepository
+
+    @Binds
+    abstract fun bindCoverArtRepository(
+        impl: CoverArtRepositoryImpl,
+    ): CoverArtRepository
 }

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -54,6 +55,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.SubcomposeAsyncImage
 import de.radiowave.core.model.PlayerState
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
@@ -70,14 +73,23 @@ fun PlayerScreen(
     onVolumeToggle: () -> Unit,
     onRandomStationClick: () -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: PlayerViewModel = hiltViewModel(),
 ) {
     val station = playerState.currentStation ?: return
     val isPlaying = playerState.isPlaying
     val metadataTitle = playerState.metadata?.title?.trim().takeUnless { it.isNullOrBlank() }
     val metadataArtist = playerState.metadata?.artist?.trim().takeUnless { it.isNullOrBlank() }
-    val coverUrl = playerState.metadata?.albumArtUrl?.trim().takeUnless { it.isNullOrBlank() }
+    val streamCoverUrl = playerState.metadata?.albumArtUrl?.trim().takeUnless { it.isNullOrBlank() }
     val fallbackLogoUrl = station.faviconUrl?.trim().takeUnless { it.isNullOrBlank() }
-    val artworkUrl = coverUrl ?: fallbackLogoUrl
+
+    val iTunesCoverUrl by viewModel.coverArtUrl.collectAsStateWithLifecycle()
+
+    LaunchedEffect(metadataArtist, metadataTitle) {
+        viewModel.loadCoverArt(metadataArtist, metadataTitle)
+    }
+
+    val artworkUrl = iTunesCoverUrl ?: streamCoverUrl ?: fallbackLogoUrl
+    val blurArtworkUrl = iTunesCoverUrl ?: streamCoverUrl
 
     val titleLine = metadataTitle ?: station.name
     val artistLine = metadataArtist ?: "Live"
@@ -114,21 +126,41 @@ fun PlayerScreen(
             .fillMaxSize()
             .background(Color(0xFF11131A)),
     ) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .blur(34.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            Color(0xFF3FE6D0).copy(alpha = 0.24f),
-                            Color(0xFFCA4D95).copy(alpha = 0.14f),
-                            Color.Transparent,
+        // Blur background from cover art or fallback gradient
+        if (blurArtworkUrl != null) {
+            SubcomposeAsyncImage(
+                model = blurArtworkUrl,
+                contentDescription = null,
+                modifier = Modifier
+                    .matchParentSize()
+                    .blur(80.dp),
+                contentScale = ContentScale.Crop,
+                loading = { BlurFallbackBackground() },
+                error = { BlurFallbackBackground() },
+            )
+            // Dark overlay for better text readability
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color.Black.copy(alpha = 0.5f)),
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .blur(34.dp)
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFF3FE6D0).copy(alpha = 0.24f),
+                                Color(0xFFCA4D95).copy(alpha = 0.14f),
+                                Color.Transparent,
+                            ),
+                            radius = 1200f,
                         ),
-                        radius = 1200f,
                     ),
-                ),
-        )
+            )
+        }
 
         Column(
             modifier = Modifier
@@ -223,13 +255,32 @@ fun PlayerScreen(
                 overflow = TextOverflow.Ellipsis,
             )
             Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = stationLine,
-                style = MaterialTheme.typography.bodyLarge,
-                color = Color.White.copy(alpha = 0.7f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            // Station row with logo and name
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Station logo (16dp)
+                if (fallbackLogoUrl != null) {
+                    SubcomposeAsyncImage(
+                        model = fallbackLogoUrl,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        contentScale = ContentScale.Crop,
+                        loading = { StationLogoPlaceholder() },
+                        error = { StationLogoPlaceholder() },
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                }
+                Text(
+                    text = stationLine,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.White.copy(alpha = 0.7f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
 
             Spacer(modifier = Modifier.height(18.dp))
 
@@ -385,6 +436,33 @@ private fun ArtworkFallback(text: String) {
             color = Color.White,
         )
     }
+}
+
+@Composable
+private fun BlurFallbackBackground() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFF3FE6D0).copy(alpha = 0.24f),
+                        Color(0xFFCA4D95).copy(alpha = 0.14f),
+                        Color.Transparent,
+                    ),
+                    radius = 1200f,
+                ),
+            ),
+    )
+}
+
+@Composable
+private fun StationLogoPlaceholder() {
+    Box(
+        modifier = Modifier
+            .size(16.dp)
+            .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(4.dp)),
+    )
 }
 
 private fun formatRuntime(durationMs: Long): String {
