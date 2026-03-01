@@ -14,6 +14,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -29,6 +30,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -62,6 +64,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.lerp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -156,10 +159,8 @@ private fun HomeContent(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
-                        .padding(top = 14.dp, bottom = 88.dp),
+                        .padding(top = 8.dp, bottom = 88.dp),
                 ) {
-                    HomeHeader()
-
                     if (favoriteStations.isNotEmpty()) {
                         SectionTitle(
                             title = "Favoriten",
@@ -479,12 +480,14 @@ private fun StarFieldLayer(
 private fun FavoriteHeroCard(
     station: Station,
     onClick: () -> Unit,
+    cardWidth: Dp = 140.dp,
+    cardHeight: Dp = 156.dp,
     modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier
-            .height(170.dp)
-            .width(154.dp),
+            .height(cardHeight)
+            .width(cardWidth),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.22f)),
@@ -590,25 +593,36 @@ private fun FavoriteStationCarousel(
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
-    LazyRow(
-        state = listState,
-        flingBehavior = rememberSnapFlingBehavior(lazyListState = listState),
+    val itemWidth = 140.dp
+    val itemSpacing = 10.dp
+    BoxWithConstraints(
         modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 28.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        items(stations, key = { station -> station.uuid }) { station ->
-            val transform = rememberCarouselTransform(listState, station.uuid)
-            FavoriteHeroCard(
-                station = station,
-                onClick = { onStationClick(station) },
-                modifier = Modifier.graphicsLayer {
-                    scaleX = transform.scale
-                    scaleY = transform.scale
-                    alpha = transform.alpha
-                    rotationY = transform.rotationY
-                },
-            )
+        val sidePadding = ((maxWidth - itemWidth) / 2).coerceAtLeast(20.dp)
+        LazyRow(
+            state = listState,
+            flingBehavior = rememberSnapFlingBehavior(
+                lazyListState = listState,
+                snapPosition = SnapPosition.Center,
+            ),
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = sidePadding),
+            horizontalArrangement = Arrangement.spacedBy(itemSpacing),
+        ) {
+            items(stations, key = { station -> station.uuid }) { station ->
+                val transform = rememberCarouselTransform(listState, station.uuid)
+                FavoriteHeroCard(
+                    station = station,
+                    onClick = { onStationClick(station) },
+                    cardWidth = itemWidth,
+                    modifier = Modifier.graphicsLayer {
+                        scaleX = transform.scale
+                        scaleY = transform.scale
+                        alpha = transform.alpha
+                        rotationY = transform.rotationY
+                    },
+                )
+            }
         }
     }
 }
@@ -639,35 +653,14 @@ private fun rememberCarouselTransform(
     val distance = (itemCenter - viewportCenter)
     val normalized = (abs(distance) / (itemInfo.size * 1.4f)).coerceIn(0f, 1f)
 
-    val scale = lerp(start = 1.08f, stop = 0.82f, fraction = normalized)
-    val alpha = lerp(start = 1f, stop = 0.58f, fraction = normalized)
-    val rotation = ((distance / itemInfo.size) * 11f).coerceIn(-11f, 11f)
+    val scale = lerp(start = 1.02f, stop = 0.84f, fraction = normalized)
+    val alpha = lerp(start = 1f, stop = 0.62f, fraction = normalized)
+    val rotation = ((distance / itemInfo.size) * 10f).coerceIn(-10f, 10f)
     return CarouselTransform(
         scale = scale,
         alpha = alpha,
         rotationY = -rotation,
     )
-}
-
-@Composable
-private fun HomeHeader(
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = "RadioWave",
-            style = MaterialTheme.typography.headlineMedium.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 32.sp,
-            ),
-            color = Color.White,
-        )
-    }
 }
 
 @Composable

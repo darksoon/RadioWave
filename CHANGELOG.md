@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.0-alpha.5] - 2026-03-01
+
+### Highlights
+- Nebula background image integrated as app atmosphere layer (Home, Browse, Favorites).
+- Settings reworked to category navigation with dedicated detail pages.
+- Home favorites carousel tuned (smaller cards, stronger center focus).
+- Carousel snapping now reliably reaches first/last items.
+
 ### Added
 - **iTunes Cover-Art Integration**: Album-Cover werden automatisch von der iTunes Search API geladen und im Fullscreen-Player angezeigt.
   - Dynamischer Blur-Hintergrund vom Album-Cover (80dp Blur-Effekt)
@@ -103,6 +111,7 @@ All notable changes to this project will be documented in this file.
 ### Security/Infra
 - Added `ACCESS_NETWORK_STATE` permission declaration in `core-player` to satisfy lint and ensure network callback safety.
 
+[0.1.0-alpha.5]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.5
 [0.1.0-alpha.3]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.3
 [0.1.0-alpha.2]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.2
 [0.1.0-alpha.1]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.1
