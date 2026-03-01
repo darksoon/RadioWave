@@ -25,7 +25,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -50,6 +53,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -68,6 +72,7 @@ import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.radiowave.core.ui.theme.MintAccent
 import de.radiowave.core.ui.theme.TealAccent
+import kotlin.math.abs
 import kotlin.math.PI
 import kotlin.math.sin
 import kotlin.random.Random
@@ -158,8 +163,8 @@ private fun HomeContent(
                             actionLabel = "Alle",
                             onActionClick = onViewAllFavorites,
                         )
-                        FavoriteStationGrid(
-                            stations = favoriteStations.take(6),
+                        FavoriteStationCarousel(
+                            stations = favoriteStations,
                             onStationClick = onStationClick,
                         )
                     }
@@ -470,21 +475,30 @@ private fun FavoriteHeroCard(
 ) {
     Card(
         modifier = modifier
-            .aspectRatio(1f),
+            .height(170.dp)
+            .width(154.dp),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.22f)),
         onClick = onClick,
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White.copy(alpha = 0.1f)),
-        ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .offset(x = (-8).dp, y = (-10).dp)
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.16f),
+                                Color.White.copy(alpha = 0.06f),
+                                Color.White.copy(alpha = 0.1f),
+                            ),
+                        ),
+                    ),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .offset(x = (-8).dp, y = (-10).dp)
                     .blur(24.dp)
                     .background(
                         Brush.radialGradient(
@@ -494,6 +508,20 @@ private fun FavoriteHeroCard(
                                 Color.Transparent,
                             ),
                             radius = 320f,
+                        ),
+                    ),
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .blur(12.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.2f),
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.18f),
+                            ),
                         ),
                     ),
             )
@@ -516,16 +544,31 @@ private fun FavoriteHeroCard(
                         ),
                     ),
             )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .border(
+                        width = 1.dp,
+                        brush = Brush.linearGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.42f),
+                                Color.White.copy(alpha = 0.1f),
+                                Color.White.copy(alpha = 0.26f),
+                            ),
+                        ),
+                        shape = RoundedCornerShape(20.dp),
+                    ),
+            )
             Text(
                 text = station.name,
                 color = Color.White,
-                maxLines = 2,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.titleSmall.copy(
                     fontWeight = FontWeight.SemiBold,
                 ),
                 modifier = Modifier
-                    .align(Alignment.BottomStart)
+                    .align(Alignment.BottomCenter)
                     .padding(horizontal = 12.dp, vertical = 12.dp),
             )
         }
@@ -533,35 +576,69 @@ private fun FavoriteHeroCard(
 }
 
 @Composable
-private fun FavoriteStationGrid(
+private fun FavoriteStationCarousel(
     stations: List<Station>,
     onStationClick: (Station) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+    val listState = rememberLazyListState()
+    LazyRow(
+        state = listState,
+        flingBehavior = rememberSnapFlingBehavior(lazyListState = listState),
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = 28.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        stations.chunked(3).take(2).forEach { rowStations ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                rowStations.forEach { station ->
-                    FavoriteHeroCard(
-                        station = station,
-                        onClick = { onStationClick(station) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                repeat(3 - rowStations.size) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-            }
+        items(stations, key = { station -> station.uuid }) { station ->
+            val transform = rememberCarouselTransform(listState, station.uuid)
+            FavoriteHeroCard(
+                station = station,
+                onClick = { onStationClick(station) },
+                modifier = Modifier.graphicsLayer {
+                    scaleX = transform.scale
+                    scaleY = transform.scale
+                    alpha = transform.alpha
+                    rotationY = transform.rotationY
+                },
+            )
         }
     }
+}
+
+private data class CarouselTransform(
+    val scale: Float,
+    val alpha: Float,
+    val rotationY: Float,
+)
+
+@Composable
+private fun rememberCarouselTransform(
+    listState: LazyListState,
+    itemKey: String,
+): CarouselTransform {
+    val viewportCenter = (listState.layoutInfo.viewportStartOffset + listState.layoutInfo.viewportEndOffset) / 2f
+    val itemInfo = listState.layoutInfo.visibleItemsInfo.firstOrNull { info ->
+        (info.key as? String) == itemKey
+    }
+    if (itemInfo == null) {
+        return CarouselTransform(
+            scale = 0.86f,
+            alpha = 0.72f,
+            rotationY = 0f,
+        )
+    }
+    val itemCenter = itemInfo.offset + itemInfo.size / 2f
+    val distance = (itemCenter - viewportCenter)
+    val normalized = (abs(distance) / (itemInfo.size * 1.4f)).coerceIn(0f, 1f)
+
+    val scale = lerp(start = 1.08f, stop = 0.82f, fraction = normalized)
+    val alpha = lerp(start = 1f, stop = 0.58f, fraction = normalized)
+    val rotation = ((distance / itemInfo.size) * 11f).coerceIn(-11f, 11f)
+    return CarouselTransform(
+        scale = scale,
+        alpha = alpha,
+        rotationY = -rotation,
+    )
 }
 
 @Composable
