@@ -1,12 +1,18 @@
 package de.radiowave
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -68,12 +74,12 @@ import de.radiowave.core.ui.theme.TealAccent
 import de.radiowave.feature.browse.BrowseScreen
 import de.radiowave.feature.favorites.FavoritesScreen
 import de.radiowave.feature.home.HomeScreen
-import de.radiowave.feature.home.HomePremiumBackground
 import de.radiowave.feature.home.HomeViewModel
 import de.radiowave.feature.player.FloatingPlayerBar
 import de.radiowave.feature.player.PlayerScreen
 import de.radiowave.feature.settings.SettingsScreen
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.core.content.ContextCompat
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -124,6 +130,7 @@ class MainActivity : ComponentActivity() {
                 darkTheme = useDarkTheme,
                 dynamicColor = dynamicColors,
             ) {
+                EnsureNotificationPermission()
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = DarkBackground,
@@ -310,8 +317,10 @@ fun RadioWaveMainScreen() {
                 ?.any { destination -> destination.route == BottomNavItem.Home.route } == true
 
             if (isHomeRoute) {
-                HomePremiumBackground(
-                    modifier = Modifier.fillMaxSize(),
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFF0D1118)),
                 )
             }
 
@@ -422,6 +431,26 @@ fun RadioWaveMainScreen() {
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun EnsureNotificationPermission() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { }
+
+    LaunchedEffect(Unit) {
+        val granted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS,
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!granted) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 }
