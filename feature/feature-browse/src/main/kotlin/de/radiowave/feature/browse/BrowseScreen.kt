@@ -81,7 +81,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.radiowave.core.ui.components.StationLogoImage
 import de.radiowave.core.model.AppSettings
 import de.radiowave.core.model.Station
-import de.radiowave.core.ui.theme.DarkBackground
 import de.radiowave.core.ui.theme.DarkCardBackground
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
@@ -279,7 +278,7 @@ private fun BrowseContent(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(DarkBackground),
+            .background(Color.Transparent),
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -894,4 +893,3 @@ private fun StationGridCard(
 private fun String.isInsecureHttpStream(): Boolean {
     return startsWith("http://", ignoreCase = true)
 }
-

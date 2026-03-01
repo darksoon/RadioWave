@@ -73,6 +73,7 @@ import de.radiowave.core.ui.theme.RadioWaveTheme
 import de.radiowave.core.ui.theme.TealAccent
 import de.radiowave.feature.browse.BrowseScreen
 import de.radiowave.feature.favorites.FavoritesScreen
+import de.radiowave.feature.home.HomePremiumBackground
 import de.radiowave.feature.home.HomeScreen
 import de.radiowave.feature.home.HomeViewModel
 import de.radiowave.feature.player.FloatingPlayerBar
@@ -312,17 +313,9 @@ fun RadioWaveMainScreen() {
         Box(
             modifier = Modifier.fillMaxSize(),
         ) {
-            val isHomeRoute = currentDestination
-                ?.hierarchy
-                ?.any { destination -> destination.route == BottomNavItem.Home.route } == true
-
-            if (isHomeRoute) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFF0D1118)),
-                )
-            }
+            HomePremiumBackground(
+                modifier = Modifier.fillMaxSize(),
+            )
 
             Box(
                 modifier = Modifier

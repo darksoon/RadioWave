@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
@@ -56,6 +57,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -67,6 +69,7 @@ import de.radiowave.core.model.Station
 import de.radiowave.core.ui.components.ErrorState
 import de.radiowave.core.ui.components.LoadingState
 import de.radiowave.core.ui.components.StationLogoImage
+import de.radiowave.core.ui.R as CoreUiR
 import de.radiowave.core.ui.theme.DarkCardBackground
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
@@ -297,9 +300,14 @@ fun HomePremiumBackground(
         label = "nebula-breath",
     )
 
-    Box(
-        modifier = modifier.background(Color(0xFF000514)),
-    ) {
+    Box(modifier = modifier.background(Color(0xFF050913))) {
+        Image(
+            painter = painterResource(id = CoreUiR.drawable.bg_nebula),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+            alpha = 0.5f,
+        )
         NebulaLayer(
             farDriftX = nebulaFarDriftX,
             farDriftY = nebulaFarDriftY,
@@ -335,9 +343,9 @@ private fun NebulaLayer(
         drawRect(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    Color(0xFF0F001E),
-                    Color(0xFF07021A),
-                    Color(0xFF000514),
+                    Color(0xFF0A1222),
+                    Color(0xFF081020),
+                    Color(0xFF050913),
                 ),
                 center = center.copy(
                     x = center.x + farShiftX,
@@ -349,8 +357,8 @@ private fun NebulaLayer(
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    TealAccent.copy(alpha = 0.14f * breath),
-                    MintAccent.copy(alpha = 0.08f * breath),
+                    TealAccent.copy(alpha = 0.1f * breath),
+                    MintAccent.copy(alpha = 0.05f * breath),
                     Color.Transparent,
                 ),
                 center = center.copy(
@@ -368,7 +376,7 @@ private fun NebulaLayer(
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    Color(0xFF6E43D6).copy(alpha = 0.12f * breath),
+                    Color(0xFF7C53D8).copy(alpha = 0.08f * breath),
                     Color.Transparent,
                 ),
                 center = center.copy(
@@ -386,7 +394,7 @@ private fun NebulaLayer(
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    Color(0xFF5ED3D6).copy(alpha = 0.08f * breath),
+                    Color(0xFF5ED3D6).copy(alpha = 0.06f * breath),
                     Color.Transparent,
                 ),
                 center = center.copy(
@@ -405,8 +413,8 @@ private fun NebulaLayer(
             brush = Brush.verticalGradient(
                 colors = listOf(
                     Color.Transparent,
-                    Color.Black.copy(alpha = 0.12f),
-                    Color.Black.copy(alpha = 0.22f),
+                    Color.Black.copy(alpha = 0.14f),
+                    Color.Black.copy(alpha = 0.26f),
                 ),
             ),
         )
@@ -431,7 +439,7 @@ private fun StarFieldLayer(
     Canvas(
         modifier = modifier.drawWithCache {
             val random = Random(9917)
-            val starCount = 60
+            val starCount = 36
             val stars = List(starCount) {
                 StarParticle(
                     xFactor = random.nextFloat(),
@@ -444,7 +452,7 @@ private fun StarFieldLayer(
                     phase = random.nextFloat() * (2f * PI.toFloat()),
                     speed = lerp(0.65f, 1.35f, random.nextFloat()),
                     minAlpha = lerp(0.3f, 0.45f, random.nextFloat()),
-                    maxAlpha = lerp(0.7f, 1.0f, random.nextFloat()),
+                    maxAlpha = lerp(0.55f, 0.85f, random.nextFloat()),
                 )
             }
 
