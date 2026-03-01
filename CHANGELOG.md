@@ -4,11 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **iTunes Cover-Art Integration**: Album-Cover werden automatisch von der iTunes Search API geladen und im Fullscreen-Player angezeigt.
+  - Dynamischer Blur-Hintergrund vom Album-Cover (80dp Blur-Effekt)
+  - Großes Cover-Bild (600x600px) im Player
+  - Station-Logo (16dp) wird vor dem Stationsnamen angezeigt
+  - In-Memory Cache verhindert wiederholte API-Aufrufe für denselben Song
+  - Fallback-Kette: iTunes Cover → Stream-Metadata Cover → Station-Logo
+  - Kostenlos, kein API-Key erforderlich
+- **Nebula Background Asset**: Echtes Nebula-Bild als visueller Hintergrund integriert (mit dezenten Overlays/Stars).
+- **Settings Kategorien-Navigation**: Settings als Kategorie-Startseite mit separaten Detailseiten fuer bessere Uebersicht.
+
 ### Fixed
 - Playback no longer keeps running after app removal from recents (`onTaskRemoved` stop path in foreground playback service).
 - Removed dead/unused `RadioPlayerService` branch to avoid parallel playback architecture drift.
 - Replaced destructive Room fallback with explicit migrations (`1->2`, `2->3`) and enabled schema export/versioning.
 - Stabilized audio focus behavior to prevent instant stop/pause loops on play.
+- Favorites-Karussell Snap-Verhalten verbessert: Center-Snap funktioniert nun robust bis zum ersten/letzten Item.
 - Fixed unit test compilation errors in `PlayerControllerImplRecoveryTest`:
   - Changed `MainDispatcherRule` from `private class` to `public class` to match public property visibility.
   - Removed invalid override of final `getSystemService` method in anonymous `ContextWrapper`.
@@ -21,6 +33,8 @@ All notable changes to this project will be documented in this file.
 - Network callback lifecycle now pause-aware in player control flow.
 - API client timeout tuned down for faster failure feedback.
 - HTTP logging interceptor now debug-only wiring.
+- Home UI weiter poliert (Header reduziert, Karussell kompakter).
+- Hintergrund-Rendering vereinheitlicht fuer Home/Browse/Favoriten.
 - Added targeted unit tests for player recovery paths (`scheduleReconnect`, playback-lost recovery, buffering watchdog).
 - Added targeted repository flow tests for favorites merge/toggle/reorder and station DTO mapping behavior.
 

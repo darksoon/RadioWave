@@ -1,6 +1,6 @@
 # RadioWave Roadmap (Public)
 
-Stand: 2026-02-25
+Stand: 2026-03-01
 
 Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 
@@ -12,10 +12,13 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Favoriten und Recents in Room
 - Fullscreen-Player Controls: Play/Pause, Mute, Random, Previous, Favorite
 - LIVE-Fortschritt im Fullscreen-Player (UI-Animation)
+- **Album-Cover im Fullscreen-Player** (iTunes API, Blur-Hintergrund, Station-Logo)
 - Home/Browse/Favorites UI-Polish (Glass-Look, bessere Karten, Performance-Tuning)
+- Nebula-Background als app-weites Visual (Home/Browse/Favoriten) mit dezenten Overlays
+- Home-Favoritenkarussell weiter optimiert (kompakter, Center-Snap inkl. Rand-Items)
 - Security-Basis gehaertet (`allowBackup=false`, HTTP-Streams kompatibel fuer breite Senderabdeckung)
 - Optional sichtbare HTTP-Kennzeichnung in Browse + Settings-Toggle fuer unsichere Streams
-- Settings Rework als Card-Sektionen (`Allgemein`, `Sound`, `Speicher & Daten`, `Info`)
+- Settings Rework als Kategorien-Navigation mit Detailseiten (`Allgemein`, `Sound`, `Benachrichtigung`, `Speicher & Daten`, `Info`)
 - Settings-Optionen: Theme (System/Dark/Light), Dynamic Colors, Standard-Qualitaet, Buffer-Profil
 - Settings-Datenaktionen: Sender-Cache leeren, Verlauf loeschen
 - Settings-Info: App-Version, GitHub Repo, Issues, Website, Buy a Coffee
@@ -30,6 +33,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Stream-Qualitaet im Fullscreen-Player anzeigen
 
 ## Geplant (naechste Schritte)
+- Radio Timeshift MVP (fix 20 Minuten Buffer, Fullscreen-Seek + LIVE-Button)
 - Sleep Timer (15/30/60/off)
 - Share Action im Fullscreen-Player
 - Favoriten Export/Import (JSON)
