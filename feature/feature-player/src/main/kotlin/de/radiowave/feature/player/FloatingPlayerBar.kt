@@ -44,9 +44,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import de.radiowave.core.model.PlayerState
 import de.radiowave.core.model.Station
+import de.radiowave.core.ui.components.StationLogoImage
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.radiowave.core.ui.theme.TealAccent
@@ -142,8 +142,8 @@ fun FloatingPlayerBar(
                         .clip(RoundedCornerShape(12.dp))
                         .background(DarkSurfaceVariant),
                 ) {
-                    AsyncImage(
-                        model = faviconUrl,
+                    StationLogoImage(
+                        imageUrl = faviconUrl,
                         contentDescription = stationName,
                         modifier = Modifier.fillMaxWidth(),
                         contentScale = ContentScale.Crop,

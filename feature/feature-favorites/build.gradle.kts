@@ -8,4 +8,5 @@ android {
 
 dependencies {
     implementation(project(":core:core-model"))
+    implementation(project(":core:core-ui"))
 }

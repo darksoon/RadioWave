@@ -78,9 +78,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
-import coil.request.CachePolicy
-import coil.request.ImageRequest
+import de.radiowave.core.ui.components.StationLogoImage
 import de.radiowave.core.model.AppSettings
 import de.radiowave.core.model.Station
 import de.radiowave.core.ui.theme.DarkBackground
@@ -811,16 +809,8 @@ private fun StationGridCard(
                         .clip(RoundedCornerShape(12.dp))
                         .background(DarkSurfaceVariant),
                 ) {
-                    val imageRequest = ImageRequest.Builder(context)
-                        .data(station.faviconUrl)
-                        .crossfade(false)
-                        .memoryCachePolicy(CachePolicy.ENABLED)
-                        .diskCachePolicy(CachePolicy.ENABLED)
-                        .networkCachePolicy(CachePolicy.ENABLED)
-                        .allowHardware(true)
-                        .build()
-                    AsyncImage(
-                        model = imageRequest,
+                    StationLogoImage(
+                        imageUrl = station.faviconUrl,
                         contentDescription = station.name,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop,
@@ -904,5 +894,4 @@ private fun StationGridCard(
 private fun String.isInsecureHttpStream(): Boolean {
     return startsWith("http://", ignoreCase = true)
 }
-
 

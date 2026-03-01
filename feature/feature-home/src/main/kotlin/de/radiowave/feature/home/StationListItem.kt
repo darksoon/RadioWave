@@ -30,8 +30,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.SubcomposeAsyncImage
 import de.radiowave.core.model.Station
+import de.radiowave.core.ui.components.StationLogoImage
 import de.radiowave.core.ui.theme.DarkCardBackground
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
@@ -65,8 +65,8 @@ fun StationListItem(
                 .clip(RoundedCornerShape(12.dp))
                 .background(DarkSurfaceVariant),
         ) {
-            SubcomposeAsyncImage(
-                model = station.faviconUrl,
+            StationLogoImage(
+                imageUrl = station.faviconUrl,
                 contentDescription = station.name,
                 modifier = Modifier.fillMaxWidth(),
                 contentScale = ContentScale.Crop,

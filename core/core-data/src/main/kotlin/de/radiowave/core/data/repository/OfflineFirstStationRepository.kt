@@ -9,7 +9,7 @@ import de.radiowave.core.model.Station
 import de.radiowave.core.network.RadioBrowserApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,7 +20,20 @@ class OfflineFirstStationRepository @Inject constructor(
 ) : StationRepository {
 
     override fun searchStations(query: String): Flow<List<Station>> = flow {
-        emit(api.searchByName(query).map { it.toDomain() })
+        val normalizedQuery = query.trim().lowercase()
+        val now = System.currentTimeMillis()
+        val cached = searchCache[normalizedQuery]
+        if (cached != null && now - cached.timestampMs <= searchCacheTtlMs) {
+            emit(cached.stations)
+            return@flow
+        }
+
+        val fresh = api.searchByName(query).map { it.toDomain() }
+        searchCache[normalizedQuery] = SearchCacheEntry(
+            timestampMs = now,
+            stations = fresh,
+        )
+        emit(fresh)
     }
 
     override fun getTopStations(): Flow<List<Station>> = flow {
@@ -57,5 +70,15 @@ class OfflineFirstStationRepository @Inject constructor(
         } catch (e: Exception) {
             // Silently fail - not critical
         }
+    }
+
+    private data class SearchCacheEntry(
+        val timestampMs: Long,
+        val stations: List<Station>,
+    )
+
+    private companion object {
+        const val searchCacheTtlMs: Long = 15 * 60 * 1000L
+        val searchCache: ConcurrentHashMap<String, SearchCacheEntry> = ConcurrentHashMap()
     }
 }

@@ -24,8 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.SubcomposeAsyncImage
 import de.radiowave.core.model.Station
+import de.radiowave.core.ui.components.StationLogoImage
 import de.radiowave.core.ui.theme.DarkCardBackground
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.radiowave.core.ui.theme.TealAccent
@@ -61,8 +61,8 @@ fun StationCard(
                     .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                     .background(DarkSurfaceVariant),
             ) {
-                SubcomposeAsyncImage(
-                    model = station.faviconUrl,
+                StationLogoImage(
+                    imageUrl = station.faviconUrl,
                     contentDescription = station.name,
                     modifier = Modifier.fillMaxWidth(),
                     contentScale = ContentScale.Crop,

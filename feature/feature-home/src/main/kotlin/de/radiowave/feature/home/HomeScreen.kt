@@ -59,10 +59,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.SubcomposeAsyncImage
 import de.radiowave.core.model.Station
 import de.radiowave.core.ui.components.ErrorState
 import de.radiowave.core.ui.components.LoadingState
+import de.radiowave.core.ui.components.StationLogoImage
 import de.radiowave.core.ui.theme.DarkCardBackground
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
@@ -753,8 +753,8 @@ private fun StationArtwork(
                 colors = fallbackColors,
             )
         } else {
-            SubcomposeAsyncImage(
-                model = imageUrl,
+            StationLogoImage(
+                imageUrl = imageUrl,
                 contentDescription = stationName,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = contentScale,

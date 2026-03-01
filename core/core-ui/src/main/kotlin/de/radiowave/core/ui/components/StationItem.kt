@@ -27,7 +27,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import de.radiowave.core.model.Station
 
 @Composable
@@ -60,8 +59,8 @@ fun StationItem(
                     .clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant),
             ) {
-                AsyncImage(
-                    model = station.faviconUrl,
+                StationLogoImage(
+                    imageUrl = station.faviconUrl,
                     contentDescription = station.name,
                     modifier = Modifier.fillMaxWidth(),
                     contentScale = ContentScale.Crop,

@@ -41,10 +41,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.SubcomposeAsyncImage
 import de.radiowave.core.model.Station
 import de.radiowave.core.ui.components.ErrorState
 import de.radiowave.core.ui.components.LoadingState
+import de.radiowave.core.ui.components.StationLogoImage
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.radiowave.core.ui.theme.TealAccent
@@ -225,8 +225,8 @@ private fun StationLogo(
         if (imageUrl.isNullOrBlank()) {
             LogoFallback(stationName = stationName)
         } else {
-            SubcomposeAsyncImage(
-                model = imageUrl,
+            StationLogoImage(
+                imageUrl = imageUrl,
                 contentDescription = stationName,
                 modifier = Modifier.fillMaxSize(),
                 loading = {
@@ -303,4 +303,3 @@ private fun EmptyFavorites(
         }
     }
 }
-
