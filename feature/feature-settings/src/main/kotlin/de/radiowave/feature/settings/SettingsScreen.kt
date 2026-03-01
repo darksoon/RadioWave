@@ -71,6 +71,18 @@ fun SettingsScreen(
     var showInsecureStreams by rememberSaveable {
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_INSECURE_STREAMS, true))
     }
+    var showNotificationPlayPause by rememberSaveable {
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_NOTIFICATION_SHOW_PLAY_PAUSE, true))
+    }
+    var showNotificationPrevious by rememberSaveable {
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_NOTIFICATION_SHOW_PREVIOUS, true))
+    }
+    var showNotificationNext by rememberSaveable {
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_NOTIFICATION_SHOW_NEXT, true))
+    }
+    var showNotificationStop by rememberSaveable {
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_NOTIFICATION_SHOW_STOP, true))
+    }
     var defaultAudioQuality by rememberSaveable {
         mutableStateOf(
             prefs.getString(AppSettings.KEY_DEFAULT_AUDIO_QUALITY, AppSettings.QUALITY_AUTO)
@@ -175,6 +187,50 @@ fun SettingsScreen(
                     onSelected = { value ->
                         defaultAudioQuality = value
                         prefs.edit().putString(AppSettings.KEY_DEFAULT_AUDIO_QUALITY, value).apply()
+                    },
+                )
+            }
+        }
+
+        item {
+            SettingsCard(title = "Benachrichtigung") {
+                SettingToggleRow(
+                    title = "Play/Pause Button",
+                    subtitle = "Steuerung direkt in der Medien-Benachrichtigung.",
+                    checked = showNotificationPlayPause,
+                    onCheckedChange = { checked ->
+                        showNotificationPlayPause = checked
+                        prefs.edit().putBoolean(AppSettings.KEY_NOTIFICATION_SHOW_PLAY_PAUSE, checked).apply()
+                    },
+                )
+                HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                SettingToggleRow(
+                    title = "Previous Button",
+                    subtitle = "Vorherigen Sender aus Verlauf abspielen.",
+                    checked = showNotificationPrevious,
+                    onCheckedChange = { checked ->
+                        showNotificationPrevious = checked
+                        prefs.edit().putBoolean(AppSettings.KEY_NOTIFICATION_SHOW_PREVIOUS, checked).apply()
+                    },
+                )
+                HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                SettingToggleRow(
+                    title = "Next Button",
+                    subtitle = "Naechsten Sender aus Verlauf/Top-Sendern starten.",
+                    checked = showNotificationNext,
+                    onCheckedChange = { checked ->
+                        showNotificationNext = checked
+                        prefs.edit().putBoolean(AppSettings.KEY_NOTIFICATION_SHOW_NEXT, checked).apply()
+                    },
+                )
+                HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                SettingToggleRow(
+                    title = "Stop Button",
+                    subtitle = "Streaming sofort beenden und Notification entfernen.",
+                    checked = showNotificationStop,
+                    onCheckedChange = { checked ->
+                        showNotificationStop = checked
+                        prefs.edit().putBoolean(AppSettings.KEY_NOTIFICATION_SHOW_STOP, checked).apply()
                     },
                 )
             }

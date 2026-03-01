@@ -13,6 +13,10 @@ object AppSettings {
     const val KEY_KEEP_SCREEN_ON_FULLSCREEN = "keep_screen_on_fullscreen"
     const val KEY_SHOW_QUICK_TOASTS = "show_quick_toasts"
     const val KEY_SHOW_INSECURE_STREAMS = "show_insecure_streams"
+    const val KEY_NOTIFICATION_SHOW_PLAY_PAUSE = "notification_show_play_pause"
+    const val KEY_NOTIFICATION_SHOW_STOP = "notification_show_stop"
+    const val KEY_NOTIFICATION_SHOW_PREVIOUS = "notification_show_previous"
+    const val KEY_NOTIFICATION_SHOW_NEXT = "notification_show_next"
 
     const val KEY_DEFAULT_AUDIO_QUALITY = "default_audio_quality"
     const val KEY_ALLOW_MOBILE_DATA = "allow_mobile_data"

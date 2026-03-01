@@ -10,8 +10,10 @@ import kotlinx.coroutines.flow.StateFlow
  */
 interface PlayerController {
     val playerState: StateFlow<PlayerState>
-    
+
     suspend fun playStation(station: Station)
+    fun playPreviousStation()
+    fun playNextStation()
     fun togglePlayPause()
     fun toggleMute()
     fun stop()

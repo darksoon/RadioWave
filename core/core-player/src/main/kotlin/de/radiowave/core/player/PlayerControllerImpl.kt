@@ -29,6 +29,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy
 import androidx.media3.exoplayer.upstream.LoadErrorHandlingPolicy
 import dagger.hilt.android.qualifiers.ApplicationContext
+import de.radiowave.core.data.repository.StationRepository
 import de.radiowave.core.model.AppSettings
 import de.radiowave.core.model.PlayerError
 import de.radiowave.core.model.PlayerState
@@ -42,6 +43,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.cancel
@@ -53,6 +55,7 @@ import kotlin.math.min
 @UnstableApi
 class PlayerControllerImpl @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val stationRepository: StationRepository,
 ) : PlayerController {
 
     private var exoPlayer: ExoPlayer? = null
@@ -88,6 +91,11 @@ class PlayerControllerImpl @Inject constructor(
     private var shouldResumeAfterAudioFocusGain = false
     private var wasDuckedForAudioFocus = false
     private var activeBufferProfile: String? = null
+    private val playbackBackStack = ArrayDeque<Station>()
+    private val playbackForwardStack = ArrayDeque<Station>()
+    private var stationPool: List<Station> = emptyList()
+    private var stationPoolJob: Job? = null
+    private val maxPlaybackHistorySize = 40
     private val audioManager: AudioManager? = context.getSystemService(AudioManager::class.java)
     private val isDebuggableApp: Boolean by lazy {
         (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
@@ -124,6 +132,10 @@ class PlayerControllerImpl @Inject constructor(
 
     private val _playerState = MutableStateFlow(PlayerState())
     override val playerState: StateFlow<PlayerState> = _playerState.asStateFlow()
+
+    init {
+        warmUpStationPool()
+    }
 
     private fun getOrCreatePlayer(): ExoPlayer {
         return exoPlayer ?: createPlayer(getSelectedBufferProfile()).also { player ->
@@ -333,8 +345,14 @@ class PlayerControllerImpl @Inject constructor(
                         station = _playerState.value.currentStation ?: return,
                         reason = "unexpected-not-playing",
                     )
-                } else if (userPausedPlayback || isStopping) {
+                } else if (isStopping) {
                     stopForegroundPlaybackServiceIfRunning()
+                } else {
+                    val stationName = _playerState.value.currentStation?.name.orEmpty()
+                    updateForegroundPlaybackNotification(
+                        stationName = stationName,
+                        subtitle = resolveNotificationSubtitle(isPlaying = false),
+                    )
                 }
                 updatePlaybackLocks(player)
             }
@@ -429,7 +447,9 @@ class PlayerControllerImpl @Inject constructor(
                 val currentStationName = _playerState.value.currentStation?.name.orEmpty()
                 updateForegroundPlaybackNotification(
                     stationName = currentStationName,
-                    subtitle = listOfNotNull(artist, title).joinToString(" - ").ifBlank { "Live stream playing" },
+                    subtitle = listOfNotNull(artist, title).joinToString(" - ").ifBlank {
+                        resolveNotificationSubtitle(isPlaying = _playerState.value.isPlaying)
+                    },
                 )
             }
 
@@ -766,7 +786,117 @@ class PlayerControllerImpl @Inject constructor(
         manager.abandonAudioFocusRequest(audioFocusRequest)
     }
 
+    private fun warmUpStationPool() {
+        if (stationPoolJob?.isActive == true) return
+        stationPoolJob = controllerScope.launch(Dispatchers.IO) {
+            val loaded = stationRepository.getTopStations().firstOrNull().orEmpty()
+                .filter { it.streamUrl.isNotBlank() }
+                .distinctBy { it.uuid }
+            if (loaded.isNotEmpty()) {
+                stationPool = loaded
+            }
+        }
+    }
+
+    private fun rememberCurrentStationForBackNavigation(nextStation: Station) {
+        val currentStation = _playerState.value.currentStation ?: return
+        if (currentStation.uuid == nextStation.uuid) return
+        if (playbackBackStack.lastOrNull()?.uuid == currentStation.uuid) return
+
+        playbackBackStack.addLast(currentStation)
+        while (playbackBackStack.size > maxPlaybackHistorySize) {
+            playbackBackStack.removeFirst()
+        }
+    }
+
+    private fun playStationFromNavigation(target: Station) {
+        controllerScope.launch {
+            playStation(target, addCurrentToBackStack = false, clearForwardStack = false)
+        }
+    }
+
+    private suspend fun pickNextStationCandidate(): Station? {
+        val currentStationUuid = _playerState.value.currentStation?.uuid
+        val currentPool = if (stationPool.isNotEmpty()) {
+            stationPool
+        } else {
+            stationRepository.getTopStations().firstOrNull().orEmpty()
+                .filter { it.streamUrl.isNotBlank() }
+                .distinctBy { it.uuid }
+                .also { loaded ->
+                    if (loaded.isNotEmpty()) {
+                        stationPool = loaded
+                    }
+                }
+        }
+
+        if (currentPool.isEmpty()) return null
+
+        val candidates = currentPool.filterNot { it.uuid == currentStationUuid }
+        return if (candidates.isNotEmpty()) {
+            candidates.random()
+        } else {
+            currentPool.random()
+        }
+    }
+
+    private suspend fun playStation(
+        station: Station,
+        addCurrentToBackStack: Boolean,
+        clearForwardStack: Boolean,
+    ) {
+        if (addCurrentToBackStack) {
+            rememberCurrentStationForBackNavigation(station)
+        }
+        if (clearForwardStack) {
+            playbackForwardStack.clear()
+        }
+        startPlayback(station)
+    }
+
     override suspend fun playStation(station: Station) {
+        playStation(
+            station = station,
+            addCurrentToBackStack = true,
+            clearForwardStack = true,
+        )
+    }
+
+    override fun playPreviousStation() {
+        val currentStation = _playerState.value.currentStation ?: return
+        val previousStation = playbackBackStack.removeLastOrNull() ?: return
+        playbackForwardStack.addLast(currentStation)
+        while (playbackForwardStack.size > maxPlaybackHistorySize) {
+            playbackForwardStack.removeFirst()
+        }
+        playStationFromNavigation(previousStation)
+    }
+
+    override fun playNextStation() {
+        val currentStation = _playerState.value.currentStation
+        val forwardStation = playbackForwardStack.removeLastOrNull()
+        if (forwardStation != null) {
+            if (currentStation != null) {
+                playbackBackStack.addLast(currentStation)
+                while (playbackBackStack.size > maxPlaybackHistorySize) {
+                    playbackBackStack.removeFirst()
+                }
+            }
+            playStationFromNavigation(forwardStation)
+            return
+        }
+
+        controllerScope.launch {
+            val nextStation = pickNextStationCandidate() ?: return@launch
+            playStation(
+                station = nextStation,
+                addCurrentToBackStack = true,
+                clearForwardStack = true,
+            )
+        }
+    }
+
+    private suspend fun startPlayback(station: Station) {
         reconnectJob?.cancel()
         bufferingWatchdogJob?.cancel()
         playbackLostRecoveryJob?.cancel()
@@ -875,6 +1005,8 @@ class PlayerControllerImpl @Inject constructor(
         shouldResumeAfterAudioFocusGain = false
         wasDuckedForAudioFocus = false
         exoPlayer?.stop()
+        playbackBackStack.clear()
+        playbackForwardStack.clear()
         unregisterNetworkCallbackIfNeeded()
         stopForegroundPlaybackServiceIfRunning()
         releasePlaybackLocks()
@@ -895,6 +1027,10 @@ class PlayerControllerImpl @Inject constructor(
         userPausedPlayback = false
         shouldResumeAfterAudioFocusGain = false
         wasDuckedForAudioFocus = false
+        stationPoolJob?.cancel()
+        playbackBackStack.clear()
+        playbackForwardStack.clear()
+        stationPool = emptyList()
         unregisterNetworkCallbackIfNeeded()
         stopForegroundPlaybackServiceIfRunning()
         releasePlaybackLocks()
@@ -910,13 +1046,14 @@ class PlayerControllerImpl @Inject constructor(
 
     private fun ensureForegroundPlaybackServiceRunning(
         stationName: String = _playerState.value.currentStation?.name.orEmpty(),
-        subtitle: String = "Live stream playing",
+        subtitle: String = resolveNotificationSubtitle(isPlaying = _playerState.value.isPlaying),
     ) {
         try {
             PlaybackForegroundService.start(
                 context = context,
                 stationName = stationName,
                 subtitle = subtitle,
+                isPlaying = _playerState.value.isPlaying,
             )
             isForegroundServiceRunning = true
         } catch (error: Exception) {
@@ -935,6 +1072,16 @@ class PlayerControllerImpl @Inject constructor(
         )
     }
 
+    private fun resolveNotificationSubtitle(isPlaying: Boolean): String {
+        val metadata = _playerState.value.metadata
+        val metadataText = listOfNotNull(
+            metadata?.artist?.trim().takeUnless { it.isNullOrBlank() },
+            metadata?.title?.trim().takeUnless { it.isNullOrBlank() },
+        ).joinToString(" - ")
+        if (metadataText.isNotBlank()) return metadataText
+        return if (isPlaying) "Live stream playing" else "Playback paused"
+    }
+
     private fun stopForegroundPlaybackServiceIfRunning() {
         if (!isForegroundServiceRunning) return
         try {
@@ -942,9 +1089,9 @@ class PlayerControllerImpl @Inject constructor(
         } catch (error: Exception) {
             logWarning("Unable to stop playback foreground service: ${error.message}")
         } finally {
-        isForegroundServiceRunning = false
-        isInternalRestartInProgress = false
-    }
+            isForegroundServiceRunning = false
+            isInternalRestartInProgress = false
+        }
     }
 
     private fun logDebug(message: String) {

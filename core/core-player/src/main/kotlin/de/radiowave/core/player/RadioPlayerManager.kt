@@ -19,6 +19,14 @@ class RadioPlayerManager @Inject constructor(
         playerController.playStation(station)
     }
 
+    fun playPreviousStation() {
+        playerController.playPreviousStation()
+    }
+
+    fun playNextStation() {
+        playerController.playNextStation()
+    }
+
     fun playStation(url: String) {
         // For simple URL playback without full station data
         val tempStation = Station(
