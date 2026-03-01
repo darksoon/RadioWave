@@ -35,6 +35,7 @@ Die öffentliche Roadmap findest du hier: **[ROADMAP.md](./ROADMAP.md)**
 - **Kein Account nötig** – alles lokal auf dem Gerät
 - **Komplett werbefrei** – kein Tracking, keine Analytics
 - **45.000+ Sender** über Radio Browser
+- **Album-Cover** – automatisch von iTunes API (basiert auf Song-Metadaten)
 - **Android Auto** Support
 - **Chromecast** Support
 - **Material You** UI mit modernem Dark Look
@@ -185,4 +186,5 @@ Wenn dir RadioWave gefällt und du die Entwicklung unterstützen willst:
 ## 🙌 Credits
 
 - Sender-Daten: [Radio Browser API](https://www.radio-browser.info/)
+- Album-Cover: [iTunes Search API](https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/)
 - Icons: Material Design Icons
