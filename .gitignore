@@ -84,3 +84,6 @@ keystore.properties
 # Local reference mockup folders
 /mokup/
 /mockup/
+
+# Local audits
+/Audits/
