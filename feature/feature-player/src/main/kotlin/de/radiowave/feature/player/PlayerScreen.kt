@@ -34,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -48,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -94,6 +96,7 @@ fun PlayerScreen(
     val titleLine = metadataTitle ?: station.name
     val artistLine = metadataArtist ?: "Live"
     val stationLine = station.name
+    val qualityLabel = formatStreamQualityLabel(station.codec, station.bitrate)
 
     val sessionStart = playerState.sessionStartedAtElapsedMs ?: remember(station.uuid) {
         SystemClock.elapsedRealtime()
@@ -281,6 +284,24 @@ fun PlayerScreen(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+            if (qualityLabel != null) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Surface(
+                    shape = RoundedCornerShape(999.dp),
+                    color = Color.White.copy(alpha = 0.1f),
+                    border = BorderStroke(
+                        width = 1.dp,
+                        color = Color.White.copy(alpha = 0.2f),
+                    ),
+                ) {
+                    Text(
+                        text = qualityLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.88f),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(18.dp))
 
@@ -354,6 +375,20 @@ private fun MainPlaybackButton(
     isPlaying: Boolean,
     onClick: () -> Unit,
 ) {
+    val ringTransition = rememberInfiniteTransition(label = "playbackRing")
+    val ringRotation by ringTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 2800,
+                easing = LinearEasing,
+            ),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "playbackRingRotation",
+    )
+
     Surface(
         onClick = onClick,
         shape = CircleShape,
@@ -363,6 +398,9 @@ private fun MainPlaybackButton(
             modifier = Modifier
                 .size(84.dp)
                 .clip(CircleShape)
+                .graphicsLayer {
+                    rotationZ = if (isPlaying) ringRotation else 0f
+                }
                 .background(
                     Brush.linearGradient(
                         colors = listOf(
@@ -474,5 +512,17 @@ private fun formatRuntime(durationMs: Long): String {
         "%d:%02d:%02d".format(hours, minutes, seconds)
     } else {
         "%01d:%02d".format(minutes, seconds)
+    }
+}
+
+private fun formatStreamQualityLabel(codec: String?, bitrate: Int?): String? {
+    val normalizedCodec = codec?.trim().takeUnless { it.isNullOrBlank() }?.uppercase()
+    val normalizedBitrate = bitrate?.takeIf { it > 0 }
+
+    return when {
+        normalizedCodec != null && normalizedBitrate != null -> "$normalizedCodec ${normalizedBitrate} kbps"
+        normalizedCodec != null -> normalizedCodec
+        normalizedBitrate != null -> "${normalizedBitrate} kbps"
+        else -> null
     }
 }
