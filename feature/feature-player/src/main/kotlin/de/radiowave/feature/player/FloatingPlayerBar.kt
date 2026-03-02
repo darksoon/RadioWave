@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.radiowave.core.model.PlayerState
 import de.radiowave.core.model.Station
+import de.radiowave.core.ui.components.MarqueeText
 import de.radiowave.core.ui.components.StationLogoImage
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
@@ -176,30 +177,17 @@ fun FloatingPlayerBar(
                     val secondaryColor = if (isBuffering) TealAccent else DarkOnSurfaceVariant
 
                     if (showMetadataLine) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 1.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            if (secondaryLine != null) {
-                                Text(
-                                    text = secondaryLine,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = secondaryColor,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f),
-                                )
-                            } else {
-                                Spacer(modifier = Modifier.weight(1f))
-                            }
+                        MarqueeText(
+                            text = secondaryLine ?: "",
+                            textStyle = MaterialTheme.typography.bodySmall,
+                            color = secondaryColor,
+                            modifier = Modifier.weight(1f),
+                        )
 
-                            StreamDurationBadge(
-                                text = sessionDurationLabel,
-                                modifier = Modifier.padding(start = 8.dp),
-                            )
-                        }
+                        StreamDurationBadge(
+                            text = sessionDurationLabel,
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
                     }
                 }
 
