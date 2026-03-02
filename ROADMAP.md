@@ -9,9 +9,11 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Basis-Player (`core-player`) mit stabilisiertem Background-Playback
 - Home, Browse/Suche, Favoriten, Fullscreen-Player, Settings-Basis
 - Bottom Navigation + stabiles Routing + Floating Mini-Player
+- Mini-Player Metadaten als Marquee bei langen Titeln
 - Favoriten und Recents in Room
 - Fullscreen-Player Controls: Play/Pause, Mute, Random, Previous, Favorite
 - LIVE-Fortschritt im Fullscreen-Player (UI-Animation)
+- Stream-Qualitaet im Fullscreen-Player sichtbar (Codec/Bitrate)
 - **Album-Cover im Fullscreen-Player** (iTunes API, Blur-Hintergrund, Station-Logo)
 - Home/Browse/Favorites UI-Polish (Glass-Look, bessere Karten, Performance-Tuning)
 - Nebula-Background als app-weites Visual (Home/Browse/Favoriten) mit dezenten Overlays
@@ -22,15 +24,14 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Settings-Optionen: Theme (System/Dark/Light), Dynamic Colors, Standard-Qualitaet, Buffer-Profil
 - Settings-Datenaktionen: Sender-Cache leeren, Verlauf loeschen
 - Settings-Info: App-Version, GitHub Repo, Issues, Website, Buy a Coffee
+- Notification Media Controls inkl. Prev/Play-Pause/Next/Stop
 - Audio Focus Verhalten bei Unterbrechungen stabilisiert (kein sofortiges Stop/Pause mehr)
 - Mobile-Daten-Policy und Buffer-Profil technisch im Player wirksam
 - Room-Migrationen aktiv (kein `fallbackToDestructiveMigration` mehr)
 - Unit-Tests erweitert fuer Player-Recovery und Repository-Flows
 
 ## In Arbeit
-- Notification Media Controls (Play/Pause/Next/Stop)
-- Mini-Player Metadaten als Marquee bei langen Titeln
-- Stream-Qualitaet im Fullscreen-Player anzeigen
+- Notification Media Controls Feinschliff (Polish/UX)
 
 ## Geplant (naechste Schritte)
 - Radio Timeshift MVP (fix 20 Minuten Buffer, Fullscreen-Seek + LIVE-Button)

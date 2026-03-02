@@ -84,6 +84,22 @@ chmod +x gradlew
 ./gradlew installDebug
 ```
 
+### Build in Proxy / Restricted Network
+
+Wenn der Gradle-Wrapper-Download blockiert ist, nutze einen internen Mirror oder Corporate-Proxy:
+
+```properties
+# ~/.gradle/gradle.properties
+systemProp.http.proxyHost=<proxy-host>
+systemProp.http.proxyPort=<proxy-port>
+systemProp.https.proxyHost=<proxy-host>
+systemProp.https.proxyPort=<proxy-port>
+```
+
+Optional (Unternehmens-Mirror):
+- `distributionUrl` in `gradle/wrapper/gradle-wrapper.properties` auf internen Gradle-Mirror setzen.
+- CI mit persistentem Gradle-Cache betreiben (`~/.gradle/caches`, `~/.gradle/wrapper`).
+
 ## 🔐 Release Signing (optional, recommended)
 
 Create a release keystore once:

@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
-    <include domain="sharedpref" path="."/>
+    <!--
+      Default hardening: no app preferences are included in backups.
+      If backup is enabled in the future, explicitly allowlist only safe keys/files.
+    -->
+    <exclude domain="sharedpref" path="."/>
 </full-backup-content>

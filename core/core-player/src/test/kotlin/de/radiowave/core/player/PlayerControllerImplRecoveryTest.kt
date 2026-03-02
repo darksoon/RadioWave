@@ -3,12 +3,16 @@ package de.radiowave.core.player
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.test.core.app.ApplicationProvider
+import de.radiowave.core.data.repository.StationRepository
+import de.radiowave.core.model.Country
+import de.radiowave.core.model.Genre
 import de.radiowave.core.model.PlayerError
 import de.radiowave.core.model.PlayerState
 import de.radiowave.core.model.Station
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -120,7 +124,7 @@ class PlayerControllerImplRecoveryTest {
 
     private fun createController(): PlayerControllerImpl {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        return PlayerControllerImpl(context)
+        return PlayerControllerImpl(context, FakeStationRepository())
     }
 
     private fun createBufferingPlayerProxy(): ExoPlayer {
@@ -193,6 +197,17 @@ class PlayerControllerImplRecoveryTest {
         method.isAccessible = true
         method.invoke(target, *args)
     }
+}
+
+private class FakeStationRepository : StationRepository {
+    override fun searchStations(query: String) = flowOf(emptyList<Station>())
+    override fun getTopStations() = flowOf(emptyList<Station>())
+    override fun getStationsByCountry(countryCode: String) = flowOf(emptyList<Station>())
+    override fun getStationsByTag(tag: String) = flowOf(emptyList<Station>())
+    override fun getTags() = flowOf(emptyList<Genre>())
+    override fun getCountries() = flowOf(emptyList<Country>())
+    override suspend fun registerClick(stationUuid: String) = Unit
+    override suspend fun reportBrokenStream(stationUuid: String) = Unit
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
