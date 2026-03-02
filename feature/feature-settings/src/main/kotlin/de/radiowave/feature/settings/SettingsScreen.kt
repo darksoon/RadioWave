@@ -381,7 +381,7 @@ fun SettingsScreen(
                         LinkRow(
                             title = "Buy a Coffee",
                             subtitle = "Support das Projekt",
-                            onClick = { uriHandler.openUri("https://buymeacoffee.com/") },
+                            onClick = { uriHandler.openUri("https://buymeacoffee.com/darksoon") },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         InfoTextRow(label = "Made by", value = "Sven Neurath")

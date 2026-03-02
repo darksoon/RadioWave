@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
+    <!--
+      Radio-Streams kommen von vielen dynamischen Dritt-Domains (teilweise HTTP).
+      Daher bleibt Cleartext global erlaubt, damit kompatible Sender nicht ausfallen.
+      Fuer bekannte App-/API-Endpunkte erzwingen wir aber explizit TLS.
+    -->
     <base-config cleartextTrafficPermitted="true" />
+
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">api.radio-browser.info</domain>
+        <domain includeSubdomains="true">all.api.radio-browser.info</domain>
+        <domain includeSubdomains="true">itunes.apple.com</domain>
+        <domain includeSubdomains="true">github.com</domain>
+        <domain includeSubdomains="true">sven-neurath.de</domain>
+        <domain includeSubdomains="true">buymeacoffee.com</domain>
+    </domain-config>
 </network-security-config>
