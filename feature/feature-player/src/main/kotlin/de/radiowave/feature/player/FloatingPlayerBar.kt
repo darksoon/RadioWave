@@ -177,17 +177,24 @@ fun FloatingPlayerBar(
                     val secondaryColor = if (isBuffering) TealAccent else DarkOnSurfaceVariant
 
                     if (showMetadataLine) {
-                        MarqueeText(
-                            text = secondaryLine ?: "",
-                            textStyle = MaterialTheme.typography.bodySmall,
-                            color = secondaryColor,
-                            modifier = Modifier.weight(1f),
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            MarqueeText(
+                                text = secondaryLine ?: "",
+                                textStyle = MaterialTheme.typography.bodySmall,
+                                color = secondaryColor,
+                                modifier = Modifier.weight(1f),
+                                enabled = shouldEnableMiniPlayerMarquee(secondaryLine),
+                                edgeFade = true,
+                            )
 
-                        StreamDurationBadge(
-                            text = sessionDurationLabel,
-                            modifier = Modifier.padding(start = 8.dp),
-                        )
+                            StreamDurationBadge(
+                                text = sessionDurationLabel,
+                                modifier = Modifier.padding(start = 8.dp),
+                            )
+                        }
                     }
                 }
 
@@ -258,6 +265,11 @@ fun FloatingPlayerBar(
             }
         }
     }
+}
+
+private fun shouldEnableMiniPlayerMarquee(text: String?): Boolean {
+    if (text.isNullOrBlank()) return false
+    return text.trim().length > 28
 }
 
 @Composable
