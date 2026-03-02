@@ -397,20 +397,25 @@ private fun MainPlaybackButton(
         Box(
             modifier = Modifier
                 .size(84.dp)
-                .clip(CircleShape)
-                .graphicsLayer {
-                    rotationZ = if (isPlaying) ringRotation else 0f
-                }
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF52E3D9),
-                            Color(0xFFC94F99),
-                        ),
-                    ),
-                ),
+                .clip(CircleShape),
             contentAlignment = Alignment.Center,
         ) {
+            Box(
+                modifier = Modifier
+                    .size(84.dp)
+                    .graphicsLayer {
+                        rotationZ = if (isPlaying) ringRotation else 0f
+                    }
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFF52E3D9),
+                                Color(0xFFC94F99),
+                            ),
+                        ),
+                        CircleShape,
+                    ),
+            )
             Box(
                 modifier = Modifier
                     .size(70.dp)
