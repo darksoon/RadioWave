@@ -22,6 +22,7 @@ import de.radiowave.core.data.repository.RecentRepository
 import de.radiowave.core.data.repository.StationRepository
 import de.radiowave.core.model.Station
 import de.radiowave.core.model.AppSettings
+import de.radiowave.core.model.Genre
 import de.radiowave.core.player.PlayerController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,7 +32,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.ConcurrentHashMap
+import java.util.Locale
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -52,6 +55,7 @@ class RadioWaveAutoService : MediaLibraryService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val stationCache = ConcurrentHashMap<String, Station>()
+    private val searchCache = ConcurrentHashMap<String, List<Station>>()
     private var lastAutoResumeAttemptAtMs = 0L
     private lateinit var fallbackPlayer: ExoPlayer
     private var mediaLibrarySession: MediaLibrarySession? = null
@@ -120,11 +124,25 @@ class RadioWaveAutoService : MediaLibraryService() {
                 ROOT_ID -> listOf(
                     browsableItem(FAVORITES_ID, "Favorites"),
                     browsableItem(RECENTS_ID, "Recents"),
+                    browsableItem(TOP_STATIONS_ID, "Top Stations"),
+                    browsableItem(GENRES_ID, "Genres"),
                 )
 
-                FAVORITES_ID -> loadFavorites().map { stationItem(it) }
-                RECENTS_ID -> loadRecents().map { stationItem(it) }
-                else -> emptyList()
+                FAVORITES_ID -> asStationChildren(loadFavorites())
+                RECENTS_ID -> asStationChildren(loadRecents())
+                TOP_STATIONS_ID -> asStationChildren(loadTopStations())
+                GENRES_ID -> asGenreChildren(loadGenres())
+                else -> {
+                    val genreTag = parentId
+                        .removePrefix(GENRE_PREFIX)
+                        .trim()
+                        .takeUnless { it.isBlank() }
+                    if (genreTag != null) {
+                        asStationChildren(loadStationsByGenre(genreTag))
+                    } else {
+                        emptyList()
+                    }
+                }
             }
             val paged = paginate(children, page, pageSize)
             return Futures.immediateFuture(LibraryResult.ofItemList(ImmutableList.copyOf(paged), params))
@@ -182,6 +200,52 @@ class RadioWaveAutoService : MediaLibraryService() {
             logInfo("Auto onAddMediaItems mapped=${mapped.size}/${mediaItems.size}")
             return Futures.immediateFuture(mapped)
         }
+
+        override fun onSearch(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            query: String,
+            params: MediaLibraryService.LibraryParams?,
+        ): ListenableFuture<LibraryResult<Void>> {
+            val normalized = normalizeSearchQuery(query)
+            if (normalized.isBlank()) return Futures.immediateFuture(LibraryResult.ofVoid(params))
+            val results = searchStations(normalized)
+            searchCache[normalized.lowercase(Locale.ROOT)] = results
+            session.notifySearchResultChanged(browser, normalized, results.size, params)
+            logInfo("Auto search '$normalized' -> ${results.size} results")
+            return Futures.immediateFuture(LibraryResult.ofVoid(params))
+        }
+
+        override fun onGetSearchResult(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            query: String,
+            page: Int,
+            pageSize: Int,
+            params: MediaLibraryService.LibraryParams?,
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+            val normalized = normalizeSearchQuery(query).lowercase(Locale.ROOT)
+            val cached = searchCache[normalized].orEmpty()
+            val candidates = if (cached.isNotEmpty()) {
+                cached
+            } else {
+                searchStations(normalized).also { fresh ->
+                    searchCache[normalized] = fresh
+                }
+            }
+            val resolvedItems = if (candidates.isEmpty()) {
+                listOf(
+                    infoItem(
+                        id = "info:no-search-results:${SystemClock.elapsedRealtime()}",
+                        title = "No results for \"$query\"",
+                    ),
+                )
+            } else {
+                candidates.map(::stationItem)
+            }
+            val items = paginate(resolvedItems, page, pageSize)
+            return Futures.immediateFuture(LibraryResult.ofItemList(ImmutableList.copyOf(items), params))
+        }
     }
 
     private fun startStationPlayback(station: Station) {
@@ -211,6 +275,16 @@ class RadioWaveAutoService : MediaLibraryService() {
             .getOrDefault(emptyList())
     }
 
+    private fun loadGenres(): List<Genre> = runBlocking {
+        runCatching { stationRepository.getTags().first().take(MAX_GENRES) }
+            .getOrDefault(emptyList())
+    }
+
+    private fun loadStationsByGenre(tag: String): List<Station> = runBlocking {
+        runCatching { stationRepository.getStationsByTag(tag).first().take(MAX_CHILDREN) }
+            .getOrDefault(emptyList())
+    }
+
     private fun loadFavorites(): List<Station> = runBlocking {
         runCatching { favoriteRepository.getFavorites().first().take(MAX_CHILDREN) }
             .getOrDefault(emptyList())
@@ -219,6 +293,59 @@ class RadioWaveAutoService : MediaLibraryService() {
     private fun loadRecents(): List<Station> = runBlocking {
         runCatching { recentRepository.getRecentStations(limit = MAX_CHILDREN).first() }
             .getOrDefault(emptyList())
+    }
+
+    private fun searchStations(query: String): List<Station> {
+        val needle = normalizeSearchQuery(query)
+        if (needle.isBlank()) return emptyList()
+        val local = (loadFavorites() + loadRecents())
+            .distinctBy { it.uuid }
+        val localMatches = rankStationsByQuery(local, needle)
+        if (localMatches.isNotEmpty()) return localMatches.take(MAX_SEARCH_RESULTS)
+
+        val remote = runBlocking {
+            runCatching {
+                withTimeoutOrNull(SEARCH_REMOTE_TIMEOUT_MS) {
+                    stationRepository.searchStations(needle).first()
+                }.orEmpty()
+            }
+                .getOrDefault(emptyList())
+        }
+        return rankStationsByQuery(remote, needle).take(MAX_SEARCH_RESULTS)
+    }
+
+    private fun rankStationsByQuery(stations: List<Station>, query: String): List<Station> {
+        val normalizedQuery = normalize(query)
+        return stations
+            .asSequence()
+            .filter { it.streamUrl.isNotBlank() }
+            .map { station ->
+                val name = normalize(station.name)
+                val score = when {
+                    name == normalizedQuery -> 0
+                    name.startsWith(normalizedQuery) -> 1
+                    name.contains(normalizedQuery) -> 2
+                    else -> 99
+                }
+                station to score
+            }
+            .filter { (_, score) -> score < 99 }
+            .sortedWith(compareBy<Pair<Station, Int>> { it.second }.thenBy { it.first.name })
+            .map { it.first }
+            .toList()
+    }
+
+    private fun normalize(value: String): String {
+        return value.trim().lowercase(Locale.ROOT)
+    }
+
+    private fun normalizeSearchQuery(value: String): String {
+        return value
+            .replace("„", "\"")
+            .replace("“", "\"")
+            .trim()
+            .trim('"', '\'', '„', '“', '‚', '‘', '’', '«', '»')
+            .trim()
     }
 
     private fun resolveStation(
@@ -320,6 +447,47 @@ class RadioWaveAutoService : MediaLibraryService() {
             .build()
     }
 
+    private fun asStationChildren(stations: List<Station>): List<MediaItem> {
+        if (stations.isEmpty()) {
+            return listOf(
+                infoItem(
+                    id = "info:empty:${SystemClock.elapsedRealtime()}",
+                    title = "No stations available",
+                ),
+            )
+        }
+        return stations.map(::stationItem)
+    }
+
+    private fun asGenreChildren(genres: List<Genre>): List<MediaItem> {
+        if (genres.isEmpty()) {
+            return listOf(
+                infoItem(
+                    id = "info:empty-genres:${SystemClock.elapsedRealtime()}",
+                    title = "No genres available",
+                ),
+            )
+        }
+        return genres.map { genre ->
+            val tag = genre.name.trim()
+            val id = "$GENRE_PREFIX$tag"
+            browsableItem(id = id, title = "${genre.name} (${genre.stationCount})")
+        }
+    }
+
+    private fun infoItem(id: String, title: String): MediaItem {
+        return MediaItem.Builder()
+            .setMediaId(id)
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(title)
+                    .setIsBrowsable(false)
+                    .setIsPlayable(false)
+                    .build(),
+            )
+            .build()
+    }
+
     private fun <T> paginate(items: List<T>, page: Int, pageSize: Int): List<T> {
         if (pageSize <= 0 || page < 0) return items
         val from = page * pageSize
@@ -332,11 +500,17 @@ class RadioWaveAutoService : MediaLibraryService() {
         const val LOG_TAG = "RadioWaveAuto"
         const val AUTO_RESUME_VERIFY_DELAY_MS = 1800L
         const val AUTO_RESUME_CONNECT_COOLDOWN_MS = 3500L
+        const val SEARCH_REMOTE_TIMEOUT_MS = 3500L
+        const val MAX_SEARCH_RESULTS = 20
         const val ROOT_ID = "root"
         const val FAVORITES_ID = "favorites"
         const val RECENTS_ID = "recents"
+        const val TOP_STATIONS_ID = "top_stations"
+        const val GENRES_ID = "genres"
+        const val GENRE_PREFIX = "genre:"
         const val STATION_PREFIX = "station:"
         const val MAX_CHILDREN = 50
+        const val MAX_GENRES = 40
     }
 
     private fun logInfo(message: String) {
