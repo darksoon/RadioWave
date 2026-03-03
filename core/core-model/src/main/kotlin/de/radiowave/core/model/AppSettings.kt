@@ -21,6 +21,12 @@ object AppSettings {
     const val KEY_DEFAULT_AUDIO_QUALITY = "default_audio_quality"
     const val KEY_ALLOW_MOBILE_DATA = "allow_mobile_data"
     const val KEY_BUFFER_PROFILE = "buffer_profile"
+    const val KEY_AUTO_PLAY_ON_ANDROID_AUTO_CONNECT = "auto_play_on_android_auto_connect"
+    const val KEY_LAST_STATION_UUID = "last_station_uuid"
+    const val KEY_LAST_STATION_NAME = "last_station_name"
+    const val KEY_LAST_STATION_STREAM_URL = "last_station_stream_url"
+    const val KEY_LAST_STATION_FAVICON_URL = "last_station_favicon_url"
+    const val KEY_LAST_STATION_COUNTRY = "last_station_country"
 
     const val THEME_SYSTEM = "system"
     const val THEME_DARK = "dark"

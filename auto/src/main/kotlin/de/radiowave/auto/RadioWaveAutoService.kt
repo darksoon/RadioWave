@@ -1,6 +1,7 @@
 package de.radiowave.auto
 
 import android.net.Uri
+import android.os.SystemClock
 import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
@@ -18,11 +19,13 @@ import de.radiowave.core.data.repository.FavoriteRepository
 import de.radiowave.core.data.repository.RecentRepository
 import de.radiowave.core.data.repository.StationRepository
 import de.radiowave.core.model.Station
+import de.radiowave.core.model.AppSettings
 import de.radiowave.core.player.PlayerController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -46,6 +49,7 @@ class RadioWaveAutoService : MediaLibraryService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val stationCache = ConcurrentHashMap<String, Station>()
+    private var lastAutoResumeAttemptAtMs = 0L
     private lateinit var fallbackPlayer: ExoPlayer
     private var mediaLibrarySession: MediaLibrarySession? = null
 
@@ -69,6 +73,7 @@ class RadioWaveAutoService : MediaLibraryService() {
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
+        tryAutoResumeOnConnect()
         return mediaLibrarySession
     }
 
@@ -175,9 +180,20 @@ class RadioWaveAutoService : MediaLibraryService() {
 
     private fun startStationPlayback(station: Station) {
         logInfo("Auto start playback '${station.name}' (${station.streamUrl})")
-        runBlocking {
-            playerController.playStation(station)
+        serviceScope.launch {
+            performPlaybackStart(station)
+            delay(AUTO_RESUME_VERIFY_DELAY_MS)
+            val state = playerController.playerState.value
+            if (!state.isPlaying && state.currentStation?.streamUrl == station.streamUrl) {
+                logInfo("Auto playback verify failed, retrying '${station.name}'")
+                performPlaybackStart(station)
+            }
         }
+    }
+
+    private suspend fun performPlaybackStart(station: Station) {
+        playerController.playStation(station)
+        recentRepository.addRecentStation(station)
         val activePlayer = playerController.sessionPlayer() ?: fallbackPlayer
         mediaLibrarySession?.setPlayer(activePlayer)
         activePlayer.playWhenReady = true
@@ -308,6 +324,8 @@ class RadioWaveAutoService : MediaLibraryService() {
 
     private companion object {
         const val LOG_TAG = "RadioWaveAuto"
+        const val AUTO_RESUME_VERIFY_DELAY_MS = 1800L
+        const val AUTO_RESUME_CONNECT_COOLDOWN_MS = 3500L
         const val ROOT_ID = "root"
         const val FAVORITES_ID = "favorites"
         const val RECENTS_ID = "recents"
@@ -317,5 +335,40 @@ class RadioWaveAutoService : MediaLibraryService() {
 
     private fun logInfo(message: String) {
         Log.i(LOG_TAG, message)
+    }
+
+    private fun tryAutoResumeOnConnect() {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastAutoResumeAttemptAtMs < AUTO_RESUME_CONNECT_COOLDOWN_MS) return
+        lastAutoResumeAttemptAtMs = now
+
+        val prefs = getSharedPreferences(AppSettings.PREFS_NAME, MODE_PRIVATE)
+        val autoPlayEnabled = prefs.getBoolean(
+            AppSettings.KEY_AUTO_PLAY_ON_ANDROID_AUTO_CONNECT,
+            true,
+        )
+        if (!autoPlayEnabled) return
+        if (playerController.playerState.value.isPlaying) return
+
+        val streamUrl = prefs.getString(AppSettings.KEY_LAST_STATION_STREAM_URL, null)
+            ?.trim()
+            .takeUnless { it.isNullOrBlank() }
+            ?: return
+        val name = prefs.getString(AppSettings.KEY_LAST_STATION_NAME, null)
+            ?.trim()
+            .takeUnless { it.isNullOrBlank() }
+            ?: "Last Station"
+        val station = Station(
+            uuid = prefs.getString(AppSettings.KEY_LAST_STATION_UUID, null)
+                ?.trim()
+                .takeUnless { it.isNullOrBlank() }
+                ?: streamUrl,
+            name = name,
+            streamUrl = streamUrl,
+            faviconUrl = prefs.getString(AppSettings.KEY_LAST_STATION_FAVICON_URL, null),
+            country = prefs.getString(AppSettings.KEY_LAST_STATION_COUNTRY, null),
+            isCustom = true,
+        )
+        startStationPlayback(station)
     }
 }

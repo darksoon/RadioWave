@@ -102,6 +102,9 @@ fun SettingsScreen(
                 ?: AppSettings.BUFFER_MEDIUM,
         )
     }
+    var autoPlayOnAndroidAutoConnect by rememberSaveable {
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_AUTO_PLAY_ON_ANDROID_AUTO_CONNECT, true))
+    }
 
     val appVersion = rememberAppVersion(context)
     val dynamicColorsSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
@@ -250,6 +253,18 @@ fun SettingsScreen(
                             },
                             enabled = false,
                             disabledHint = "Noch nicht aktiv im Player",
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingToggleRow(
+                            title = "Autoplay bei Android Auto Verbindung",
+                            subtitle = "Startet den zuletzt gehoerten Sender automatisch beim Auto-Connect.",
+                            checked = autoPlayOnAndroidAutoConnect,
+                            onCheckedChange = { checked ->
+                                autoPlayOnAndroidAutoConnect = checked
+                                prefs.edit()
+                                    .putBoolean(AppSettings.KEY_AUTO_PLAY_ON_ANDROID_AUTO_CONNECT, checked)
+                                    .apply()
+                            },
                         )
                     }
 

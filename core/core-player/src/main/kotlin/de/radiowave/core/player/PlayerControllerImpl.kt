@@ -944,6 +944,7 @@ class PlayerControllerImpl @Inject constructor(
                 metadata = null,
             )
         }
+        persistLastStation(station)
 
         val player = getOrCreatePlayer()
         ensureForegroundPlaybackServiceRunning(
@@ -951,6 +952,16 @@ class PlayerControllerImpl @Inject constructor(
             subtitle = "Buffering...",
         )
         restartStream(player, station)
+    }
+
+    private fun persistLastStation(station: Station) {
+        settingsPrefs.edit()
+            .putString(AppSettings.KEY_LAST_STATION_UUID, station.uuid)
+            .putString(AppSettings.KEY_LAST_STATION_NAME, station.name)
+            .putString(AppSettings.KEY_LAST_STATION_STREAM_URL, station.streamUrl)
+            .putString(AppSettings.KEY_LAST_STATION_FAVICON_URL, station.faviconUrl)
+            .putString(AppSettings.KEY_LAST_STATION_COUNTRY, station.country)
+            .apply()
     }
 
     override fun togglePlayPause() {
