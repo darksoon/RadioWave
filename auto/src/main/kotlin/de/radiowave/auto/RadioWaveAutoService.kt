@@ -6,11 +6,13 @@ import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MediaItem.RequestMetadata
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.MediaSession
+import androidx.media3.session.SessionError
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -33,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 @AndroidEntryPoint
+@UnstableApi
 class RadioWaveAutoService : MediaLibraryService() {
 
     @Inject
@@ -101,7 +104,7 @@ class RadioWaveAutoService : MediaLibraryService() {
             mediaId: String,
         ): ListenableFuture<LibraryResult<MediaItem>> {
             val item = resolvePlayableItem(mediaId)
-                ?: return Futures.immediateFuture(LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE))
+                ?: return Futures.immediateFuture(LibraryResult.ofError(SessionError.ERROR_BAD_VALUE))
             return Futures.immediateFuture(LibraryResult.ofItem(item, null))
         }
 
@@ -127,6 +130,7 @@ class RadioWaveAutoService : MediaLibraryService() {
             return Futures.immediateFuture(LibraryResult.ofItemList(ImmutableList.copyOf(paged), params))
         }
 
+        @UnstableApi
         override fun onSetMediaItems(
             mediaSession: MediaSession,
             controller: MediaSession.ControllerInfo,
@@ -145,6 +149,7 @@ class RadioWaveAutoService : MediaLibraryService() {
                 startStationPlayback(station)
                 val resolvedItem = stationItem(station)
                 return Futures.immediateFuture(
+                    @UnstableApi
                     MediaSession.MediaItemsWithStartPosition(
                         mutableListOf(resolvedItem),
                         0,
@@ -154,6 +159,7 @@ class RadioWaveAutoService : MediaLibraryService() {
             }
             logInfo("Auto onSetMediaItems unresolved; size=${mediaItems.size}, startIndex=$startIndex")
             return Futures.immediateFuture(
+                @UnstableApi
                 MediaSession.MediaItemsWithStartPosition(
                     mediaItems,
                     resolvedStartIndex,
