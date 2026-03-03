@@ -34,8 +34,8 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - CI/Release Pipelines gehaertet (Push-CI aktiv, Signed-Workflow robuster)
 
 ## In Arbeit
-- Android Auto Feinschliff (Car-UX, Browse-Erweiterung, Voice/Search-Flow)
 - Notification Media Controls Feinschliff (Polish/UX)
+- Voice/Assistant-Play-Intents fuer Senderaufrufe (Google Assistant)
 
 ## Geplant (naechste Schritte)
 - Radio Timeshift MVP (fix 20 Minuten Buffer, Fullscreen-Seek + LIVE-Button)
@@ -46,7 +46,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Datennutzung sichtbar machen (geschaetzt ueber Bitrate)
 
 ## Spaeter
-- Android Auto Ausbau (Queue/Recommendations/Search, Car-spezifische UX)
+- Android Auto Ausbau (Queue/Recommendations, Car-spezifische UX)
 - Chromecast Ausbau
 - Widget fuer schnellen Playback-Zugriff
 - Weitere Animationen/Transitions/Shimmer

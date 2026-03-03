@@ -10,10 +10,11 @@ All notable changes to this project will be documented in this file.
 - First Android Auto integration via Media3 `MediaLibraryService` with Favorites/Recents browsing.
 - Auto playback handoff stabilized (item mapping, URI fallback, startup retry, reconnect resume).
 - Last played station persistence + optional autoplay on Android Auto connect.
+- Android Auto browse/search expanded with Top Stations + Genres and improved search reliability.
 
 ### Added
 - **Android Auto Media Service** (`RadioWaveAutoService`) with:
-  - Root library + Favorites/Recents nodes.
+  - Root library + Favorites/Recents/Top Stations/Genres nodes.
   - Station metadata including favicon artwork for car UI.
   - Media item resolution from `mediaId`, `uri`, and request metadata fallback.
 - **Auto Resume Settings**:
@@ -21,11 +22,18 @@ All notable changes to this project will be documented in this file.
   - Last station is persisted (`uuid`, `name`, `streamUrl`, `favicon`, `country`) for resume.
 - **Automotive manifest setup**:
   - Car app descriptor + media service registration in app manifest.
+- **Android Auto Search Flow**:
+  - Media3 `onSearch` + `onGetSearchResult` wiring for car search integration.
+  - Query normalization for quoted queries and robust fallback behavior.
+- **Android Auto Metadata/Commands**:
+  - Extended metadata composition for station rows (country/codec/bitrate when available).
+  - Next/Previous media commands mapped to adjacent favorites.
 
 ### Fixed
 - Auto favorite selection no longer stalls in endless loading path.
 - Resolved Android Auto resume edge case where playback only worked after manually opening app on phone.
 - Added retry verification for auto-start to reduce silent-start race conditions after reconnect.
+- Fixed Android Auto search loading loop on cache miss by adding direct search fallback and explicit no-result item.
 - CI required check issue addressed by running `build-lint-test` on `push` to `main`.
 - Signed release workflow improved with explicit missing-secret errors and more robust `apksigner` lookup.
 
