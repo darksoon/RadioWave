@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.0-alpha.6] - 2026-03-03
+
+### Highlights
+- First Android Auto integration via Media3 `MediaLibraryService` with Favorites/Recents browsing.
+- Auto playback handoff stabilized (item mapping, URI fallback, startup retry, reconnect resume).
+- Last played station persistence + optional autoplay on Android Auto connect.
+
+### Added
+- **Android Auto Media Service** (`RadioWaveAutoService`) with:
+  - Root library + Favorites/Recents nodes.
+  - Station metadata including favicon artwork for car UI.
+  - Media item resolution from `mediaId`, `uri`, and request metadata fallback.
+- **Auto Resume Settings**:
+  - New setting: `Autoplay bei Android Auto Verbindung` (default: enabled).
+  - Last station is persisted (`uuid`, `name`, `streamUrl`, `favicon`, `country`) for resume.
+- **Automotive manifest setup**:
+  - Car app descriptor + media service registration in app manifest.
+
+### Fixed
+- Auto favorite selection no longer stalls in endless loading path.
+- Resolved Android Auto resume edge case where playback only worked after manually opening app on phone.
+- Added retry verification for auto-start to reduce silent-start race conditions after reconnect.
+- CI required check issue addressed by running `build-lint-test` on `push` to `main`.
+- Signed release workflow improved with explicit missing-secret errors and more robust `apksigner` lookup.
+
 ## [0.1.0-alpha.5] - 2026-03-01
 
 ### Highlights
@@ -111,6 +136,7 @@ All notable changes to this project will be documented in this file.
 ### Security/Infra
 - Added `ACCESS_NETWORK_STATE` permission declaration in `core-player` to satisfy lint and ensure network callback safety.
 
+[0.1.0-alpha.6]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.6
 [0.1.0-alpha.5]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.5
 [0.1.0-alpha.3]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.3
 [0.1.0-alpha.2]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.2
