@@ -6,13 +6,16 @@ import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MediaItem.RequestMetadata
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaSession.ConnectionResult
 import androidx.media3.session.SessionError
+import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -93,6 +96,22 @@ class RadioWaveAutoService : MediaLibraryService() {
     }
 
     private inner class RadioWaveLibraryCallback : MediaLibrarySession.Callback {
+        override fun onConnect(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+        ): ConnectionResult {
+            val base = super.onConnect(session, controller)
+            val playerCommands = base.availablePlayerCommands
+                .buildUpon()
+                .add(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
+                .add(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+                .build()
+            return ConnectionResult.accept(
+                base.availableSessionCommands,
+                playerCommands,
+            )
+        }
+
         override fun onGetLibraryRoot(
             session: MediaLibrarySession,
             browser: MediaSession.ControllerInfo,
@@ -199,6 +218,32 @@ class RadioWaveAutoService : MediaLibraryService() {
             }
             logInfo("Auto onAddMediaItems mapped=${mapped.size}/${mediaItems.size}")
             return Futures.immediateFuture(mapped)
+        }
+
+        override fun onPlayerCommandRequest(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            playerCommand: Int,
+        ): Int {
+            return when (playerCommand) {
+                Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM -> {
+                    if (playAdjacentFavorite(+1)) {
+                        SessionResult.RESULT_SUCCESS
+                    } else {
+                        SessionResult.RESULT_ERROR_NOT_SUPPORTED
+                    }
+                }
+
+                Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM -> {
+                    if (playAdjacentFavorite(-1)) {
+                        SessionResult.RESULT_SUCCESS
+                    } else {
+                        SessionResult.RESULT_ERROR_NOT_SUPPORTED
+                    }
+                }
+
+                else -> SessionResult.RESULT_SUCCESS
+            }
         }
 
         override fun onSearch(
@@ -425,13 +470,35 @@ class RadioWaveAutoService : MediaLibraryService() {
             .setMediaMetadata(
                 MediaMetadata.Builder()
                     .setTitle(station.name)
-                    .setArtist(station.country)
+                    .setArtist(buildStationArtist(station))
+                    .setSubtitle(buildStationSubtitle(station))
                     .setArtworkUri(artworkUri)
                     .setIsPlayable(true)
                     .setIsBrowsable(false)
                     .build(),
             )
             .build()
+    }
+
+    private fun buildStationSubtitle(station: Station): String? {
+        val codec = station.codec?.trim()?.uppercase(Locale.ROOT).takeUnless { it.isNullOrBlank() }
+        val bitrate = station.bitrate?.takeIf { it > 0 }?.let { "${it}kbps" }
+        val language = station.language?.trim().takeUnless { it.isNullOrBlank() }
+        val parts = listOfNotNull(codec, bitrate, language)
+        return parts.joinToString(" • ").takeIf { it.isNotBlank() }
+    }
+
+    private fun buildStationArtist(station: Station): String? {
+        val parts = mutableListOf<String>()
+        val country = station.country?.trim().takeUnless { it.isNullOrBlank() }
+        val codec = station.codec?.trim()?.uppercase(Locale.ROOT).takeUnless { it.isNullOrBlank() }
+        val bitrate = station.bitrate?.takeIf { it > 0 }?.let { "${it}kbps" }
+
+        if (country != null) parts += country
+        if (codec != null) parts += codec
+        if (bitrate != null) parts += bitrate
+
+        return parts.joinToString(" • ").takeIf { it.isNotBlank() }
     }
 
     private fun browsableItem(id: String, title: String): MediaItem {
@@ -494,6 +561,20 @@ class RadioWaveAutoService : MediaLibraryService() {
         if (from >= items.size) return emptyList()
         val to = kotlin.math.min(from + pageSize, items.size)
         return items.subList(from, to)
+    }
+
+    private fun playAdjacentFavorite(step: Int): Boolean {
+        val favorites = loadFavorites()
+        if (favorites.isEmpty()) return false
+        val current = playerController.playerState.value.currentStation ?: return false
+        val currentIndex = favorites.indexOfFirst { candidate ->
+            candidate.uuid == current.uuid || candidate.streamUrl == current.streamUrl
+        }
+        if (currentIndex == -1) return false
+        val targetIndex = (currentIndex + step).mod(favorites.size)
+        val target = favorites[targetIndex]
+        startStationPlayback(target)
+        return true
     }
 
     private companion object {
