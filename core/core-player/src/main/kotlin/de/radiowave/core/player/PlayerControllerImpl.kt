@@ -992,6 +992,8 @@ class PlayerControllerImpl @Inject constructor(
         _playerState.update { it.copy(isMuted = shouldMute) }
     }
 
+    override fun sessionPlayer(): Player? = exoPlayer
+
     override fun stop() {
         isStopping = true
         reconnectJob?.cancel()

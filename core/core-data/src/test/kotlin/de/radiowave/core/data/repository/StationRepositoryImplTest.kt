@@ -86,6 +86,16 @@ class StationRepositoryImplTest {
         assertTrue(api.registerClickCalled)
         assertTrue(api.reportBrokenCalled)
     }
+
+    @Test
+    fun `getTopStations returns empty list when api throws http error`() = runBlocking {
+        val api = FakeRadioBrowserApi(throwOnGetTopStations = true)
+        val repository = StationRepositoryImpl(api)
+
+        val stations = repository.getTopStations().first()
+
+        assertTrue(stations.isEmpty())
+    }
 }
 
 private class FakeRadioBrowserApi(
@@ -97,6 +107,7 @@ private class FakeRadioBrowserApi(
     private val countriesResult: List<RadioBrowserCountry> = emptyList(),
     private val throwOnRegisterClick: Boolean = false,
     private val throwOnReportBroken: Boolean = false,
+    private val throwOnGetTopStations: Boolean = false,
 ) : RadioBrowserApi {
     var registerClickCalled: Boolean = false
     var reportBrokenCalled: Boolean = false
@@ -125,7 +136,10 @@ private class FakeRadioBrowserApi(
         hideBroken: Boolean,
     ): List<RadioBrowserStation> = searchByCountryResult
 
-    override suspend fun getTopStations(count: Int): List<RadioBrowserStation> = topStationsResult
+    override suspend fun getTopStations(count: Int): List<RadioBrowserStation> {
+        if (throwOnGetTopStations) throw IllegalStateException("HTTP 502 Bad Gateway")
+        return topStationsResult
+    }
 
     override suspend fun getTags(order: String, reverse: Boolean, limit: Int): List<RadioBrowserTag> = tagsResult
 

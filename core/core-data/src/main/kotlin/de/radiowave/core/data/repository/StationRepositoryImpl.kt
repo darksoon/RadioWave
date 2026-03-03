@@ -16,27 +16,27 @@ class StationRepositoryImpl @Inject constructor(
 ) : StationRepository {
 
     override fun searchStations(query: String): Flow<List<Station>> = flow {
-        emit(api.searchByName(query).map { it.toDomain() })
+        emit(runCatching { api.searchByName(query).map { it.toDomain() } }.getOrDefault(emptyList()))
     }
 
     override fun getTopStations(): Flow<List<Station>> = flow {
-        emit(api.getTopStations(100).map { it.toDomain() })
+        emit(runCatching { api.getTopStations(100).map { it.toDomain() } }.getOrDefault(emptyList()))
     }
 
     override fun getStationsByCountry(countryCode: String): Flow<List<Station>> = flow {
-        emit(api.searchByCountry(countryCode).map { it.toDomain() })
+        emit(runCatching { api.searchByCountry(countryCode).map { it.toDomain() } }.getOrDefault(emptyList()))
     }
 
     override fun getStationsByTag(tag: String): Flow<List<Station>> = flow {
-        emit(api.searchByTag(tag).map { it.toDomain() })
+        emit(runCatching { api.searchByTag(tag).map { it.toDomain() } }.getOrDefault(emptyList()))
     }
 
     override fun getTags(): Flow<List<Genre>> = flow {
-        emit(api.getTags().map { it.toDomain() })
+        emit(runCatching { api.getTags().map { it.toDomain() } }.getOrDefault(emptyList()))
     }
 
     override fun getCountries(): Flow<List<Country>> = flow {
-        emit(api.getCountries().map { it.toDomain() })
+        emit(runCatching { api.getCountries().map { it.toDomain() } }.getOrDefault(emptyList()))
     }
 
     override suspend fun registerClick(stationUuid: String) {

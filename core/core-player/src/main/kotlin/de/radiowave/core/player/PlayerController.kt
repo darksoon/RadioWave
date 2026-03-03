@@ -3,6 +3,7 @@ package de.radiowave.core.player
 import de.radiowave.core.model.PlayerError
 import de.radiowave.core.model.PlayerState
 import de.radiowave.core.model.Station
+import androidx.media3.common.Player
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -16,6 +17,7 @@ interface PlayerController {
     fun playNextStation()
     fun togglePlayPause()
     fun toggleMute()
+    fun sessionPlayer(): Player?
     fun stop()
     fun release()
 }
