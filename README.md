@@ -127,7 +127,7 @@ cp keystore.properties.example keystore.properties
 
 1. Öffne die aktuelle Release-Seite:  
    **https://github.com/darksoon/RadioWave/releases/latest**
-2. Lade die Datei **`app-release.apk`** herunter.
+2. Lade die Datei **`RadioWave-v0.1.0-alpha.6.apk`** herunter (bzw. die aktuelle Release-APK mit Versionsnamen).
 3. Falls nötig: „Installation aus unbekannten Quellen“ für deinen Browser/Dateimanager erlauben.
 4. APK öffnen und installieren.
 
@@ -154,9 +154,8 @@ Im Repository unter **Actions → Manual Android Build → Run workflow**.
 - APK/AAB nach dem Lauf unter **Artifacts**
 
 ### PR CI
-- Läuft automatisch bei **Pull Requests** auf `main`
+- Läuft automatisch bei **Push** und **Pull Requests** auf `main`
 - Zusätzlich manuell startbar über **workflow_dispatch**
-- Kein Auto-Run mehr bei jedem Push auf `main`
 
 ## 📦 Projektstruktur
 

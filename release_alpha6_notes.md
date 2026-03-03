@@ -13,14 +13,17 @@ Wichtigste Punkte:
 - Signed Release Workflow robuster (klare Secret-Fehler + apksigner-Fallback-Lookup)
 
 Commits seit v0.1.0-alpha.5:
-- d55b250 feat(auto): resume last station on car reconnect with autoplay toggle
-- 48d96f6 feat(auto): add media3 auto service and stabilize playback handoff
+- 35a2c68 CI-Fix: Android Auto Lint-Blocker in App/Auto Modulen behoben / CI fix: resolve Android Auto lint blockers in app/auto modules
+- 9ed3a93 Prepare alpha 6: version/changelog + CI and signed-release workflow fixes (DE/EN)
+- 12418ca Android Auto: letzten Sender bei Reconnect fortsetzen + Autoplay-Toggle / Android Auto: resume last station on reconnect + autoplay toggle
+- 1ad67b7 Android Auto Grundintegration: Media3 Service + stabileres Playback-Handoff / Android Auto base integration: Media3 service + stabilized playback handoff
 - f4ed83b Audit 2-5: Backup/Doku/Build-Doku/Tests verbessern (DE/EN)
 - 3acf946 Hotfix: nur aeusserer Play-Ring rotiert (DE/EN)
 - 246c8c5 Fullscreen: Qualitaetsanzeige + Play-Ring-Animation (DE/EN)
 - 0d428a5 Security config härten + BuyMeACoffee-Link korrigieren (DE/EN)
 - 78c94dc Gitignore: lokalen Audits-Ordner ausschliessen
 - 9e4e40b Mini-Player Lauftext/Marquee fixen und polieren (DE/EN)
+- 463f1c8 Add MarqueeText component for Mini-Player metadata / MarqueeText Komponente fuer Mini-Player Metadaten hinzugefuegt
 
 ### EN
 This alpha release introduces the first usable Android Auto integration, including Favorites/Recents browsing and more stable playback resume on reconnect.

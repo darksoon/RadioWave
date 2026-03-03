@@ -1,6 +1,6 @@
 # RadioWave Roadmap (Public)
 
-Stand: 2026-03-01
+Stand: 2026-03-03
 
 Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 
@@ -29,8 +29,12 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Mobile-Daten-Policy und Buffer-Profil technisch im Player wirksam
 - Room-Migrationen aktiv (kein `fallbackToDestructiveMigration` mehr)
 - Unit-Tests erweitert fuer Player-Recovery und Repository-Flows
+- Android Auto Basis integriert (Media3 `MediaLibraryService`, Favorites/Recents Browse)
+- Android Auto Resume/Autoplay verbessert (letzter Sender + Auto-Connect-Resume)
+- CI/Release Pipelines gehaertet (Push-CI aktiv, Signed-Workflow robuster)
 
 ## In Arbeit
+- Android Auto Feinschliff (Car-UX, Browse-Erweiterung, Voice/Search-Flow)
 - Notification Media Controls Feinschliff (Polish/UX)
 
 ## Geplant (naechste Schritte)
@@ -42,7 +46,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Datennutzung sichtbar machen (geschaetzt ueber Bitrate)
 
 ## Spaeter
-- Android Auto Ausbau (MediaLibraryService + Browse-Tree, bewusst nach Alpha)
+- Android Auto Ausbau (Queue/Recommendations/Search, Car-spezifische UX)
 - Chromecast Ausbau
 - Widget fuer schnellen Playback-Zugriff
 - Weitere Animationen/Transitions/Shimmer
