@@ -20,3 +20,4 @@ Fuer Test-Builds muss deshalb der Developer-Mode aktiviert und "Unbekannte Quell
 
 - Fuer reine GitHub-Sideload-Builds gibt es derzeit keinen stabilen Workaround ohne diese Schritte.
 - Bei Play-Store-Distribution entfaellt der Schritt in der Regel.
+- Auf manchen Geraeten hat Android Auto keinen normalen Launcher-Einstieg. In RadioWave oeffnet der Shortcut dann automatisch die App-Info als Fallback.

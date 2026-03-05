@@ -955,10 +955,39 @@ private fun buildUpdateCheckSubtitle(lastCheckedAtMs: Long?, error: String?): St
 }
 
 private fun openAndroidAutoApp(context: Context) {
-    val launchIntent = context.packageManager.getLaunchIntentForPackage("com.google.android.projection.gearhead")
-    if (launchIntent != null) {
-        context.startActivity(launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-    } else {
-        Toast.makeText(context, "Android Auto App nicht gefunden", Toast.LENGTH_SHORT).show()
+    val packageName = "com.google.android.projection.gearhead"
+    val pm = context.packageManager
+    val launchIntent = pm.getLaunchIntentForPackage(packageName)
+    if (launchIntent != null && startActivitySafely(context, launchIntent)) {
+        return
     }
+
+    val settingsIntent = Intent("com.google.android.projection.gearhead.SETTINGS")
+        .setPackage(packageName)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    if (startActivitySafely(context, settingsIntent)) {
+        return
+    }
+
+    val appDetailsIntent = Intent(
+        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+        Uri.parse("package:$packageName"),
+    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    if (startActivitySafely(context, appDetailsIntent)) {
+        Toast.makeText(
+            context,
+            "Android Auto ohne Launcher-Einstieg. App-Info geoeffnet.",
+            Toast.LENGTH_SHORT,
+        ).show()
+        return
+    }
+
+    Toast.makeText(context, "Android Auto nicht verfuegbar", Toast.LENGTH_SHORT).show()
+}
+
+private fun startActivitySafely(context: Context, intent: Intent): Boolean {
+    return runCatching {
+        context.startActivity(intent)
+        true
+    }.getOrDefault(false)
 }

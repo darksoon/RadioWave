@@ -43,6 +43,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Update-Settings-Seite integriert (Popup an/aus, Auto-Check an/aus, manuelle Pruefung, Versionsstatus)
 - Update-Dialog zeigt Download-Fortschritt live (MB/% + Progressbar)
 - Android Auto Developer-Mode Anleitung fuer Sideload/Beta hinterlegt (Settings + Docs)
+- Android Auto Shortcut in Settings mit Fallbacks (kein Launcher -> Settings/App-Info)
 - CI/Release Pipelines gehaertet (Push-CI aktiv, Signed-Workflow robuster)
 
 ## In Arbeit
