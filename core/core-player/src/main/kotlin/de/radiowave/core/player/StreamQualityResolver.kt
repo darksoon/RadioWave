@@ -44,12 +44,7 @@ class StreamQualityResolver @Inject constructor(
         requested: String,
         automotiveMode: Boolean,
     ): String {
-        if (!automotiveMode) return requested
-        return when (requested) {
-            AppSettings.QUALITY_HIGH -> AppSettings.QUALITY_MEDIUM
-            AppSettings.QUALITY_AUTO -> AppSettings.QUALITY_MEDIUM
-            else -> requested
-        }
+        return requested
     }
 
     private fun selectVariant(
@@ -62,11 +57,16 @@ class StreamQualityResolver @Inject constructor(
         val withKnownBitrate = candidates.filter { (it.bitrate ?: 0) > 0 }
         if (withKnownBitrate.isEmpty()) return candidates.first()
 
-        val targetKbps = when (quality) {
+        val baseTargetKbps = when (quality) {
             AppSettings.QUALITY_LOW -> 64
             AppSettings.QUALITY_MEDIUM -> if (automotiveMode) 96 else 128
             AppSettings.QUALITY_HIGH -> 192
-            else -> if (automotiveMode) 96 else 128
+            else -> 128
+        }
+        val targetKbps = if (automotiveMode) {
+            minOf(baseTargetKbps, 128)
+        } else {
+            baseTargetKbps
         }
 
         val belowOrEqual = withKnownBitrate.filter { (it.bitrate ?: 0) <= targetKbps }
