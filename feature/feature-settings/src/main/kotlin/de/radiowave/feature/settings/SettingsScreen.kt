@@ -1,5 +1,6 @@
 package de.radiowave.feature.settings
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -49,6 +50,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -260,6 +263,8 @@ fun SettingsScreen(
                             onSelected = { value ->
                                 appLanguage = value
                                 prefs.edit().putString(AppSettings.KEY_APP_LANGUAGE, value).apply()
+                                applyAppLanguage(value)
+                                (context as? Activity)?.recreate()
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
@@ -609,6 +614,15 @@ private enum class SettingsCategory {
     DATA,
     UPDATES,
     INFO,
+}
+
+private fun applyAppLanguage(language: String) {
+    val locales = when (language) {
+        AppSettings.LANGUAGE_DE -> LocaleListCompat.forLanguageTags("de")
+        AppSettings.LANGUAGE_EN -> LocaleListCompat.forLanguageTags("en")
+        else -> LocaleListCompat.getEmptyLocaleList()
+    }
+    AppCompatDelegate.setApplicationLocales(locales)
 }
 
 private fun categoryTitle(category: SettingsCategory, context: Context): String {

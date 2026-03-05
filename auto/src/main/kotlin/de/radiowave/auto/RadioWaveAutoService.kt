@@ -135,13 +135,15 @@ class RadioWaveAutoService : MediaLibraryService() {
             val children = when (parentId) {
                 ROOT_ID -> listOf(
                     browsableItem(FAVORITES_ID, "Favorites"),
-                    browsableItem(RECENTS_ID, "Recents"),
+                    // Some Android Auto surfaces prioritize this slot.
+                    // Mirror favorites here so users land on favorites instead of recents.
+                    browsableItem(RECENTS_ID, "Favorites"),
                     browsableItem(TOP_STATIONS_ID, "Top Stations"),
                     browsableItem(GENRES_ID, "Genres"),
                 )
 
                 FAVORITES_ID -> asStationChildren(loadFavorites())
-                RECENTS_ID -> asStationChildren(loadRecents())
+                RECENTS_ID -> asStationChildren(loadFavorites())
                 TOP_STATIONS_ID -> asStationChildren(loadTopStations())
                 GENRES_ID -> asGenreChildren(loadGenres())
                 else -> {
