@@ -135,6 +135,13 @@ cp keystore.properties.example keystore.properties
 - Updates kannst du einfach über neue Releases installieren.
 - Wichtig: Die APK muss mit demselben Signatur-Key gebaut sein (ist hier der Fall).
 
+### In-App Update-System (DE/EN)
+- Beim App-Start wird intervallbasiert auf Updates geprueft (nicht bei jedem Start sofort).
+- In den Settings unter `Updates` gibt es:
+  - `Jetzt pruefen / Check now` (manuelle Pruefung)
+  - `Update-Popup testen / Test update popup` (zeigt den gleichen Dialog wie beim Auto-Treffer)
+- If an update is found, the dialog links directly to the GitHub release page for download/install.
+
 ### Sicherheit
 - Lade die APK nur von der offiziellen GitHub-Release-Seite.
 - Prüfe bei Bedarf die Release-Notes und Dateigröße vor der Installation.

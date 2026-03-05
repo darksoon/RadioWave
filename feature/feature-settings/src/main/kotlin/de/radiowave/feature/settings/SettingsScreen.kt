@@ -31,8 +31,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -145,6 +147,8 @@ fun SettingsScreen(
     var updatePopupEnabled by rememberSaveable {
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_UPDATE_POPUP_ENABLED, true))
     }
+    var manualUpdateCheckRequested by rememberSaveable { mutableStateOf(false) }
+    var showUpdateAvailableDialog by rememberSaveable { mutableStateOf(false) }
 
     val appVersion = rememberAppVersion(context)
     val dynamicColorsSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
@@ -170,6 +174,30 @@ fun SettingsScreen(
         if (themeMode != AppSettings.THEME_DARK) {
             themeMode = AppSettings.THEME_DARK
             prefs.edit().putString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_DARK).apply()
+        }
+    }
+
+    LaunchedEffect(updateUiState.isChecking, updateUiState.hasUpdate, manualUpdateCheckRequested) {
+        if (!manualUpdateCheckRequested || updateUiState.isChecking) return@LaunchedEffect
+        manualUpdateCheckRequested = false
+        when {
+            updateUiState.hasUpdate && updateUiState.latestRelease != null -> {
+                showUpdateAvailableDialog = true
+            }
+            updateUiState.lastError != null -> {
+                Toast.makeText(
+                    context,
+                    tr("Update-Pruefung fehlgeschlagen", "Update check failed"),
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+            else -> {
+                Toast.makeText(
+                    context,
+                    tr("Kein Update verfuegbar", "No update available"),
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
         }
     }
 
@@ -547,10 +575,43 @@ fun SettingsScreen(
                             },
                             onActionClick = {
                                 if (!updateUiState.isChecking) {
+                                    manualUpdateCheckRequested = true
                                     viewModel.checkForUpdates(currentVersionName = appVersion)
                                 }
                             },
                             secondaryActionLabel = stringResource(R.string.settings_updates_manual_release_page),
+                            onSecondaryActionClick = {
+                                val releaseUrl = updateUiState.latestRelease?.htmlUrl
+                                    ?: "https://github.com/darksoon/RadioWave/releases"
+                                uriHandler.openUri(releaseUrl)
+                            },
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingActionRow(
+                            title = tr("Update-Popup testen", "Test update popup"),
+                            subtitle = tr(
+                                "Zeigt denselben Dialog wie bei einem automatischen Update-Treffer.",
+                                "Shows the same dialog used when an automatic update is found.",
+                            ),
+                            actionLabel = tr("Popup zeigen", "Show popup"),
+                            onActionClick = {
+                                when {
+                                    updateUiState.hasUpdate && updateUiState.latestRelease != null -> {
+                                        showUpdateAvailableDialog = true
+                                    }
+                                    updateUiState.isChecking -> Unit
+                                    else -> {
+                                        manualUpdateCheckRequested = true
+                                        viewModel.checkForUpdates(currentVersionName = appVersion)
+                                        Toast.makeText(
+                                            context,
+                                            tr("Pruefe auf Update...", "Checking for update..."),
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                    }
+                                }
+                            },
+                            secondaryActionLabel = tr("Release-Seite", "Release page"),
                             onSecondaryActionClick = {
                                 val releaseUrl = updateUiState.latestRelease?.htmlUrl
                                     ?: "https://github.com/darksoon/RadioWave/releases"
@@ -622,6 +683,37 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+
+    if (showUpdateAvailableDialog && updateUiState.latestRelease != null) {
+        val release = updateUiState.latestRelease!!
+        AlertDialog(
+            onDismissRequest = { showUpdateAvailableDialog = false },
+            title = { Text(text = tr("Update verfuegbar", "Update available")) },
+            text = {
+                Text(
+                    text = tr(
+                        "Neue Version gefunden: ${release.tag}. Soll die Release-Seite geoeffnet werden?",
+                        "New version found: ${release.tag}. Open the release page?",
+                    ),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showUpdateAvailableDialog = false
+                        uriHandler.openUri(release.htmlUrl ?: "https://github.com/darksoon/RadioWave/releases")
+                    },
+                ) {
+                    Text(text = tr("Update", "Update"))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUpdateAvailableDialog = false }) {
+                    Text(text = tr("Spaeter", "Later"))
+                }
+            },
+        )
     }
 }
 
@@ -903,6 +995,7 @@ private fun SettingActionRow(
             }
         }
     }
+
 }
 
 @Composable
