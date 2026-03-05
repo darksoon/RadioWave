@@ -1,6 +1,6 @@
 # RadioWave Roadmap (Public)
 
-Stand: 2026-03-03
+Stand: 2026-03-05
 
 Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 
@@ -31,6 +31,9 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Unit-Tests erweitert fuer Player-Recovery und Repository-Flows
 - Android Auto Basis integriert (Media3 `MediaLibraryService`, Favorites/Recents Browse)
 - Android Auto Resume/Autoplay verbessert (letzter Sender + Auto-Connect-Resume)
+- Android Auto Player-Pfad vereinheitlicht (kein separater Fallback-Player mehr)
+- Doppel-Notification bei Android Auto behoben (nur ein aktiver Media-Notification-Pfad)
+- Backup-Defaults weiter gehaertet (SharedPrefs in Cloud-Backup ausgeschlossen)
 - CI/Release Pipelines gehaertet (Push-CI aktiv, Signed-Workflow robuster)
 
 ## In Arbeit
