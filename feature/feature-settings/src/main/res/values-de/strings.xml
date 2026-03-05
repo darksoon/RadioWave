@@ -14,6 +14,10 @@
     <string name="settings_category_updates_subtitle">Popup, manuell pruefen, Release-Status</string>
     <string name="settings_category_info_title">Info</string>
     <string name="settings_category_info_subtitle">Version, Links, Projekt</string>
+    <string name="settings_language_title">App-Sprache</string>
+    <string name="settings_language_system">System</string>
+    <string name="settings_language_de">Deutsch</string>
+    <string name="settings_language_en">English</string>
     <string name="settings_updates_installed_version">Installierte Version</string>
     <string name="settings_updates_latest_release">Letztes gefundenes Release</string>
     <string name="settings_updates_not_checked">Noch nicht geprueft</string>

@@ -74,6 +74,12 @@ fun SettingsScreen(
     var themeMode by rememberSaveable {
         mutableStateOf(prefs.getString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_SYSTEM) ?: AppSettings.THEME_SYSTEM)
     }
+    var appLanguage by rememberSaveable {
+        mutableStateOf(
+            prefs.getString(AppSettings.KEY_APP_LANGUAGE, AppSettings.LANGUAGE_SYSTEM)
+                ?: AppSettings.LANGUAGE_SYSTEM,
+        )
+    }
     var dynamicColors by rememberSaveable {
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_DYNAMIC_COLORS, false))
     }
@@ -228,7 +234,7 @@ fun SettingsScreen(
             }
             item {
                 when (selectedCategory) {
-                    SettingsCategory.GENERAL -> SettingsCard(title = "Allgemein") {
+                    SettingsCategory.GENERAL -> SettingsCard(title = stringResource(R.string.settings_category_general_title)) {
                         SettingChoiceRow(
                             title = "Theme",
                             options = listOf(
@@ -240,6 +246,20 @@ fun SettingsScreen(
                             onSelected = { value ->
                                 themeMode = value
                                 prefs.edit().putString(AppSettings.KEY_THEME_MODE, value).apply()
+                            },
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingChoiceRow(
+                            title = stringResource(R.string.settings_language_title),
+                            options = listOf(
+                                ThemeOption(AppSettings.LANGUAGE_SYSTEM, stringResource(R.string.settings_language_system)),
+                                ThemeOption(AppSettings.LANGUAGE_DE, stringResource(R.string.settings_language_de)),
+                                ThemeOption(AppSettings.LANGUAGE_EN, stringResource(R.string.settings_language_en)),
+                            ),
+                            selectedValue = appLanguage,
+                            onSelected = { value ->
+                                appLanguage = value
+                                prefs.edit().putString(AppSettings.KEY_APP_LANGUAGE, value).apply()
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
@@ -266,7 +286,7 @@ fun SettingsScreen(
                         )
                     }
 
-                    SettingsCategory.SOUND -> SettingsCard(title = "Sound") {
+                    SettingsCategory.SOUND -> SettingsCard(title = stringResource(R.string.settings_category_sound_title)) {
                         SettingToggleRow(
                             title = "Metadaten im Mini-Player",
                             subtitle = "Zeigt Artist/Titel unter dem Sendernamen.",
@@ -317,7 +337,7 @@ fun SettingsScreen(
                         )
                     }
 
-                    SettingsCategory.NOTIFICATION -> SettingsCard(title = "Benachrichtigung") {
+                    SettingsCategory.NOTIFICATION -> SettingsCard(title = stringResource(R.string.settings_category_notification_title)) {
                         SettingToggleRow(
                             title = "Play/Pause Button",
                             subtitle = "Steuerung direkt in der Medien-Benachrichtigung.",
@@ -359,7 +379,7 @@ fun SettingsScreen(
                         )
                     }
 
-                    SettingsCategory.DATA -> SettingsCard(title = "Speicher & Daten") {
+                    SettingsCategory.DATA -> SettingsCard(title = stringResource(R.string.settings_category_data_title)) {
                         SettingToggleRow(
                             title = "Mobile Daten erlauben",
                             subtitle = "Wenn aus, streamt die App nur im WLAN.",
@@ -545,7 +565,7 @@ fun SettingsScreen(
                             }
                     }
 
-                    SettingsCategory.INFO -> SettingsCard(title = "Info") {
+                    SettingsCategory.INFO -> SettingsCard(title = stringResource(R.string.settings_category_info_title)) {
                         InfoTextRow(label = "Version", value = appVersion)
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         LinkRow(

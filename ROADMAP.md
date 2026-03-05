@@ -46,6 +46,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Android Auto Shortcut in Settings mit Fallbacks (kein Launcher -> Settings/App-Info)
 - i18n-Basis gestartet (DE/EN ueber Systemsprache, Ressourcenstruktur eingefuehrt)
 - Settings-Update-Bereich bereits auf lokalisierte Strings umgestellt (DE/EN)
+- Sprachwahl in Settings integriert (System/Deutsch/English)
 - CI/Release Pipelines gehaertet (Push-CI aktiv, Signed-Workflow robuster)
 
 ## In Arbeit

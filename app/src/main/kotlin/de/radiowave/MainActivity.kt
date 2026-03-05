@@ -123,6 +123,14 @@ class MainActivity : ComponentActivity() {
             DisposableEffect(prefs) {
                 val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                     when (key) {
+                        AppSettings.KEY_APP_LANGUAGE -> {
+                            val language = prefs.getString(
+                                AppSettings.KEY_APP_LANGUAGE,
+                                AppSettings.LANGUAGE_SYSTEM,
+                            ) ?: AppSettings.LANGUAGE_SYSTEM
+                            AppLanguageManager.applyLanguage(language)
+                        }
+
                         AppSettings.KEY_THEME_MODE -> {
                             themeMode = prefs.getString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_SYSTEM)
                                 ?: AppSettings.THEME_SYSTEM

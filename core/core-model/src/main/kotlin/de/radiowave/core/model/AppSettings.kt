@@ -7,6 +7,7 @@ object AppSettings {
     const val PREFS_NAME = "radiowave_settings"
 
     const val KEY_THEME_MODE = "theme_mode"
+    const val KEY_APP_LANGUAGE = "app_language"
     const val KEY_DYNAMIC_COLORS = "dynamic_colors"
 
     const val KEY_SHOW_MINIPLAYER_METADATA = "show_miniplayer_metadata"
@@ -38,6 +39,9 @@ object AppSettings {
     const val THEME_SYSTEM = "system"
     const val THEME_DARK = "dark"
     const val THEME_LIGHT = "light"
+    const val LANGUAGE_SYSTEM = "system"
+    const val LANGUAGE_DE = "de"
+    const val LANGUAGE_EN = "en"
 
     const val QUALITY_AUTO = "auto"
     const val QUALITY_LOW = "low"
