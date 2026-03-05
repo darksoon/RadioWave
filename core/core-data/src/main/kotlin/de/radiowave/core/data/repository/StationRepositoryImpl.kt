@@ -31,6 +31,38 @@ class StationRepositoryImpl @Inject constructor(
         emit(runCatching { api.searchByTag(tag).map { it.toDomain() } }.getOrDefault(emptyList()))
     }
 
+    override suspend fun getStationVariants(station: Station): List<Station> {
+        val stationName = station.name.trim()
+        if (stationName.isBlank()) return listOf(station)
+        val normalizedName = normalizeName(stationName)
+
+        val remoteCandidates = runCatching {
+            api.searchByNameExact(
+                name = stationName,
+                limit = 100,
+            ).map { it.toDomain() }
+        }.getOrDefault(emptyList())
+
+        val exactNameCandidates = remoteCandidates.filter {
+            normalizeName(it.name) == normalizedName
+        }
+        val withCountryPreference = station.countryCode
+            ?.trim()
+            ?.takeIf { it.isNotBlank() }
+            ?.let { country ->
+                val sameCountry = exactNameCandidates.filter { candidate ->
+                    candidate.countryCode.equals(country, ignoreCase = true)
+                }
+                if (sameCountry.isNotEmpty()) sameCountry else exactNameCandidates
+            }
+            ?: exactNameCandidates
+
+        return (listOf(station) + withCountryPreference)
+            .filter { it.streamUrl.isNotBlank() }
+            .distinctBy { it.streamUrl }
+            .ifEmpty { listOf(station) }
+    }
+
     override fun getTags(): Flow<List<Genre>> = flow {
         emit(runCatching { api.getTags().map { it.toDomain() } }.getOrDefault(emptyList()))
     }
@@ -53,5 +85,9 @@ class StationRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             // Silently fail - not critical
         }
+    }
+
+    private fun normalizeName(value: String): String {
+        return value.trim().lowercase()
     }
 }

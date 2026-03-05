@@ -22,6 +22,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Optional sichtbare HTTP-Kennzeichnung in Browse + Settings-Toggle fuer unsichere Streams
 - Settings Rework als Kategorien-Navigation mit Detailseiten (`Allgemein`, `Sound`, `Benachrichtigung`, `Speicher & Daten`, `Info`)
 - Settings-Optionen: Theme (System/Dark/Light), Dynamic Colors, Standard-Qualitaet, Buffer-Profil
+- Standard-Qualitaet ist jetzt im Player aktiv (Variante wird bei Wiedergabe nach Bitrate gepickt)
 - Settings-Datenaktionen: Sender-Cache leeren, Verlauf loeschen
 - Settings-Info: App-Version, GitHub Repo, Issues, Website, Buy a Coffee
 - Notification Media Controls inkl. Prev/Play-Pause/Next/Stop
@@ -36,6 +37,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Backup-Defaults weiter gehaertet (SharedPrefs in Cloud-Backup ausgeschlossen)
 - Optionaler Hitzemodus in Settings (kleineres Buffer-Profil + reduzierte Metadatenlast)
 - Auto-Verbindung aktiviert Low-Load-Verhalten automatisch (Metadaten-/Artwork-Last reduziert)
+- Android Auto waehlt standardmaessig bitrate-schonender (Auto/Hoch -> Mittel waehrend Car-Session)
 - CI/Release Pipelines gehaertet (Push-CI aktiv, Signed-Workflow robuster)
 
 ## In Arbeit
@@ -64,7 +66,6 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
   - `search_cache_meta` fuer TTL-Logik
   - Verknuepfung mit Favoriten/Recents gegen Daten-Inkonsistenzen
   - Room-Migration bei Schema-Aenderung
-- Optionale Qualitaets-Presets pro Sender, wenn mehrere Stream-Varianten vorhanden sind
 - Optionaler Lautstaerke-Slider zusaetzlich zu Mute
 
 ## Hinweis

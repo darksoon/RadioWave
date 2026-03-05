@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Optional thermal mode setting (`Hitzemodus`) for car/charging scenarios in settings.
 - Optional short-drop timeshift guard setting (`Netzausfall-Puffer (MVP)`) in settings.
+- Active stream quality selection pipeline wired to `Standard-Qualitaet` setting (`Auto/Niedrig/Mittel/Hoch`).
 
 ### Fixed
 - Android Auto now uses the same session player as the app player (removed split fallback-player path).
@@ -19,6 +20,7 @@ All notable changes to this project will be documented in this file.
 - Android Auto now enables low-load behavior automatically while connected (no manual toggle required).
 - Timeshift guard now enforces large buffer profile and extends buffering-stall watchdog for short connection drops.
 - Refactored player recovery unit tests away from private reflection access to explicit test hooks.
+- Android Auto playback now prefers lower bitrate variants by default (`Auto/Hoch` are capped to `Mittel` while connected).
 
 ## [0.1.0-alpha.6] - 2026-03-03
 

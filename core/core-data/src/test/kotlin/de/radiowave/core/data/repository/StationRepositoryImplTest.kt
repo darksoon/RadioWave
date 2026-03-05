@@ -99,6 +99,7 @@ class StationRepositoryImplTest {
 }
 
 private class FakeRadioBrowserApi(
+    private val searchByNameExactResult: List<RadioBrowserStation> = emptyList(),
     private val searchByNameResult: List<RadioBrowserStation> = emptyList(),
     private val searchByTagResult: List<RadioBrowserStation> = emptyList(),
     private val searchByCountryResult: List<RadioBrowserStation> = emptyList(),
@@ -111,6 +112,14 @@ private class FakeRadioBrowserApi(
 ) : RadioBrowserApi {
     var registerClickCalled: Boolean = false
     var reportBrokenCalled: Boolean = false
+
+    override suspend fun searchByNameExact(
+        name: String,
+        limit: Int,
+        order: String,
+        reverse: Boolean,
+        hideBroken: Boolean,
+    ): List<RadioBrowserStation> = searchByNameExactResult
 
     override suspend fun searchByName(
         name: String,

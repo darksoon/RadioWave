@@ -281,8 +281,8 @@ fun SettingsScreen(
                                 defaultAudioQuality = value
                                 prefs.edit().putString(AppSettings.KEY_DEFAULT_AUDIO_QUALITY, value).apply()
                             },
-                            enabled = false,
-                            disabledHint = "Noch nicht aktiv im Player",
+                            enabled = true,
+                            disabledHint = null,
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingToggleRow(

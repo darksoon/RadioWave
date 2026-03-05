@@ -9,6 +9,7 @@ import androidx.media3.common.util.UnstableApi
 import de.radiowave.core.player.PlayerController
 import de.radiowave.core.player.PlayerControllerImpl
 import de.radiowave.core.player.RadioPlayerManager
+import de.radiowave.core.player.StreamQualityResolver
 import javax.inject.Singleton
 
 @Module
@@ -26,8 +27,12 @@ abstract class PlayerModule {
         @Singleton
         fun provideRadioPlayerManager(
             playerController: PlayerController,
+            streamQualityResolver: StreamQualityResolver,
         ): RadioPlayerManager {
-            return RadioPlayerManager(playerController)
+            return RadioPlayerManager(
+                playerController = playerController,
+                streamQualityResolver = streamQualityResolver,
+            )
         }
     }
 }

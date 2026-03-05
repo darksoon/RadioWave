@@ -12,11 +12,19 @@ import javax.inject.Singleton
 @Singleton
 class RadioPlayerManager @Inject constructor(
     private val playerController: PlayerController,
+    private val streamQualityResolver: StreamQualityResolver,
 ) {
     val playerState: StateFlow<PlayerState> = playerController.playerState
 
-    suspend fun playStation(station: Station) {
-        playerController.playStation(station)
+    suspend fun playStation(
+        station: Station,
+        automotiveMode: Boolean = false,
+    ) {
+        val selectedStation = streamQualityResolver.resolve(
+            station = station,
+            automotiveMode = automotiveMode,
+        )
+        playerController.playStation(selectedStation)
     }
 
     fun playPreviousStation() {

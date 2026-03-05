@@ -13,6 +13,15 @@ import retrofit2.http.Query
  */
 interface RadioBrowserApi {
 
+    @GET("json/stations/bynameexact/{name}")
+    suspend fun searchByNameExact(
+        @Path("name") name: String,
+        @Query("limit") limit: Int = 100,
+        @Query("order") order: String = "clickcount",
+        @Query("reverse") reverse: Boolean = true,
+        @Query("hidebroken") hideBroken: Boolean = true,
+    ): List<RadioBrowserStation>
+
     @GET("json/stations/byname/{name}")
     suspend fun searchByName(
         @Path("name") name: String,

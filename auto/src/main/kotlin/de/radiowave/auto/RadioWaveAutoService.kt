@@ -26,6 +26,7 @@ import de.radiowave.core.model.Station
 import de.radiowave.core.model.AppSettings
 import de.radiowave.core.model.Genre
 import de.radiowave.core.player.PlayerController
+import de.radiowave.core.player.StreamQualityResolver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -54,6 +55,9 @@ class RadioWaveAutoService : MediaLibraryService() {
 
     @Inject
     lateinit var recentRepository: RecentRepository
+
+    @Inject
+    lateinit var streamQualityResolver: StreamQualityResolver
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val stationCache = ConcurrentHashMap<String, Station>()
@@ -308,8 +312,12 @@ class RadioWaveAutoService : MediaLibraryService() {
     }
 
     private suspend fun performPlaybackStart(station: Station) {
-        playerController.playStation(station)
-        recentRepository.addRecentStation(station)
+        val selectedStation = streamQualityResolver.resolve(
+            station = station,
+            automotiveMode = true,
+        )
+        playerController.playStation(selectedStation)
+        recentRepository.addRecentStation(selectedStation)
         val activePlayer = playerController.ensureSessionPlayer()
         mediaLibrarySession?.setPlayer(activePlayer)
         activePlayer.playWhenReady = true
