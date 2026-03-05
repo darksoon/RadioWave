@@ -82,9 +82,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.radiowave.core.ui.components.StationLogoImage
 import de.radiowave.core.model.AppSettings
 import de.radiowave.core.model.Station
-import de.radiowave.core.ui.theme.DarkCardBackground
-import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
-import de.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.radiowave.core.ui.theme.TealAccent
 import de.radiowave.feature.home.HomeUiState
 import de.radiowave.feature.home.HomeViewModel
@@ -772,7 +769,7 @@ private fun EmptyState(
                         Text(text = suggestion)
                     },
                     colors = FilterChipDefaults.filterChipColors(
-                        containerColor = DarkSurfaceVariant,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
                         labelColor = TealAccent,
                     ),
                     shape = RoundedCornerShape(20.dp),
@@ -791,13 +788,12 @@ private fun StationGridCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     Card(
         modifier = modifier
             .fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = DarkCardBackground,
+            containerColor = MaterialTheme.colorScheme.surface,
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 2.dp,
@@ -815,7 +811,7 @@ private fun StationGridCard(
                     modifier = Modifier
                         .size(64.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(DarkSurfaceVariant),
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
                 ) {
                     StationLogoImage(
                         imageUrl = station.faviconUrl,
@@ -835,7 +831,7 @@ private fun StationGridCard(
                     ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.fillMaxWidth(),
                 )
 
@@ -858,7 +854,7 @@ private fun StationGridCard(
                     color = Color(0xFFE65100).copy(alpha = 0.92f),
                     border = BorderStroke(
                         width = 1.dp,
-                        color = Color.White.copy(alpha = 0.2f),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
                     ),
                     modifier = Modifier
                         .align(Alignment.TopStart)
@@ -877,10 +873,10 @@ private fun StationGridCard(
             Surface(
                 onClick = onToggleFavorite,
                 shape = CircleShape,
-                color = Color.Black.copy(alpha = 0.34f),
+                color = MaterialTheme.colorScheme.surface,
                 border = BorderStroke(
                     width = 1.dp,
-                    color = Color.White.copy(alpha = 0.2f),
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
                 ),
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -889,7 +885,7 @@ private fun StationGridCard(
                 Icon(
                     imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     contentDescription = null,
-                    tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.84f),
+                    tint = if (isFavorite) Color(0xFFFF5A7A) else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .size(24.dp)
                         .padding(4.dp),

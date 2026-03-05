@@ -74,7 +74,6 @@ import de.radiowave.core.ui.components.ErrorState
 import de.radiowave.core.ui.components.LoadingState
 import de.radiowave.core.ui.components.StationLogoImage
 import de.radiowave.core.ui.R as CoreUiR
-import de.radiowave.core.ui.theme.DarkCardBackground
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.radiowave.core.ui.theme.MintAccent
@@ -219,6 +218,7 @@ private fun HomeContent(
                     ) {
                         Spacer(modifier = Modifier.height(18.dp))
                         EmptyStartCard(
+                            isGerman = isGerman,
                             onNavigateToBrowse = onNavigateToBrowse,
                         )
                     }
@@ -687,13 +687,13 @@ private fun SectionTitle(
                 fontWeight = FontWeight.Bold,
                 fontSize = 26.sp,
             ),
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(modifier = Modifier.weight(1f))
         if (actionLabel != null && onActionClick != null) {
             Surface(
                 onClick = onActionClick,
-                color = Color.White.copy(alpha = 0.08f),
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = RoundedCornerShape(12.dp),
             ) {
                 Row(
@@ -703,12 +703,12 @@ private fun SectionTitle(
                     Text(
                         text = actionLabel,
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Icon(
                         imageVector = Icons.Default.ChevronRight,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier
                             .padding(start = 2.dp)
                             .size(16.dp),
@@ -733,7 +733,7 @@ private fun RecentStationCard(
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         border = BorderStroke(
             width = 1.dp,
-            color = Color.White.copy(alpha = 0.14f),
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 4.dp,
@@ -743,7 +743,7 @@ private fun RecentStationCard(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White.copy(alpha = 0.1f)),
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
         ) {
             Box(
                 modifier = Modifier
@@ -774,7 +774,7 @@ private fun RecentStationCard(
                             color = Color(0xFFFF7043),
                             shape = CircleShape,
                         )
-                        .background(DarkSurfaceVariant),
+                        .background(MaterialTheme.colorScheme.surface),
                     contentAlignment = Alignment.Center,
                 ) {
                     StationArtwork(
@@ -795,7 +795,7 @@ private fun RecentStationCard(
                     ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     minLines = 2,
                 )
                 station.country?.let { country ->
@@ -807,7 +807,7 @@ private fun RecentStationCard(
                         ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        color = DarkOnSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -827,7 +827,7 @@ private fun StationArtwork(
     Box(
         modifier = modifier
             .clip(shape)
-            .background(DarkSurfaceVariant),
+            .background(MaterialTheme.colorScheme.surface),
         contentAlignment = Alignment.Center,
     ) {
         if (imageUrl.isNullOrBlank()) {
@@ -879,7 +879,7 @@ private fun ArtworkFallback(
             style = MaterialTheme.typography.headlineSmall.copy(
                 fontWeight = FontWeight.Bold,
             ),
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
@@ -891,20 +891,22 @@ private val defaultFallbackColors = listOf(
 
 @Composable
 private fun EmptyStartCard(
+    isGerman: Boolean,
     onNavigateToBrowse: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    fun tr(de: String, en: String): String = if (isGerman) de else en
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = DarkCardBackground.copy(alpha = 0.72f),
+            containerColor = MaterialTheme.colorScheme.surface,
         ),
         border = BorderStroke(
             width = 1.dp,
-            color = Color.White.copy(alpha = 0.08f),
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
         ),
         onClick = { onNavigateToBrowse("popular") },
     ) {
@@ -912,17 +914,20 @@ private fun EmptyStartCard(
             modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
         ) {
             Text(
-                text = "Build your radio feed",
+                text = tr("Baue deinen Radio-Feed", "Build your radio feed"),
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
                 ),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Discover trending stations and start your first favorites collection.",
+                text = tr(
+                    "Entdecke trendende Sender und starte deine erste Favoritenliste.",
+                    "Discover trending stations and start your first favorites collection.",
+                ),
                 style = MaterialTheme.typography.bodyMedium,
-                color = DarkOnSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

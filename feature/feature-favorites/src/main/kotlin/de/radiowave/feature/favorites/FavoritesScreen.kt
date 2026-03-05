@@ -46,8 +46,6 @@ import de.radiowave.core.model.Station
 import de.radiowave.core.ui.components.ErrorState
 import de.radiowave.core.ui.components.LoadingState
 import de.radiowave.core.ui.components.StationLogoImage
-import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
-import de.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.radiowave.core.ui.theme.TealAccent
 
 @Composable
@@ -74,7 +72,10 @@ fun FavoritesScreen(
         }
 
         uiState.stations.isEmpty() -> {
-            EmptyFavorites(modifier = modifier)
+            EmptyFavorites(
+                isGerman = isGerman,
+                modifier = modifier,
+            )
         }
 
         else -> {
@@ -167,7 +168,7 @@ private fun FavoriteStationCard(
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.labelSmall,
-                    color = DarkOnSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -223,7 +224,7 @@ private fun StationLogo(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
-            .background(DarkSurfaceVariant),
+            .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center,
     ) {
         if (imageUrl.isNullOrBlank()) {
@@ -258,15 +259,17 @@ private fun LogoFallback(
         Text(
             text = stationName.firstOrNull()?.uppercase() ?: "?",
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
 
 @Composable
 private fun EmptyFavorites(
+    isGerman: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    fun tr(de: String, en: String): String = if (isGerman) de else en
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -285,17 +288,20 @@ private fun EmptyFavorites(
             )
             Spacer(modifier = Modifier.height(14.dp))
             Text(
-                text = "Noch keine Favoriten",
+                text = tr("Noch keine Favoriten", "No favorites yet"),
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Bold,
                 ),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "Tippe bei einem Sender auf das Herz, um ihn hier zu speichern.",
+                text = tr(
+                    "Tippe bei einem Sender auf das Herz, um ihn hier zu speichern.",
+                    "Tap the heart on a station to save it here.",
+                ),
                 style = MaterialTheme.typography.bodyMedium,
-                color = DarkOnSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
