@@ -32,4 +32,13 @@ interface StationDao {
 
     @Query("SELECT * FROM stations WHERE name LIKE '%' || :query || '%' ORDER BY cachedAt DESC LIMIT :limit")
     fun searchStations(query: String, limit: Int = 50): Flow<List<StationEntity>>
+
+    @Query("SELECT * FROM stations ORDER BY cachedAt DESC LIMIT :limit")
+    suspend fun getLatestStations(limit: Int = 200): List<StationEntity>
+
+    @Query("SELECT * FROM stations WHERE LOWER(countryCode) = LOWER(:countryCode) ORDER BY cachedAt DESC LIMIT :limit")
+    suspend fun getStationsByCountryCode(countryCode: String, limit: Int = 200): List<StationEntity>
+
+    @Query("SELECT * FROM stations WHERE tags LIKE '%' || :tag || '%' ORDER BY cachedAt DESC LIMIT :limit")
+    suspend fun getStationsByTag(tag: String, limit: Int = 200): List<StationEntity>
 }
