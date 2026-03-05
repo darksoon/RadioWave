@@ -25,6 +25,8 @@ All notable changes to this project will be documented in this file.
 - Resolved Android Auto resume case where UI looked active but no audible playback started until manual station switch.
 - Removed duplicate concurrent media notifications while Android Auto is connected (single active transport notification path).
 - Hardened cloud backup rules by excluding SharedPreferences in `data_extraction_rules.xml`.
+- Fixed startup crash after locale-engine migration by aligning `MainActivity` (`AppCompatActivity`) with an AppCompat-based app theme.
+- Fixed light-mode readability regressions in key screens (Home/Browse/Favorites) by switching hardcoded white text/backgrounds to theme-based colors.
 
 ### Improved
 - Thermal mode now enforces small player buffer profile and throttles metadata/artwork updates to reduce runtime load.
@@ -32,6 +34,8 @@ All notable changes to this project will be documented in this file.
 - Timeshift guard now enforces large buffer profile and extends buffering-stall watchdog for short connection drops.
 - Refactored player recovery unit tests away from private reflection access to explicit test hooks.
 - Android Auto playback now enforces a hard bitrate cap at `128 kbps` while connected.
+- UI visual direction simplified: removed star/nebula backdrop from the main shell and moved to a cleaner anthracite/white palette for dark/light modes.
+- Android Auto browse flow now mirrors favorites in the former recents slot for faster in-car favorite access.
 
 ## [0.1.0-alpha.6] - 2026-03-03
 

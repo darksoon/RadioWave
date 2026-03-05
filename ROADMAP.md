@@ -47,6 +47,10 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - i18n-Basis gestartet (DE/EN ueber Systemsprache, Ressourcenstruktur eingefuehrt)
 - Settings-Update-Bereich bereits auf lokalisierte Strings umgestellt (DE/EN)
 - Sprachwahl in Settings integriert (System/Deutsch/English)
+- Locale-Engine auf AppCompat-Basis stabilisiert (Crashfix bei Aktivitaetsstart nach Sprachwechsel)
+- Light-Mode Lesbarkeit in Home/Browse/Favoriten auf Theme-Farben umgestellt (keine harten Weiss-Kontraste mehr)
+- App-Shell auf schlichtes Visual reduziert (kein Sterne/Nebula-Hintergrund mehr im Hauptlayout)
+- Android Auto Browse-Slot `Recents` auf `Favorites` gemappt fuer schnelleren Zugriff waehrend der Fahrt
 - CI/Release Pipelines gehaertet (Push-CI aktiv, Signed-Workflow robuster)
 
 ## In Arbeit

@@ -38,7 +38,7 @@ Die öffentliche Roadmap findest du hier: **[ROADMAP.md](./ROADMAP.md)**
 - **Album-Cover** – automatisch von iTunes API (basiert auf Song-Metadaten)
 - **Android Auto** Support
 - **Chromecast** Support
-- **Material You** UI mit modernem Dark Look
+- **Material You** UI mit klarem Anthrazit/Weiss-Theme (Dark/Light)
 
 ## 📸 Screenshots
 
