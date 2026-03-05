@@ -57,6 +57,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Radio Timeshift MVP (fix 20 Minuten Buffer, Fullscreen-Seek + LIVE-Button)
 - Sleep Timer (15/30/60/off)
 - Share Action im Fullscreen-Player
+- Podcasts MVP als eigener Bereich (Bottom-Bar Eintrag + Suche + Episodenliste)
 - Favoriten Export/Import (JSON)
 - Custom Stations (manuelle URL) + M3U/PLS Import
 - Datennutzung sichtbar machen (geschaetzt ueber Bitrate)
@@ -69,6 +70,10 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Ausbau von Unit- und UI-Tests
 
 ## Ueberlegungen / Maybe Features
+- Podcast-Quelle separat anbinden:
+  - RadioBrowser API liefert primaer Radiosender, keine saubere Podcast-Episodenstruktur
+  - fuer Podcasts daher eigener Provider noetig (z. B. RSS-basiert / dedizierte Podcast-API)
+  - UI-Konzept: getrennte Listen `Sender` / `Podcasts` in Favoriten moeglich
 - Cache-DB fuer Browse/Suche:
   - `cached_stations` als zentrale Quelle in Room
   - Cache-first Repository-Flow (erst lokal, dann Netzwerk-Refresh)

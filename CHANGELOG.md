@@ -18,6 +18,7 @@ All notable changes to this project will be documented in this file.
 - Settings update section texts are now resource-driven (localized DE/EN).
 - Android Auto developer-mode documentation is now bilingual (DE/EN).
 - Added in-app language selector in settings (`System`, `Deutsch`, `English`) with immediate locale application.
+- Product docs now include planned podcast feature track (separate section/provider due to radio-centric API).
 
 ### Fixed
 - Android Auto now uses the same session player as the app player (removed split fallback-player path).
