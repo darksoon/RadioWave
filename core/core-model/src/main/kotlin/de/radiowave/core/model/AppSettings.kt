@@ -21,6 +21,7 @@ object AppSettings {
     const val KEY_DEFAULT_AUDIO_QUALITY = "default_audio_quality"
     const val KEY_ALLOW_MOBILE_DATA = "allow_mobile_data"
     const val KEY_BUFFER_PROFILE = "buffer_profile"
+    const val KEY_THERMAL_MODE = "thermal_mode"
     const val KEY_AUTO_PLAY_ON_ANDROID_AUTO_CONNECT = "auto_play_on_android_auto_connect"
     const val KEY_LAST_STATION_UUID = "last_station_uuid"
     const val KEY_LAST_STATION_NAME = "last_station_name"

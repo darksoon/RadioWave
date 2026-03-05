@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Optional thermal mode setting (`Hitzemodus`) for car/charging scenarios in settings.
+
 ### Fixed
 - Android Auto now uses the same session player as the app player (removed split fallback-player path).
 - Resolved Android Auto resume case where UI looked active but no audible playback started until manual station switch.
@@ -11,6 +14,7 @@ All notable changes to this project will be documented in this file.
 - Hardened cloud backup rules by excluding SharedPreferences in `data_extraction_rules.xml`.
 
 ### Improved
+- Thermal mode now enforces small player buffer profile and throttles metadata/artwork updates to reduce runtime load.
 - Refactored player recovery unit tests away from private reflection access to explicit test hooks.
 
 ## [0.1.0-alpha.6] - 2026-03-03

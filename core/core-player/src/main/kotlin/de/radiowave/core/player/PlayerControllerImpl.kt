@@ -93,6 +93,7 @@ class PlayerControllerImpl @Inject constructor(
     private var shouldResumeAfterAudioFocusGain = false
     private var wasDuckedForAudioFocus = false
     private var activeBufferProfile: String? = null
+    private var lastMetadataUpdateAtElapsedMs = 0L
     private val playbackBackStack = ArrayDeque<Station>()
     private val playbackForwardStack = ArrayDeque<Station>()
     private var stationPool: List<Station> = emptyList()
@@ -253,6 +254,9 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private fun getSelectedBufferProfile(): String {
+        if (isThermalModeEnabled()) {
+            return AppSettings.BUFFER_SMALL
+        }
         val value = settingsPrefs.getString(
             AppSettings.KEY_BUFFER_PROFILE,
             AppSettings.BUFFER_MEDIUM,
@@ -265,6 +269,10 @@ class PlayerControllerImpl @Inject constructor(
 
             else -> AppSettings.BUFFER_MEDIUM
         }
+    }
+
+    private fun isThermalModeEnabled(): Boolean {
+        return settingsPrefs.getBoolean(AppSettings.KEY_THERMAL_MODE, false)
     }
 
     private fun isPlaybackBlockedByMobileDataPolicy(): Boolean {
@@ -423,10 +431,17 @@ class PlayerControllerImpl @Inject constructor(
             }
 
             override fun onMediaMetadataChanged(metadata: MediaMetadata) {
+                if (isThermalModeEnabled() && !canProcessMetadataUpdateNow()) {
+                    return
+                }
                 val stationName = _playerState.value.currentStation?.name?.trim()
                 val title = metadata.title?.toString()?.trim()
                 val artist = metadata.artist?.toString()?.trim()
-                val albumArtUrl = metadata.artworkUri?.toString()
+                val albumArtUrl = if (isThermalModeEnabled()) {
+                    null
+                } else {
+                    metadata.artworkUri?.toString()
+                }
                 val hasUsefulMetadata = (!title.isNullOrBlank() && !title.equals(stationName, ignoreCase = true)) ||
                     !artist.isNullOrBlank() ||
                     !albumArtUrl.isNullOrBlank()
@@ -437,6 +452,11 @@ class PlayerControllerImpl @Inject constructor(
 
                 _playerState.update {
                     val previous = it.metadata ?: StreamMetadata()
+                    val noChange =
+                        previous.title == (title ?: previous.title) &&
+                            previous.artist == (artist ?: previous.artist) &&
+                            previous.albumArtUrl == (albumArtUrl ?: previous.albumArtUrl)
+                    if (noChange) return@update it
                     it.copy(
                         metadata = previous.copy(
                             title = title ?: previous.title,
@@ -568,6 +588,7 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private fun applyStreamTitle(rawTitle: String) {
+        if (isThermalModeEnabled() && !canProcessMetadataUpdateNow()) return
         val titleText = rawTitle.trim().takeUnless { it.isBlank() } ?: return
         val stationName = _playerState.value.currentStation?.name?.trim()
         if (stationName != null && titleText.equals(stationName, ignoreCase = true)) {
@@ -584,6 +605,10 @@ class PlayerControllerImpl @Inject constructor(
 
         _playerState.update {
             val previous = it.metadata ?: StreamMetadata()
+            val noChange =
+                previous.title == (parsedTitle ?: previous.title) &&
+                    previous.artist == (parsedArtist ?: previous.artist)
+            if (noChange) return@update it
             it.copy(
                 metadata = previous.copy(
                     title = parsedTitle ?: previous.title,
@@ -1125,6 +1150,13 @@ class PlayerControllerImpl @Inject constructor(
         }
     }
 
+    private fun canProcessMetadataUpdateNow(): Boolean {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastMetadataUpdateAtElapsedMs < thermalMetadataUpdateMinIntervalMs) return false
+        lastMetadataUpdateAtElapsedMs = now
+        return true
+    }
+
     @VisibleForTesting
     internal fun testSetPlayerState(state: PlayerState) {
         _playerState.value = state
@@ -1187,6 +1219,7 @@ class PlayerControllerImpl @Inject constructor(
 
     private companion object {
         const val APP_LOG_TAG = "RadioWave"
+        const val thermalMetadataUpdateMinIntervalMs = 2_500L
     }
 }
 

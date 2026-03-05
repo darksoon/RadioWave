@@ -110,6 +110,9 @@ fun SettingsScreen(
                 ?: AppSettings.BUFFER_MEDIUM,
         )
     }
+    var thermalMode by rememberSaveable {
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_THERMAL_MODE, false))
+    }
     var autoPlayOnAndroidAutoConnect by rememberSaveable {
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_AUTO_PLAY_ON_ANDROID_AUTO_CONNECT, true))
     }
@@ -356,6 +359,16 @@ fun SettingsScreen(
                             onSelected = { value ->
                                 bufferProfile = value
                                 prefs.edit().putString(AppSettings.KEY_BUFFER_PROFILE, value).apply()
+                            },
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingToggleRow(
+                            title = "Hitzemodus (Auto/Charging)",
+                            subtitle = "Reduziert Last: kleines Buffer-Profil + weniger Metadaten-/Artwork-Updates.",
+                            checked = thermalMode,
+                            onCheckedChange = { checked ->
+                                thermalMode = checked
+                                prefs.edit().putBoolean(AppSettings.KEY_THERMAL_MODE, checked).apply()
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))

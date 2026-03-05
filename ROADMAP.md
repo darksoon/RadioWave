@@ -34,6 +34,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Android Auto Player-Pfad vereinheitlicht (kein separater Fallback-Player mehr)
 - Doppel-Notification bei Android Auto behoben (nur ein aktiver Media-Notification-Pfad)
 - Backup-Defaults weiter gehaertet (SharedPrefs in Cloud-Backup ausgeschlossen)
+- Optionaler Hitzemodus in Settings (kleineres Buffer-Profil + reduzierte Metadatenlast)
 - CI/Release Pipelines gehaertet (Push-CI aktiv, Signed-Workflow robuster)
 
 ## In Arbeit
