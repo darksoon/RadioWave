@@ -9,6 +9,7 @@ import de.radiowave.core.model.Genre
 import de.radiowave.core.model.PlayerError
 import de.radiowave.core.model.PlayerState
 import de.radiowave.core.model.Station
+import de.radiowave.core.model.AppSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -83,6 +84,7 @@ class PlayerControllerImplRecoveryTest {
 
     @Test
     fun `startBufferingWatchdog triggers lost playback recovery after threshold`() = runTest {
+        setTimeshiftGuardEnabled(false)
         val controller = createController()
         val station = station(uuid = "s4")
         controller.testSetPlayerState(PlayerState(currentStation = station))
@@ -98,6 +100,15 @@ class PlayerControllerImplRecoveryTest {
         assertEquals(1, controller.testPlaybackLostRecoveryAttempts())
         assertTrue(controller.playerState.value.isLoading)
         assertTrue(controller.playerState.value.isBuffering)
+    }
+
+    private fun setTimeshiftGuardEnabled(enabled: Boolean) {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        context
+            .getSharedPreferences(AppSettings.PREFS_NAME, android.content.Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(AppSettings.KEY_TIMESHIFT_GUARD, enabled)
+            .commit()
     }
 
     private fun createController(): PlayerControllerImpl {
