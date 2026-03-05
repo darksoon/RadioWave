@@ -1,7 +1,11 @@
 package de.radiowave.feature.settings
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
+import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,6 +33,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +48,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import de.radiowave.core.model.AppSettings
 import de.radiowave.core.ui.theme.DarkCardBackground
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
@@ -108,7 +116,23 @@ fun SettingsScreen(
 
     val appVersion = rememberAppVersion(context)
     val dynamicColorsSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    var batteryOptimizationExcluded by remember {
+        mutableStateOf(isBatteryOptimizationExcluded(context))
+    }
+    val lifecycleOwner = LocalLifecycleOwner.current
     var selectedCategory by rememberSaveable { mutableStateOf<SettingsCategory?>(null) }
+
+    DisposableEffect(lifecycleOwner, context) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                batteryOptimizationExcluded = isBatteryOptimizationExcluded(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     LazyColumn(
         modifier = modifier
@@ -343,6 +367,22 @@ fun SettingsScreen(
                                 showInsecureStreams = checked
                                 prefs.edit().putBoolean(AppSettings.KEY_SHOW_INSECURE_STREAMS, checked).apply()
                             },
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingActionRow(
+                            title = "Akku-Optimierung",
+                            subtitle = if (batteryOptimizationExcluded) {
+                                "Fuer RadioWave deaktiviert. Background-Playback ist besser abgesichert."
+                            } else {
+                                "Aktiv. Kann auf manchen Geraeten Background-Audio aggressiv beenden."
+                            },
+                            actionLabel = if (batteryOptimizationExcluded) "Erneut pruefen" else "Ausnahme setzen",
+                            onActionClick = {
+                                requestDisableBatteryOptimization(context)
+                                batteryOptimizationExcluded = isBatteryOptimizationExcluded(context)
+                            },
+                            secondaryActionLabel = "Akku-Einstellungen",
+                            onSecondaryActionClick = { openBatteryOptimizationSettings(context) },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         Row(
@@ -623,6 +663,52 @@ private fun LinkRow(
 }
 
 @Composable
+private fun SettingActionRow(
+    title: String,
+    subtitle: String,
+    actionLabel: String,
+    onActionClick: () -> Unit,
+    secondaryActionLabel: String,
+    onSecondaryActionClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = Color.White,
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodySmall,
+            color = DarkOnSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            OutlinedButton(
+                onClick = onActionClick,
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(actionLabel)
+            }
+            OutlinedButton(
+                onClick = onSecondaryActionClick,
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(secondaryActionLabel)
+            }
+        }
+    }
+}
+
+@Composable
 private fun InfoTextRow(
     label: String,
     value: String,
@@ -670,4 +756,32 @@ private fun rememberAppVersion(context: Context): String {
             "unbekannt"
         }
     }
+}
+
+private fun isBatteryOptimizationExcluded(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
+    val powerManager = context.getSystemService(PowerManager::class.java) ?: return false
+    return powerManager.isIgnoringBatteryOptimizations(context.packageName)
+}
+
+private fun requestDisableBatteryOptimization(context: Context) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
+    val packageUri = Uri.parse("package:${context.packageName}")
+    val requestIntent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, packageUri)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    val listIntent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    runCatching {
+        context.startActivity(requestIntent)
+    }.onFailure {
+        runCatching { context.startActivity(listIntent) }
+    }
+}
+
+private fun openBatteryOptimizationSettings(context: Context) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
+    val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    runCatching { context.startActivity(intent) }
 }
