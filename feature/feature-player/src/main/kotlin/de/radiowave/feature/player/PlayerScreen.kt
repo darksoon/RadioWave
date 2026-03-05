@@ -61,6 +61,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.SubcomposeAsyncImage
 import de.radiowave.core.model.PlayerState
+import de.radiowave.core.ui.components.MarqueeText
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import kotlinx.coroutines.delay
 
@@ -94,7 +95,11 @@ fun PlayerScreen(
     val blurArtworkUrl = iTunesCoverUrl ?: streamCoverUrl
 
     val titleLine = metadataTitle ?: station.name
-    val artistLine = metadataArtist ?: "Live"
+    val artistLine = metadataArtist
+    val titleArtistLine = listOfNotNull(
+        titleLine.takeIf { it.isNotBlank() },
+        artistLine.takeIf { !it.isNullOrBlank() },
+    ).joinToString("  •  ")
     val stationLine = station.name
     val qualityLabel = formatStreamQualityLabel(station.codec, station.bitrate)
 
@@ -237,29 +242,23 @@ fun PlayerScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            Text(
-                text = titleLine,
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 45.sp,
+            MarqueeText(
+                text = titleArtistLine,
+                textStyle = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.SemiBold,
                 ),
                 color = Color.White,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(modifier = Modifier.height(3.dp))
-            Text(
-                text = artistLine,
-                style = MaterialTheme.typography.titleLarge,
-                color = DarkOnSurfaceVariant,
+                modifier = Modifier.fillMaxWidth(),
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                enabled = true,
+                edgeFade = true,
             )
-            Spacer(modifier = Modifier.height(6.dp))
-            // Station row with logo and name
+            Spacer(modifier = Modifier.height(8.dp))
+            // Station row with logo/name and optional kbps/codec on the same line
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // Station logo (16dp)
@@ -282,28 +281,21 @@ fun PlayerScreen(
                     color = Color.White.copy(alpha = 0.7f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
                 )
-            }
-            if (qualityLabel != null) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Surface(
-                    shape = RoundedCornerShape(999.dp),
-                    color = Color.White.copy(alpha = 0.1f),
-                    border = BorderStroke(
-                        width = 1.dp,
-                        color = Color.White.copy(alpha = 0.2f),
-                    ),
-                ) {
+                if (qualityLabel != null) {
+                    Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         text = qualityLabel,
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.88f),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        color = DarkOnSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             LinearProgressIndicator(
                 progress = { 1f },
