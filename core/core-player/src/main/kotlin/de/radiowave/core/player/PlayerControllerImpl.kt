@@ -12,6 +12,7 @@ import android.net.wifi.WifiManager
 import android.os.PowerManager
 import android.os.SystemClock
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -87,6 +88,7 @@ class PlayerControllerImpl @Inject constructor(
     private var networkLossObserved = false
     private var lastNetworkRecoveryAt = 0L
     private var isForegroundServiceRunning = false
+    private var isPlaybackNotificationEnabled = true
     private var isInternalRestartInProgress = false
     private var shouldResumeAfterAudioFocusGain = false
     private var wasDuckedForAudioFocus = false
@@ -1003,6 +1005,21 @@ class PlayerControllerImpl @Inject constructor(
         _playerState.update { it.copy(isMuted = shouldMute) }
     }
 
+    override fun ensureSessionPlayer(): Player = getOrCreatePlayer()
+
+    override fun setPlaybackNotificationEnabled(enabled: Boolean) {
+        if (isPlaybackNotificationEnabled == enabled) return
+        isPlaybackNotificationEnabled = enabled
+        if (!enabled) {
+            stopForegroundPlaybackServiceIfRunning()
+            return
+        }
+
+        if (_playerState.value.currentStation != null) {
+            ensureForegroundPlaybackServiceRunning()
+        }
+    }
+
     override fun sessionPlayer(): Player? = exoPlayer
 
     override fun stop() {
@@ -1061,6 +1078,7 @@ class PlayerControllerImpl @Inject constructor(
         stationName: String = _playerState.value.currentStation?.name.orEmpty(),
         subtitle: String = resolveNotificationSubtitle(isPlaying = _playerState.value.isPlaying),
     ) {
+        if (!isPlaybackNotificationEnabled) return
         try {
             PlaybackForegroundService.start(
                 context = context,
@@ -1105,6 +1123,45 @@ class PlayerControllerImpl @Inject constructor(
             isForegroundServiceRunning = false
             isInternalRestartInProgress = false
         }
+    }
+
+    @VisibleForTesting
+    internal fun testSetPlayerState(state: PlayerState) {
+        _playerState.value = state
+    }
+
+    @VisibleForTesting
+    internal fun testSetPlaybackLostRecoveryAttempts(value: Int) {
+        playbackLostRecoveryAttempts = value
+    }
+
+    @VisibleForTesting
+    internal fun testReconnectAttempts(): Int = reconnectAttempts
+
+    @VisibleForTesting
+    internal fun testPlaybackLostRecoveryAttempts(): Int = playbackLostRecoveryAttempts
+
+    @VisibleForTesting
+    internal fun testScheduleReconnect(
+        station: Station,
+        delayOverrideMs: Long? = null,
+        countAttempt: Boolean = true,
+    ) {
+        scheduleReconnect(
+            station = station,
+            delayOverrideMs = delayOverrideMs,
+            countAttempt = countAttempt,
+        )
+    }
+
+    @VisibleForTesting
+    internal fun testTriggerPlaybackLostRecovery(station: Station, reason: String) {
+        triggerPlaybackLostRecovery(station, reason)
+    }
+
+    @VisibleForTesting
+    internal fun testStartBufferingWatchdog(player: ExoPlayer) {
+        startBufferingWatchdog(player)
     }
 
     private fun logDebug(message: String) {

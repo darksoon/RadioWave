@@ -8,7 +8,6 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MediaItem.RequestMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaLibraryService.MediaLibrarySession
@@ -60,26 +59,14 @@ class RadioWaveAutoService : MediaLibraryService() {
     private val stationCache = ConcurrentHashMap<String, Station>()
     private val searchCache = ConcurrentHashMap<String, List<Station>>()
     private var lastAutoResumeAttemptAtMs = 0L
-    private lateinit var fallbackPlayer: ExoPlayer
     private var mediaLibrarySession: MediaLibrarySession? = null
 
     override fun onCreate() {
         super.onCreate()
-        fallbackPlayer = ExoPlayer.Builder(this).build()
         val callback = RadioWaveLibraryCallback()
-        val player = playerController.sessionPlayer() ?: fallbackPlayer
+        playerController.setPlaybackNotificationEnabled(false)
+        val player = playerController.ensureSessionPlayer()
         mediaLibrarySession = MediaLibrarySession.Builder(this, player, callback).build()
-
-        serviceScope.launch {
-            playerController.playerState.collect {
-                val activePlayer = playerController.sessionPlayer() ?: fallbackPlayer
-                mediaLibrarySession?.player?.let { current ->
-                    if (current !== activePlayer) {
-                        mediaLibrarySession?.setPlayer(activePlayer)
-                    }
-                }
-            }
-        }
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
@@ -90,7 +77,7 @@ class RadioWaveAutoService : MediaLibraryService() {
     override fun onDestroy() {
         mediaLibrarySession?.release()
         mediaLibrarySession = null
-        fallbackPlayer.release()
+        playerController.setPlaybackNotificationEnabled(true)
         serviceScope.cancel()
         super.onDestroy()
     }
@@ -298,18 +285,30 @@ class RadioWaveAutoService : MediaLibraryService() {
         serviceScope.launch {
             performPlaybackStart(station)
             delay(AUTO_RESUME_VERIFY_DELAY_MS)
-            val state = playerController.playerState.value
-            if (!state.isPlaying && state.currentStation?.streamUrl == station.streamUrl) {
+            if (shouldRetryPlayback(station)) {
                 logInfo("Auto playback verify failed, retrying '${station.name}'")
                 performPlaybackStart(station)
             }
         }
     }
 
+    private fun shouldRetryPlayback(station: Station): Boolean {
+        val state = playerController.playerState.value
+        val activePlayer = playerController.ensureSessionPlayer()
+        val sameStation = state.currentStation?.streamUrl == station.streamUrl
+        if (!sameStation) return false
+
+        val playerReadyOrBuffering =
+            activePlayer.playbackState == Player.STATE_READY ||
+                activePlayer.playbackState == Player.STATE_BUFFERING
+        val audiblePlaybackLikely = state.isPlaying && activePlayer.isPlaying && playerReadyOrBuffering
+        return !audiblePlaybackLikely
+    }
+
     private suspend fun performPlaybackStart(station: Station) {
         playerController.playStation(station)
         recentRepository.addRecentStation(station)
-        val activePlayer = playerController.sessionPlayer() ?: fallbackPlayer
+        val activePlayer = playerController.ensureSessionPlayer()
         mediaLibrarySession?.setPlayer(activePlayer)
         activePlayer.playWhenReady = true
         activePlayer.play()

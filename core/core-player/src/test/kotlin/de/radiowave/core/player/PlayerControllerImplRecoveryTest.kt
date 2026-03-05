@@ -44,19 +44,14 @@ class PlayerControllerImplRecoveryTest {
         val controller = createController()
         val station = station(uuid = "s1")
 
-        invokePrivate(
-            target = controller,
-            methodName = "scheduleReconnect",
-            parameterTypes = arrayOf(
-                Station::class.java,
-                java.lang.Long::class.java,
-                Boolean::class.javaPrimitiveType!!,
-            ),
-            args = arrayOf(station, 50L, true),
+        controller.testScheduleReconnect(
+            station = station,
+            delayOverrideMs = 50L,
+            countAttempt = true,
         )
         runCurrent()
 
-        assertEquals(1, readIntField(controller, "reconnectAttempts"))
+        assertEquals(1, controller.testReconnectAttempts())
         assertTrue(controller.playerState.value.isLoading)
         assertTrue(controller.playerState.value.isBuffering)
     }
@@ -65,14 +60,8 @@ class PlayerControllerImplRecoveryTest {
     fun `triggerPlaybackLostRecovery sets network error when max attempts reached`() = runTest {
         val controller = createController()
         val station = station(uuid = "s2")
-        setIntField(controller, "playbackLostRecoveryAttempts", 3)
-
-        invokePrivate(
-            target = controller,
-            methodName = "triggerPlaybackLostRecovery",
-            parameterTypes = arrayOf(Station::class.java, String::class.java),
-            args = arrayOf(station, "test"),
-        )
+        controller.testSetPlaybackLostRecoveryAttempts(3)
+        controller.testTriggerPlaybackLostRecovery(station = station, reason = "test")
 
         assertEquals(PlayerError.NetworkError, controller.playerState.value.error)
         assertEquals(false, controller.playerState.value.isLoading)
@@ -83,17 +72,11 @@ class PlayerControllerImplRecoveryTest {
     fun `triggerPlaybackLostRecovery schedules recovery and marks loading`() = runTest {
         val controller = createController()
         val station = station(uuid = "s3")
-        setPlayerState(controller, PlayerState(currentStation = station))
-
-        invokePrivate(
-            target = controller,
-            methodName = "triggerPlaybackLostRecovery",
-            parameterTypes = arrayOf(Station::class.java, String::class.java),
-            args = arrayOf(station, "manual-trigger"),
-        )
+        controller.testSetPlayerState(PlayerState(currentStation = station))
+        controller.testTriggerPlaybackLostRecovery(station = station, reason = "manual-trigger")
         runCurrent()
 
-        assertEquals(1, readIntField(controller, "playbackLostRecoveryAttempts"))
+        assertEquals(1, controller.testPlaybackLostRecoveryAttempts())
         assertTrue(controller.playerState.value.isLoading)
         assertTrue(controller.playerState.value.isBuffering)
     }
@@ -102,22 +85,17 @@ class PlayerControllerImplRecoveryTest {
     fun `startBufferingWatchdog triggers lost playback recovery after threshold`() = runTest {
         val controller = createController()
         val station = station(uuid = "s4")
-        setPlayerState(controller, PlayerState(currentStation = station))
+        controller.testSetPlayerState(PlayerState(currentStation = station))
         val player = createBufferingPlayerProxy()
 
-        invokePrivate(
-            target = controller,
-            methodName = "startBufferingWatchdog",
-            parameterTypes = arrayOf(ExoPlayer::class.java),
-            args = arrayOf(player),
-        )
+        controller.testStartBufferingWatchdog(player)
         runCurrent()
-        assertEquals(0, readIntField(controller, "playbackLostRecoveryAttempts"))
+        assertEquals(0, controller.testPlaybackLostRecoveryAttempts())
 
         advanceTimeBy(18_000L)
         runCurrent()
 
-        assertEquals(1, readIntField(controller, "playbackLostRecoveryAttempts"))
+        assertEquals(1, controller.testPlaybackLostRecoveryAttempts())
         assertTrue(controller.playerState.value.isLoading)
         assertTrue(controller.playerState.value.isBuffering)
     }
@@ -167,36 +145,6 @@ class PlayerControllerImplRecoveryTest {
         )
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun setPlayerState(controller: PlayerControllerImpl, state: PlayerState) {
-        val field = controller.javaClass.getDeclaredField("_playerState")
-        field.isAccessible = true
-        val flow = field.get(controller) as MutableStateFlow<PlayerState>
-        flow.value = state
-    }
-
-    private fun setIntField(target: Any, fieldName: String, value: Int) {
-        val field = target.javaClass.getDeclaredField(fieldName)
-        field.isAccessible = true
-        field.setInt(target, value)
-    }
-
-    private fun readIntField(target: Any, fieldName: String): Int {
-        val field = target.javaClass.getDeclaredField(fieldName)
-        field.isAccessible = true
-        return field.getInt(target)
-    }
-
-    private fun invokePrivate(
-        target: Any,
-        methodName: String,
-        parameterTypes: Array<Class<*>>,
-        args: Array<Any?>,
-    ) {
-        val method = target.javaClass.getDeclaredMethod(methodName, *parameterTypes)
-        method.isAccessible = true
-        method.invoke(target, *args)
-    }
 }
 
 private class FakeStationRepository : StationRepository {
