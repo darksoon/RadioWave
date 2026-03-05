@@ -77,7 +77,8 @@ class PlayerControllerImpl @Inject constructor(
     private val networkRecoveryDelayMs = 350L
     private val networkRecoveryCooldownMs = 1_500L
     private val playbackLostRecoveryDelayMs = 450L
-    private val bufferingStallThresholdMs = 18_000L
+    private val defaultBufferingStallThresholdMs = 18_000L
+    private val timeshiftGuardBufferingStallThresholdMs = 45_000L
     private val controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val connectivityManager: ConnectivityManager? =
         context.getSystemService(ConnectivityManager::class.java)
@@ -255,6 +256,9 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private fun getSelectedBufferProfile(): String {
+        if (isTimeshiftGuardEnabled()) {
+            return AppSettings.BUFFER_LARGE
+        }
         if (isLowLoadModeEnabled()) {
             return AppSettings.BUFFER_SMALL
         }
@@ -278,6 +282,10 @@ class PlayerControllerImpl @Inject constructor(
 
     private fun isLowLoadModeEnabled(): Boolean {
         return isThermalModeEnabled() || isAutomotivePerformanceModeEnabled
+    }
+
+    private fun isTimeshiftGuardEnabled(): Boolean {
+        return settingsPrefs.getBoolean(AppSettings.KEY_TIMESHIFT_GUARD, true)
     }
 
     private fun isPlaybackBlockedByMobileDataPolicy(): Boolean {
@@ -498,9 +506,14 @@ class PlayerControllerImpl @Inject constructor(
     private fun startBufferingWatchdog(player: ExoPlayer) {
         bufferingWatchdogJob?.cancel()
         val stationUuid = _playerState.value.currentStation?.uuid ?: return
+        val stallThresholdMs = if (isTimeshiftGuardEnabled()) {
+            timeshiftGuardBufferingStallThresholdMs
+        } else {
+            defaultBufferingStallThresholdMs
+        }
 
         bufferingWatchdogJob = controllerScope.launch {
-            delay(bufferingStallThresholdMs)
+            delay(stallThresholdMs)
 
             val currentStation = _playerState.value.currentStation ?: return@launch
             if (currentStation.uuid != stationUuid) return@launch
@@ -508,7 +521,7 @@ class PlayerControllerImpl @Inject constructor(
             if (!player.playWhenReady) return@launch
             if (player.playbackState != Player.STATE_BUFFERING) return@launch
 
-            logWarning("Buffering stall detected after ${bufferingStallThresholdMs}ms")
+            logWarning("Buffering stall detected after ${stallThresholdMs}ms")
             triggerPlaybackLostRecovery(currentStation, reason = "buffer-stall")
         }
     }

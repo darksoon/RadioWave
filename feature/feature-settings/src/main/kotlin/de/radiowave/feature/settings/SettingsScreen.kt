@@ -110,6 +110,9 @@ fun SettingsScreen(
                 ?: AppSettings.BUFFER_MEDIUM,
         )
     }
+    var timeshiftGuard by rememberSaveable {
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_TIMESHIFT_GUARD, true))
+    }
     var thermalMode by rememberSaveable {
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_THERMAL_MODE, false))
     }
@@ -359,6 +362,16 @@ fun SettingsScreen(
                             onSelected = { value ->
                                 bufferProfile = value
                                 prefs.edit().putString(AppSettings.KEY_BUFFER_PROFILE, value).apply()
+                            },
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingToggleRow(
+                            title = "Netzausfall-Puffer (MVP)",
+                            subtitle = "Erhoeht Stream-Puffer und wartet laenger bei kurzen Verbindungsabbruechen.",
+                            checked = timeshiftGuard,
+                            onCheckedChange = { checked ->
+                                timeshiftGuard = checked
+                                prefs.edit().putBoolean(AppSettings.KEY_TIMESHIFT_GUARD, checked).apply()
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
