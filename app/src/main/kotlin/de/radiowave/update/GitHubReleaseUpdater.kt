@@ -15,6 +15,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
+import kotlin.math.roundToInt
 
 data class UpdateRelease(
     val tag: String,
@@ -23,6 +24,12 @@ data class UpdateRelease(
     val htmlUrl: String,
     val apkUrl: String,
     val apkName: String,
+)
+
+data class UpdateDownloadProgress(
+    val downloadedBytes: Long,
+    val totalBytes: Long,
+    val percent: Int?,
 )
 
 object GitHubReleaseUpdater {
@@ -36,6 +43,7 @@ object GitHubReleaseUpdater {
     suspend fun downloadAndStartInstall(
         context: Context,
         release: UpdateRelease,
+        onProgress: (UpdateDownloadProgress) -> Unit = {},
     ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             ensureInstallPermission(context)
@@ -44,12 +52,20 @@ object GitHubReleaseUpdater {
                 "updates",
             ).apply { mkdirs() }
             val targetFile = File(updatesDir, sanitizeFileName(release.apkName))
-            downloadFile(url = release.apkUrl, targetFile = targetFile)
+            downloadFile(
+                url = release.apkUrl,
+                targetFile = targetFile,
+                onProgress = onProgress,
+            )
             launchInstaller(context, targetFile)
         }
     }
 
-    private fun downloadFile(url: String, targetFile: File) {
+    private suspend fun downloadFile(
+        url: String,
+        targetFile: File,
+        onProgress: (UpdateDownloadProgress) -> Unit,
+    ) {
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             connectTimeout = CONNECT_TIMEOUT_MS
@@ -60,9 +76,27 @@ object GitHubReleaseUpdater {
             if (connection.responseCode !in 200..299) {
                 error("Download failed: HTTP ${connection.responseCode}")
             }
+            val totalBytes = connection.contentLengthLong.takeIf { it > 0L } ?: -1L
+            publishProgress(
+                onProgress = onProgress,
+                downloadedBytes = 0L,
+                totalBytes = totalBytes,
+            )
             connection.inputStream.use { input ->
                 targetFile.outputStream().use { output ->
-                    input.copyTo(output)
+                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                    var downloadedBytes = 0L
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read <= 0) break
+                        output.write(buffer, 0, read)
+                        downloadedBytes += read
+                        publishProgress(
+                            onProgress = onProgress,
+                            downloadedBytes = downloadedBytes,
+                            totalBytes = totalBytes,
+                        )
+                    }
                 }
             }
         } finally {
@@ -104,6 +138,28 @@ object GitHubReleaseUpdater {
         val cleaned = name.replace(Regex("[^a-zA-Z0-9._-]"), "_").trim('_')
         if (cleaned.isBlank()) return fallback
         return if (cleaned.endsWith(".apk", ignoreCase = true)) cleaned else "$cleaned.apk"
+    }
+
+    private suspend fun publishProgress(
+        onProgress: (UpdateDownloadProgress) -> Unit,
+        downloadedBytes: Long,
+        totalBytes: Long,
+    ) {
+        val percent = if (totalBytes > 0L) {
+            ((downloadedBytes.toDouble() / totalBytes.toDouble()) * 100.0).roundToInt()
+                .coerceIn(0, 100)
+        } else {
+            null
+        }
+        withContext(Dispatchers.Main.immediate) {
+            onProgress(
+                UpdateDownloadProgress(
+                    downloadedBytes = downloadedBytes,
+                    totalBytes = totalBytes,
+                    percent = percent,
+                ),
+            )
+        }
     }
 
     private fun GitHubReleaseInfo.toUpdateRelease(): UpdateRelease = UpdateRelease(

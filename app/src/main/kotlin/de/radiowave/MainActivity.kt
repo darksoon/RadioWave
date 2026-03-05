@@ -15,11 +15,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
@@ -34,6 +36,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -83,6 +86,7 @@ import de.radiowave.feature.player.FloatingPlayerBar
 import de.radiowave.feature.player.PlayerScreen
 import de.radiowave.feature.settings.SettingsScreen
 import de.radiowave.update.GitHubReleaseUpdater
+import de.radiowave.update.UpdateDownloadProgress
 import de.radiowave.update.UpdateRelease
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.core.content.ContextCompat
@@ -220,6 +224,7 @@ fun RadioWaveMainScreen() {
     }
     var availableUpdate by remember { mutableStateOf<UpdateRelease?>(null) }
     var updateInProgress by remember { mutableStateOf(false) }
+    var updateProgress by remember { mutableStateOf<UpdateDownloadProgress?>(null) }
 
     suspend fun checkForAppUpdate(force: Boolean) {
         val autoCheckEnabled = prefs.getBoolean(AppSettings.KEY_UPDATE_CHECK_ENABLED, true)
@@ -503,20 +508,47 @@ fun RadioWaveMainScreen() {
                     onDismissRequest = { },
                     title = { Text("Neues Update verfuegbar") },
                     text = {
-                        Text(
-                            "Version: ${updateRelease.tag}\n\n" +
-                                "${previewReleaseNotes(updateRelease.body)}",
-                        )
+                        Column {
+                            Text(
+                                "Version: ${updateRelease.tag}\n\n" +
+                                    "${previewReleaseNotes(updateRelease.body)}",
+                            )
+                            if (updateInProgress) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                val progress = updateProgress
+                                val progressText = buildUpdateProgressText(progress)
+                                Text(
+                                    text = "Download laeuft: $progressText",
+                                    color = TealAccent,
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                val percent = progress?.percent
+                                if (percent != null) {
+                                    LinearProgressIndicator(
+                                        progress = { percent / 100f },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                } else {
+                                    LinearProgressIndicator(
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                }
+                            }
+                        }
                     },
                     confirmButton = {
                         TextButton(
                             onClick = {
                                 if (updateInProgress) return@TextButton
                                 updateInProgress = true
+                                updateProgress = null
                                 coroutineScope.launch {
                                     val result = GitHubReleaseUpdater.downloadAndStartInstall(
                                         context = context,
                                         release = updateRelease,
+                                        onProgress = { progress ->
+                                            updateProgress = progress
+                                        },
                                     )
                                     updateInProgress = false
                                     result.onFailure { error ->
@@ -535,6 +567,7 @@ fun RadioWaveMainScreen() {
                     dismissButton = {
                         TextButton(
                             onClick = {
+                                if (updateInProgress) return@TextButton
                                 prefs.edit()
                                     .putString(AppSettings.KEY_LAST_DISMISSED_UPDATE_TAG, updateRelease.tag)
                                     .apply()
@@ -593,6 +626,21 @@ private fun readVersionName(context: Context): String {
         }
         packageInfo.versionName ?: ""
     }.getOrDefault("")
+}
+
+private fun buildUpdateProgressText(progress: UpdateDownloadProgress?): String {
+    if (progress == null) return "wird vorbereitet..."
+    val downloadedMb = progress.downloadedBytes / (1024f * 1024f)
+    val totalMb = progress.totalBytes.takeIf { it > 0L }?.let { it / (1024f * 1024f) }
+    val sizePart = if (totalMb != null) {
+        String.format("%.1f / %.1f MB", downloadedMb, totalMb)
+    } else {
+        String.format("%.1f MB", downloadedMb)
+    }
+    val percentPart = progress.percent?.let { "$it%" } ?: ""
+    return listOf(sizePart, percentPart)
+        .filter { it.isNotBlank() }
+        .joinToString("  ")
 }
 
 private const val UPDATE_CHECK_INTERVAL_MS = 6L * 60L * 60L * 1000L

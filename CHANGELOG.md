@@ -11,6 +11,8 @@ All notable changes to this project will be documented in this file.
 - First-run info dialog with key setup hints (Android Auto profile, battery optimization, update flow).
 - GitHub release updater flow: update check, release-notes dialog, APK download and installer handoff.
 - New dedicated `Updates` settings section: popup toggle, automatic check toggle, manual check action, installed/latest version status.
+- Update dialog now shows live APK download progress (MB + percentage + progress bar).
+- Added Android Auto developer-mode guidance for sideload/beta builds (in-app + docs).
 
 ### Fixed
 - Android Auto now uses the same session player as the app player (removed split fallback-player path).

@@ -508,6 +508,29 @@ fun SettingsScreen(
                                 uriHandler.openUri(releaseUrl)
                             },
                         )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        InfoTextBlockRow(
+                            label = "Android Auto (Beta / Sideload)",
+                            value = "Fuer nicht-Play-Store Builds ist aktuell kein echter Workaround moeglich: " +
+                                "Android Auto verlangt Developer-Mode + Unbekannte Quellen.\n\n" +
+                                "Schritte:\n" +
+                                "1) Android Auto App oeffnen\n" +
+                                "2) In Einstellungen mehrfach auf die Versionsnummer tippen (Developer-Mode)\n" +
+                                "3) Oben rechts Entwicklereinstellungen oeffnen\n" +
+                                "4) 'Unbekannte Quellen' aktivieren\n" +
+                                "5) Auto neu verbinden",
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingActionRow(
+                            title = "Android Auto Hilfe",
+                            subtitle = "Direkt in Android Auto springen oder die Schritt-fuer-Schritt-Anleitung oeffnen.",
+                            actionLabel = "Android Auto oeffnen",
+                            onActionClick = { openAndroidAutoApp(context) },
+                            secondaryActionLabel = "Anleitung",
+                            onSecondaryActionClick = {
+                                uriHandler.openUri("https://github.com/darksoon/RadioWave/blob/main/docs/ANDROID_AUTO_DEV_MODE.md")
+                            },
+                        )
                         updateUiState.latestRelease?.body
                             ?.takeIf { it.isNotBlank() }
                             ?.let { notes ->
@@ -929,4 +952,13 @@ private fun buildUpdateCheckSubtitle(lastCheckedAtMs: Long?, error: String?): St
         "Letzte Pruefung: $formatted"
     } ?: "Noch keine manuelle Pruefung erfolgt."
     return if (error.isNullOrBlank()) timePart else "$timePart  Fehler: $error"
+}
+
+private fun openAndroidAutoApp(context: Context) {
+    val launchIntent = context.packageManager.getLaunchIntentForPackage("com.google.android.projection.gearhead")
+    if (launchIntent != null) {
+        context.startActivity(launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    } else {
+        Toast.makeText(context, "Android Auto App nicht gefunden", Toast.LENGTH_SHORT).show()
+    }
 }

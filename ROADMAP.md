@@ -41,6 +41,8 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Erststart-Info-Dialog integriert (wichtige Hinweise beim ersten App-Start)
 - In-App Updateflow ueber GitHub Releases integriert (Hinweisdialog + APK-Download + Installer)
 - Update-Settings-Seite integriert (Popup an/aus, Auto-Check an/aus, manuelle Pruefung, Versionsstatus)
+- Update-Dialog zeigt Download-Fortschritt live (MB/% + Progressbar)
+- Android Auto Developer-Mode Anleitung fuer Sideload/Beta hinterlegt (Settings + Docs)
 - CI/Release Pipelines gehaertet (Push-CI aktiv, Signed-Workflow robuster)
 
 ## In Arbeit
