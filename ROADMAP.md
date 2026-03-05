@@ -38,6 +38,8 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Optionaler Hitzemodus in Settings (kleineres Buffer-Profil + reduzierte Metadatenlast)
 - Auto-Verbindung aktiviert Low-Load-Verhalten automatisch (Metadaten-/Artwork-Last reduziert)
 - Android Auto erzwingt waehrend Car-Session maximal 128 kbps (bitrate-schonender Betrieb)
+- Erststart-Info-Dialog integriert (wichtige Hinweise beim ersten App-Start)
+- In-App Updateflow ueber GitHub Releases integriert (Hinweisdialog + APK-Download + Installer)
 - CI/Release Pipelines gehaertet (Push-CI aktiv, Signed-Workflow robuster)
 
 ## In Arbeit

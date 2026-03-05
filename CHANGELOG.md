@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file.
 - Optional thermal mode setting (`Hitzemodus`) for car/charging scenarios in settings.
 - Optional short-drop timeshift guard setting (`Netzausfall-Puffer (MVP)`) in settings.
 - Active stream quality selection pipeline wired to `Standard-Qualitaet` setting (`Auto/Niedrig/Mittel/Hoch`).
+- First-run info dialog with key setup hints (Android Auto profile, battery optimization, update flow).
+- GitHub release updater flow: update check, release-notes dialog, APK download and installer handoff.
 
 ### Fixed
 - Android Auto now uses the same session player as the app player (removed split fallback-player path).

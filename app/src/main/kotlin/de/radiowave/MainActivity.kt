@@ -33,9 +33,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -43,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalView
@@ -79,8 +82,11 @@ import de.radiowave.feature.home.HomeViewModel
 import de.radiowave.feature.player.FloatingPlayerBar
 import de.radiowave.feature.player.PlayerScreen
 import de.radiowave.feature.settings.SettingsScreen
+import de.radiowave.update.GitHubReleaseUpdater
+import de.radiowave.update.UpdateRelease
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -196,6 +202,7 @@ fun RadioWaveMainScreen() {
     val prefs = remember(context) {
         context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
     }
+    val coroutineScope = rememberCoroutineScope()
     var showMiniPlayerMetadata by remember {
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_MINIPLAYER_METADATA, true))
     }
@@ -206,6 +213,31 @@ fun RadioWaveMainScreen() {
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_QUICK_TOASTS, true))
     }
     var showFullscreenPlayer by rememberSaveable { mutableStateOf(false) }
+    var showFirstRunInfo by rememberSaveable {
+        mutableStateOf(
+            !prefs.getBoolean(AppSettings.KEY_FIRST_RUN_ONBOARDING_DONE, false),
+        )
+    }
+    var availableUpdate by remember { mutableStateOf<UpdateRelease?>(null) }
+    var updateInProgress by remember { mutableStateOf(false) }
+
+    suspend fun checkForAppUpdate(force: Boolean) {
+        val autoCheckEnabled = prefs.getBoolean(AppSettings.KEY_UPDATE_CHECK_ENABLED, true)
+        if (!autoCheckEnabled) return
+        val now = System.currentTimeMillis()
+        val lastCheckAt = prefs.getLong(AppSettings.KEY_LAST_UPDATE_CHECK_AT_MS, 0L)
+        if (!force && now - lastCheckAt < UPDATE_CHECK_INTERVAL_MS) return
+        prefs.edit().putLong(AppSettings.KEY_LAST_UPDATE_CHECK_AT_MS, now).apply()
+        val versionName = readVersionName(context)
+        runCatching {
+            GitHubReleaseUpdater.checkForUpdate(versionName)
+        }.onSuccess { update ->
+            if (update == null) return@onSuccess
+            val dismissedTag = prefs.getString(AppSettings.KEY_LAST_DISMISSED_UPDATE_TAG, null)
+            if (dismissedTag.equals(update.tag, ignoreCase = true)) return@onSuccess
+            availableUpdate = update
+        }
+    }
 
     BackHandler(enabled = showFullscreenPlayer) {
         showFullscreenPlayer = false
@@ -254,6 +286,12 @@ fun RadioWaveMainScreen() {
     LaunchedEffect(showPlayerBar) {
         if (!showPlayerBar) {
             showFullscreenPlayer = false
+        }
+    }
+
+    LaunchedEffect(showFirstRunInfo) {
+        if (!showFirstRunInfo) {
+            checkForAppUpdate(force = false)
         }
     }
 
@@ -424,6 +462,88 @@ fun RadioWaveMainScreen() {
                     )
                 }
             }
+
+            if (showFirstRunInfo) {
+                AlertDialog(
+                    onDismissRequest = { },
+                    title = {
+                        Text("Willkommen bei RadioWave")
+                    },
+                    text = {
+                        Text(
+                            "Kurzer Hinweis fuer den Start:\n" +
+                                "- Android Auto nutzt automatisch ein sparsames Profil (max. 128 kbps).\n" +
+                                "- Akku-Optimierung fuer die App sollte deaktiviert werden.\n" +
+                                "- Updates werden ueber GitHub Releases erkannt und koennen direkt installiert werden.",
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                prefs.edit()
+                                    .putBoolean(AppSettings.KEY_FIRST_RUN_ONBOARDING_DONE, true)
+                                    .apply()
+                                showFirstRunInfo = false
+                                coroutineScope.launch {
+                                    checkForAppUpdate(force = true)
+                                }
+                            },
+                        ) {
+                            Text("Verstanden")
+                        }
+                    },
+                )
+            }
+
+            val updateRelease = availableUpdate
+            if (updateRelease != null) {
+                AlertDialog(
+                    onDismissRequest = { },
+                    title = { Text("Neues Update verfuegbar") },
+                    text = {
+                        Text(
+                            "Version: ${updateRelease.tag}\n\n" +
+                                "${previewReleaseNotes(updateRelease.body)}",
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                if (updateInProgress) return@TextButton
+                                updateInProgress = true
+                                coroutineScope.launch {
+                                    val result = GitHubReleaseUpdater.downloadAndStartInstall(
+                                        context = context,
+                                        release = updateRelease,
+                                    )
+                                    updateInProgress = false
+                                    result.onFailure { error ->
+                                        Toast.makeText(
+                                            context,
+                                            "Update fehlgeschlagen: ${error.message ?: "Unbekannter Fehler"}",
+                                            Toast.LENGTH_LONG,
+                                        ).show()
+                                    }
+                                }
+                            },
+                        ) {
+                            Text(if (updateInProgress) "Lade..." else "Update")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = {
+                                prefs.edit()
+                                    .putString(AppSettings.KEY_LAST_DISMISSED_UPDATE_TAG, updateRelease.tag)
+                                    .apply()
+                                availableUpdate = null
+                            },
+                        ) {
+                            Text("Spaeter")
+                        }
+                    },
+                )
+            }
         }
     }
 }
@@ -447,3 +567,30 @@ private fun EnsureNotificationPermission() {
         }
     }
 }
+
+private fun previewReleaseNotes(notes: String): String {
+    if (notes.isBlank()) return "Keine Release Notes verfuegbar."
+    return notes
+        .lineSequence()
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+        .take(10)
+        .joinToString("\n")
+}
+
+private fun readVersionName(context: Context): String {
+    return runCatching {
+        val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.packageManager.getPackageInfo(
+                context.packageName,
+                android.content.pm.PackageManager.PackageInfoFlags.of(0),
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            context.packageManager.getPackageInfo(context.packageName, 0)
+        }
+        packageInfo.versionName ?: ""
+    }.getOrDefault("")
+}
+
+private const val UPDATE_CHECK_INTERVAL_MS = 6L * 60L * 60L * 1000L
