@@ -44,6 +44,8 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Update-Dialog zeigt Download-Fortschritt live (MB/% + Progressbar)
 - Android Auto Developer-Mode Anleitung fuer Sideload/Beta hinterlegt (Settings + Docs)
 - Android Auto Shortcut in Settings mit Fallbacks (kein Launcher -> Settings/App-Info)
+- i18n-Basis gestartet (DE/EN ueber Systemsprache, Ressourcenstruktur eingefuehrt)
+- Settings-Update-Bereich bereits auf lokalisierte Strings umgestellt (DE/EN)
 - CI/Release Pipelines gehaertet (Push-CI aktiv, Signed-Workflow robuster)
 
 ## In Arbeit

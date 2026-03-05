@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_overview">Uebersichtlich: Allgemein, Sound, Benachrichtigung, Daten, Updates, Info</string>
+    <string name="settings_category_general_title">Allgemein</string>
+    <string name="settings_category_general_subtitle">Theme, Dynamic Colors, Hinweise</string>
+    <string name="settings_category_sound_title">Sound</string>
+    <string name="settings_category_sound_subtitle">Mini-Player, Qualitaet, Vollbild</string>
+    <string name="settings_category_notification_title">Benachrichtigung</string>
+    <string name="settings_category_notification_subtitle">Buttons in der Notification</string>
+    <string name="settings_category_data_title">Speicher &amp; Daten</string>
+    <string name="settings_category_data_subtitle">Buffer, Streams, Cache, Verlauf</string>
+    <string name="settings_category_updates_title">Updates</string>
+    <string name="settings_category_updates_subtitle">Popup, manuell pruefen, Release-Status</string>
+    <string name="settings_category_info_title">Info</string>
+    <string name="settings_category_info_subtitle">Version, Links, Projekt</string>
+    <string name="settings_updates_installed_version">Installierte Version</string>
+    <string name="settings_updates_latest_release">Letztes gefundenes Release</string>
+    <string name="settings_updates_not_checked">Noch nicht geprueft</string>
+    <string name="settings_updates_status">Update-Status</string>
+    <string name="settings_updates_status_unknown">Unbekannt (noch nicht geprueft)</string>
+    <string name="settings_updates_status_available">Update verfuegbar</string>
+    <string name="settings_updates_status_current">Aktuell</string>
+    <string name="settings_updates_auto_check_title">Automatisch nach Updates suchen</string>
+    <string name="settings_updates_auto_check_subtitle">Prueft regelmaessig GitHub Releases im Hintergrund.</string>
+    <string name="settings_updates_popup_title">Update-Popup anzeigen</string>
+    <string name="settings_updates_popup_subtitle">Zeigt bei neuer Version automatisch den Update-Dialog.</string>
+    <string name="settings_updates_manual_title">Manuelle Update-Pruefung</string>
+    <string name="settings_updates_manual_checking">Pruefe...</string>
+    <string name="settings_updates_manual_check">Jetzt pruefen</string>
+    <string name="settings_updates_manual_release_page">Release-Seite</string>
+    <string name="settings_updates_auto_beta_label">Android Auto (Beta / Sideload)</string>
+    <string name="settings_updates_auto_beta_text">Fuer nicht-Play-Store Builds ist aktuell kein echter Workaround moeglich: Android Auto verlangt Developer-Mode + Unbekannte Quellen.\n\nSchritte:\n1) Android Auto App oeffnen\n2) In Einstellungen mehrfach auf die Versionsnummer tippen (Developer-Mode)\n3) Oben rechts Entwicklereinstellungen oeffnen\n4) „Unbekannte Quellen“ aktivieren\n5) Auto neu verbinden</string>
+    <string name="settings_updates_auto_help_title">Android Auto Hilfe</string>
+    <string name="settings_updates_auto_help_subtitle">Direkt in Android Auto springen oder die Schritt-fuer-Schritt-Anleitung oeffnen.</string>
+    <string name="settings_updates_auto_open">Android Auto oeffnen</string>
+    <string name="settings_updates_auto_guide">Anleitung</string>
+    <string name="settings_updates_notes_preview">Release Notes (Vorschau)</string>
+    <string name="settings_update_last_check">Letzte Pruefung: %1$s</string>
+    <string name="settings_update_never_checked">Noch keine manuelle Pruefung erfolgt.</string>
+    <string name="settings_update_error_prefix">Fehler: %1$s</string>
+    <string name="settings_android_auto_fallback_toast">Android Auto ohne Launcher-Einstieg. App-Info geoeffnet.</string>
+    <string name="settings_android_auto_not_available">Android Auto nicht verfuegbar</string>
+    <string name="settings_unknown">unbekannt</string>
+    <string name="settings_back">Zurueck</string>
+</resources>

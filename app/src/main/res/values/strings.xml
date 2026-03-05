@@ -1,4 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">RadioWave</string>
+    <string name="update_dialog_title">New update available</string>
+    <string name="update_dialog_version">Version: %1$s</string>
+    <string name="update_dialog_release_notes_fallback">No release notes available.</string>
+    <string name="update_dialog_download_running">Downloading: %1$s</string>
+    <string name="update_dialog_downloading">Downloading…</string>
+    <string name="update_dialog_update_action">Update</string>
+    <string name="update_dialog_later_action">Later</string>
+    <string name="update_dialog_failed">Update failed: %1$s</string>
+    <string name="update_dialog_failed_unknown">Unknown error</string>
+    <string name="first_run_title">Welcome to RadioWave</string>
+    <string name="first_run_body">Quick setup notes:\n- Android Auto uses an efficient profile automatically (max 128 kbps).\n- Battery optimization should be disabled for the app.\n- Updates are detected via GitHub Releases and can be installed directly.</string>
+    <string name="first_run_confirm">Understood</string>
+    <string name="update_progress_preparing">preparing…</string>
+    <string name="update_progress_known">%1$.1f / %2$.1f MB  %3$d%%</string>
+    <string name="update_progress_unknown">%1$.1f MB</string>
 </resources>

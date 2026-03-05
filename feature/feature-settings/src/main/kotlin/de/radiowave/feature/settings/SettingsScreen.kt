@@ -45,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,6 +57,7 @@ import de.radiowave.core.model.AppSettings
 import de.radiowave.core.ui.theme.DarkCardBackground
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.TealAccent
+import de.radiowave.feature.settings.R
 import java.text.DateFormat
 import java.util.Date
 
@@ -159,7 +161,7 @@ fun SettingsScreen(
     ) {
         item {
             Text(
-                text = "Einstellungen",
+                text = stringResource(R.string.settings_title),
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 30.sp,
@@ -168,7 +170,7 @@ fun SettingsScreen(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Uebersichtlich: Allgemein, Sound, Benachrichtigung, Daten, Updates, Info",
+                text = stringResource(R.string.settings_overview),
                 style = MaterialTheme.typography.bodyMedium,
                 color = DarkOnSurfaceVariant,
             )
@@ -177,50 +179,50 @@ fun SettingsScreen(
         if (selectedCategory == null) {
             item {
                 SettingsCategoryCard(
-                    title = "Allgemein",
-                    subtitle = "Theme, Dynamic Colors, Hinweise",
+                    title = stringResource(R.string.settings_category_general_title),
+                    subtitle = stringResource(R.string.settings_category_general_subtitle),
                     onClick = { selectedCategory = SettingsCategory.GENERAL },
                 )
             }
             item {
                 SettingsCategoryCard(
-                    title = "Sound",
-                    subtitle = "Mini-Player, Qualitaet, Vollbild",
+                    title = stringResource(R.string.settings_category_sound_title),
+                    subtitle = stringResource(R.string.settings_category_sound_subtitle),
                     onClick = { selectedCategory = SettingsCategory.SOUND },
                 )
             }
             item {
                 SettingsCategoryCard(
-                    title = "Benachrichtigung",
-                    subtitle = "Buttons in der Notification",
+                    title = stringResource(R.string.settings_category_notification_title),
+                    subtitle = stringResource(R.string.settings_category_notification_subtitle),
                     onClick = { selectedCategory = SettingsCategory.NOTIFICATION },
                 )
             }
             item {
                 SettingsCategoryCard(
-                    title = "Speicher & Daten",
-                    subtitle = "Buffer, Streams, Cache, Verlauf",
+                    title = stringResource(R.string.settings_category_data_title),
+                    subtitle = stringResource(R.string.settings_category_data_subtitle),
                     onClick = { selectedCategory = SettingsCategory.DATA },
                 )
             }
             item {
                 SettingsCategoryCard(
-                    title = "Updates",
-                    subtitle = "Popup, manuell pruefen, Release-Status",
+                    title = stringResource(R.string.settings_category_updates_title),
+                    subtitle = stringResource(R.string.settings_category_updates_subtitle),
                     onClick = { selectedCategory = SettingsCategory.UPDATES },
                 )
             }
             item {
                 SettingsCategoryCard(
-                    title = "Info",
-                    subtitle = "Version, Links, Projekt",
+                    title = stringResource(R.string.settings_category_info_title),
+                    subtitle = stringResource(R.string.settings_category_info_subtitle),
                     onClick = { selectedCategory = SettingsCategory.INFO },
                 )
             }
         } else {
             item {
                 SettingsDetailHeader(
-                    title = selectedCategory!!.title,
+                    title = categoryTitle(selectedCategory!!, context),
                     onBack = { selectedCategory = null },
                 )
             }
@@ -455,26 +457,26 @@ fun SettingsScreen(
                         }
                     }
 
-                    SettingsCategory.UPDATES -> SettingsCard(title = "Updates") {
-                        InfoTextRow(label = "Installierte Version", value = appVersion)
+                    SettingsCategory.UPDATES -> SettingsCard(title = stringResource(R.string.settings_category_updates_title)) {
+                        InfoTextRow(label = stringResource(R.string.settings_updates_installed_version), value = appVersion)
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         InfoTextRow(
-                            label = "Letztes gefundenes Release",
-                            value = updateUiState.latestRelease?.tag ?: "Noch nicht geprueft",
+                            label = stringResource(R.string.settings_updates_latest_release),
+                            value = updateUiState.latestRelease?.tag ?: stringResource(R.string.settings_updates_not_checked),
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         InfoTextRow(
-                            label = "Update-Status",
+                            label = stringResource(R.string.settings_updates_status),
                             value = when {
-                                updateUiState.latestRelease == null -> "Unbekannt (noch nicht geprueft)"
-                                updateUiState.hasUpdate -> "Update verfuegbar"
-                                else -> "Aktuell"
+                                updateUiState.latestRelease == null -> stringResource(R.string.settings_updates_status_unknown)
+                                updateUiState.hasUpdate -> stringResource(R.string.settings_updates_status_available)
+                                else -> stringResource(R.string.settings_updates_status_current)
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingToggleRow(
-                            title = "Automatisch nach Updates suchen",
-                            subtitle = "Prueft regelmaessig GitHub Releases im Hintergrund.",
+                            title = stringResource(R.string.settings_updates_auto_check_title),
+                            subtitle = stringResource(R.string.settings_updates_auto_check_subtitle),
                             checked = updateCheckEnabled,
                             onCheckedChange = { checked ->
                                 updateCheckEnabled = checked
@@ -483,8 +485,8 @@ fun SettingsScreen(
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingToggleRow(
-                            title = "Update-Popup anzeigen",
-                            subtitle = "Zeigt bei neuer Version automatisch den Update-Dialog.",
+                            title = stringResource(R.string.settings_updates_popup_title),
+                            subtitle = stringResource(R.string.settings_updates_popup_subtitle),
                             checked = updatePopupEnabled,
                             onCheckedChange = { checked ->
                                 updatePopupEnabled = checked
@@ -493,15 +495,19 @@ fun SettingsScreen(
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingActionRow(
-                            title = "Manuelle Update-Pruefung",
-                            subtitle = buildUpdateCheckSubtitle(updateUiState.lastCheckedAtMs, updateUiState.lastError),
-                            actionLabel = if (updateUiState.isChecking) "Pruefe..." else "Jetzt pruefen",
+                            title = stringResource(R.string.settings_updates_manual_title),
+                            subtitle = buildUpdateCheckSubtitle(context, updateUiState.lastCheckedAtMs, updateUiState.lastError),
+                            actionLabel = if (updateUiState.isChecking) {
+                                stringResource(R.string.settings_updates_manual_checking)
+                            } else {
+                                stringResource(R.string.settings_updates_manual_check)
+                            },
                             onActionClick = {
                                 if (!updateUiState.isChecking) {
                                     viewModel.checkForUpdates(currentVersionName = appVersion)
                                 }
                             },
-                            secondaryActionLabel = "Release-Seite",
+                            secondaryActionLabel = stringResource(R.string.settings_updates_manual_release_page),
                             onSecondaryActionClick = {
                                 val releaseUrl = updateUiState.latestRelease?.htmlUrl
                                     ?: "https://github.com/darksoon/RadioWave/releases"
@@ -510,23 +516,16 @@ fun SettingsScreen(
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         InfoTextBlockRow(
-                            label = "Android Auto (Beta / Sideload)",
-                            value = "Fuer nicht-Play-Store Builds ist aktuell kein echter Workaround moeglich: " +
-                                "Android Auto verlangt Developer-Mode + Unbekannte Quellen.\n\n" +
-                                "Schritte:\n" +
-                                "1) Android Auto App oeffnen\n" +
-                                "2) In Einstellungen mehrfach auf die Versionsnummer tippen (Developer-Mode)\n" +
-                                "3) Oben rechts Entwicklereinstellungen oeffnen\n" +
-                                "4) 'Unbekannte Quellen' aktivieren\n" +
-                                "5) Auto neu verbinden",
+                            label = stringResource(R.string.settings_updates_auto_beta_label),
+                            value = stringResource(R.string.settings_updates_auto_beta_text),
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingActionRow(
-                            title = "Android Auto Hilfe",
-                            subtitle = "Direkt in Android Auto springen oder die Schritt-fuer-Schritt-Anleitung oeffnen.",
-                            actionLabel = "Android Auto oeffnen",
+                            title = stringResource(R.string.settings_updates_auto_help_title),
+                            subtitle = stringResource(R.string.settings_updates_auto_help_subtitle),
+                            actionLabel = stringResource(R.string.settings_updates_auto_open),
                             onActionClick = { openAndroidAutoApp(context) },
-                            secondaryActionLabel = "Anleitung",
+                            secondaryActionLabel = stringResource(R.string.settings_updates_auto_guide),
                             onSecondaryActionClick = {
                                 uriHandler.openUri("https://github.com/darksoon/RadioWave/blob/main/docs/ANDROID_AUTO_DEV_MODE.md")
                             },
@@ -536,7 +535,7 @@ fun SettingsScreen(
                             ?.let { notes ->
                                 HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                                 InfoTextBlockRow(
-                                    label = "Release Notes (Vorschau)",
+                                    label = stringResource(R.string.settings_updates_notes_preview),
                                     value = notes.lineSequence()
                                         .map { it.trim() }
                                         .filter { it.isNotBlank() }
@@ -583,13 +582,24 @@ fun SettingsScreen(
     }
 }
 
-private enum class SettingsCategory(val title: String) {
-    GENERAL("Allgemein"),
-    SOUND("Sound"),
-    NOTIFICATION("Benachrichtigung"),
-    DATA("Speicher & Daten"),
-    UPDATES("Updates"),
-    INFO("Info"),
+private enum class SettingsCategory {
+    GENERAL,
+    SOUND,
+    NOTIFICATION,
+    DATA,
+    UPDATES,
+    INFO,
+}
+
+private fun categoryTitle(category: SettingsCategory, context: Context): String {
+    return when (category) {
+        SettingsCategory.GENERAL -> context.getString(R.string.settings_category_general_title)
+        SettingsCategory.SOUND -> context.getString(R.string.settings_category_sound_title)
+        SettingsCategory.NOTIFICATION -> context.getString(R.string.settings_category_notification_title)
+        SettingsCategory.DATA -> context.getString(R.string.settings_category_data_title)
+        SettingsCategory.UPDATES -> context.getString(R.string.settings_category_updates_title)
+        SettingsCategory.INFO -> context.getString(R.string.settings_category_info_title)
+    }
 }
 
 @Composable
@@ -649,7 +659,7 @@ private fun SettingsDetailHeader(
         IconButton(onClick = onBack) {
             Icon(
                 imageVector = Icons.Default.ArrowBack,
-                contentDescription = "Zurueck",
+                contentDescription = stringResource(R.string.settings_back),
                 tint = Color.White,
             )
         }
@@ -888,7 +898,7 @@ private fun rememberAppVersion(context: Context): String {
             }
             packageInfo.versionName ?: "unbekannt"
         } catch (_: Exception) {
-            "unbekannt"
+            context.getString(R.string.settings_unknown)
         }
     }
 }
@@ -945,13 +955,17 @@ private fun openBatteryOptimizationSettings(context: Context) {
     runCatching { context.startActivity(intent) }
 }
 
-private fun buildUpdateCheckSubtitle(lastCheckedAtMs: Long?, error: String?): String {
+private fun buildUpdateCheckSubtitle(context: Context, lastCheckedAtMs: Long?, error: String?): String {
     val timePart = lastCheckedAtMs?.let {
         val formatted = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
             .format(Date(it))
-        "Letzte Pruefung: $formatted"
-    } ?: "Noch keine manuelle Pruefung erfolgt."
-    return if (error.isNullOrBlank()) timePart else "$timePart  Fehler: $error"
+        context.getString(R.string.settings_update_last_check, formatted)
+    } ?: context.getString(R.string.settings_update_never_checked)
+    return if (error.isNullOrBlank()) {
+        timePart
+    } else {
+        "$timePart  ${context.getString(R.string.settings_update_error_prefix, error)}"
+    }
 }
 
 private fun openAndroidAutoApp(context: Context) {
@@ -976,13 +990,13 @@ private fun openAndroidAutoApp(context: Context) {
     if (startActivitySafely(context, appDetailsIntent)) {
         Toast.makeText(
             context,
-            "Android Auto ohne Launcher-Einstieg. App-Info geoeffnet.",
+            context.getString(R.string.settings_android_auto_fallback_toast),
             Toast.LENGTH_SHORT,
         ).show()
         return
     }
 
-    Toast.makeText(context, "Android Auto nicht verfuegbar", Toast.LENGTH_SHORT).show()
+    Toast.makeText(context, context.getString(R.string.settings_android_auto_not_available), Toast.LENGTH_SHORT).show()
 }
 
 private fun startActivitySafely(context: Context, intent: Intent): Boolean {

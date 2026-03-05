@@ -14,6 +14,9 @@ All notable changes to this project will be documented in this file.
 - Update dialog now shows live APK download progress (MB + percentage + progress bar).
 - Added Android Auto developer-mode guidance for sideload/beta builds (in-app + docs).
 - Android Auto quick action in Settings now includes robust fallbacks (settings intent + app details) for devices without launcher entry.
+- i18n foundation added for DE/EN in app and settings resources (system-language based selection).
+- Settings update section texts are now resource-driven (localized DE/EN).
+- Android Auto developer-mode documentation is now bilingual (DE/EN).
 
 ### Fixed
 - Android Auto now uses the same session player as the app player (removed split fallback-player path).

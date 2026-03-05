@@ -51,6 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
@@ -85,6 +86,7 @@ import de.radiowave.feature.home.HomeViewModel
 import de.radiowave.feature.player.FloatingPlayerBar
 import de.radiowave.feature.player.PlayerScreen
 import de.radiowave.feature.settings.SettingsScreen
+import de.radiowave.R
 import de.radiowave.update.GitHubReleaseUpdater
 import de.radiowave.update.UpdateDownloadProgress
 import de.radiowave.update.UpdateRelease
@@ -474,15 +476,10 @@ fun RadioWaveMainScreen() {
                 AlertDialog(
                     onDismissRequest = { },
                     title = {
-                        Text("Willkommen bei RadioWave")
+                        Text(stringResource(R.string.first_run_title))
                     },
                     text = {
-                        Text(
-                            "Kurzer Hinweis fuer den Start:\n" +
-                                "- Android Auto nutzt automatisch ein sparsames Profil (max. 128 kbps).\n" +
-                                "- Akku-Optimierung fuer die App sollte deaktiviert werden.\n" +
-                                "- Updates werden ueber GitHub Releases erkannt und koennen direkt installiert werden.",
-                        )
+                        Text(stringResource(R.string.first_run_body))
                     },
                     confirmButton = {
                         TextButton(
@@ -496,7 +493,7 @@ fun RadioWaveMainScreen() {
                                 }
                             },
                         ) {
-                            Text("Verstanden")
+                            Text(stringResource(R.string.first_run_confirm))
                         }
                     },
                 )
@@ -506,19 +503,19 @@ fun RadioWaveMainScreen() {
             if (updateRelease != null) {
                 AlertDialog(
                     onDismissRequest = { },
-                    title = { Text("Neues Update verfuegbar") },
+                    title = { Text(stringResource(R.string.update_dialog_title)) },
                     text = {
                         Column {
                             Text(
-                                "Version: ${updateRelease.tag}\n\n" +
-                                    "${previewReleaseNotes(updateRelease.body)}",
+                                "${stringResource(R.string.update_dialog_version, updateRelease.tag)}\n\n" +
+                                    "${previewReleaseNotes(context, updateRelease.body)}",
                             )
                             if (updateInProgress) {
                                 Spacer(modifier = Modifier.height(12.dp))
                                 val progress = updateProgress
-                                val progressText = buildUpdateProgressText(progress)
+                                val progressText = buildUpdateProgressText(context, progress)
                                 Text(
-                                    text = "Download laeuft: $progressText",
+                                    text = stringResource(R.string.update_dialog_download_running, progressText),
                                     color = TealAccent,
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -554,14 +551,23 @@ fun RadioWaveMainScreen() {
                                     result.onFailure { error ->
                                         Toast.makeText(
                                             context,
-                                            "Update fehlgeschlagen: ${error.message ?: "Unbekannter Fehler"}",
+                                            context.getString(
+                                                R.string.update_dialog_failed,
+                                                error.message ?: context.getString(R.string.update_dialog_failed_unknown),
+                                            ),
                                             Toast.LENGTH_LONG,
                                         ).show()
                                     }
                                 }
                             },
                         ) {
-                            Text(if (updateInProgress) "Lade..." else "Update")
+                            Text(
+                                if (updateInProgress) {
+                                    stringResource(R.string.update_dialog_downloading)
+                                } else {
+                                    stringResource(R.string.update_dialog_update_action)
+                                },
+                            )
                         }
                     },
                     dismissButton = {
@@ -574,7 +580,7 @@ fun RadioWaveMainScreen() {
                                 availableUpdate = null
                             },
                         ) {
-                            Text("Spaeter")
+                            Text(stringResource(R.string.update_dialog_later_action))
                         }
                     },
                 )
@@ -603,8 +609,8 @@ private fun EnsureNotificationPermission() {
     }
 }
 
-private fun previewReleaseNotes(notes: String): String {
-    if (notes.isBlank()) return "Keine Release Notes verfuegbar."
+private fun previewReleaseNotes(context: Context, notes: String): String {
+    if (notes.isBlank()) return context.getString(R.string.update_dialog_release_notes_fallback)
     return notes
         .lineSequence()
         .map { it.trim() }
@@ -628,19 +634,20 @@ private fun readVersionName(context: Context): String {
     }.getOrDefault("")
 }
 
-private fun buildUpdateProgressText(progress: UpdateDownloadProgress?): String {
-    if (progress == null) return "wird vorbereitet..."
+private fun buildUpdateProgressText(context: Context, progress: UpdateDownloadProgress?): String {
+    if (progress == null) return context.getString(R.string.update_progress_preparing)
     val downloadedMb = progress.downloadedBytes / (1024f * 1024f)
     val totalMb = progress.totalBytes.takeIf { it > 0L }?.let { it / (1024f * 1024f) }
-    val sizePart = if (totalMb != null) {
-        String.format("%.1f / %.1f MB", downloadedMb, totalMb)
+    return if (totalMb != null) {
+        context.getString(
+            R.string.update_progress_known,
+            downloadedMb,
+            totalMb,
+            progress.percent ?: 0,
+        )
     } else {
-        String.format("%.1f MB", downloadedMb)
+        context.getString(R.string.update_progress_unknown, downloadedMb)
     }
-    val percentPart = progress.percent?.let { "$it%" } ?: ""
-    return listOf(sizePart, percentPart)
-        .filter { it.isNotBlank() }
-        .joinToString("  ")
 }
 
 private const val UPDATE_CHECK_INTERVAL_MS = 6L * 60L * 60L * 1000L
