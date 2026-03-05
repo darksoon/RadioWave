@@ -40,6 +40,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Android Auto erzwingt waehrend Car-Session maximal 128 kbps (bitrate-schonender Betrieb)
 - Erststart-Info-Dialog integriert (wichtige Hinweise beim ersten App-Start)
 - In-App Updateflow ueber GitHub Releases integriert (Hinweisdialog + APK-Download + Installer)
+- Update-Settings-Seite integriert (Popup an/aus, Auto-Check an/aus, manuelle Pruefung, Versionsstatus)
 - CI/Release Pipelines gehaertet (Push-CI aktiv, Signed-Workflow robuster)
 
 ## In Arbeit

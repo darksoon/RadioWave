@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 - Active stream quality selection pipeline wired to `Standard-Qualitaet` setting (`Auto/Niedrig/Mittel/Hoch`).
 - First-run info dialog with key setup hints (Android Auto profile, battery optimization, update flow).
 - GitHub release updater flow: update check, release-notes dialog, APK download and installer handoff.
+- New dedicated `Updates` settings section: popup toggle, automatic check toggle, manual check action, installed/latest version status.
 
 ### Fixed
 - Android Auto now uses the same session player as the app player (removed split fallback-player path).

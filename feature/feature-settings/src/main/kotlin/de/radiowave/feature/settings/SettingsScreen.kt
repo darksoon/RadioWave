@@ -34,6 +34,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +56,8 @@ import de.radiowave.core.model.AppSettings
 import de.radiowave.core.ui.theme.DarkCardBackground
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.TealAccent
+import java.text.DateFormat
+import java.util.Date
 
 @Composable
 fun SettingsScreen(
@@ -64,6 +67,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val prefs = context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
+    val updateUiState by viewModel.updateUiState.collectAsState()
 
     var themeMode by rememberSaveable {
         mutableStateOf(prefs.getString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_SYSTEM) ?: AppSettings.THEME_SYSTEM)
@@ -119,6 +123,12 @@ fun SettingsScreen(
     var autoPlayOnAndroidAutoConnect by rememberSaveable {
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_AUTO_PLAY_ON_ANDROID_AUTO_CONNECT, true))
     }
+    var updateCheckEnabled by rememberSaveable {
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_UPDATE_CHECK_ENABLED, true))
+    }
+    var updatePopupEnabled by rememberSaveable {
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_UPDATE_POPUP_ENABLED, true))
+    }
 
     val appVersion = rememberAppVersion(context)
     val dynamicColorsSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
@@ -158,7 +168,7 @@ fun SettingsScreen(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Uebersichtlich: Allgemein, Sound, Benachrichtigung, Daten, Info",
+                text = "Uebersichtlich: Allgemein, Sound, Benachrichtigung, Daten, Updates, Info",
                 style = MaterialTheme.typography.bodyMedium,
                 color = DarkOnSurfaceVariant,
             )
@@ -191,6 +201,13 @@ fun SettingsScreen(
                     title = "Speicher & Daten",
                     subtitle = "Buffer, Streams, Cache, Verlauf",
                     onClick = { selectedCategory = SettingsCategory.DATA },
+                )
+            }
+            item {
+                SettingsCategoryCard(
+                    title = "Updates",
+                    subtitle = "Popup, manuell pruefen, Release-Status",
+                    onClick = { selectedCategory = SettingsCategory.UPDATES },
                 )
             }
             item {
@@ -438,6 +455,74 @@ fun SettingsScreen(
                         }
                     }
 
+                    SettingsCategory.UPDATES -> SettingsCard(title = "Updates") {
+                        InfoTextRow(label = "Installierte Version", value = appVersion)
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        InfoTextRow(
+                            label = "Letztes gefundenes Release",
+                            value = updateUiState.latestRelease?.tag ?: "Noch nicht geprueft",
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        InfoTextRow(
+                            label = "Update-Status",
+                            value = when {
+                                updateUiState.latestRelease == null -> "Unbekannt (noch nicht geprueft)"
+                                updateUiState.hasUpdate -> "Update verfuegbar"
+                                else -> "Aktuell"
+                            },
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingToggleRow(
+                            title = "Automatisch nach Updates suchen",
+                            subtitle = "Prueft regelmaessig GitHub Releases im Hintergrund.",
+                            checked = updateCheckEnabled,
+                            onCheckedChange = { checked ->
+                                updateCheckEnabled = checked
+                                prefs.edit().putBoolean(AppSettings.KEY_UPDATE_CHECK_ENABLED, checked).apply()
+                            },
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingToggleRow(
+                            title = "Update-Popup anzeigen",
+                            subtitle = "Zeigt bei neuer Version automatisch den Update-Dialog.",
+                            checked = updatePopupEnabled,
+                            onCheckedChange = { checked ->
+                                updatePopupEnabled = checked
+                                prefs.edit().putBoolean(AppSettings.KEY_UPDATE_POPUP_ENABLED, checked).apply()
+                            },
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingActionRow(
+                            title = "Manuelle Update-Pruefung",
+                            subtitle = buildUpdateCheckSubtitle(updateUiState.lastCheckedAtMs, updateUiState.lastError),
+                            actionLabel = if (updateUiState.isChecking) "Pruefe..." else "Jetzt pruefen",
+                            onActionClick = {
+                                if (!updateUiState.isChecking) {
+                                    viewModel.checkForUpdates(currentVersionName = appVersion)
+                                }
+                            },
+                            secondaryActionLabel = "Release-Seite",
+                            onSecondaryActionClick = {
+                                val releaseUrl = updateUiState.latestRelease?.htmlUrl
+                                    ?: "https://github.com/darksoon/RadioWave/releases"
+                                uriHandler.openUri(releaseUrl)
+                            },
+                        )
+                        updateUiState.latestRelease?.body
+                            ?.takeIf { it.isNotBlank() }
+                            ?.let { notes ->
+                                HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                                InfoTextBlockRow(
+                                    label = "Release Notes (Vorschau)",
+                                    value = notes.lineSequence()
+                                        .map { it.trim() }
+                                        .filter { it.isNotBlank() }
+                                        .take(6)
+                                        .joinToString("\n"),
+                                )
+                            }
+                    }
+
                     SettingsCategory.INFO -> SettingsCard(title = "Info") {
                         InfoTextRow(label = "Version", value = appVersion)
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
@@ -480,6 +565,7 @@ private enum class SettingsCategory(val title: String) {
     SOUND("Sound"),
     NOTIFICATION("Benachrichtigung"),
     DATA("Speicher & Daten"),
+    UPDATES("Updates"),
     INFO("Info"),
 }
 
@@ -784,6 +870,30 @@ private fun rememberAppVersion(context: Context): String {
     }
 }
 
+@Composable
+private fun InfoTextBlockRow(
+    label: String,
+    value: String,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = DarkOnSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.White,
+        )
+    }
+}
+
 private fun isBatteryOptimizationExcluded(context: Context): Boolean {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
     val powerManager = context.getSystemService(PowerManager::class.java) ?: return false
@@ -810,4 +920,13 @@ private fun openBatteryOptimizationSettings(context: Context) {
     val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     runCatching { context.startActivity(intent) }
+}
+
+private fun buildUpdateCheckSubtitle(lastCheckedAtMs: Long?, error: String?): String {
+    val timePart = lastCheckedAtMs?.let {
+        val formatted = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
+            .format(Date(it))
+        "Letzte Pruefung: $formatted"
+    } ?: "Noch keine manuelle Pruefung erfolgt."
+    return if (error.isNullOrBlank()) timePart else "$timePart  Fehler: $error"
 }

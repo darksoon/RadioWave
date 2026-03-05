@@ -233,6 +233,8 @@ fun RadioWaveMainScreen() {
             GitHubReleaseUpdater.checkForUpdate(versionName)
         }.onSuccess { update ->
             if (update == null) return@onSuccess
+            val popupEnabled = prefs.getBoolean(AppSettings.KEY_UPDATE_POPUP_ENABLED, true)
+            if (!popupEnabled) return@onSuccess
             val dismissedTag = prefs.getString(AppSettings.KEY_LAST_DISMISSED_UPDATE_TAG, null)
             if (dismissedTag.equals(update.tag, ignoreCase = true)) return@onSuccess
             availableUpdate = update
