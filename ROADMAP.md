@@ -37,7 +37,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Backup-Defaults weiter gehaertet (SharedPrefs in Cloud-Backup ausgeschlossen)
 - Optionaler Hitzemodus in Settings (kleineres Buffer-Profil + reduzierte Metadatenlast)
 - Auto-Verbindung aktiviert Low-Load-Verhalten automatisch (Metadaten-/Artwork-Last reduziert)
-- Android Auto waehlt standardmaessig bitrate-schonender (Auto/Hoch -> Mittel waehrend Car-Session)
+- Android Auto erzwingt waehrend Car-Session maximal 128 kbps (bitrate-schonender Betrieb)
 - CI/Release Pipelines gehaertet (Push-CI aktiv, Signed-Workflow robuster)
 
 ## In Arbeit

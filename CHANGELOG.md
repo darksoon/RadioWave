@@ -20,7 +20,7 @@ All notable changes to this project will be documented in this file.
 - Android Auto now enables low-load behavior automatically while connected (no manual toggle required).
 - Timeshift guard now enforces large buffer profile and extends buffering-stall watchdog for short connection drops.
 - Refactored player recovery unit tests away from private reflection access to explicit test hooks.
-- Android Auto playback now prefers lower bitrate variants by default (`Auto/Hoch` are capped to `Mittel` while connected).
+- Android Auto playback now enforces a hard bitrate cap at `128 kbps` while connected.
 
 ## [0.1.0-alpha.6] - 2026-03-03
 
