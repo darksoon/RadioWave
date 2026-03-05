@@ -35,6 +35,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -79,7 +80,7 @@ fun SettingsScreen(
     val updateUiState by viewModel.updateUiState.collectAsState()
 
     var themeMode by rememberSaveable {
-        mutableStateOf(prefs.getString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_SYSTEM) ?: AppSettings.THEME_SYSTEM)
+        mutableStateOf(prefs.getString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_DARK) ?: AppSettings.THEME_DARK)
     }
     var appLanguage by rememberSaveable {
         mutableStateOf(
@@ -165,6 +166,13 @@ fun SettingsScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        if (themeMode != AppSettings.THEME_DARK) {
+            themeMode = AppSettings.THEME_DARK
+            prefs.edit().putString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_DARK).apply()
+        }
+    }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -245,15 +253,15 @@ fun SettingsScreen(
                         SettingChoiceRow(
                             title = tr("Theme", "Theme"),
                             options = listOf(
-                                ThemeOption(AppSettings.THEME_SYSTEM, tr("System", "System")),
                                 ThemeOption(AppSettings.THEME_DARK, tr("Dunkel", "Dark")),
-                                ThemeOption(AppSettings.THEME_LIGHT, tr("Hell", "Light")),
                             ),
                             selectedValue = themeMode,
                             onSelected = { value ->
                                 themeMode = value
                                 prefs.edit().putString(AppSettings.KEY_THEME_MODE, value).apply()
                             },
+                            enabled = false,
+                            disabledHint = tr("Nur Dark-Mode aktiv", "Dark mode only"),
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingChoiceRow(

@@ -13,7 +13,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -105,20 +104,15 @@ class MainActivity : AppCompatActivity() {
             val prefs = remember(context) {
                 context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
             }
-            var themeMode by remember {
-                mutableStateOf(
-                    prefs.getString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_SYSTEM)
-                        ?: AppSettings.THEME_SYSTEM,
-                )
-            }
             var dynamicColors by remember {
                 mutableStateOf(prefs.getBoolean(AppSettings.KEY_DYNAMIC_COLORS, false))
             }
-            val systemDarkTheme = isSystemInDarkTheme()
-            val useDarkTheme = when (themeMode) {
-                AppSettings.THEME_LIGHT -> false
-                AppSettings.THEME_DARK -> true
-                else -> systemDarkTheme
+            val useDarkTheme = true
+
+            LaunchedEffect(Unit) {
+                if (prefs.getString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_DARK) != AppSettings.THEME_DARK) {
+                    prefs.edit().putString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_DARK).apply()
+                }
             }
 
             DisposableEffect(prefs) {
@@ -130,11 +124,6 @@ class MainActivity : AppCompatActivity() {
                                 AppSettings.LANGUAGE_SYSTEM,
                             ) ?: AppSettings.LANGUAGE_SYSTEM
                             AppLanguageManager.applyLanguage(language)
-                        }
-
-                        AppSettings.KEY_THEME_MODE -> {
-                            themeMode = prefs.getString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_SYSTEM)
-                                ?: AppSettings.THEME_SYSTEM
                         }
 
                         AppSettings.KEY_DYNAMIC_COLORS -> {
