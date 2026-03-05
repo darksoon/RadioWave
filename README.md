@@ -127,7 +127,7 @@ cp keystore.properties.example keystore.properties
 
 1. Öffne die aktuelle Release-Seite:  
    **https://github.com/darksoon/RadioWave/releases/latest**
-2. Lade die Datei **`RadioWave-v0.1.0-alpha.6.apk`** herunter (bzw. die aktuelle Release-APK mit Versionsnamen).
+2. Lade die Datei **`RadioWave-v0.1.0-beta.1.apk`** herunter (bzw. die aktuelle Release-APK mit Versionsnamen).
 3. Falls nötig: „Installation aus unbekannten Quellen“ für deinen Browser/Dateimanager erlauben.
 4. APK öffnen und installieren.
 

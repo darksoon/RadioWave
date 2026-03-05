@@ -5,37 +5,53 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- Optional thermal mode setting (`Hitzemodus`) for car/charging scenarios in settings.
-- Optional short-drop timeshift guard setting (`Netzausfall-Puffer (MVP)`) in settings.
-- Active stream quality selection pipeline wired to `Standard-Qualitaet` setting (`Auto/Niedrig/Mittel/Hoch`).
-- First-run info dialog with key setup hints (Android Auto profile, battery optimization, update flow).
-- GitHub release updater flow: update check, release-notes dialog, APK download and installer handoff.
-- New dedicated `Updates` settings section: popup toggle, automatic check toggle, manual check action, installed/latest version status.
-- Update dialog now shows live APK download progress (MB + percentage + progress bar).
-- Added Android Auto developer-mode guidance for sideload/beta builds (in-app + docs).
-- Android Auto quick action in Settings now includes robust fallbacks (settings intent + app details) for devices without launcher entry.
-- i18n foundation added for DE/EN in app and settings resources (system-language based selection).
-- Settings update section texts are now resource-driven (localized DE/EN).
-- Android Auto developer-mode documentation is now bilingual (DE/EN).
-- Added in-app language selector in settings (`System`, `Deutsch`, `English`) with immediate locale application.
-- Product docs now include planned podcast feature track (separate section/provider due to radio-centric API).
+- TBD
+
+## [0.1.0-beta.1] - 2026-03-05
+
+### Highlights
+- First public **beta baseline** after alpha phase hardening.
+- Full **GitHub in-app auto-update flow** (check, notes, download with progress, installer handoff).
+- Android Auto playback path stabilized further for real in-car scenarios.
+- App language stack stabilized with DE/EN resources and in-app language selection.
+- Search responsiveness improved with local cache-first behavior and lighter logo rendering.
+
+### Added
+- **Auto-Update System (GitHub Releases)**:
+  - In-app update check against GitHub releases.
+  - Release-notes dialog before update.
+  - APK download + installer handoff from app.
+  - Live download progress (MB, %, progress bar).
+  - Dedicated `Updates` settings area:
+    - Popup on/off
+    - Automatic check on/off
+    - Manual update check
+    - Installed vs latest release status
+- First-run onboarding/info dialog with setup hints (Android Auto, battery, updates).
+- Optional thermal mode (`Hitzemodus`) in settings.
+- Optional short-drop timeshift guard (`Netzausfall-Puffer (MVP)`) in settings.
+- Active stream quality selection wired to `Standard-Qualitaet` (`Auto/Niedrig/Mittel/Hoch`).
+- Android Auto dev-mode guide integrated in-app and in docs (DE/EN).
+- In-app language selector (`System`, `Deutsch`, `English`) with immediate apply.
 
 ### Fixed
-- Android Auto now uses the same session player as the app player (removed split fallback-player path).
-- Resolved Android Auto resume case where UI looked active but no audible playback started until manual station switch.
-- Removed duplicate concurrent media notifications while Android Auto is connected (single active transport notification path).
+- Android Auto uses one shared session player path (no split fallback path).
+- Fixed Android Auto resume edge case: playback appeared active but remained silent until manual switch.
+- Removed duplicate media notifications while Android Auto is connected.
 - Hardened cloud backup rules by excluding SharedPreferences in `data_extraction_rules.xml`.
-- Fixed startup crash after locale-engine migration by aligning `MainActivity` (`AppCompatActivity`) with an AppCompat-based app theme.
-- Fixed light-mode readability regressions in key screens (Home/Browse/Favorites) by switching hardcoded white text/backgrounds to theme-based colors.
+- Fixed startup crash after locale migration by aligning `MainActivity` (`AppCompatActivity`) with AppCompat theme base.
+- Stabilized language switching behavior and startup handling.
+- Fixed CI blocker in player recovery tests (timeshift-dependent watchdog expectation now deterministic).
 
 ### Improved
-- Thermal mode now enforces small player buffer profile and throttles metadata/artwork updates to reduce runtime load.
-- Android Auto now enables low-load behavior automatically while connected (no manual toggle required).
-- Timeshift guard now enforces large buffer profile and extends buffering-stall watchdog for short connection drops.
-- Refactored player recovery unit tests away from private reflection access to explicit test hooks.
-- Android Auto playback now enforces a hard bitrate cap at `128 kbps` while connected.
-- UI visual direction simplified: removed star/nebula backdrop from the main shell and moved to a cleaner anthracite/white palette for dark/light modes.
-- Android Auto browse flow now mirrors favorites in the former recents slot for faster in-car favorite access.
+- Android Auto now enables low-load behavior automatically while connected.
+- Android Auto playback enforces bitrate cap at `128 kbps` during car sessions.
+- Timeshift guard now enforces large buffer profile and longer buffering-stall watchdog.
+- Thermal mode now enforces small buffer profile and throttles metadata/artwork updates.
+- Android Auto browse flow mirrors favorites in former recents slot for faster in-car access.
+- Search flow now uses local DB-first emission + network refresh merge for smoother scrolling/result stability.
+- Station logo rendering optimized to reduce scroll jank in browse/search grids.
+- UI direction consolidated to dark-focused operation (stable readability baseline for beta).
 
 ## [0.1.0-alpha.6] - 2026-03-03
 
@@ -177,6 +193,7 @@ All notable changes to this project will be documented in this file.
 ### Security/Infra
 - Added `ACCESS_NETWORK_STATE` permission declaration in `core-player` to satisfy lint and ensure network callback safety.
 
+[0.1.0-beta.1]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-beta.1
 [0.1.0-alpha.6]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.6
 [0.1.0-alpha.5]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.5
 [0.1.0-alpha.3]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.3

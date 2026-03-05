@@ -18,8 +18,8 @@ android {
 
     defaultConfig {
         applicationId = "de.radiowave"
-        versionCode = 6
-        versionName = "0.1.0-alpha.6"
+        versionCode = 7
+        versionName = "0.1.0-beta.1"
     }
 
     signingConfigs {

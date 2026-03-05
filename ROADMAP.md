@@ -58,7 +58,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Voice/Assistant-Play-Intents fuer Senderaufrufe (Google Assistant)
 
 ## Geplant (naechste Schritte)
-- Radio Timeshift MVP (fix 20 Minuten Buffer, Fullscreen-Seek + LIVE-Button)
+- Radio Timeshift Ausbau (ueber MVP hinaus: laengerer Buffer, optionaler Seek/LIVE im Fullscreen)
 - Sleep Timer (15/30/60/off)
 - Share Action im Fullscreen-Player
 - Podcasts MVP als eigener Bereich (Bottom-Bar Eintrag + Suche + Episodenliste)
