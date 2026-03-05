@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -55,6 +56,9 @@ fun FavoritesScreen(
     viewModel: FavoritesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val configuration = LocalConfiguration.current
+    val isGerman = configuration.locales[0]?.language?.equals("de", ignoreCase = true) == true
+    fun tr(de: String, en: String): String = if (isGerman) de else en
 
     when {
         uiState.isLoading -> {
@@ -63,7 +67,7 @@ fun FavoritesScreen(
 
         uiState.error != null -> {
             ErrorState(
-                message = uiState.error ?: "Unbekannter Fehler",
+                message = uiState.error ?: tr("Unbekannter Fehler", "Unknown error"),
                 onRetry = {},
                 modifier = modifier,
             )
@@ -125,14 +129,14 @@ private fun FavoriteStationCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
         onClick = onPlayClick,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White.copy(alpha = 0.08f))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                 .padding(horizontal = 10.dp, vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -149,7 +153,7 @@ private fun FavoriteStationCard(
                 style = MaterialTheme.typography.labelLarge.copy(
                     fontWeight = FontWeight.SemiBold,
                 ),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -178,8 +182,8 @@ private fun FavoriteStationCard(
                 Surface(
                     onClick = onPlayClick,
                     shape = CircleShape,
-                    color = Color.Black.copy(alpha = 0.28f),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
                 ) {
                     Icon(
                         imageVector = Icons.Filled.PlayArrow,
@@ -193,8 +197,8 @@ private fun FavoriteStationCard(
                 Surface(
                     onClick = onToggleFavorite,
                     shape = CircleShape,
-                    color = Color.Black.copy(alpha = 0.28f),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Favorite,
@@ -248,14 +252,7 @@ private fun LogoFallback(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(
-                        TealAccent.copy(alpha = 0.45f),
-                        Color(0xFF1A1F2B),
-                    ),
-                ),
-            ),
+            .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center,
     ) {
         Text(

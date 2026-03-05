@@ -70,6 +70,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -159,12 +160,6 @@ private val quickGenres = listOf(
     ),
 )
 
-private val sortOptions = listOf(
-    SortOption.POPULARITY to "Beliebtheit",
-    SortOption.NAME to "Name",
-    SortOption.COUNTRY to "Land",
-)
-
 @Composable
 fun BrowseScreen(
     initialGenre: String = "",
@@ -251,6 +246,16 @@ private fun BrowseContent(
     onToggleFavorite: (Station) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val configuration = LocalConfiguration.current
+    val isGerman = configuration.locales[0]?.language?.equals("de", ignoreCase = true) == true
+    fun tr(de: String, en: String): String = if (isGerman) de else en
+
+    val sortOptionsLocalized = listOf(
+        SortOption.POPULARITY to tr("Beliebtheit", "Popularity"),
+        SortOption.NAME to tr("Name", "Name"),
+        SortOption.COUNTRY to tr("Land", "Country"),
+    )
+
     val favoriteIds = uiState.favoriteStations.map { station -> station.uuid }.toSet()
     val visibleStations = remember(uiState.topStations, showInsecureStreams) {
         if (showInsecureStreams) {
@@ -278,7 +283,7 @@ private fun BrowseContent(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Transparent),
+            .background(MaterialTheme.colorScheme.background),
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -290,19 +295,19 @@ private fun BrowseContent(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Entdecken & Suche",
+                    text = tr("Entdecken & Suche", "Discover & Search"),
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 26.sp,
                     ),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.weight(1f),
                 )
                 IconButton(onClick = onRefresh) {
                     Icon(
                         Icons.Default.Refresh,
-                        contentDescription = "Aktualisieren",
-                        tint = DarkOnSurfaceVariant,
+                        contentDescription = tr("Aktualisieren", "Refresh"),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -315,26 +320,26 @@ private fun BrowseContent(
                     .padding(horizontal = 20.dp),
                 placeholder = {
                     Text(
-                        "Sender, Genre, Land...",
-                        color = DarkOnSurfaceVariant,
+                        tr("Sender, Genre, Land...", "Station, genre, country..."),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 },
                 leadingIcon = {
                     Icon(
                         Icons.Default.Search,
                         contentDescription = null,
-                        tint = DarkOnSurfaceVariant,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 },
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = DarkCardBackground,
-                    unfocusedContainerColor = DarkCardBackground,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                     focusedBorderColor = TealAccent,
-                    unfocusedBorderColor = DarkSurfaceVariant,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                     cursorColor = TealAccent,
                 ),
             )
@@ -348,11 +353,11 @@ private fun BrowseContent(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = "Quick Genres",
+                        text = tr("Schnell-Genres", "Quick Genres"),
                         style = MaterialTheme.typography.titleSmall.copy(
                             fontWeight = FontWeight.SemiBold,
                         ),
-                        color = DarkOnSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 20.dp),
                     )
 
@@ -385,21 +390,21 @@ private fun BrowseContent(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(DarkCardBackground)
+                                .background(MaterialTheme.colorScheme.surface)
                                 .clickable { advancedFiltersExpanded = !advancedFiltersExpanded }
                                 .padding(horizontal = 14.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                text = "Weitere Filter",
+                                text = tr("Weitere Filter", "More filters"),
                                 style = MaterialTheme.typography.labelLarge,
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f),
                             )
                             Icon(
                                 imageVector = if (advancedFiltersExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
                                 contentDescription = null,
-                                tint = DarkOnSurfaceVariant,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
 
@@ -413,7 +418,7 @@ private fun BrowseContent(
                                     .fillMaxWidth()
                                     .padding(top = 10.dp)
                                     .clip(RoundedCornerShape(14.dp))
-                                    .background(DarkCardBackground.copy(alpha = 0.9f))
+                                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.95f))
                                     .padding(vertical = 10.dp),
                             ) {
                                 LazyRow(
@@ -435,8 +440,8 @@ private fun BrowseContent(
                                             colors = FilterChipDefaults.filterChipColors(
                                                 selectedContainerColor = TealAccent,
                                                 selectedLabelColor = Color.Black,
-                                                containerColor = DarkSurfaceVariant,
-                                                labelColor = Color.White,
+                                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                                labelColor = MaterialTheme.colorScheme.onSurface,
                                             ),
                                             shape = RoundedCornerShape(20.dp),
                                         )
@@ -463,8 +468,8 @@ private fun BrowseContent(
                                             colors = FilterChipDefaults.filterChipColors(
                                                 selectedContainerColor = TealAccent,
                                                 selectedLabelColor = Color.Black,
-                                                containerColor = DarkSurfaceVariant,
-                                                labelColor = Color.White,
+                                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                                labelColor = MaterialTheme.colorScheme.onSurface,
                                             ),
                                             shape = RoundedCornerShape(20.dp),
                                         )
@@ -487,16 +492,16 @@ private fun BrowseContent(
             ) {
                 Text(
                     text = if (uiState.searchResultCount > 0) {
-                        "${visibleStations.size} Sender gefunden"
+                        tr("${visibleStations.size} Sender gefunden", "${visibleStations.size} stations found")
                     } else if (searchQuery.isBlank() && selectedCountry == null) {
-                        "Top Sender"
+                        tr("Top Sender", "Top stations")
                     } else {
-                        "Sender"
+                        tr("Sender", "Stations")
                     },
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.SemiBold,
                     ),
-                    color = DarkOnSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 var sortMenuExpanded by remember { mutableStateOf(false) }
@@ -507,15 +512,16 @@ private fun BrowseContent(
                             .padding(4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        val currentSortLabel = sortOptions.find { it.first == uiState.sortOption }?.second ?: "Beliebtheit"
+                        val currentSortLabel = sortOptionsLocalized.find { it.first == uiState.sortOption }?.second
+                            ?: tr("Beliebtheit", "Popularity")
                         Text(
-                            text = "Sort: $currentSortLabel",
+                            text = tr("Sort: ", "Sort: ") + currentSortLabel,
                             style = MaterialTheme.typography.labelMedium,
                             color = TealAccent,
                         )
                         Icon(
                             Icons.Default.KeyboardArrowDown,
-                            contentDescription = "Sortierung wählen",
+                            contentDescription = tr("Sortierung waehlen", "Choose sorting"),
                             tint = TealAccent,
                             modifier = Modifier.size(18.dp),
                         )
@@ -523,14 +529,14 @@ private fun BrowseContent(
                     DropdownMenu(
                         expanded = sortMenuExpanded,
                         onDismissRequest = { sortMenuExpanded = false },
-                        containerColor = DarkCardBackground,
+                        containerColor = MaterialTheme.colorScheme.surface,
                     ) {
-                        sortOptions.forEach { (option, label) ->
+                        sortOptionsLocalized.forEach { (option, label) ->
                             DropdownMenuItem(
                                 text = {
                                     Text(
                                         text = label,
-                                        color = if (uiState.sortOption == option) TealAccent else Color.White,
+                                        color = if (uiState.sortOption == option) TealAccent else MaterialTheme.colorScheme.onSurface,
                                         fontWeight = if (uiState.sortOption == option) FontWeight.Bold else FontWeight.Normal,
                                     )
                                 },
@@ -555,8 +561,8 @@ private fun BrowseContent(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = "Lade Sender...",
-                            color = DarkOnSurfaceVariant,
+                            text = tr("Lade Sender...", "Loading stations..."),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -568,8 +574,8 @@ private fun BrowseContent(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = "Gib einen Suchbegriff ein\noder wähle ein Genre/Land",
-                            color = DarkOnSurfaceVariant,
+                            text = tr("Gib einen Suchbegriff ein\noder waehle ein Genre/Land", "Enter a search term\nor pick a genre/country"),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyLarge,
                             textAlign = TextAlign.Center,
                         )
@@ -579,6 +585,7 @@ private fun BrowseContent(
                     EmptyState(
                         searchQuery = searchQuery,
                         selectedCountry = selectedCountry,
+                        isGerman = isGerman,
                         onSuggestionClick = { suggestion ->
                             onSearchQueryChange(suggestion)
                         },
@@ -629,7 +636,7 @@ private fun BrowseContent(
         ) {
             Surface(
                 shape = CircleShape,
-                color = DarkCardBackground.copy(alpha = 0.92f),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
                 border = BorderStroke(1.dp, TealAccent.copy(alpha = 0.5f)),
                 modifier = Modifier
                     .size(44.dp)
@@ -642,7 +649,7 @@ private fun BrowseContent(
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Filled.KeyboardArrowUp,
-                        contentDescription = "Nach oben",
+                        contentDescription = tr("Nach oben", "To top"),
                         tint = TealAccent,
                     )
                 }
@@ -702,9 +709,11 @@ private fun QuickGenreCard(
 private fun EmptyState(
     searchQuery: String,
     selectedCountry: String?,
+    isGerman: Boolean,
     onSuggestionClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    fun tr(de: String, en: String): String = if (isGerman) de else en
     val suggestions = listOf("Rock", "Jazz", "Pop", "Dance", "Classical")
     
     Column(
@@ -713,8 +722,8 @@ private fun EmptyState(
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = "Keine Sender gefunden",
-            color = Color.White,
+            text = tr("Keine Sender gefunden", "No stations found"),
+            color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.titleMedium.copy(
                 fontWeight = FontWeight.SemiBold,
             ),
@@ -725,12 +734,12 @@ private fun EmptyState(
         val contextText = when {
             searchQuery.isNotBlank() && selectedCountry != null -> {
                 val countryName = topCountries.find { it.code == selectedCountry }?.name ?: selectedCountry
-                "FÃ¼r \"$searchQuery\" in $countryName"
+                tr("Fuer \"$searchQuery\" in $countryName", "For \"$searchQuery\" in $countryName")
             }
-            searchQuery.isNotBlank() -> "FÃ¼r \"$searchQuery\""
+            searchQuery.isNotBlank() -> tr("Fuer \"$searchQuery\"", "For \"$searchQuery\"")
             selectedCountry != null -> {
                 val countryName = topCountries.find { it.code == selectedCountry }?.name ?: selectedCountry
-                "In $countryName"
+                tr("In $countryName", "In $countryName")
             }
             else -> ""
         }
@@ -738,15 +747,15 @@ private fun EmptyState(
         if (contextText.isNotBlank()) {
             Text(
                 text = contextText,
-                color = DarkOnSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
             )
             Spacer(modifier = Modifier.height(16.dp))
         }
         
         Text(
-            text = "VorschlÃ¤ge:",
-            color = DarkOnSurfaceVariant,
+            text = tr("Vorschlaege:", "Suggestions:"),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.labelMedium,
         )
         

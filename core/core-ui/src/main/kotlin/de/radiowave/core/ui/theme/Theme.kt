@@ -38,8 +38,22 @@ private val PremiumDarkColorScheme = darkColorScheme(
 
 private val LightColorScheme = lightColorScheme(
     primary = TealAccent,
+    onPrimary = Color.White,
+    primaryContainer = TealLight,
+    onPrimaryContainer = Color.Black,
     secondary = MintAccent,
+    onSecondary = Color.White,
+    secondaryContainer = MintLight,
+    onSecondaryContainer = Color.Black,
     tertiary = TealAccent,
+    background = LightBackground,
+    onBackground = LightOnSurface,
+    surface = LightSurface,
+    onSurface = LightOnSurface,
+    surfaceVariant = LightSurfaceVariant,
+    onSurfaceVariant = LightOnSurfaceVariant,
+    outline = LightBorder,
+    outlineVariant = LightBorder,
 )
 
 @Composable
@@ -62,8 +76,8 @@ fun RadioWaveTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = DarkBackground.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            window.statusBarColor = if (darkTheme) DarkBackground.toArgb() else LightBackground.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
 

@@ -37,6 +37,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -75,13 +76,10 @@ import androidx.compose.ui.window.DialogProperties
 import dagger.hilt.android.AndroidEntryPoint
 import de.radiowave.core.model.AppSettings
 import de.radiowave.core.model.PlayerState
-import de.radiowave.core.ui.theme.DarkBackground
-import de.radiowave.core.ui.theme.DarkSurface
 import de.radiowave.core.ui.theme.RadioWaveTheme
 import de.radiowave.core.ui.theme.TealAccent
 import de.radiowave.feature.browse.BrowseScreen
 import de.radiowave.feature.favorites.FavoritesScreen
-import de.radiowave.feature.home.HomePremiumBackground
 import de.radiowave.feature.home.HomeScreen
 import de.radiowave.feature.home.HomeViewModel
 import de.radiowave.feature.player.FloatingPlayerBar
@@ -157,7 +155,7 @@ class MainActivity : ComponentActivity() {
                 EnsureNotificationPermission()
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = DarkBackground,
+                    color = MaterialTheme.colorScheme.background,
                 ) {
                     RadioWaveMainScreen()
                 }
@@ -330,7 +328,7 @@ fun RadioWaveMainScreen() {
         containerColor = Color.Transparent,
         bottomBar = {
             NavigationBar(
-                containerColor = DarkSurface,
+                containerColor = MaterialTheme.colorScheme.surface,
                 tonalElevation = 0.dp,
             ) {
                 bottomNavItems.forEach { item ->
@@ -360,8 +358,8 @@ fun RadioWaveMainScreen() {
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = TealAccent,
                             selectedTextColor = TealAccent,
-                            unselectedIconColor = Color.Gray,
-                            unselectedTextColor = Color.Gray,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             indicatorColor = TealAccent.copy(alpha = 0.18f),
                         ),
                     )
@@ -372,8 +370,10 @@ fun RadioWaveMainScreen() {
         Box(
             modifier = Modifier.fillMaxSize(),
         ) {
-            HomePremiumBackground(
-                modifier = Modifier.fillMaxSize(),
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
             )
 
             Box(

@@ -59,6 +59,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -112,6 +113,10 @@ private fun HomeContent(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val configuration = LocalConfiguration.current
+    val isGerman = configuration.locales[0]?.language?.equals("de", ignoreCase = true) == true
+    fun tr(de: String, en: String): String = if (isGerman) de else en
+
     when {
         uiState.isLoading -> {
             LoadingState(modifier = modifier)
@@ -163,8 +168,8 @@ private fun HomeContent(
                 ) {
                     if (favoriteStations.isNotEmpty()) {
                         SectionTitle(
-                            title = "Favoriten",
-                            actionLabel = "Alle",
+                            title = tr("Favoriten", "Favorites"),
+                            actionLabel = tr("Alle", "All"),
                             onActionClick = onViewAllFavorites,
                         )
                         FavoriteStationCarousel(
@@ -175,7 +180,7 @@ private fun HomeContent(
 
                     if (recentStations.isNotEmpty()) {
                         SectionTitle(
-                            title = "Zuletzt gehoert",
+                            title = tr("Zuletzt gehoert", "Recently played"),
                         )
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 20.dp),
@@ -192,7 +197,7 @@ private fun HomeContent(
 
                     if (discoverStations.isNotEmpty()) {
                         SectionTitle(
-                            title = "Entdecken",
+                            title = tr("Entdecken", "Discover"),
                         )
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 20.dp),
