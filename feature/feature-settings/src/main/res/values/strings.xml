@@ -47,4 +47,5 @@
     <string name="settings_android_auto_not_available">Android Auto not available</string>
     <string name="settings_unknown">unknown</string>
     <string name="settings_back">Back</string>
+    <string name="settings_open">Open</string>
 </resources>

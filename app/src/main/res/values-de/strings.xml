@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">RadioWave</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_browse">Suchen</string>
+    <string name="nav_favorites">Favoriten</string>
+    <string name="nav_settings">Einstellungen</string>
+    <string name="toast_favorite_added">Zu Favoriten hinzugefuegt</string>
+    <string name="toast_favorite_removed">Aus Favoriten entfernt</string>
     <string name="update_dialog_title">Neues Update verfuegbar</string>
     <string name="update_dialog_version">Version: %1$s</string>
     <string name="update_dialog_release_notes_fallback">Keine Release Notes verfuegbar.</string>

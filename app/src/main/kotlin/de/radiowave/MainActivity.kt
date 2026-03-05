@@ -60,6 +60,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.annotation.StringRes
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -92,11 +93,13 @@ import de.radiowave.update.UpdateDownloadProgress
 import de.radiowave.update.UpdateRelease
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
@@ -165,34 +168,34 @@ class MainActivity : ComponentActivity() {
 
 sealed class BottomNavItem(
     val route: String,
-    val title: String,
+    @StringRes val titleRes: Int,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
 ) {
     object Home : BottomNavItem(
         route = "home",
-        title = "Home",
+        titleRes = R.string.nav_home,
         selectedIcon = Icons.Filled.Home,
         unselectedIcon = Icons.Outlined.Home,
     )
 
     object Browse : BottomNavItem(
         route = "browse",
-        title = "Suchen",
+        titleRes = R.string.nav_browse,
         selectedIcon = Icons.Filled.Search,
         unselectedIcon = Icons.Outlined.Search,
     )
 
     object Favorites : BottomNavItem(
         route = "favorites",
-        title = "Favoriten",
+        titleRes = R.string.nav_favorites,
         selectedIcon = Icons.Filled.Favorite,
         unselectedIcon = Icons.Outlined.FavoriteBorder,
     )
 
     object Settings : BottomNavItem(
         route = "settings",
-        title = "Einstellungen",
+        titleRes = R.string.nav_settings,
         selectedIcon = Icons.Filled.Settings,
         unselectedIcon = Icons.Outlined.Settings,
     )
@@ -331,6 +334,7 @@ fun RadioWaveMainScreen() {
                 tonalElevation = 0.dp,
             ) {
                 bottomNavItems.forEach { item ->
+                    val title = stringResource(item.titleRes)
                     val selected = currentDestination
                         ?.hierarchy
                         ?.any { it.route == item.route } == true
@@ -342,13 +346,13 @@ fun RadioWaveMainScreen() {
                         icon = {
                             Icon(
                                 imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-                                contentDescription = item.title,
+                                contentDescription = title,
                                 modifier = Modifier.size(24.dp),
                             )
                         },
                         label = {
                             Text(
-                                text = item.title,
+                                text = title,
                                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                                 fontSize = 10.sp,
                             )
@@ -420,9 +424,9 @@ fun RadioWaveMainScreen() {
                             homeViewModel.toggleFavorite(station)
                             if (showQuickToasts) {
                                 val message = if (willBeFavorite) {
-                                    "Zu Favoriten hinzugefuegt"
+                                    context.getString(R.string.toast_favorite_added)
                                 } else {
-                                    "Aus Favoriten entfernt"
+                                    context.getString(R.string.toast_favorite_removed)
                                 }
                                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                             }
@@ -462,9 +466,9 @@ fun RadioWaveMainScreen() {
                                 homeViewModel.toggleFavorite(station)
                                 if (showQuickToasts) {
                                     val message = if (willBeFavorite) {
-                                        "Zu Favoriten hinzugefuegt"
+                                        context.getString(R.string.toast_favorite_added)
                                     } else {
-                                        "Aus Favoriten entfernt"
+                                        context.getString(R.string.toast_favorite_removed)
                                     }
                                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                                 }

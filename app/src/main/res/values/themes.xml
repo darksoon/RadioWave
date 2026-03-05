@@ -1,3 +1,11 @@
 <resources>
-    <style name="Theme.RadioWave" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.RadioWave.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#11131A</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.RadioWave</item>
+    </style>
+
+    <style name="Theme.RadioWave" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#11131A</item>
+    </style>
 </resources>

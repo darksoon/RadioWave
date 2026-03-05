@@ -44,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
@@ -70,6 +71,9 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val isGerman = configuration.locales[0]?.language?.equals("de", ignoreCase = true) == true
+    fun tr(de: String, en: String): String = if (isGerman) de else en
     val uriHandler = LocalUriHandler.current
     val prefs = context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
     val updateUiState by viewModel.updateUiState.collectAsState()
@@ -239,11 +243,11 @@ fun SettingsScreen(
                 when (selectedCategory) {
                     SettingsCategory.GENERAL -> SettingsCard(title = stringResource(R.string.settings_category_general_title)) {
                         SettingChoiceRow(
-                            title = "Theme",
+                            title = tr("Theme", "Theme"),
                             options = listOf(
-                                ThemeOption(AppSettings.THEME_SYSTEM, "System"),
-                                ThemeOption(AppSettings.THEME_DARK, "Dark"),
-                                ThemeOption(AppSettings.THEME_LIGHT, "Light"),
+                                ThemeOption(AppSettings.THEME_SYSTEM, tr("System", "System")),
+                                ThemeOption(AppSettings.THEME_DARK, tr("Dunkel", "Dark")),
+                                ThemeOption(AppSettings.THEME_LIGHT, tr("Hell", "Light")),
                             ),
                             selectedValue = themeMode,
                             onSelected = { value ->
@@ -269,20 +273,20 @@ fun SettingsScreen(
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingToggleRow(
-                            title = "Dynamic Colors",
-                            subtitle = "Material You Farben (Android 12+).",
+                            title = tr("Dynamic Colors", "Dynamic colors"),
+                            subtitle = tr("Material You Farben (Android 12+).", "Material You colors (Android 12+)."),
                             checked = dynamicColors,
                             onCheckedChange = { checked ->
                                 dynamicColors = checked
                                 prefs.edit().putBoolean(AppSettings.KEY_DYNAMIC_COLORS, checked).apply()
                             },
                             enabled = dynamicColorsSupported,
-                            disabledHint = "Nur auf Android 12+ verfuegbar",
+                            disabledHint = tr("Nur auf Android 12+ verfuegbar", "Only available on Android 12+"),
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingToggleRow(
-                            title = "Kurze Hinweise anzeigen",
-                            subtitle = "Zeigt Add/Remove Feedback als Toast.",
+                            title = tr("Kurze Hinweise anzeigen", "Show quick hints"),
+                            subtitle = tr("Zeigt Add/Remove Feedback als Toast.", "Shows add/remove feedback as a toast."),
                             checked = showQuickToasts,
                             onCheckedChange = { checked ->
                                 showQuickToasts = checked
@@ -293,8 +297,8 @@ fun SettingsScreen(
 
                     SettingsCategory.SOUND -> SettingsCard(title = stringResource(R.string.settings_category_sound_title)) {
                         SettingToggleRow(
-                            title = "Metadaten im Mini-Player",
-                            subtitle = "Zeigt Artist/Titel unter dem Sendernamen.",
+                            title = tr("Metadaten im Mini-Player", "Metadata in mini player"),
+                            subtitle = tr("Zeigt Artist/Titel unter dem Sendernamen.", "Shows artist/title below the station name."),
                             checked = showMiniPlayerMetadata,
                             onCheckedChange = { checked ->
                                 showMiniPlayerMetadata = checked
@@ -303,8 +307,8 @@ fun SettingsScreen(
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingToggleRow(
-                            title = "Display anlassen im Vollbild-Player",
-                            subtitle = "Verhindert das Dimmen waehrend Vollbild-Wiedergabe.",
+                            title = tr("Display anlassen im Vollbild-Player", "Keep screen on in fullscreen player"),
+                            subtitle = tr("Verhindert das Dimmen waehrend Vollbild-Wiedergabe.", "Prevents dimming during fullscreen playback."),
                             checked = keepScreenOnFullscreen,
                             onCheckedChange = { checked ->
                                 keepScreenOnFullscreen = checked
@@ -313,12 +317,12 @@ fun SettingsScreen(
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingChoiceRow(
-                            title = "Standard-Qualitaet",
+                            title = tr("Standard-Qualitaet", "Default quality"),
                             options = listOf(
                                 ThemeOption(AppSettings.QUALITY_AUTO, "Auto"),
-                                ThemeOption(AppSettings.QUALITY_LOW, "Niedrig"),
-                                ThemeOption(AppSettings.QUALITY_MEDIUM, "Mittel"),
-                                ThemeOption(AppSettings.QUALITY_HIGH, "Hoch"),
+                                ThemeOption(AppSettings.QUALITY_LOW, tr("Niedrig", "Low")),
+                                ThemeOption(AppSettings.QUALITY_MEDIUM, tr("Mittel", "Medium")),
+                                ThemeOption(AppSettings.QUALITY_HIGH, tr("Hoch", "High")),
                             ),
                             selectedValue = defaultAudioQuality,
                             onSelected = { value ->
@@ -330,8 +334,8 @@ fun SettingsScreen(
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingToggleRow(
-                            title = "Autoplay bei Android Auto Verbindung",
-                            subtitle = "Startet den zuletzt gehoerten Sender automatisch beim Auto-Connect.",
+                            title = tr("Autoplay bei Android Auto Verbindung", "Autoplay on Android Auto connect"),
+                            subtitle = tr("Startet den zuletzt gehoerten Sender automatisch beim Auto-Connect.", "Starts the last station automatically when Android Auto connects."),
                             checked = autoPlayOnAndroidAutoConnect,
                             onCheckedChange = { checked ->
                                 autoPlayOnAndroidAutoConnect = checked
@@ -344,8 +348,8 @@ fun SettingsScreen(
 
                     SettingsCategory.NOTIFICATION -> SettingsCard(title = stringResource(R.string.settings_category_notification_title)) {
                         SettingToggleRow(
-                            title = "Play/Pause Button",
-                            subtitle = "Steuerung direkt in der Medien-Benachrichtigung.",
+                            title = tr("Play/Pause Button", "Play/Pause button"),
+                            subtitle = tr("Steuerung direkt in der Medien-Benachrichtigung.", "Controls directly in media notification."),
                             checked = showNotificationPlayPause,
                             onCheckedChange = { checked ->
                                 showNotificationPlayPause = checked
@@ -354,8 +358,8 @@ fun SettingsScreen(
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingToggleRow(
-                            title = "Previous Button",
-                            subtitle = "Vorherigen Sender aus Verlauf abspielen.",
+                            title = tr("Previous Button", "Previous button"),
+                            subtitle = tr("Vorherigen Sender aus Verlauf abspielen.", "Play previous station from history."),
                             checked = showNotificationPrevious,
                             onCheckedChange = { checked ->
                                 showNotificationPrevious = checked
@@ -364,8 +368,8 @@ fun SettingsScreen(
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingToggleRow(
-                            title = "Next Button",
-                            subtitle = "Naechsten Sender aus Verlauf/Top-Sendern starten.",
+                            title = tr("Next Button", "Next button"),
+                            subtitle = tr("Naechsten Sender aus Verlauf/Top-Sendern starten.", "Start next station from history/top stations."),
                             checked = showNotificationNext,
                             onCheckedChange = { checked ->
                                 showNotificationNext = checked
@@ -374,8 +378,8 @@ fun SettingsScreen(
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingToggleRow(
-                            title = "Stop Button",
-                            subtitle = "Streaming sofort beenden und Notification entfernen.",
+                            title = tr("Stop Button", "Stop button"),
+                            subtitle = tr("Streaming sofort beenden und Notification entfernen.", "Stop streaming immediately and remove notification."),
                             checked = showNotificationStop,
                             onCheckedChange = { checked ->
                                 showNotificationStop = checked
@@ -386,8 +390,8 @@ fun SettingsScreen(
 
                     SettingsCategory.DATA -> SettingsCard(title = stringResource(R.string.settings_category_data_title)) {
                         SettingToggleRow(
-                            title = "Mobile Daten erlauben",
-                            subtitle = "Wenn aus, streamt die App nur im WLAN.",
+                            title = tr("Mobile Daten erlauben", "Allow mobile data"),
+                            subtitle = tr("Wenn aus, streamt die App nur im WLAN.", "If disabled, app only streams on Wi-Fi."),
                             checked = allowMobileData,
                             onCheckedChange = { checked ->
                                 allowMobileData = checked
@@ -396,11 +400,11 @@ fun SettingsScreen(
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingChoiceRow(
-                            title = "Buffer-Profil",
+                            title = tr("Buffer-Profil", "Buffer profile"),
                             options = listOf(
-                                ThemeOption(AppSettings.BUFFER_SMALL, "Klein"),
-                                ThemeOption(AppSettings.BUFFER_MEDIUM, "Mittel"),
-                                ThemeOption(AppSettings.BUFFER_LARGE, "Gross"),
+                                ThemeOption(AppSettings.BUFFER_SMALL, tr("Klein", "Small")),
+                                ThemeOption(AppSettings.BUFFER_MEDIUM, tr("Mittel", "Medium")),
+                                ThemeOption(AppSettings.BUFFER_LARGE, tr("Gross", "Large")),
                             ),
                             selectedValue = bufferProfile,
                             onSelected = { value ->
@@ -410,8 +414,8 @@ fun SettingsScreen(
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingToggleRow(
-                            title = "Netzausfall-Puffer (MVP)",
-                            subtitle = "Erhoeht Stream-Puffer und wartet laenger bei kurzen Verbindungsabbruechen.",
+                            title = tr("Netzausfall-Puffer (MVP)", "Outage buffer (MVP)"),
+                            subtitle = tr("Erhoeht Stream-Puffer und wartet laenger bei kurzen Verbindungsabbruechen.", "Increases stream buffer and waits longer during short connection drops."),
                             checked = timeshiftGuard,
                             onCheckedChange = { checked ->
                                 timeshiftGuard = checked
@@ -420,8 +424,8 @@ fun SettingsScreen(
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingToggleRow(
-                            title = "Hitzemodus (Auto/Charging)",
-                            subtitle = "Reduziert Last: kleines Buffer-Profil + weniger Metadaten-/Artwork-Updates.",
+                            title = tr("Hitzemodus (Auto/Charging)", "Thermal mode (car/charging)"),
+                            subtitle = tr("Reduziert Last: kleines Buffer-Profil + weniger Metadaten-/Artwork-Updates.", "Reduces load: smaller buffer profile + fewer metadata/artwork updates."),
                             checked = thermalMode,
                             onCheckedChange = { checked ->
                                 thermalMode = checked
@@ -430,8 +434,8 @@ fun SettingsScreen(
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingToggleRow(
-                            title = "Unsichere HTTP-Streams anzeigen",
-                            subtitle = "Wenn aus, werden HTTP-Sender ausgeblendet.",
+                            title = tr("Unsichere HTTP-Streams anzeigen", "Show insecure HTTP streams"),
+                            subtitle = tr("Wenn aus, werden HTTP-Sender ausgeblendet.", "If disabled, HTTP stations are hidden."),
                             checked = showInsecureStreams,
                             onCheckedChange = { checked ->
                                 showInsecureStreams = checked
@@ -440,18 +444,24 @@ fun SettingsScreen(
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingActionRow(
-                            title = "Akku-Optimierung",
+                            title = tr("Akku-Optimierung", "Battery optimization"),
                             subtitle = if (batteryOptimizationExcluded) {
-                                "Fuer RadioWave deaktiviert. Background-Playback ist besser abgesichert."
+                                tr(
+                                    "Fuer RadioWave deaktiviert. Background-Playback ist besser abgesichert.",
+                                    "Disabled for RadioWave. Background playback is better protected.",
+                                )
                             } else {
-                                "Aktiv. Kann auf manchen Geraeten Background-Audio aggressiv beenden."
+                                tr(
+                                    "Aktiv. Kann auf manchen Geraeten Background-Audio aggressiv beenden.",
+                                    "Enabled. Can aggressively stop background audio on some devices.",
+                                )
                             },
-                            actionLabel = if (batteryOptimizationExcluded) "Erneut pruefen" else "Ausnahme setzen",
+                            actionLabel = if (batteryOptimizationExcluded) tr("Erneut pruefen", "Check again") else tr("Ausnahme setzen", "Set exception"),
                             onActionClick = {
                                 requestDisableBatteryOptimization(context)
                                 batteryOptimizationExcluded = isBatteryOptimizationExcluded(context)
                             },
-                            secondaryActionLabel = "Akku-Einstellungen",
+                            secondaryActionLabel = tr("Akku-Einstellungen", "Battery settings"),
                             onSecondaryActionClick = { openBatteryOptimizationSettings(context) },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
@@ -464,20 +474,20 @@ fun SettingsScreen(
                             OutlinedButton(
                                 onClick = {
                                     viewModel.clearStationCache()
-                                    Toast.makeText(context, "Sender-Cache geleert", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, tr("Sender-Cache geleert", "Station cache cleared"), Toast.LENGTH_SHORT).show()
                                 },
                                 modifier = Modifier.weight(1f),
                             ) {
-                                Text("Cache leeren")
+                                Text(tr("Cache leeren", "Clear cache"))
                             }
                             OutlinedButton(
                                 onClick = {
                                     viewModel.clearHistory()
-                                    Toast.makeText(context, "Verlauf geloescht", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, tr("Verlauf geloescht", "History cleared"), Toast.LENGTH_SHORT).show()
                                 },
                                 modifier = Modifier.weight(1f),
                             ) {
-                                Text("History loeschen")
+                                Text(tr("History loeschen", "Clear history"))
                             }
                         }
                     }
@@ -571,33 +581,33 @@ fun SettingsScreen(
                     }
 
                     SettingsCategory.INFO -> SettingsCard(title = stringResource(R.string.settings_category_info_title)) {
-                        InfoTextRow(label = "Version", value = appVersion)
+                        InfoTextRow(label = tr("Version", "Version"), value = appVersion)
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         LinkRow(
-                            title = "GitHub Repository",
+                            title = tr("GitHub Repository", "GitHub repository"),
                             subtitle = "darksoon/RadioWave",
                             onClick = { uriHandler.openUri("https://github.com/darksoon/RadioWave") },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         LinkRow(
-                            title = "Issues / Feedback",
-                            subtitle = "Bugs und Feature-Wuensche",
+                            title = tr("Issues / Feedback", "Issues / feedback"),
+                            subtitle = tr("Bugs und Feature-Wuensche", "Bugs and feature requests"),
                             onClick = { uriHandler.openUri("https://github.com/darksoon/RadioWave/issues") },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         LinkRow(
-                            title = "Website",
+                            title = tr("Website", "Website"),
                             subtitle = "sven-neurath.de",
                             onClick = { uriHandler.openUri("https://sven-neurath.de") },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         LinkRow(
-                            title = "Buy a Coffee",
-                            subtitle = "Support das Projekt",
+                            title = tr("Buy a Coffee", "Buy a coffee"),
+                            subtitle = tr("Support das Projekt", "Support the project"),
                             onClick = { uriHandler.openUri("https://buymeacoffee.com/darksoon") },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                        InfoTextRow(label = "Made by", value = "Sven Neurath")
+                        InfoTextRow(label = tr("Made by", "Made by"), value = "Sven Neurath")
                     }
 
                     null -> Unit
@@ -836,7 +846,7 @@ private fun LinkRow(
             )
         }
         OutlinedButton(onClick = onClick) {
-            Text("Open")
+            Text(stringResource(R.string.settings_open))
         }
     }
 }
@@ -930,7 +940,7 @@ private fun rememberAppVersion(context: Context): String {
                 @Suppress("DEPRECATION")
                 context.packageManager.getPackageInfo(context.packageName, 0)
             }
-            packageInfo.versionName ?: "unbekannt"
+            packageInfo.versionName ?: context.getString(R.string.settings_unknown)
         } catch (_: Exception) {
             context.getString(R.string.settings_unknown)
         }
