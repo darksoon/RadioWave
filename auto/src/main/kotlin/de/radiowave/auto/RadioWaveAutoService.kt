@@ -63,6 +63,7 @@ class RadioWaveAutoService : MediaLibraryService() {
 
     override fun onCreate() {
         super.onCreate()
+        playerController.setAutomotivePerformanceModeEnabled(true)
         val callback = RadioWaveLibraryCallback()
         playerController.setPlaybackNotificationEnabled(false)
         val player = playerController.ensureSessionPlayer()
@@ -78,6 +79,7 @@ class RadioWaveAutoService : MediaLibraryService() {
         mediaLibrarySession?.release()
         mediaLibrarySession = null
         playerController.setPlaybackNotificationEnabled(true)
+        playerController.setAutomotivePerformanceModeEnabled(false)
         serviceScope.cancel()
         super.onDestroy()
     }

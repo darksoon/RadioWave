@@ -89,6 +89,7 @@ class PlayerControllerImpl @Inject constructor(
     private var lastNetworkRecoveryAt = 0L
     private var isForegroundServiceRunning = false
     private var isPlaybackNotificationEnabled = true
+    private var isAutomotivePerformanceModeEnabled = false
     private var isInternalRestartInProgress = false
     private var shouldResumeAfterAudioFocusGain = false
     private var wasDuckedForAudioFocus = false
@@ -254,7 +255,7 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private fun getSelectedBufferProfile(): String {
-        if (isThermalModeEnabled()) {
+        if (isLowLoadModeEnabled()) {
             return AppSettings.BUFFER_SMALL
         }
         val value = settingsPrefs.getString(
@@ -273,6 +274,10 @@ class PlayerControllerImpl @Inject constructor(
 
     private fun isThermalModeEnabled(): Boolean {
         return settingsPrefs.getBoolean(AppSettings.KEY_THERMAL_MODE, false)
+    }
+
+    private fun isLowLoadModeEnabled(): Boolean {
+        return isThermalModeEnabled() || isAutomotivePerformanceModeEnabled
     }
 
     private fun isPlaybackBlockedByMobileDataPolicy(): Boolean {
@@ -431,13 +436,13 @@ class PlayerControllerImpl @Inject constructor(
             }
 
             override fun onMediaMetadataChanged(metadata: MediaMetadata) {
-                if (isThermalModeEnabled() && !canProcessMetadataUpdateNow()) {
+                if (isLowLoadModeEnabled() && !canProcessMetadataUpdateNow()) {
                     return
                 }
                 val stationName = _playerState.value.currentStation?.name?.trim()
                 val title = metadata.title?.toString()?.trim()
                 val artist = metadata.artist?.toString()?.trim()
-                val albumArtUrl = if (isThermalModeEnabled()) {
+                val albumArtUrl = if (isLowLoadModeEnabled()) {
                     null
                 } else {
                     metadata.artworkUri?.toString()
@@ -588,7 +593,7 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private fun applyStreamTitle(rawTitle: String) {
-        if (isThermalModeEnabled() && !canProcessMetadataUpdateNow()) return
+        if (isLowLoadModeEnabled() && !canProcessMetadataUpdateNow()) return
         val titleText = rawTitle.trim().takeUnless { it.isBlank() } ?: return
         val stationName = _playerState.value.currentStation?.name?.trim()
         if (stationName != null && titleText.equals(stationName, ignoreCase = true)) {
@@ -1042,6 +1047,19 @@ class PlayerControllerImpl @Inject constructor(
 
         if (_playerState.value.currentStation != null) {
             ensureForegroundPlaybackServiceRunning()
+        }
+    }
+
+    override fun setAutomotivePerformanceModeEnabled(enabled: Boolean) {
+        if (isAutomotivePerformanceModeEnabled == enabled) return
+        isAutomotivePerformanceModeEnabled = enabled
+        if (!enabled) return
+
+        // If AA connects during active playback, apply low-load settings immediately.
+        val currentStation = _playerState.value.currentStation ?: return
+        if (!_playerState.value.isPlaying) return
+        controllerScope.launch {
+            startPlayback(currentStation)
         }
     }
 

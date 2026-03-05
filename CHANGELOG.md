@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 
 ### Improved
 - Thermal mode now enforces small player buffer profile and throttles metadata/artwork updates to reduce runtime load.
+- Android Auto now enables low-load behavior automatically while connected (no manual toggle required).
 - Refactored player recovery unit tests away from private reflection access to explicit test hooks.
 
 ## [0.1.0-alpha.6] - 2026-03-03
