@@ -29,6 +29,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.AlertDialog
@@ -42,6 +43,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -61,12 +63,15 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import de.radiowave.core.model.AppSettings
+import de.radiowave.core.data.update.GitHubReleaseUpdater
+import de.radiowave.core.data.update.UpdateDownloadProgress
 import de.radiowave.core.ui.theme.DarkCardBackground
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.TealAccent
 import de.radiowave.feature.settings.R
 import java.text.DateFormat
 import java.util.Date
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(
@@ -80,6 +85,7 @@ fun SettingsScreen(
     val uriHandler = LocalUriHandler.current
     val prefs = context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
     val updateUiState by viewModel.updateUiState.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
 
     var themeMode by rememberSaveable {
         mutableStateOf(prefs.getString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_DARK) ?: AppSettings.THEME_DARK)
@@ -152,6 +158,8 @@ fun SettingsScreen(
     }
     var manualUpdateCheckRequested by rememberSaveable { mutableStateOf(false) }
     var showUpdateAvailableDialog by rememberSaveable { mutableStateOf(false) }
+    var updateInstallInProgress by remember { mutableStateOf(false) }
+    var updateInstallProgress by remember { mutableStateOf<UpdateDownloadProgress?>(null) }
 
     val appVersion = rememberAppVersion(context)
     val dynamicColorsSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
@@ -712,26 +720,99 @@ fun SettingsScreen(
             onDismissRequest = { showUpdateAvailableDialog = false },
             title = { Text(text = tr("Update verfuegbar", "Update available")) },
             text = {
-                Text(
-                    text = tr(
-                        "Neue Version gefunden: ${release.tag}. Soll die Release-Seite geoeffnet werden?",
-                        "New version found: ${release.tag}. Open the release page?",
-                    ),
-                )
+                Column {
+                    Text(
+                        text = tr(
+                            "Neue Version gefunden: ${release.tag}",
+                            "New version found: ${release.tag}",
+                        ),
+                    )
+                    release.body
+                        .takeIf { it.isNotBlank() }
+                        ?.let { notes ->
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = notes.lineSequence()
+                                    .map { it.trim() }
+                                    .filter { it.isNotBlank() }
+                                    .take(6)
+                                    .joinToString("\n"),
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    if (updateInstallInProgress) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = tr(
+                                "Download laeuft: ${buildUpdateProgressText(updateInstallProgress)}",
+                                "Download running: ${buildUpdateProgressText(updateInstallProgress)}",
+                            ),
+                            color = TealAccent,
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        val percent = updateInstallProgress?.percent
+                        if (percent != null) {
+                            LinearProgressIndicator(
+                                progress = { percent / 100f },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        } else {
+                            LinearProgressIndicator(
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
+                }
             },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        showUpdateAvailableDialog = false
-                        uriHandler.openUri(release.htmlUrl ?: "https://github.com/darksoon/RadioWave/releases")
+                        if (updateInstallInProgress) return@TextButton
+                        updateInstallInProgress = true
+                        updateInstallProgress = null
+                        coroutineScope.launch {
+                            val result = GitHubReleaseUpdater.downloadAndStartInstall(
+                                context = context,
+                                release = release,
+                                onProgress = { progress ->
+                                    updateInstallProgress = progress
+                                },
+                            )
+                            updateInstallInProgress = false
+                            result.onFailure { error ->
+                                Toast.makeText(
+                                    context,
+                                    tr(
+                                        "Update fehlgeschlagen: ${error.message ?: "unbekannt"}",
+                                        "Update failed: ${error.message ?: "unknown"}",
+                                    ),
+                                    Toast.LENGTH_LONG,
+                                ).show()
+                            }
+                        }
                     },
                 ) {
-                    Text(text = tr("Update", "Update"))
+                    Text(text = tr(if (updateInstallInProgress) "Lade..." else "Update", if (updateInstallInProgress) "Downloading..." else "Update"))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showUpdateAvailableDialog = false }) {
-                    Text(text = tr("Spaeter", "Later"))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(
+                        onClick = {
+                            if (updateInstallInProgress) return@TextButton
+                            uriHandler.openUri(release.htmlUrl)
+                        },
+                    ) {
+                        Text(text = tr("Release-Seite", "Release page"))
+                    }
+                    TextButton(
+                        onClick = {
+                            if (updateInstallInProgress) return@TextButton
+                            showUpdateAvailableDialog = false
+                        },
+                    ) {
+                        Text(text = tr("Spaeter", "Later"))
+                    }
                 }
             },
         )
@@ -1131,6 +1212,17 @@ private fun buildUpdateCheckSubtitle(context: Context, lastCheckedAtMs: Long?, e
         timePart
     } else {
         "$timePart  ${context.getString(R.string.settings_update_error_prefix, error)}"
+    }
+}
+
+private fun buildUpdateProgressText(progress: UpdateDownloadProgress?): String {
+    if (progress == null) return "0 MB"
+    val downloadedMb = progress.downloadedBytes / (1024f * 1024f)
+    val totalMb = progress.totalBytes.takeIf { it > 0L }?.let { it / (1024f * 1024f) }
+    return if (totalMb != null) {
+        String.format("%.1f / %.1f MB (%d%%)", downloadedMb, totalMb, progress.percent ?: 0)
+    } else {
+        String.format("%.1f MB", downloadedMb)
     }
 }
 

@@ -1,4 +1,4 @@
-package de.radiowave.update
+package de.radiowave.core.data.update
 
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -8,23 +8,12 @@ import android.os.Build
 import android.os.Environment
 import android.provider.Settings
 import androidx.core.content.FileProvider
-import de.radiowave.core.data.update.GitHubReleaseChecker
-import de.radiowave.core.data.update.GitHubReleaseInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.math.roundToInt
-
-data class UpdateRelease(
-    val tag: String,
-    val title: String,
-    val body: String,
-    val htmlUrl: String,
-    val apkUrl: String,
-    val apkName: String,
-)
 
 data class UpdateDownloadProgress(
     val downloadedBytes: Long,
@@ -39,16 +28,16 @@ object GitHubReleaseUpdater {
     suspend fun checkForUpdate(
         currentVersionName: String,
         includePrerelease: Boolean = false,
-    ): UpdateRelease? = withContext(Dispatchers.IO) {
+    ): GitHubReleaseInfo? = withContext(Dispatchers.IO) {
         GitHubReleaseChecker.checkForUpdate(
             currentVersionName = currentVersionName,
             includePrerelease = includePrerelease,
-        )?.toUpdateRelease()
+        )
     }
 
     suspend fun downloadAndStartInstall(
         context: Context,
-        release: UpdateRelease,
+        release: GitHubReleaseInfo,
         onProgress: (UpdateDownloadProgress) -> Unit = {},
     ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
@@ -167,13 +156,4 @@ object GitHubReleaseUpdater {
             )
         }
     }
-
-    private fun GitHubReleaseInfo.toUpdateRelease(): UpdateRelease = UpdateRelease(
-        tag = tag,
-        title = title,
-        body = body,
-        htmlUrl = htmlUrl,
-        apkUrl = apkUrl,
-        apkName = apkName,
-    )
 }

@@ -87,12 +87,12 @@ import de.radiowave.feature.player.FloatingPlayerBar
 import de.radiowave.feature.player.PlayerScreen
 import de.radiowave.feature.settings.SettingsScreen
 import de.radiowave.R
-import de.radiowave.update.GitHubReleaseUpdater
-import de.radiowave.update.UpdateDownloadProgress
-import de.radiowave.update.UpdateRelease
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import de.radiowave.core.data.update.GitHubReleaseInfo
+import de.radiowave.core.data.update.GitHubReleaseUpdater
+import de.radiowave.core.data.update.UpdateDownloadProgress
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -243,7 +243,7 @@ fun RadioWaveMainScreen(
             !prefs.getBoolean(AppSettings.KEY_FIRST_RUN_ONBOARDING_DONE, false),
         )
     }
-    var availableUpdate by remember { mutableStateOf<UpdateRelease?>(null) }
+    var availableUpdate by remember { mutableStateOf<GitHubReleaseInfo?>(null) }
     var updateInProgress by remember { mutableStateOf(false) }
     var updateProgress by remember { mutableStateOf<UpdateDownloadProgress?>(null) }
 
