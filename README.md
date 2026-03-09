@@ -44,13 +44,21 @@ Die öffentliche Roadmap findest du hier: **[ROADMAP.md](./ROADMAP.md)**
 
 ## 📸 Screenshots
 
-| Home | Entdecken |
+| Home | Suche |
 |---|---|
-| ![Home](docs/screenshots/home.jpg) | ![Entdecken](docs/screenshots/discover.jpg) |
+| ![Home](docs/screenshots/home.jpg) | ![Suche](docs/screenshots/search.jpg) |
 
 | Favoriten | Fullscreen Player | Einstellungen |
 |---|---|---|
-| ![Favoriten](docs/screenshots/favorites.jpg) | ![Player](docs/screenshots/player.jpg) | ![Einstellungen](docs/screenshots/settings.jpg) |
+| ![Favoriten](docs/screenshots/favorites.jpg) | ![Fullscreen Player](docs/screenshots/fullscreen_player.jpg) | ![Einstellungen](docs/screenshots/settings.jpg) |
+
+| Android Auto 1 | Android Auto 2 |
+|---|---|
+| ![Android Auto 1](docs/screenshots/Android_Auto1.png) | ![Android Auto 2](docs/screenshots/Android_Auto2.png) |
+
+| Android Auto 3 | Android Auto 4 |
+|---|---|
+| ![Android Auto 3](docs/screenshots/Android_Auto3.png) | ![Android Auto 4](docs/screenshots/Android_Auto4.png) |
 
 ## 🧱 Tech Stack
 
