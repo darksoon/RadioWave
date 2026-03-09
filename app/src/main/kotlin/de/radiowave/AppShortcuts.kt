@@ -2,11 +2,14 @@ package de.radiowave
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 
 object AppShortcuts {
+    private const val TAG = "AppShortcuts"
+
     fun sync(context: Context) {
         val shortcuts = listOf(
             shortcut(
@@ -39,8 +42,12 @@ object AppShortcuts {
             ),
         )
 
-        ShortcutManagerCompat.removeAllDynamicShortcuts(context)
-        ShortcutManagerCompat.addDynamicShortcuts(context, shortcuts)
+        runCatching {
+            ShortcutManagerCompat.removeAllDynamicShortcuts(context)
+            ShortcutManagerCompat.addDynamicShortcuts(context, shortcuts)
+        }.onFailure { error ->
+            Log.w(TAG, "Skipping dynamic shortcut sync", error)
+        }
     }
 
     private fun shortcut(
