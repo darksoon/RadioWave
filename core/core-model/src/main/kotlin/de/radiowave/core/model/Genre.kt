@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.model
 
 /**
@@ -7,3 +9,4 @@ data class Genre(
     val name: String,
     val stationCount: Int,
 )
+

@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 import de.radiowave.convention.libs
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -18,3 +20,4 @@ class HiltConventionPlugin : Plugin<Project> {
         }
     }
 }
+

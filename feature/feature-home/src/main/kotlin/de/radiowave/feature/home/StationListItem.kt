@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.feature.home
 
 import androidx.compose.foundation.background
@@ -128,3 +130,4 @@ fun StationListItem(
         }
     }
 }
+

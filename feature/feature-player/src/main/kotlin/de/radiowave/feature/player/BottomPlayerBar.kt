@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.feature.player
 
 import androidx.compose.foundation.background
@@ -152,3 +154,4 @@ fun BottomPlayerBar(
         }
     }
 }
+

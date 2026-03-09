@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.database
 
 import androidx.room.Database
@@ -30,3 +32,4 @@ abstract class RadioWaveDatabase : RoomDatabase() {
     abstract fun recentDao(): RecentDao
     abstract fun customStationDao(): CustomStationDao
 }
+

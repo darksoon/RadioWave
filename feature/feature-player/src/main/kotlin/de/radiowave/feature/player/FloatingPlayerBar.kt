@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.feature.player
 
 import android.os.SystemClock
@@ -338,3 +340,4 @@ private fun buildCompactMetadata(
         else -> null
     }
 }
+

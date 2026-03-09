@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.data.mapper
 
 import de.radiowave.core.database.entity.CustomStationEntity
@@ -132,3 +134,4 @@ fun Station.toEntity(): StationEntity = StationEntity(
     codec = codec,
     bitrate = bitrate,
 )
+

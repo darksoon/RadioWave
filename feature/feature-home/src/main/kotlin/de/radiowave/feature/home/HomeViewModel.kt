@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.feature.home
 
 import android.util.Log
@@ -449,3 +451,4 @@ class HomeViewModel @Inject constructor(
         playerManager.toggleMute()
     }
 }
+

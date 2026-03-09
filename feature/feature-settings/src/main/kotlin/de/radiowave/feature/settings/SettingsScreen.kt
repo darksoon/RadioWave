@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.feature.settings
 
 import android.app.Activity
@@ -1326,3 +1328,4 @@ private fun startActivitySafely(context: Context, intent: Intent): Boolean {
         true
     }.getOrDefault(false)
 }
+

@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.database.dao
 
 import androidx.room.Dao
@@ -28,3 +30,4 @@ interface CustomStationDao {
     @Query("SELECT * FROM custom_stations WHERE uuid = :uuid LIMIT 1")
     suspend fun getByUuid(uuid: String): CustomStationEntity?
 }
+

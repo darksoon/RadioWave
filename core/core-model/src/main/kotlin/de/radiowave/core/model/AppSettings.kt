@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.model
 
 /**
@@ -53,3 +55,4 @@ object AppSettings {
     const val BUFFER_MEDIUM = "medium"
     const val BUFFER_LARGE = "large"
 }
+

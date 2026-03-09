@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.ui.theme
 
 import android.app.Activity
@@ -87,3 +89,4 @@ fun RadioWaveTheme(
         content = content,
     )
 }
+

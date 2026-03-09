@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.buildlogic
 
 import com.android.build.api.dsl.LibraryExtension
@@ -26,3 +28,4 @@ class AndroidRoomConventionPlugin : Plugin<Project> {
         }
     }
 }
+

@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.database
 
 import androidx.room.migration.Migration
@@ -50,3 +52,4 @@ object DatabaseMigrations {
         }
     }
 }
+

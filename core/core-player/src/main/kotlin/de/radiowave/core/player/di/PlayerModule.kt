@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.player.di
 
 import dagger.Binds
@@ -36,3 +38,4 @@ abstract class PlayerModule {
         }
     }
 }
+

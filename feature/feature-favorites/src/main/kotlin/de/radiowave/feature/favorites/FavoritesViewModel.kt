@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.feature.favorites
 
 import androidx.lifecycle.ViewModel
@@ -77,3 +79,4 @@ class FavoritesViewModel @Inject constructor(
         }
     }
 }
+

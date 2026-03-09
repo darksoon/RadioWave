@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.network.dto
 
 import kotlinx.serialization.SerialName
@@ -12,3 +14,4 @@ data class RadioBrowserTag(
     @SerialName("stationcount")
     val stationCount: Int,
 )
+

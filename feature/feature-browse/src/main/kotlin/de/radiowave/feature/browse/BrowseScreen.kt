@@ -1,4 +1,6 @@
-﻿package de.radiowave.feature.browse
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
+package de.radiowave.feature.browse
 
 import android.content.Context
 import androidx.compose.foundation.background
@@ -898,3 +900,4 @@ private fun StationGridCard(
 private fun String.isInsecureHttpStream(): Boolean {
     return startsWith("http://", ignoreCase = true)
 }
+

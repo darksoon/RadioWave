@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.model
 
 /**
@@ -13,3 +15,4 @@ data class PlayerState(
     val error: PlayerError? = null,
     val metadata: StreamMetadata? = null,
 )
+

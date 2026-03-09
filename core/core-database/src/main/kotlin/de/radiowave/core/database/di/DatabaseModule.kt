@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.database.di
 
 import android.content.Context
@@ -56,3 +58,4 @@ object DatabaseModule {
         return database.customStationDao()
     }
 }
+

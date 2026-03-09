@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 import com.android.build.api.dsl.ApplicationExtension
 import de.radiowave.convention.configureKotlinAndroid
 import de.radiowave.convention.libs
@@ -37,3 +39,4 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
         }
     }
 }
+

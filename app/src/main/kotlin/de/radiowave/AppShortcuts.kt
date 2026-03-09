@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave
 
 import android.content.Context
@@ -69,3 +71,4 @@ object AppShortcuts {
             .build()
     }
 }
+

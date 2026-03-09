@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.database.dao
 
 import androidx.room.Dao
@@ -42,3 +44,4 @@ interface StationDao {
     @Query("SELECT * FROM stations WHERE tags LIKE '%' || :tag || '%' ORDER BY cachedAt DESC LIMIT :limit")
     suspend fun getStationsByTag(tag: String, limit: Int = 200): List<StationEntity>
 }
+

@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.data.repository
 
 import de.radiowave.core.model.Country
@@ -19,3 +21,4 @@ interface StationRepository {
     suspend fun registerClick(stationUuid: String)
     suspend fun reportBrokenStream(stationUuid: String)
 }
+

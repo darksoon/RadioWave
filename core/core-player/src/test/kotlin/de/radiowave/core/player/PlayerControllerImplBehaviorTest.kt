@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.player
 
 import androidx.test.core.app.ApplicationProvider
@@ -84,3 +86,4 @@ private class LocalStationRepositoryFake(
     override suspend fun registerClick(stationUuid: String) = Unit
     override suspend fun reportBrokenStream(stationUuid: String) = Unit
 }
+

@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.player
 
 import de.radiowave.core.model.PlayerError
@@ -24,3 +26,4 @@ interface PlayerController {
     fun stop()
     fun release()
 }
+

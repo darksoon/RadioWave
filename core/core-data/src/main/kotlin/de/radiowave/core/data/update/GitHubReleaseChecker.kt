@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.data.update
 
 import kotlinx.coroutines.Dispatchers
@@ -110,3 +112,4 @@ object GitHubReleaseChecker {
         return raw.trim().removePrefix("v").lowercase()
     }
 }
+

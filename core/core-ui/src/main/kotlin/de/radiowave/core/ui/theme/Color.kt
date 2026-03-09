@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
@@ -35,3 +37,4 @@ val LightCardBackground = Color(0xFFFFFFFF)
 val LightOnSurface = Color(0xFF1A1D22)
 val LightOnSurfaceVariant = Color(0xFF5C6470)
 val LightBorder = Color(0xFFD6DBE2)
+

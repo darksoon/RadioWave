@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.data.repository
 
 import de.radiowave.core.data.mapper.toDomain
@@ -56,3 +58,4 @@ private fun RecentEntity.toStation(): Station = Station(
     bitrate = bitrate,
     lastPlayedAt = lastPlayedAt,
 )
+

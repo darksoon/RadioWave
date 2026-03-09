@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.data.repository
 
 import de.radiowave.core.model.Station
@@ -11,3 +13,4 @@ interface RecentRepository {
     suspend fun addRecentStation(station: Station)
     suspend fun clearHistory()
 }
+

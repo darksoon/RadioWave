@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.player
 
 import android.content.Context
@@ -85,3 +87,4 @@ class StreamQualityResolver @Inject constructor(
         )
     }
 }
+

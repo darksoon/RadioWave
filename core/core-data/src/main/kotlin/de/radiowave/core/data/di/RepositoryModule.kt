@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.data.di
 
 import dagger.Binds
@@ -37,3 +39,4 @@ abstract class RepositoryModule {
         impl: CoverArtRepositoryImpl,
     ): CoverArtRepository
 }
+

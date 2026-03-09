@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.model
 
 import kotlinx.serialization.Serializable
@@ -24,3 +26,4 @@ data class Station(
     val addedAt: Long = System.currentTimeMillis(),
     val clickCount: Int = 0,
 )
+

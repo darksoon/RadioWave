@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.network
 
 import de.radiowave.core.network.dto.RadioBrowserCountry
@@ -77,3 +79,4 @@ interface RadioBrowserApi {
         @Path("stationuuid") uuid: String,
     )
 }
+

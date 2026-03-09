@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.auto
 
 import android.net.Uri
@@ -805,3 +807,4 @@ class RadioWaveAutoService : MediaLibraryService() {
         startStationPlayback(station)
     }
 }
+

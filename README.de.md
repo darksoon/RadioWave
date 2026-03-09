@@ -11,7 +11,7 @@
   </a>
   <img src="https://img.shields.io/badge/Kotlin-2.1.0-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin 2.1.0" />
   <a href="./LICENSE.txt">
-    <img src="https://img.shields.io/badge/License-Proprietary-red" alt="License Proprietary" />
+    <img src="https://img.shields.io/badge/License-GPL--3.0--or--later-blue" alt="License GPL-3.0-or-later" />
   </a>
   <a href="https://ko-fi.com/darksoon">
     <img src="https://img.shields.io/badge/Ko--fi-Support%20the%20project-29ABE0?logo=kofi&logoColor=white" alt="Ko-fi" />
@@ -175,6 +175,11 @@ Unter `Actions -> Manual Android Build -> Run workflow`.
 - Keine Werbung
 - Keine versteckte Telemetrie
 - Crash-Reports werden nur lokal gespeichert und nur aktiv vom Nutzer geteilt
+
+## Lizenz
+
+RadioWave steht unter der GNU General Public License v3.0 oder spaeter.
+Siehe [LICENSE.txt](./LICENSE.txt).
 
 ## Support
 

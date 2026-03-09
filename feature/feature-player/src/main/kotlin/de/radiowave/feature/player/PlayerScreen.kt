@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.feature.player
 
 import android.os.SystemClock
@@ -523,3 +525,4 @@ private fun formatStreamQualityLabel(codec: String?, bitrate: Int?): String? {
         else -> null
     }
 }
+

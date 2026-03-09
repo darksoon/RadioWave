@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.feature.home
 
 import androidx.compose.animation.core.LinearEasing
@@ -932,3 +934,4 @@ private fun EmptyStartCard(
         }
     }
 }
+

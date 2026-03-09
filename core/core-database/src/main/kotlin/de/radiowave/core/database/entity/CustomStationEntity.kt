@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.database.entity
 
 import androidx.room.Entity
@@ -18,3 +20,4 @@ data class CustomStationEntity(
     val country: String? = null,
     val addedAt: Long = System.currentTimeMillis(),
 )
+

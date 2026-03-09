@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.feature.settings
 
 import androidx.lifecycle.ViewModel
@@ -83,3 +85,4 @@ class SettingsViewModel @Inject constructor(
         return raw.trim().removePrefix("v").lowercase()
     }
 }
+

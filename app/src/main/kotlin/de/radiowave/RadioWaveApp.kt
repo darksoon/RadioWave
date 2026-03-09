@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave
 
 import android.app.Application
@@ -13,3 +15,4 @@ class RadioWaveApp : Application() {
         AppShortcuts.sync(this)
     }
 }
+

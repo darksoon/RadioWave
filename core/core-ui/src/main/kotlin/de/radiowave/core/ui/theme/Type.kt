@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.ui.theme
 
 import androidx.compose.material3.Typography
@@ -29,3 +31,4 @@ val Typography = Typography(
         letterSpacing = 0.5.sp,
     ),
 )
+

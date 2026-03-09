@@ -1,4 +1,6 @@
-﻿package de.radiowave.feature.favorites
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
+package de.radiowave.feature.favorites
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -306,3 +308,4 @@ private fun EmptyFavorites(
         }
     }
 }
+

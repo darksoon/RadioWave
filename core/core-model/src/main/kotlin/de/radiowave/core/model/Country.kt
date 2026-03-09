@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.model
 
 /**
@@ -8,3 +10,4 @@ data class Country(
     val code: String,
     val stationCount: Int,
 )
+

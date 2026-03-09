@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.player
 
 import de.radiowave.core.model.PlayerState
@@ -61,3 +63,4 @@ class RadioPlayerManager @Inject constructor(
         playerController.release()
     }
 }
+

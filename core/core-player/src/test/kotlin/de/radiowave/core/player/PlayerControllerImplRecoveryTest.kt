@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.player
 
 import androidx.media3.common.Player
@@ -182,3 +184,4 @@ class MainDispatcherRule(
         Dispatchers.resetMain()
     }
 }
+

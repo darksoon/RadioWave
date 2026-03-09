@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave
 
 import android.Manifest
@@ -742,3 +744,4 @@ const val ACTION_OPEN_SEARCH = "de.radiowave.action.OPEN_SEARCH"
 const val ACTION_OPEN_FAVORITES = "de.radiowave.action.OPEN_FAVORITES"
 const val ACTION_OPEN_PLAYER = "de.radiowave.action.OPEN_PLAYER"
 const val ACTION_OPEN_SETTINGS = "de.radiowave.action.OPEN_SETTINGS"
+

@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.ui.components
 
 import androidx.compose.foundation.layout.Box
@@ -56,3 +58,4 @@ fun StationLogoImage(
         }
     }
 }
+

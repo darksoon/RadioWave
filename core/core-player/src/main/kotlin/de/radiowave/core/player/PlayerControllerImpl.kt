@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.player
 
 import android.media.AudioAttributes as PlatformAudioAttributes
@@ -1286,3 +1288,4 @@ private class RadioLoadErrorHandlingPolicy : DefaultLoadErrorHandlingPolicy() {
         return if (dataType == C.DATA_TYPE_MEDIA) 12 else 6
     }
 }
+

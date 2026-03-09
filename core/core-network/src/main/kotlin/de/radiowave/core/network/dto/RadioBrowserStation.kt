@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.network.dto
 
 import kotlinx.serialization.SerialName
@@ -27,3 +29,4 @@ data class RadioBrowserStation(
     val clickCount: Int? = null,
     val votes: Int? = null,
 )
+

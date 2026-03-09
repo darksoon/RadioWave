@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.ui.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -68,3 +70,4 @@ fun MarqueeText(
         textAlign = TextAlign.Start,
     )
 }
+

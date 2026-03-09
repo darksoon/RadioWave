@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.core.database.entity
 
 import androidx.room.Entity
@@ -22,3 +24,4 @@ data class StationEntity(
     val bitrate: Int? = null,
     val cachedAt: Long = System.currentTimeMillis(),
 )
+

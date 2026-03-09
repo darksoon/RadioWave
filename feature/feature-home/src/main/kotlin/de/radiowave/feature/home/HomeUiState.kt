@@ -1,3 +1,5 @@
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+
 package de.radiowave.feature.home
 
 import de.radiowave.core.model.Station
@@ -18,3 +20,4 @@ data class HomeUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
 )
+
