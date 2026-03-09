@@ -50,4 +50,10 @@
     <string name="settings_unknown">unbekannt</string>
     <string name="settings_back">Zurueck</string>
     <string name="settings_open">Oeffnen</string>
+    <string name="settings_issue_report_status_label">Crash-Report</string>
+    <string name="settings_issue_report_status_none">Kein lokaler Crash-Report verfuegbar</string>
+    <string name="settings_issue_report_title">Crash-Report teilen</string>
+    <string name="settings_issue_report_subtitle">Exportiert den letzten lokalen Crash-Report und bereitet ein GitHub-Issue ohne Hintergrund-Tracking vor.</string>
+    <string name="settings_issue_report_share">Bericht teilen</string>
+    <string name="settings_issue_report_open_issue">GitHub Issue oeffnen</string>
 </resources>

@@ -46,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -64,6 +65,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import de.radiowave.core.model.AppSettings
 import de.radiowave.core.data.update.GitHubReleaseUpdater
+import de.radiowave.core.data.update.LocalIssueReporter
 import de.radiowave.core.data.update.UpdateDownloadProgress
 import de.radiowave.core.ui.theme.DarkCardBackground
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
@@ -86,6 +88,10 @@ fun SettingsScreen(
     val prefs = context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
     val updateUiState by viewModel.updateUiState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    var issueReportRefreshKey by remember { mutableLongStateOf(0L) }
+    val latestIssueReport = remember(context, issueReportRefreshKey) {
+        LocalIssueReporter.getLatestReport(context)
+    }
 
     var themeMode by rememberSaveable {
         mutableStateOf(prefs.getString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_DARK) ?: AppSettings.THEME_DARK)
@@ -680,6 +686,46 @@ fun SettingsScreen(
 
                     SettingsCategory.INFO -> SettingsCard(title = stringResource(R.string.settings_category_info_title)) {
                         InfoTextRow(label = tr("Version", "Version"), value = appVersion)
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        InfoTextRow(
+                            label = stringResource(R.string.settings_issue_report_status_label),
+                            value = latestIssueReport?.summary ?: stringResource(R.string.settings_issue_report_status_none),
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingActionRow(
+                            title = stringResource(R.string.settings_issue_report_title),
+                            subtitle = stringResource(R.string.settings_issue_report_subtitle),
+                            actionLabel = stringResource(R.string.settings_issue_report_share),
+                            onActionClick = {
+                                val shareIntent = LocalIssueReporter.buildShareIntent(context)
+                                if (shareIntent != null) {
+                                    val chooser = Intent.createChooser(
+                                        shareIntent,
+                                        context.getString(R.string.settings_issue_report_share),
+                                    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    startActivitySafely(context, chooser)
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.settings_issue_report_status_none),
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
+                            },
+                            secondaryActionLabel = stringResource(R.string.settings_issue_report_open_issue),
+                            onSecondaryActionClick = {
+                                val issueUrl = LocalIssueReporter.buildIssueUrl(context)
+                                if (issueUrl != null) {
+                                    uriHandler.openUri(issueUrl)
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.settings_issue_report_status_none),
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
+                            },
+                        )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         LinkRow(
                             title = tr("GitHub Repository", "GitHub repository"),
