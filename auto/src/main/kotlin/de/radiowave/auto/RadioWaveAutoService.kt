@@ -1,6 +1,7 @@
 package de.radiowave.auto
 
 import android.net.Uri
+import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
 import androidx.media3.common.MediaItem
@@ -8,7 +9,9 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MediaItem.RequestMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.CommandButton
 import androidx.media3.session.LibraryResult
+import androidx.media3.session.MediaConstants
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.MediaSession
@@ -36,6 +39,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
+import java.text.Normalizer
 import java.util.concurrent.ConcurrentHashMap
 import java.util.Locale
 import javax.inject.Inject
@@ -71,7 +75,10 @@ class RadioWaveAutoService : MediaLibraryService() {
         val callback = RadioWaveLibraryCallback()
         playerController.setPlaybackNotificationEnabled(false)
         val player = playerController.ensureSessionPlayer()
-        mediaLibrarySession = MediaLibrarySession.Builder(this, player, callback).build()
+        mediaLibrarySession = MediaLibrarySession.Builder(this, player, callback).build().also { session ->
+            session.setSessionExtras(buildAutoSessionExtras())
+            session.setMediaButtonPreferences(buildAutoMediaButtons())
+        }
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
@@ -110,7 +117,7 @@ class RadioWaveAutoService : MediaLibraryService() {
             browser: MediaSession.ControllerInfo,
             params: MediaLibraryService.LibraryParams?,
         ): ListenableFuture<LibraryResult<MediaItem>> {
-            val root = browsableItem(ROOT_ID, "RadioWave")
+            val root = browsableItem(ROOT_ID, getString(R.string.auto_root_title))
             return Futures.immediateFuture(LibraryResult.ofItem(root, params))
         }
 
@@ -134,16 +141,16 @@ class RadioWaveAutoService : MediaLibraryService() {
         ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
             val children = when (parentId) {
                 ROOT_ID -> listOf(
-                    browsableItem(FAVORITES_ID, "Favorites"),
+                    browsableItem(FAVORITES_ID, getString(R.string.auto_favorites)),
                     // Some Android Auto surfaces prioritize this slot.
-                    // Mirror favorites here so users land on favorites instead of recents.
-                    browsableItem(RECENTS_ID, "Favorites"),
-                    browsableItem(TOP_STATIONS_ID, "Top Stations"),
-                    browsableItem(GENRES_ID, "Genres"),
+                    // Offer a compact mix of favorites and recents on those surfaces.
+                    browsableItem(RECENTS_ID, getString(R.string.auto_quick_access)),
+                    browsableItem(TOP_STATIONS_ID, getString(R.string.auto_top_stations)),
+                    browsableItem(GENRES_ID, getString(R.string.auto_genres)),
                 )
 
                 FAVORITES_ID -> asStationChildren(loadFavorites())
-                RECENTS_ID -> asStationChildren(loadFavorites())
+                RECENTS_ID -> asStationChildren(loadQuickAccess())
                 TOP_STATIONS_ID -> asStationChildren(loadTopStations())
                 GENRES_ID -> asGenreChildren(loadGenres())
                 else -> {
@@ -247,7 +254,7 @@ class RadioWaveAutoService : MediaLibraryService() {
             query: String,
             params: MediaLibraryService.LibraryParams?,
         ): ListenableFuture<LibraryResult<Void>> {
-            val normalized = normalizeSearchQuery(query)
+            val normalized = sanitizeSearchQuery(query)
             if (normalized.isBlank()) return Futures.immediateFuture(LibraryResult.ofVoid(params))
             val results = searchStations(normalized)
             searchCache[normalized.lowercase(Locale.ROOT)] = results
@@ -264,7 +271,7 @@ class RadioWaveAutoService : MediaLibraryService() {
             pageSize: Int,
             params: MediaLibraryService.LibraryParams?,
         ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-            val normalized = normalizeSearchQuery(query).lowercase(Locale.ROOT)
+            val normalized = sanitizeSearchQuery(query).lowercase(Locale.ROOT)
             val cached = searchCache[normalized].orEmpty()
             val candidates = if (cached.isNotEmpty()) {
                 cached
@@ -277,7 +284,7 @@ class RadioWaveAutoService : MediaLibraryService() {
                 listOf(
                     infoItem(
                         id = "info:no-search-results:${SystemClock.elapsedRealtime()}",
-                        title = "No results for \"$query\"",
+                        title = getString(R.string.auto_no_results_for, query),
                     ),
                 )
             } else {
@@ -351,14 +358,16 @@ class RadioWaveAutoService : MediaLibraryService() {
             .getOrDefault(emptyList())
     }
 
-    private fun searchStations(query: String): List<Station> {
-        val needle = normalizeSearchQuery(query)
-        if (needle.isBlank()) return emptyList()
-        val local = (loadFavorites() + loadRecents())
+    private fun loadQuickAccess(): List<Station> {
+        return (loadFavorites() + loadRecents())
             .distinctBy { it.uuid }
-        val localMatches = rankStationsByQuery(local, needle)
-        if (localMatches.isNotEmpty()) return localMatches.take(MAX_SEARCH_RESULTS)
+            .take(MAX_CHILDREN)
+    }
 
+    private fun searchStations(query: String): List<Station> {
+        val needle = sanitizeSearchQuery(query)
+        if (needle.isBlank()) return emptyList()
+        val localMatches = rankStationsByQuery(loadQuickAccess(), needle)
         val remote = runBlocking {
             runCatching {
                 withTimeoutOrNull(SEARCH_REMOTE_TIMEOUT_MS) {
@@ -367,20 +376,32 @@ class RadioWaveAutoService : MediaLibraryService() {
             }
                 .getOrDefault(emptyList())
         }
-        return rankStationsByQuery(remote, needle).take(MAX_SEARCH_RESULTS)
+        val remoteMatches = rankStationsByQuery(remote, needle)
+        return (localMatches + remoteMatches)
+            .distinctBy { it.uuid }
+            .take(MAX_SEARCH_RESULTS)
     }
 
     private fun rankStationsByQuery(stations: List<Station>, query: String): List<Station> {
-        val normalizedQuery = normalize(query)
+        val normalizedQuery = normalizeForMatch(query)
+        val queryTokens = normalizedQuery.split(" ").filter { it.isNotBlank() }
         return stations
             .asSequence()
             .filter { it.streamUrl.isNotBlank() }
             .map { station ->
-                val name = normalize(station.name)
+                val name = normalizeForMatch(station.name)
+                val country = normalizeForMatch(station.country.orEmpty())
+                val tags = normalizeForMatch(station.tags.joinToString(" "))
+                val haystack = listOf(name, country, tags)
+                    .filter { it.isNotBlank() }
+                    .joinToString(" ")
                 val score = when {
                     name == normalizedQuery -> 0
                     name.startsWith(normalizedQuery) -> 1
                     name.contains(normalizedQuery) -> 2
+                    queryTokens.isNotEmpty() && queryTokens.all { token -> haystack.contains(token) } -> 3
+                    queryTokens.isNotEmpty() && queryTokens.any { token -> name.contains(token) } -> 4
+                    haystack.contains(normalizedQuery) -> 5
                     else -> 99
                 }
                 station to score
@@ -392,7 +413,15 @@ class RadioWaveAutoService : MediaLibraryService() {
     }
 
     private fun normalize(value: String): String {
-        return value.trim().lowercase(Locale.ROOT)
+        return Normalizer.normalize(value, Normalizer.Form.NFD)
+            .replace("\\p{Mn}+".toRegex(), "")
+            .replace("ä", "ae", ignoreCase = true)
+            .replace("ö", "oe", ignoreCase = true)
+            .replace("ü", "ue", ignoreCase = true)
+            .replace("ß", "ss", ignoreCase = true)
+            .lowercase(Locale.ROOT)
+            .replace("[^a-z0-9]+".toRegex(), " ")
+            .trim()
     }
 
     private fun normalizeSearchQuery(value: String): String {
@@ -401,6 +430,27 @@ class RadioWaveAutoService : MediaLibraryService() {
             .replace("“", "\"")
             .trim()
             .trim('"', '\'', '„', '“', '‚', '‘', '’', '«', '»')
+            .trim()
+    }
+
+    private fun normalizeForMatch(value: String): String {
+        return Normalizer.normalize(value, Normalizer.Form.NFD)
+            .replace("\\p{Mn}+".toRegex(), "")
+            .replace("\u00E4", "ae", ignoreCase = true)
+            .replace("\u00F6", "oe", ignoreCase = true)
+            .replace("\u00FC", "ue", ignoreCase = true)
+            .replace("\u00DF", "ss", ignoreCase = true)
+            .lowercase(Locale.ROOT)
+            .replace("[^a-z0-9]+".toRegex(), " ")
+            .trim()
+    }
+
+    private fun sanitizeSearchQuery(value: String): String {
+        return value
+            .replace("\u201E", "\"")
+            .replace("\u201C", "\"")
+            .trim()
+            .trim('"', '\'', '\u201E', '\u201C', '\u201A', '\u2018', '\u2019', '\u00AB', '\u00BB')
             .trim()
     }
 
@@ -446,7 +496,7 @@ class RadioWaveAutoService : MediaLibraryService() {
             ?: mediaUri
         val fallbackTitle = item.mediaMetadata.title?.toString()?.trim()
             .takeUnless { it.isNullOrBlank() }
-            ?: "Live Stream"
+            ?: getString(R.string.auto_live_stream)
         val fallbackArtwork = item.mediaMetadata.artworkUri?.toString()
             ?.trim()
             .takeUnless { it.isNullOrBlank() }
@@ -530,7 +580,7 @@ class RadioWaveAutoService : MediaLibraryService() {
             return listOf(
                 infoItem(
                     id = "info:empty:${SystemClock.elapsedRealtime()}",
-                    title = "No stations available",
+                    title = getString(R.string.auto_no_stations_available),
                 ),
             )
         }
@@ -542,7 +592,7 @@ class RadioWaveAutoService : MediaLibraryService() {
             return listOf(
                 infoItem(
                     id = "info:empty-genres:${SystemClock.elapsedRealtime()}",
-                    title = "No genres available",
+                    title = getString(R.string.auto_no_genres_available),
                 ),
             )
         }
@@ -575,15 +625,15 @@ class RadioWaveAutoService : MediaLibraryService() {
     }
 
     private fun playAdjacentFavorite(step: Int): Boolean {
-        val favorites = loadFavorites()
-        if (favorites.isEmpty()) return false
+        val queue = loadFavorites().ifEmpty { loadQuickAccess() }
+        if (queue.isEmpty()) return false
         val current = playerController.playerState.value.currentStation ?: return false
-        val currentIndex = favorites.indexOfFirst { candidate ->
+        val currentIndex = queue.indexOfFirst { candidate ->
             candidate.uuid == current.uuid || candidate.streamUrl == current.streamUrl
         }
         if (currentIndex == -1) return false
-        val targetIndex = (currentIndex + step).mod(favorites.size)
-        val target = favorites[targetIndex]
+        val targetIndex = (currentIndex + step).mod(queue.size)
+        val target = queue[targetIndex]
         startStationPlayback(target)
         return true
     }
@@ -609,6 +659,28 @@ class RadioWaveAutoService : MediaLibraryService() {
         Log.i(LOG_TAG, message)
     }
 
+    private fun buildAutoSessionExtras(): Bundle {
+        return Bundle().apply {
+            putBoolean(MediaConstants.EXTRAS_KEY_SLOT_RESERVATION_SEEK_TO_PREV, true)
+            putBoolean(MediaConstants.EXTRAS_KEY_SLOT_RESERVATION_SEEK_TO_NEXT, true)
+        }
+    }
+
+    private fun buildAutoMediaButtons(): List<CommandButton> {
+        return listOf(
+            CommandButton.Builder(CommandButton.ICON_PREVIOUS)
+                .setPlayerCommand(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+                .setDisplayName(getString(R.string.auto_previous))
+                .setSlots(CommandButton.SLOT_BACK)
+                .build(),
+            CommandButton.Builder(CommandButton.ICON_NEXT)
+                .setPlayerCommand(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
+                .setDisplayName(getString(R.string.auto_next))
+                .setSlots(CommandButton.SLOT_FORWARD)
+                .build(),
+        )
+    }
+
     private fun tryAutoResumeOnConnect() {
         val now = SystemClock.elapsedRealtime()
         if (now - lastAutoResumeAttemptAtMs < AUTO_RESUME_CONNECT_COOLDOWN_MS) return
@@ -629,7 +701,7 @@ class RadioWaveAutoService : MediaLibraryService() {
         val name = prefs.getString(AppSettings.KEY_LAST_STATION_NAME, null)
             ?.trim()
             .takeUnless { it.isNullOrBlank() }
-            ?: "Last Station"
+            ?: getString(R.string.auto_last_station)
         val station = Station(
             uuid = prefs.getString(AppSettings.KEY_LAST_STATION_UUID, null)
                 ?.trim()

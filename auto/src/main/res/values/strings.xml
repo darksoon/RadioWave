@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auto_root_title">RadioWave</string>
+    <string name="auto_favorites">Favorites</string>
+    <string name="auto_quick_access">Quick Access</string>
+    <string name="auto_top_stations">Top Stations</string>
+    <string name="auto_genres">Genres</string>
+    <string name="auto_no_results_for">No results for "%1$s"</string>
+    <string name="auto_no_stations_available">No stations available</string>
+    <string name="auto_no_genres_available">No genres available</string>
+    <string name="auto_live_stream">Live Stream</string>
+    <string name="auto_last_station">Last Station</string>
+    <string name="auto_previous">Previous station</string>
+    <string name="auto_next">Next station</string>
+</resources>
