@@ -147,6 +147,9 @@ fun SettingsScreen(
     var updatePopupEnabled by rememberSaveable {
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_UPDATE_POPUP_ENABLED, true))
     }
+    var updateBetaChannelEnabled by rememberSaveable {
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_UPDATE_BETA_CHANNEL_ENABLED, false))
+    }
     var manualUpdateCheckRequested by rememberSaveable { mutableStateOf(false) }
     var showUpdateAvailableDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -565,6 +568,18 @@ fun SettingsScreen(
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingToggleRow(
+                            title = stringResource(R.string.settings_updates_beta_channel_title),
+                            subtitle = stringResource(R.string.settings_updates_beta_channel_subtitle),
+                            checked = updateBetaChannelEnabled,
+                            onCheckedChange = { checked ->
+                                updateBetaChannelEnabled = checked
+                                prefs.edit()
+                                    .putBoolean(AppSettings.KEY_UPDATE_BETA_CHANNEL_ENABLED, checked)
+                                    .apply()
+                            },
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingActionRow(
                             title = stringResource(R.string.settings_updates_manual_title),
                             subtitle = buildUpdateCheckSubtitle(context, updateUiState.lastCheckedAtMs, updateUiState.lastError),
@@ -576,7 +591,10 @@ fun SettingsScreen(
                             onActionClick = {
                                 if (!updateUiState.isChecking) {
                                     manualUpdateCheckRequested = true
-                                    viewModel.checkForUpdates(currentVersionName = appVersion)
+                                    viewModel.checkForUpdates(
+                                        currentVersionName = appVersion,
+                                        includePrerelease = updateBetaChannelEnabled,
+                                    )
                                 }
                             },
                             secondaryActionLabel = stringResource(R.string.settings_updates_manual_release_page),
@@ -602,7 +620,10 @@ fun SettingsScreen(
                                     updateUiState.isChecking -> Unit
                                     else -> {
                                         manualUpdateCheckRequested = true
-                                        viewModel.checkForUpdates(currentVersionName = appVersion)
+                                        viewModel.checkForUpdates(
+                                            currentVersionName = appVersion,
+                                            includePrerelease = updateBetaChannelEnabled,
+                                        )
                                         Toast.makeText(
                                             context,
                                             tr("Pruefe auf Update...", "Checking for update..."),

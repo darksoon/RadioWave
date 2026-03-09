@@ -23,23 +23,35 @@ object GitHubReleaseChecker {
     private const val CONNECT_TIMEOUT_MS = 12_000
     private const val READ_TIMEOUT_MS = 20_000
 
-    suspend fun checkForUpdate(currentVersionName: String): GitHubReleaseInfo? = withContext(Dispatchers.IO) {
+    suspend fun checkForUpdate(
+        currentVersionName: String,
+        includePrerelease: Boolean = false,
+    ): GitHubReleaseInfo? = withContext(Dispatchers.IO) {
         val currentVersion = normalizeVersion(currentVersionName)
-        val latest = getLatestInstallableRelease() ?: return@withContext null
+        val latest = getLatestInstallableRelease(includePrerelease = includePrerelease) ?: return@withContext null
         val candidateVersion = normalizeVersion(latest.tag)
         if (candidateVersion == currentVersion) return@withContext null
         latest
     }
 
-    suspend fun getLatestInstallableRelease(): GitHubReleaseInfo? = withContext(Dispatchers.IO) {
+    suspend fun getLatestInstallableRelease(
+        includePrerelease: Boolean = false,
+    ): GitHubReleaseInfo? = withContext(Dispatchers.IO) {
         val json = requestJsonArray(RELEASES_URL) ?: return@withContext null
-        parseLatestInstallableRelease(json)
+        parseLatestInstallableRelease(
+            array = json,
+            includePrerelease = includePrerelease,
+        )
     }
 
-    private fun parseLatestInstallableRelease(array: JSONArray): GitHubReleaseInfo? {
+    private fun parseLatestInstallableRelease(
+        array: JSONArray,
+        includePrerelease: Boolean,
+    ): GitHubReleaseInfo? {
         for (index in 0 until array.length()) {
             val release = array.optJSONObject(index) ?: continue
             if (release.optBoolean("draft", false)) continue
+            if (release.optBoolean("prerelease", false) && !includePrerelease) continue
             val assets = release.optJSONArray("assets") ?: continue
             val apkAsset = findApkAsset(assets) ?: continue
 

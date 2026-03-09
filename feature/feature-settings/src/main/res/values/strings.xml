@@ -29,6 +29,8 @@
     <string name="settings_updates_auto_check_subtitle">Checks GitHub releases periodically in background.</string>
     <string name="settings_updates_popup_title">Show update popup</string>
     <string name="settings_updates_popup_subtitle">Shows update dialog automatically when a new version is available.</string>
+    <string name="settings_updates_beta_channel_title">Receive beta updates</string>
+    <string name="settings_updates_beta_channel_subtitle">Includes GitHub pre-releases in update checks.</string>
     <string name="settings_updates_manual_title">Manual update check</string>
     <string name="settings_updates_manual_checking">Checking…</string>
     <string name="settings_updates_manual_check">Check now</string>

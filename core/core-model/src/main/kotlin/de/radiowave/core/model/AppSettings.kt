@@ -28,6 +28,7 @@ object AppSettings {
     const val KEY_FIRST_RUN_ONBOARDING_DONE = "first_run_onboarding_done"
     const val KEY_UPDATE_CHECK_ENABLED = "update_check_enabled"
     const val KEY_UPDATE_POPUP_ENABLED = "update_popup_enabled"
+    const val KEY_UPDATE_BETA_CHANNEL_ENABLED = "update_beta_channel_enabled"
     const val KEY_LAST_UPDATE_CHECK_AT_MS = "last_update_check_at_ms"
     const val KEY_LAST_DISMISSED_UPDATE_TAG = "last_dismissed_update_tag"
     const val KEY_LAST_STATION_UUID = "last_station_uuid"

@@ -36,8 +36,14 @@ object GitHubReleaseUpdater {
     private const val CONNECT_TIMEOUT_MS = 12_000
     private const val READ_TIMEOUT_MS = 20_000
 
-    suspend fun checkForUpdate(currentVersionName: String): UpdateRelease? = withContext(Dispatchers.IO) {
-        GitHubReleaseChecker.checkForUpdate(currentVersionName)?.toUpdateRelease()
+    suspend fun checkForUpdate(
+        currentVersionName: String,
+        includePrerelease: Boolean = false,
+    ): UpdateRelease? = withContext(Dispatchers.IO) {
+        GitHubReleaseChecker.checkForUpdate(
+            currentVersionName = currentVersionName,
+            includePrerelease = includePrerelease,
+        )?.toUpdateRelease()
     }
 
     suspend fun downloadAndStartInstall(

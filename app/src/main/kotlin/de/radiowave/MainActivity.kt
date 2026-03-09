@@ -255,8 +255,12 @@ fun RadioWaveMainScreen(
         if (!force && now - lastCheckAt < UPDATE_CHECK_INTERVAL_MS) return
         prefs.edit().putLong(AppSettings.KEY_LAST_UPDATE_CHECK_AT_MS, now).apply()
         val versionName = readVersionName(context)
+        val includePrerelease = prefs.getBoolean(AppSettings.KEY_UPDATE_BETA_CHANNEL_ENABLED, false)
         runCatching {
-            GitHubReleaseUpdater.checkForUpdate(versionName)
+            GitHubReleaseUpdater.checkForUpdate(
+                currentVersionName = versionName,
+                includePrerelease = includePrerelease,
+            )
         }.onSuccess { update ->
             if (update == null) return@onSuccess
             val popupEnabled = prefs.getBoolean(AppSettings.KEY_UPDATE_POPUP_ENABLED, true)

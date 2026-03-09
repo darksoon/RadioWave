@@ -29,6 +29,8 @@
     <string name="settings_updates_auto_check_subtitle">Prueft regelmaessig GitHub Releases im Hintergrund.</string>
     <string name="settings_updates_popup_title">Update-Popup anzeigen</string>
     <string name="settings_updates_popup_subtitle">Zeigt bei neuer Version automatisch den Update-Dialog.</string>
+    <string name="settings_updates_beta_channel_title">Beta-Updates erhalten</string>
+    <string name="settings_updates_beta_channel_subtitle">Bezieht GitHub-Pre-Releases in die Update-Pruefung ein.</string>
     <string name="settings_updates_manual_title">Manuelle Update-Pruefung</string>
     <string name="settings_updates_manual_checking">Pruefe...</string>
     <string name="settings_updates_manual_check">Jetzt pruefen</string>

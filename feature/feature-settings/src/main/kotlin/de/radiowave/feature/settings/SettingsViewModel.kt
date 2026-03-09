@@ -42,12 +42,17 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun checkForUpdates(currentVersionName: String) {
+    fun checkForUpdates(
+        currentVersionName: String,
+        includePrerelease: Boolean,
+    ) {
         viewModelScope.launch {
             _updateUiState.update { it.copy(isChecking = true, lastError = null) }
             val now = System.currentTimeMillis()
             runCatching {
-                val latest = GitHubReleaseChecker.getLatestInstallableRelease()
+                val latest = GitHubReleaseChecker.getLatestInstallableRelease(
+                    includePrerelease = includePrerelease,
+                )
                 val hasUpdate = latest?.let { release ->
                     normalizeVersion(release.tag) != normalizeVersion(currentVersionName)
                 } ?: false
