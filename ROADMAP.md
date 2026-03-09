@@ -1,100 +1,94 @@
-# RadioWave Roadmap (Public)
+# RadioWave Roadmap
 
-Stand: 2026-03-09
+[Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
+Status: 2026-03-09
 
-## Fertig
-- Core-Architektur (`core-model`, `core-database`, `core-network`, `core-data`)
-- Basis-Player (`core-player`) mit stabilisiertem Background-Playback
-- Home, Browse/Suche, Favoriten, Fullscreen-Player, Settings-Basis
-- Bottom Navigation + stabiles Routing + Floating Mini-Player
-- Mini-Player Metadaten als Marquee bei langen Titeln
-- Favoriten und Recents in Room
-- Fullscreen-Player Controls: Play/Pause, Mute, Random, Previous, Favorite
-- LIVE-Fortschritt im Fullscreen-Player (UI-Animation)
-- Stream-Qualitaet im Fullscreen-Player sichtbar (Codec/Bitrate)
-- **Album-Cover im Fullscreen-Player** (iTunes API, Blur-Hintergrund, Station-Logo)
-- Home/Browse/Favorites UI-Polish (Glass-Look, bessere Karten, Performance-Tuning)
-- Nebula-Background als app-weites Visual (Home/Browse/Favoriten) mit dezenten Overlays
-- Home-Favoritenkarussell weiter optimiert (kompakter, Center-Snap inkl. Rand-Items)
-- Security-Basis gehaertet (`allowBackup=false`, HTTP-Streams kompatibel fuer breite Senderabdeckung)
-- Optional sichtbare HTTP-Kennzeichnung in Browse + Settings-Toggle fuer unsichere Streams
-- Settings Rework als Kategorien-Navigation mit Detailseiten (`Allgemein`, `Sound`, `Benachrichtigung`, `Speicher & Daten`, `Info`)
-- Settings-Optionen: Theme (System/Dark/Light), Dynamic Colors, Standard-Qualitaet, Buffer-Profil
-- Standard-Qualitaet ist jetzt im Player aktiv (Variante wird bei Wiedergabe nach Bitrate gepickt)
-- Settings-Datenaktionen: Sender-Cache leeren, Verlauf loeschen
-- Settings-Info: App-Version, GitHub Repo, Issues, Website, Ko-fi
-- Lokaler Crash-Report mit Share-/Issue-Export in Settings-Info integriert
-- Notification Media Controls inkl. Prev/Play-Pause/Next/Stop
-- Audio Focus Verhalten bei Unterbrechungen stabilisiert (kein sofortiges Stop/Pause mehr)
-- Mobile-Daten-Policy und Buffer-Profil technisch im Player wirksam
-- Room-Migrationen aktiv (kein `fallbackToDestructiveMigration` mehr)
-- Unit-Tests erweitert fuer Player-Recovery und Repository-Flows
-- Android Auto Basis integriert (Media3 `MediaLibraryService`, Favorites/Recents Browse)
-- Android Auto Resume/Autoplay verbessert (letzter Sender + Auto-Connect-Resume)
-- Android Auto Player-Pfad vereinheitlicht (kein separater Fallback-Player mehr)
-- Doppel-Notification bei Android Auto behoben (nur ein aktiver Media-Notification-Pfad)
-- Backup-Defaults weiter gehaertet (SharedPrefs in Cloud-Backup ausgeschlossen)
-- Optionaler Hitzemodus in Settings (kleineres Buffer-Profil + reduzierte Metadatenlast)
-- Auto-Verbindung aktiviert Low-Load-Verhalten automatisch (Metadaten-/Artwork-Last reduziert)
-- Android Auto erzwingt waehrend Car-Session maximal 128 kbps (bitrate-schonender Betrieb)
-- Erststart-Info-Dialog integriert (wichtige Hinweise beim ersten App-Start)
-- In-App Updateflow ueber GitHub Releases integriert (Hinweisdialog + APK-Download + Installer)
-- Update-Settings-Seite integriert (Popup an/aus, Auto-Check an/aus, manuelle Pruefung, Versionsstatus)
-- Update-Dialog zeigt Download-Fortschritt live (MB/% + Progressbar)
-- Stable/Beta-Updatekanal in Settings integriert (Pre-Releases optional)
-- Manueller Signed-Release-Workflow mit Versionspflege ueber `gradle.properties` integriert
-- Android Auto Developer-Mode Anleitung fuer Sideload/Beta hinterlegt (Settings + Docs)
-- Android Auto Shortcut in Settings mit Fallbacks (kein Launcher -> Settings/App-Info)
-- Launcher Quick Actions per App-Icon-Long-Press integriert (`Search`, `Favorites`, `Player`, `Settings`)
-- Android Auto Browse/Player weiter poliert (lokalisierte Labels, `Quick Access`, robustere Suche, Prev/Next im Car-Player)
-- i18n-Basis gestartet (DE/EN ueber Systemsprache, Ressourcenstruktur eingefuehrt)
-- Settings-Update-Bereich bereits auf lokalisierte Strings umgestellt (DE/EN)
-- Sprachwahl in Settings integriert (System/Deutsch/English)
-- Locale-Engine auf AppCompat-Basis stabilisiert (Crashfix bei Aktivitaetsstart nach Sprachwechsel)
-- Light-Mode Lesbarkeit in Home/Browse/Favoriten auf Theme-Farben umgestellt (keine harten Weiss-Kontraste mehr)
-- App-Shell auf schlichtes Visual reduziert (kein Sterne/Nebula-Hintergrund mehr im Hauptlayout)
-- Android Auto Browse-Slot `Recents` auf `Favorites` gemappt fuer schnelleren Zugriff waehrend der Fahrt
-- CI/Release Pipelines gehaertet (Push-CI aktiv, Signed-Workflow robuster)
+This roadmap is intended for GitHub and keeps the public product status compact.
 
-## In Arbeit
-- Voice/Assistant-Play-Intents fuer Senderaufrufe (Google Assistant)
+## Done
 
-## Geplant (naechste Schritte)
-- Radio Timeshift Ausbau (ueber MVP hinaus: laengerer Buffer, optionaler Seek/LIVE im Fullscreen)
-- Sleep Timer (15/30/60/off)
-- Share Action im Fullscreen-Player
-- Podcasts MVP als eigener Bereich (Bottom-Bar Eintrag + Suche + Episodenliste)
-- Favoriten Export/Import (JSON)
-- Custom Stations (manuelle URL) + M3U/PLS Import
-- Datennutzung sichtbar machen (geschaetzt ueber Bitrate)
+- Core architecture (`core-model`, `core-database`, `core-network`, `core-data`)
+- Stable player foundation (`core-player`) with hardened background playback
+- Home, browse/search, favorites, fullscreen player, and settings base
+- Bottom navigation, stable routing, and floating mini-player
+- Marquee metadata in the mini-player for long titles
+- Favorites and recents persisted in Room
+- Fullscreen player controls: play/pause, mute, random, previous, favorite
+- Live progress animation in the fullscreen player
+- Stream quality visible in the fullscreen player
+- Album art in the fullscreen player (iTunes API, blur background, station logo)
+- Home, browse, and favorites UI polish and performance tuning
+- Security baseline hardened (`allowBackup=false`, HTTP stream compatibility)
+- Optional HTTP indicator in browse and settings toggle for insecure streams
+- Settings category navigation with dedicated detail pages
+- Working settings for theme, dynamic colors, default quality, and buffer profile
+- Data actions in settings: clear station cache and clear history
+- Settings info links: version, GitHub repo, issues, website, Ko-fi
+- Local crash-report export with share action and GitHub issue handoff
+- Notification media controls including previous/play-pause/next/stop
+- Audio focus behavior stabilized for interruptions
+- Mobile-data policy and buffer profile applied in the actual player
+- Room migrations enabled, no destructive fallback
+- Extended unit tests for player recovery and repository flows
+- Android Auto base via Media3 `MediaLibraryService`
+- Android Auto resume/autoplay improved with last-station restore
+- Unified Android Auto player path
+- Duplicate media notification removed while Android Auto is connected
+- Optional thermal mode in settings
+- Android Auto low-load behavior applied automatically while connected
+- Android Auto bitrate capped at 128 kbps during car sessions
+- First-run info dialog integrated
+- In-app update flow via GitHub Releases
+- Update settings page with popup toggle, auto-check toggle, manual check, and version state
+- Live download progress for updates
+- Stable/beta update channel toggle
+- Manual signed release workflow with version metadata in `gradle.properties`
+- Android Auto dev-mode guide linked in app and docs
+- Launcher quick actions (`Search`, `Favorites`, `Player`, `Settings`)
+- Android Auto browse/player polish: localized labels, quick access, stronger search, prev/next
+- DE/EN language basis with in-app language selection
+- CI and release pipelines hardened
 
-## Spaeter
-- Android Auto Ausbau (Recommendations, weitere Car-spezifische UX)
-- Android TV / Google TV Basis (Leanback-Launcher, D-Pad-/Focus-Navigation, TV-Layout-MVP)
-- Chromecast Ausbau
-- Widget fuer schnellen Playback-Zugriff
-- Weitere Animationen/Transitions/Shimmer
-- Ausbau von Unit- und UI-Tests
+## In Progress
 
-## Ueberlegungen / Maybe Features
-- Podcast-Quelle separat anbinden:
-  - RadioBrowser API liefert primaer Radiosender, keine saubere Podcast-Episodenstruktur
-  - fuer Podcasts daher eigener Provider noetig (z. B. RSS-basiert / dedizierte Podcast-API)
-  - UI-Konzept: getrennte Listen `Sender` / `Podcasts` in Favoriten moeglich
-- Wear OS Companion:
-  - eher Remote-/Companion-Use-Case statt vollwertiger Radio-Client
-  - Fokus auf Play/Pause, Favoriten, Recents und Player-Status
-  - nur sinnvoll nach Phone/Auto/TV/Chromecast-Basis
-- Cache-DB fuer Browse/Suche:
-  - `cached_stations` als zentrale Quelle in Room
-  - Cache-first Repository-Flow (erst lokal, dann Netzwerk-Refresh)
-  - `search_cache_meta` fuer TTL-Logik
-  - Verknuepfung mit Favoriten/Recents gegen Daten-Inkonsistenzen
-  - Room-Migration bei Schema-Aenderung
-- Optionaler Lautstaerke-Slider zusaetzlich zu Mute
+- Voice and Assistant play intents for station launch
 
-## Hinweis
-- Diese Roadmap priorisiert Nutzerwert und Stabilitaet.
-- Reihenfolge kann sich je nach Test-Feedback und Device-Verhalten aendern.
+## Planned Next
+
+- Radio timeshift beyond MVP (longer buffer, optional seek/live in fullscreen)
+- Sleep timer (15/30/60/off)
+- Share action in the fullscreen player
+- Podcasts MVP as a dedicated area
+- Favorites export/import (JSON)
+- Custom stations and M3U/PLS import
+- Visible data-usage estimate based on bitrate
+
+## Later
+
+- Further Android Auto expansion (recommendations, more car-specific UX)
+- Android TV / Google TV base (Leanback launcher, D-pad/focus navigation, TV layout MVP)
+- Chromecast expansion
+- Quick-access playback widget
+- More transitions, motion, and shimmer
+- More unit and UI tests
+
+## Maybe
+
+- Wear OS companion:
+  - remote/companion use case rather than full radio client
+  - focus on play/pause, favorites, recents, and player status
+- Separate podcast source:
+  - Radio Browser is station-focused, not episode-focused
+  - podcasts likely need a dedicated provider
+- Cache DB for browse/search:
+  - `cached_stations` as central Room source
+  - cache-first flow with local emit plus network refresh
+  - TTL metadata via `search_cache_meta`
+  - clean links between cache, favorites, and recents
+- Optional volume slider in addition to mute
+
+## Note
+
+- This roadmap prioritizes user value and stability.
+- Priorities may change based on testing feedback and device behavior.

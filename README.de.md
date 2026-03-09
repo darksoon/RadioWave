@@ -26,7 +26,7 @@
 
 ## Roadmap
 
-Die oeffentliche Roadmap liegt in [ROADMAP.md](./ROADMAP.md).
+Die oeffentliche Roadmap liegt in [ROADMAP.de.md](./ROADMAP.de.md).
 
 - Fokus: Stabilitaet und Nutzerwert
 - Wird laufend mit Releases und Hotfixes aktualisiert
@@ -147,7 +147,7 @@ cp keystore.properties.example keystore.properties
 - Suche fuehrt lokale und entfernte Treffer robuster zusammen
 - Vor/Zurueck im Car-Player funktioniert als echte Sendernavigation
 
-Siehe auch: [docs/ANDROID_AUTO_DEV_MODE.md](docs/ANDROID_AUTO_DEV_MODE.md)
+Siehe auch: [docs/ANDROID_AUTO_DEV_MODE.de.md](docs/ANDROID_AUTO_DEV_MODE.de.md)
 
 ## GitHub Actions
 
