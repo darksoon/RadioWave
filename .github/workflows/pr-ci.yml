@@ -23,6 +23,17 @@ jobs:
           java-version: "17"
           cache: gradle
 
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/configuration-cache
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', '**/gradle.properties', '**/libs.versions.toml') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
@@ -30,13 +41,13 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build logic
-        run: ./gradlew :build-logic:build --stacktrace
+        run: ./gradlew :build-logic:build --stacktrace --build-cache
 
       - name: Build
-        run: ./gradlew build --stacktrace
+        run: ./gradlew build --stacktrace --build-cache
 
       - name: Lint
-        run: ./gradlew lint --stacktrace
+        run: ./gradlew lint --stacktrace --build-cache
 
       - name: Test
-        run: ./gradlew test --stacktrace
+        run: ./gradlew test --stacktrace --build-cache
