@@ -89,4 +89,4 @@ Ziel: Eine zentrale lokale Datei statt separatem `PHASEN.md` + `todo.md`.
 - [x] LIVE-Bar Animation im Fullscreen-Player
 - [x] Settings-Rework als Kategorien-Navigation mit Detailseiten
 - [x] Theme (System/Dark/Light), Dynamic Colors, HTTP-Streams Toggle
-- [x] Settings Info-Links (GitHub, Issues, Website, Buy a Coffee)
+- [x] Settings Info-Links (GitHub, Issues, Website, Ko-fi)

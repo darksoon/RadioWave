@@ -24,7 +24,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Settings-Optionen: Theme (System/Dark/Light), Dynamic Colors, Standard-Qualitaet, Buffer-Profil
 - Standard-Qualitaet ist jetzt im Player aktiv (Variante wird bei Wiedergabe nach Bitrate gepickt)
 - Settings-Datenaktionen: Sender-Cache leeren, Verlauf loeschen
-- Settings-Info: App-Version, GitHub Repo, Issues, Website, Buy a Coffee
+- Settings-Info: App-Version, GitHub Repo, Issues, Website, Ko-fi
 - Notification Media Controls inkl. Prev/Play-Pause/Next/Stop
 - Audio Focus Verhalten bei Unterbrechungen stabilisiert (kein sofortiges Stop/Pause mehr)
 - Mobile-Daten-Policy und Buffer-Profil technisch im Player wirksam

@@ -746,9 +746,9 @@ fun SettingsScreen(
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         LinkRow(
-                            title = tr("Buy a Coffee", "Buy a coffee"),
+                            title = "Ko-fi",
                             subtitle = tr("Support das Projekt", "Support the project"),
-                            onClick = { uriHandler.openUri("https://buymeacoffee.com/darksoon") },
+                            onClick = { uriHandler.openUri("https://ko-fi.com/darksoon") },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         InfoTextRow(label = tr("Made by", "Made by"), value = "Sven Neurath")

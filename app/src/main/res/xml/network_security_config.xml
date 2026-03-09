@@ -13,6 +13,6 @@
         <domain includeSubdomains="true">itunes.apple.com</domain>
         <domain includeSubdomains="true">github.com</domain>
         <domain includeSubdomains="true">sven-neurath.de</domain>
-        <domain includeSubdomains="true">buymeacoffee.com</domain>
+        <domain includeSubdomains="true">ko-fi.com</domain>
     </domain-config>
 </network-security-config>

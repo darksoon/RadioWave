@@ -11,8 +11,8 @@
   <a href="./LICENSE.txt">
     <img src="https://img.shields.io/badge/License-Proprietary-red" alt="License Proprietary" />
   </a>
-  <a href="https://buymeacoffee.com/darksoon">
-    <img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-Support%20the%20project-FFDD00?logo=buymeacoffee&logoColor=000000" alt="Buy Me a Coffee" />
+  <a href="https://ko-fi.com/darksoon">
+    <img src="https://img.shields.io/badge/Ko--fi-Support%20the%20project-29ABE0?logo=kofi&logoColor=white" alt="Ko-fi" />
   </a>
 
   <h3>Die moderne, werbefreie Internet-Radio-App für Android.</h3>
@@ -245,7 +245,7 @@ Siehe [LICENSE.txt](./LICENSE.txt).
 
 Wenn dir RadioWave gefällt und du die Entwicklung unterstützen willst:
 
-☕ **Buy Me a Coffee:** https://buymeacoffee.com/darksoon
+☕ **Ko-fi:** https://ko-fi.com/darksoon
 
 ## 🙌 Credits
 
