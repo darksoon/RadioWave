@@ -25,6 +25,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Standard-Qualitaet ist jetzt im Player aktiv (Variante wird bei Wiedergabe nach Bitrate gepickt)
 - Settings-Datenaktionen: Sender-Cache leeren, Verlauf loeschen
 - Settings-Info: App-Version, GitHub Repo, Issues, Website, Ko-fi
+- Lokaler Crash-Report mit Share-/Issue-Export in Settings-Info integriert
 - Notification Media Controls inkl. Prev/Play-Pause/Next/Stop
 - Audio Focus Verhalten bei Unterbrechungen stabilisiert (kein sofortiges Stop/Pause mehr)
 - Mobile-Daten-Policy und Buffer-Profil technisch im Player wirksam

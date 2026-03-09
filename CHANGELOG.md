@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 - Runtime shortcut sync for better launcher compatibility on OEM devices.
 - Stable/Beta update channel toggle in settings for GitHub release checks.
 - Manual signed release workflow with app version metadata sourced from `gradle.properties`.
+- Local crash-report export flow with share action and prefilled GitHub issue handoff.
 
 ### Fixed
 - Prevented app startup crash on devices that reject dynamic manipulation of manifest-defined launcher shortcuts.
@@ -23,6 +24,7 @@ All notable changes to this project will be documented in this file.
 - Android Auto search ranking improved with combined local/remote results and broader token/country/tag matching.
 - Android Auto player controls now expose working previous/next navigation for queue-capable in-car playback.
 - CI/release workflows now use stronger Gradle caching and configuration cache for faster repeat runs.
+- Support links now point to Ko-fi in app and GitHub documentation.
 
 ## [0.1.0-beta.1] - 2026-03-05
 

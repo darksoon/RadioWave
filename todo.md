@@ -48,6 +48,7 @@ Ziel: Eine zentrale lokale Datei statt separatem `PHASEN.md` + `todo.md`.
 - [x] Launcher Quick Actions per App-Icon-Long-Press (Suche, Favoriten, Player, Settings)
 - [x] In-App Updater: Settings-Check nutzt denselben APK-Download/Installer wie der Hauptdialog
 - [x] Stable/Beta-Updatekanal fuer GitHub Releases
+- [x] Lokaler Crash-Report mit Share-Export und vorbereiteter GitHub-Issue-Erstellung
 - [ ] Android TV / Google TV Basis (Leanback-Launcher, D-Pad-/Focus-Navigation, TV-UI-MVP)
 - [ ] Podcasts MVP als eigener Bereich (Bottom-Bar + Suche + Episodenliste)
 - [ ] Favoriten getrennt darstellbar machen: `Sender` / `Podcasts`
