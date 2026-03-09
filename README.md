@@ -36,6 +36,7 @@ Die öffentliche Roadmap findest du hier: **[ROADMAP.md](./ROADMAP.md)**
 - **Komplett werbefrei** – kein Tracking, keine Analytics
 - **45.000+ Sender** über Radio Browser
 - **Album-Cover** – automatisch von iTunes API (basiert auf Song-Metadaten)
+- **Launcher Quick Actions** – Suche, Favoriten, Player und Settings direkt per Long-Press
 - **Android Auto** Support
 - **Chromecast** Support
 - **Material You** UI mit klarem Anthrazit/Weiss-Theme (Dark/Light)
@@ -150,6 +151,15 @@ cp keystore.properties.example keystore.properties
 
 - Background-Playback wurde für Screen-Off stabilisiert.
 - Kernänderung: dedizierter Foreground-Service-Lifecycle für laufendes Streaming.
+- Notification Media Controls wurden weiter aufgeräumt:
+  - direkter Sprung in den Player aus der Notification
+  - sauberere Play/Pause/Prev/Next/Stop-Steuerung
+  - bessere Metadaten- und Statusdarstellung
+
+## 🚀 Launcher Quick Actions
+
+- Per Long-Press auf das App-Icon stehen Schnellaktionen für `Suche`, `Favoriten`, `Player` und `Settings` bereit.
+- Auf manchen Launchern hilft es nach einem Update, das Icon einmal neu auf den Homescreen zu ziehen.
 
 ## 🤖 GitHub Actions
 

@@ -5,7 +5,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- TBD
+- Launcher quick actions via app-icon long press (`Search`, `Favorites`, `Player`, `Settings`).
+- Runtime shortcut sync for better launcher compatibility on OEM devices.
+
+### Improved
+- Playback notification polished with cleaner media controls and direct player open action.
+- Notification labels/status texts localized and metadata presentation improved.
 
 ## [0.1.0-beta.1] - 2026-03-05
 

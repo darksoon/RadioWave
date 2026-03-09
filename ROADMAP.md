@@ -1,6 +1,6 @@
 # RadioWave Roadmap (Public)
 
-Stand: 2026-03-05
+Stand: 2026-03-09
 
 Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 
@@ -44,6 +44,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Update-Dialog zeigt Download-Fortschritt live (MB/% + Progressbar)
 - Android Auto Developer-Mode Anleitung fuer Sideload/Beta hinterlegt (Settings + Docs)
 - Android Auto Shortcut in Settings mit Fallbacks (kein Launcher -> Settings/App-Info)
+- Launcher Quick Actions per App-Icon-Long-Press integriert (`Search`, `Favorites`, `Player`, `Settings`)
 - i18n-Basis gestartet (DE/EN ueber Systemsprache, Ressourcenstruktur eingefuehrt)
 - Settings-Update-Bereich bereits auf lokalisierte Strings umgestellt (DE/EN)
 - Sprachwahl in Settings integriert (System/Deutsch/English)
@@ -54,7 +55,6 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - CI/Release Pipelines gehaertet (Push-CI aktiv, Signed-Workflow robuster)
 
 ## In Arbeit
-- Notification Media Controls Feinschliff (Polish/UX)
 - Voice/Assistant-Play-Intents fuer Senderaufrufe (Google Assistant)
 
 ## Geplant (naechste Schritte)
