@@ -45,6 +45,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Android Auto Developer-Mode Anleitung fuer Sideload/Beta hinterlegt (Settings + Docs)
 - Android Auto Shortcut in Settings mit Fallbacks (kein Launcher -> Settings/App-Info)
 - Launcher Quick Actions per App-Icon-Long-Press integriert (`Search`, `Favorites`, `Player`, `Settings`)
+- Android Auto Browse/Player weiter poliert (lokalisierte Labels, `Quick Access`, robustere Suche, Prev/Next im Car-Player)
 - i18n-Basis gestartet (DE/EN ueber Systemsprache, Ressourcenstruktur eingefuehrt)
 - Settings-Update-Bereich bereits auf lokalisierte Strings umgestellt (DE/EN)
 - Sprachwahl in Settings integriert (System/Deutsch/English)
@@ -67,7 +68,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - Datennutzung sichtbar machen (geschaetzt ueber Bitrate)
 
 ## Spaeter
-- Android Auto Ausbau (Queue/Recommendations, Car-spezifische UX)
+- Android Auto Ausbau (Recommendations, weitere Car-spezifische UX)
 - Android TV / Google TV Basis (Leanback-Launcher, D-Pad-/Focus-Navigation, TV-Layout-MVP)
 - Chromecast Ausbau
 - Widget fuer schnellen Playback-Zugriff

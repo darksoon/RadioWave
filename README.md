@@ -37,7 +37,7 @@ Die öffentliche Roadmap findest du hier: **[ROADMAP.md](./ROADMAP.md)**
 - **45.000+ Sender** über Radio Browser
 - **Album-Cover** – automatisch von iTunes API (basiert auf Song-Metadaten)
 - **Launcher Quick Actions** – Suche, Favoriten, Player und Settings direkt per Long-Press
-- **Android Auto** Support
+- **Android Auto** Support mit Favorites, Quick Access, Suche und Prev/Next im Car-Player
 - **Chromecast** Support
 - **Material You** UI mit klarem Anthrazit/Weiss-Theme (Dark/Light)
 
@@ -155,6 +155,13 @@ cp keystore.properties.example keystore.properties
   - direkter Sprung in den Player aus der Notification
   - sauberere Play/Pause/Prev/Next/Stop-Steuerung
   - bessere Metadaten- und Statusdarstellung
+
+## Android Auto
+
+- Browse ist auf schnelle In-Car-Nutzung ausgelegt: `Favoriten`, `Quick Access`, `Top Sender`, `Genres`
+- `Quick Access` kombiniert Favoriten und Recents fuer schnelleren Wiedereinstieg
+- Suche kombiniert lokale und entfernte Treffer robuster fuer Voice- und Texteingaben
+- Im Car-Player stehen `Prev/Next` jetzt als echte Sendernavigation zur Verfuegung
 
 ## 🚀 Launcher Quick Actions
 

@@ -8,9 +8,16 @@ All notable changes to this project will be documented in this file.
 - Launcher quick actions via app-icon long press (`Search`, `Favorites`, `Player`, `Settings`).
 - Runtime shortcut sync for better launcher compatibility on OEM devices.
 
+### Fixed
+- Prevented app startup crash on devices that reject dynamic manipulation of manifest-defined launcher shortcuts.
+
 ### Improved
 - Playback notification polished with cleaner media controls and direct player open action.
 - Notification labels/status texts localized and metadata presentation improved.
+- Android Auto browse labels and empty states localized for DE/EN.
+- Android Auto `Quick Access` now combines favorites and recents instead of mirroring favorites only.
+- Android Auto search ranking improved with combined local/remote results and broader token/country/tag matching.
+- Android Auto player controls now expose working previous/next navigation for queue-capable in-car playback.
 
 ## [0.1.0-beta.1] - 2026-03-05
 

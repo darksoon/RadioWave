@@ -44,8 +44,8 @@ Ziel: Eine zentrale lokale Datei statt separatem `PHASEN.md` + `todo.md`.
 - [x] Android Auto: doppelte Notification entfernt (ein einheitlicher Media-Notification-Pfad)
 - [x] Android Auto: Resume-/Autoplay-Startpfad stabilisiert (kein "spielt, aber stumm"-Zustand)
 - [x] Android Auto: Low-Load-Modus automatisch aktiv waehrend Verbindung
+- [x] Android Auto Feinschliff (lokalisierte Browse-Texte, Quick Access, robustere Suche, Prev/Next im Car-Player)
 - [x] Launcher Quick Actions per App-Icon-Long-Press (Suche, Favoriten, Player, Settings)
-- [ ] Android Auto Feinschliff (Voice/Search-Flow, Browse-Erweiterung, Car-UX-Polish)
 - [ ] Android TV / Google TV Basis (Leanback-Launcher, D-Pad-/Focus-Navigation, TV-UI-MVP)
 - [ ] Podcasts MVP als eigener Bereich (Bottom-Bar + Suche + Episodenliste)
 - [ ] Favoriten getrennt darstellbar machen: `Sender` / `Podcasts`
