@@ -1,5 +1,7 @@
 # RadioWave
 
+[Deutsch](README.de.md) | [English](README.md)
+
 <div align="center">
   <a href="https://github.com/darksoon/RadioWave/actions/workflows/pr-ci.yml">
     <img src="https://github.com/darksoon/RadioWave/actions/workflows/pr-ci.yml/badge.svg?branch=main" alt="PR CI" />
@@ -15,42 +17,42 @@
     <img src="https://img.shields.io/badge/Ko--fi-Support%20the%20project-29ABE0?logo=kofi&logoColor=white" alt="Ko-fi" />
   </a>
 
-  <h3>Die moderne, werbefreie Internet-Radio-App für Android.</h3>
-  <p>⚡ Schnell · 🔒 Privacy-first · 🚫 Kein Tracking · 🎧 45.000+ Sender</p>
-  <p>🌐 Entwickler-Website: <a href="https://sven-neurath.de">sven-neurath.de</a></p>
+  <h3>The modern, ad-free internet radio app for Android.</h3>
+  <p>Fast | Privacy-first | No tracking | 45,000+ stations</p>
+  <p>Developer website: <a href="https://sven-neurath.de">sven-neurath.de</a></p>
 </div>
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
-Die öffentliche Roadmap findest du hier: **[ROADMAP.md](./ROADMAP.md)**
+The public roadmap is available in [ROADMAP.md](./ROADMAP.md).
 
-- Fokus: Stabilität + Nutzerwert
-- Stand wird laufend mit Releases/Hotfixes aktualisiert
-- Vorschläge/Feedback gerne über Issues
+- Focus: stability and user value
+- Updated continuously with releases and hotfixes
+- Feedback is welcome through GitHub Issues
 
-## ✨ Highlights
+## Highlights
 
-- **Kein Account nötig** – alles lokal auf dem Gerät
-- **Komplett werbefrei** – kein Tracking, keine Analytics
-- **45.000+ Sender** über Radio Browser
-- **Album-Cover** – automatisch von iTunes API (basiert auf Song-Metadaten)
-- **Launcher Quick Actions** – Suche, Favoriten, Player und Settings direkt per Long-Press
-- **Android Auto** Support mit Favorites, Quick Access, Suche und Prev/Next im Car-Player
-- **In-App Updater** mit APK-Download, Fortschritt und Installer-Start direkt aus der App
-- **Chromecast** Support
-- **Material You** UI mit klarem Anthrazit/Weiss-Theme (Dark/Light)
+- No account required, everything stays on the device
+- Completely ad-free, no analytics, no behavior tracking
+- 45,000+ stations via Radio Browser
+- Album art lookup via the iTunes Search API
+- Launcher quick actions for `Search`, `Favorites`, `Player`, and `Settings`
+- Android Auto support with favorites, quick access, search, and previous/next in the car player
+- Built-in updater with APK download, progress, and installer handoff
+- Local crash-report export with share action and prefilled GitHub issue handoff
+- Chromecast support
 
-## 📸 Screenshots
+## Screenshots
 
-| Home | Suche |
+| Home | Search |
 |---|---|
-| ![Home](docs/screenshots/home.jpg) | ![Suche](docs/screenshots/search.jpg) |
+| ![Home](docs/screenshots/home.jpg) | ![Search](docs/screenshots/search.jpg) |
 
-| Favoriten | Fullscreen Player | Einstellungen |
+| Favorites | Fullscreen Player | Settings |
 |---|---|---|
-| ![Favoriten](docs/screenshots/favorites.jpg) | ![Fullscreen Player](docs/screenshots/fullscreen_player.jpg) | ![Einstellungen](docs/screenshots/settings.jpg) |
+| ![Favorites](docs/screenshots/favorites.jpg) | ![Fullscreen Player](docs/screenshots/fullscreen_player.jpg) | ![Settings](docs/screenshots/settings.jpg) |
 
 | Android Auto 1 | Android Auto 2 |
 |---|---|
@@ -60,17 +62,17 @@ Die öffentliche Roadmap findest du hier: **[ROADMAP.md](./ROADMAP.md)**
 |---|---|
 | ![Android Auto 3](docs/screenshots/Android_Auto3.png) | ![Android Auto 4](docs/screenshots/Android_Auto4.png) |
 
-## 🧱 Tech Stack
+## Tech Stack
 
-- **Kotlin 2.1.0**
-- **Jetpack Compose + Material 3**
-- **Clean Architecture + MVVM**
-- **Hilt**
-- **Media3 / ExoPlayer**
-- **Room**
-- **Retrofit + Kotlinx Serialization**
+- Kotlin 2.1.0
+- Jetpack Compose + Material 3
+- Clean Architecture + MVVM
+- Hilt
+- Media3 / ExoPlayer
+- Room
+- Retrofit + Kotlinx Serialization
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 git clone https://github.com/darksoon/RadioWave.git
@@ -80,23 +82,23 @@ chmod +x gradlew
 ./gradlew assembleDebug
 ```
 
-## 🛠️ Lokale Builds
+## Local Builds
 
 ```bash
 # Full build
 ./gradlew build
 
-# Lint + Tests
+# Lint + tests
 ./gradlew lint
 ./gradlew test
 
-# Debug APK installieren
+# Install debug APK
 ./gradlew installDebug
 ```
 
-### Build in Proxy / Restricted Network
+### Restricted Networks / Proxy
 
-Wenn der Gradle-Wrapper-Download blockiert ist, nutze einen internen Mirror oder Corporate-Proxy:
+If Gradle downloads are blocked, use a mirror or proxy:
 
 ```properties
 # ~/.gradle/gradle.properties
@@ -106,149 +108,82 @@ systemProp.https.proxyHost=<proxy-host>
 systemProp.https.proxyPort=<proxy-port>
 ```
 
-Optional (Unternehmens-Mirror):
-- `distributionUrl` in `gradle/wrapper/gradle-wrapper.properties` auf internen Gradle-Mirror setzen.
-- CI mit persistentem Gradle-Cache betreiben (`~/.gradle/caches`, `~/.gradle/wrapper`).
+## Release Signing
 
-## 🔐 Release Signing (optional, recommended)
+Signed release builds are handled through GitHub Actions.
 
-Create a release keystore once:
-
-```bash
-keytool -genkeypair \
-  -v \
-  -keystore radiowave-release.keystore \
-  -alias radiowave \
-  -keyalg RSA \
-  -keysize 4096 \
-  -validity 3650
-```
-
-Then configure local signing:
+For local signing experiments only:
 
 ```bash
 cp keystore.properties.example keystore.properties
-# edit values in keystore.properties
+# edit keystore.properties
 ```
 
-`keystore.properties` is ignored by Git. If present, release builds are signed automatically.
+## Installation
 
-## 📲 Installation (ohne Play Store)
+1. Open the latest release page:
+   `https://github.com/darksoon/RadioWave/releases/latest`
+2. Download the current APK asset.
+3. Allow installs from unknown sources if your device asks for it.
+4. Open the APK and install it.
 
-1. Öffne die aktuelle Release-Seite:  
-   **https://github.com/darksoon/RadioWave/releases/latest**
-2. Lade die Datei **`RadioWave-v0.1.0-beta.1.apk`** herunter (bzw. die aktuelle Release-APK mit Versionsnamen).
-3. Falls nötig: „Installation aus unbekannten Quellen“ für deinen Browser/Dateimanager erlauben.
-4. APK öffnen und installieren.
+## In-App Update System
 
-### Update-Hinweis
-- Updates kannst du einfach über neue Releases installieren.
-- Wichtig: Die APK muss mit demselben Signatur-Key gebaut sein (ist hier der Fall).
-
-### In-App Update-System (DE/EN)
-- Beim App-Start wird intervallbasiert auf Updates geprueft (nicht bei jedem Start sofort).
-- In den Settings unter `Updates` gibt es:
-  - `Jetzt pruefen / Check now` (manuelle Pruefung)
-  - `Update-Popup testen / Test update popup` (zeigt den gleichen Dialog wie beim Auto-Treffer)
-- Stable/Beta-Kanal ist waehlbar:
-  - `Beta-Updates erhalten` aus: nur stabile Releases
-  - `Beta-Updates erhalten` an: GitHub Pre-Releases werden mit angeboten
-- Wenn ein Update gefunden wird, laedt die App die APK direkt herunter und startet den Installer aus der App.
-- Beim ersten Update auf manchen Geraeten muss `Installationen aus unbekannten Quellen` einmal fuer RadioWave erlaubt werden.
-
-### Sicherheit
-- Lade die APK nur von der offiziellen GitHub-Release-Seite.
-- Prüfe bei Bedarf die Release-Notes und Dateigröße vor der Installation.
-
-## 🎧 Playback Hinweis (2026-02-25)
-
-- Background-Playback wurde für Screen-Off stabilisiert.
-- Kernänderung: dedizierter Foreground-Service-Lifecycle für laufendes Streaming.
-- Notification Media Controls wurden weiter aufgeräumt:
-  - direkter Sprung in den Player aus der Notification
-  - sauberere Play/Pause/Prev/Next/Stop-Steuerung
-  - bessere Metadaten- und Statusdarstellung
+- The app checks for updates on an interval, not on every single launch
+- In `Settings -> Updates` you can:
+  - run a manual update check
+  - test the update popup
+  - enable or disable automatic checks
+  - enable or disable popup behavior
+- Stable and beta channels are separated:
+  - beta disabled: only stable releases
+  - beta enabled: GitHub pre-releases are included
+- If an update is found, the app downloads the APK directly and starts the installer
 
 ## Android Auto
 
-- Browse ist auf schnelle In-Car-Nutzung ausgelegt: `Favoriten`, `Quick Access`, `Top Sender`, `Genres`
-- `Quick Access` kombiniert Favoriten und Recents fuer schnelleren Wiedereinstieg
-- Suche kombiniert lokale und entfernte Treffer robuster fuer Voice- und Texteingaben
-- Im Car-Player stehen `Prev/Next` jetzt als echte Sendernavigation zur Verfuegung
+- Browse is optimized for in-car usage: `Favorites`, `Quick Access`, `Top Stations`, `Genres`
+- Quick Access combines favorites and recents
+- Search merges local and remote results more robustly
+- Previous/next in the car player now works as real station navigation
 
-## 🚀 Launcher Quick Actions
+See also: [docs/ANDROID_AUTO_DEV_MODE.md](docs/ANDROID_AUTO_DEV_MODE.md)
 
-- Per Long-Press auf das App-Icon stehen Schnellaktionen für `Suche`, `Favoriten`, `Player` und `Settings` bereit.
-- Auf manchen Launchern hilft es nach einem Update, das Icon einmal neu auf den Homescreen zu ziehen.
-
-## 🤖 GitHub Actions
+## GitHub Actions
 
 ### Manual Android Build
-Im Repository unter **Actions → Manual Android Build → Run workflow**.
 
-- Standard-Task: `assembleDebug`
-- Optional: `assembleRelease` oder `build`
-- APK/AAB nach dem Lauf unter **Artifacts**
+Available under `Actions -> Manual Android Build -> Run workflow`.
 
 ### PR CI
-- Läuft automatisch bei **Push** und **Pull Requests** auf `main`
-- Zusätzlich manuell startbar über **workflow_dispatch**
+
+- Runs automatically on pushes and pull requests to `main`
+- Can also be started manually
 
 ### Release Build
-- Signed Releases laufen ueber **Actions → Release Build**
-- Workflow:
-  - setzt `app.versionName` und `app.versionCode`
-  - baut eine signierte Release-APK
-  - erstellt Tag + GitHub Release
-  - haengt die APK direkt als Release-Asset an
-- Tag-Format: `v0.1.0-beta.2`
-- Wichtig fuer den Update-Checker:
-  - stabile App-Updates nur mit normalem Release
-  - Beta-Updates nur fuer Nutzer mit aktiviertem Beta-Kanal
 
-## 📦 Projektstruktur
+- Signed releases are created through `Actions -> Release Build`
+- The workflow:
+  - updates `app.versionName` and `app.versionCode`
+  - builds a signed release APK
+  - creates a tag and GitHub release
+  - uploads the APK as a release asset
 
-```text
-RadioWave/
-├── app/                    # Haupt-App Modul
-├── core/
-│   ├── core-model/
-│   ├── core-database/
-│   ├── core-network/
-│   ├── core-data/
-│   ├── core-player/
-│   ├── core-cast/
-│   └── core-ui/
-├── feature/
-│   ├── feature-home/
-│   ├── feature-browse/
-│   ├── feature-favorites/
-│   ├── feature-player/
-│   ├── feature-custom-stations/
-│   └── feature-settings/
-└── auto/
-```
+## Privacy
 
-## 🔐 Datenschutz
+- No analytics
+- No ads
+- No hidden telemetry
+- Crash reports are stored locally only and shared explicitly by the user
 
-- Keine Datenerhebung
-- Keine Analytics
-- Keine Werbung
-- Alle Daten bleiben lokal auf dem Gerät
+## Support
 
-## 📜 Lizenz
+If you want to support the project:
 
-Proprietäre Lizenz mit kommerziellem Nutzungsverbot.  
-Siehe [LICENSE.txt](./LICENSE.txt).
+- Ko-fi: https://ko-fi.com/darksoon
 
-## ❤️ Support
+## Credits
 
-Wenn dir RadioWave gefällt und du die Entwicklung unterstützen willst:
-
-☕ **Ko-fi:** https://ko-fi.com/darksoon
-
-## 🙌 Credits
-
-- Sender-Daten: [Radio Browser API](https://www.radio-browser.info/)
-- Album-Cover: [iTunes Search API](https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/)
+- Station data: [Radio Browser API](https://www.radio-browser.info/)
+- Album art: [iTunes Search API](https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/)
 - Icons: Material Design Icons
