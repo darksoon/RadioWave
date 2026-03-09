@@ -16,6 +16,8 @@
     <string name="update_dialog_later_action">Later</string>
     <string name="update_dialog_failed">Update failed: %1$s</string>
     <string name="update_dialog_failed_unknown">Unknown error</string>
+    <string name="update_dialog_install_permission_required">Allow installs from unknown apps, then tap Update again.</string>
+    <string name="update_dialog_no_installer">No package installer was found on this device.</string>
     <string name="first_run_title">Welcome to RadioWave</string>
     <string name="first_run_body">Quick setup notes:\n- Android Auto uses an efficient profile automatically (max 128 kbps).\n- Battery optimization should be disabled for the app.\n- Updates are detected via GitHub Releases and can be installed directly.</string>
     <string name="first_run_confirm">Understood</string>

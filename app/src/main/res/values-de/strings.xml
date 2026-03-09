@@ -16,6 +16,8 @@
     <string name="update_dialog_later_action">Spaeter</string>
     <string name="update_dialog_failed">Update fehlgeschlagen: %1$s</string>
     <string name="update_dialog_failed_unknown">Unbekannter Fehler</string>
+    <string name="update_dialog_install_permission_required">Erlaube Installationen aus unbekannten Quellen und tippe dann erneut auf Update.</string>
+    <string name="update_dialog_no_installer">Auf diesem Geraet wurde kein Paket-Installer gefunden.</string>
     <string name="first_run_title">Willkommen bei RadioWave</string>
     <string name="first_run_body">Kurzer Hinweis fuer den Start:\n- Android Auto nutzt automatisch ein sparsames Profil (max. 128 kbps).\n- Akku-Optimierung fuer die App sollte deaktiviert werden.\n- Updates werden ueber GitHub Releases erkannt und koennen direkt installiert werden.</string>
     <string name="first_run_confirm">Verstanden</string>

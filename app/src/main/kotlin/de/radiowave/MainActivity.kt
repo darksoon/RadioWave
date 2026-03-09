@@ -605,11 +605,22 @@ fun RadioWaveMainScreen(
                                     )
                                     updateInProgress = false
                                     result.onFailure { error ->
+                                        val message = when (error.message) {
+                                            "Please allow installs from unknown apps and try again" -> {
+                                                context.getString(R.string.update_dialog_install_permission_required)
+                                            }
+                                            "No package installer activity found" -> {
+                                                context.getString(R.string.update_dialog_no_installer)
+                                            }
+                                            else -> {
+                                                error.message ?: context.getString(R.string.update_dialog_failed_unknown)
+                                            }
+                                        }
                                         Toast.makeText(
                                             context,
                                             context.getString(
                                                 R.string.update_dialog_failed,
-                                                error.message ?: context.getString(R.string.update_dialog_failed_unknown),
+                                                message,
                                             ),
                                             Toast.LENGTH_LONG,
                                         ).show()

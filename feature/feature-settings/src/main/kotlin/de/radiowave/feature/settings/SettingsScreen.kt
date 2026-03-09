@@ -780,11 +780,28 @@ fun SettingsScreen(
                             )
                             updateInstallInProgress = false
                             result.onFailure { error ->
+                                val message = when (error.message) {
+                                    "Please allow installs from unknown apps and try again" -> {
+                                        tr(
+                                            "Erlaube Installationen aus unbekannten Quellen und tippe dann erneut auf Update.",
+                                            "Allow installs from unknown apps, then tap Update again.",
+                                        )
+                                    }
+                                    "No package installer activity found" -> {
+                                        tr(
+                                            "Auf diesem Geraet wurde kein Paket-Installer gefunden.",
+                                            "No package installer was found on this device.",
+                                        )
+                                    }
+                                    else -> {
+                                        error.message ?: tr("unbekannt", "unknown")
+                                    }
+                                }
                                 Toast.makeText(
                                     context,
                                     tr(
-                                        "Update fehlgeschlagen: ${error.message ?: "unbekannt"}",
-                                        "Update failed: ${error.message ?: "unknown"}",
+                                        "Update fehlgeschlagen: $message",
+                                        "Update failed: $message",
                                     ),
                                     Toast.LENGTH_LONG,
                                 ).show()

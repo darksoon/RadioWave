@@ -105,16 +105,32 @@ object GitHubReleaseUpdater {
             "${context.packageName}.fileprovider",
             apkFile,
         )
-        val installIntent = Intent(Intent.ACTION_VIEW).apply {
-            data = apkUri
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
-            type = "application/vnd.android.package-archive"
-        }
-        try {
+        val installIntents = listOf(
+            Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
+                data = apkUri
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
+                putExtra(Intent.EXTRA_RETURN_RESULT, false)
+            },
+            Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(apkUri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            },
+            Intent(Intent.ACTION_VIEW).apply {
+                data = apkUri
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            },
+        )
+        installIntents.firstOrNull { intent ->
+            intent.resolveActivity(context.packageManager) != null
+        }?.let { installIntent ->
             context.startActivity(installIntent)
-        } catch (_: ActivityNotFoundException) {
-            error("No installer available on device")
+            return
         }
+        throw ActivityNotFoundException("No package installer activity found")
     }
 
     private fun ensureInstallPermission(context: Context) {
@@ -125,7 +141,7 @@ object GitHubReleaseUpdater {
             Uri.parse("package:${context.packageName}"),
         ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
-        error("Install unknown apps permission required")
+        error("Please allow installs from unknown apps and try again")
     }
 
     private fun sanitizeFileName(name: String): String {
