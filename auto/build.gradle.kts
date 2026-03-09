@@ -1,5 +1,3 @@
-import org.gradle.api.tasks.testing.Test
-
 plugins {
     id("radiowave.android.library")
     id("radiowave.hilt")
@@ -15,10 +13,4 @@ dependencies {
     implementation(project(":core:core-player"))
     
     implementation(libs.bundles.media3)
-}
-
-tasks.withType<Test>().configureEach {
-    onlyIf {
-        project.file("src/test").exists() || project.file("src/androidTest").exists()
-    }
 }

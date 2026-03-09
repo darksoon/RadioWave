@@ -1,5 +1,3 @@
-import org.gradle.api.tasks.testing.Test
-
 plugins {
     id("radiowave.android.library")
     id("radiowave.hilt")
@@ -17,10 +15,4 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit)
-}
-
-tasks.withType<Test>().configureEach {
-    onlyIf {
-        project.file("src/test").exists() || project.file("src/androidTest").exists()
-    }
 }

@@ -31,10 +31,12 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 add("implementation", libs.findLibrary("androidx-lifecycle-runtime-ktx").get())
             }
 
+            val hasTestSources =
+                layout.projectDirectory.dir("src/test").asFile.exists() ||
+                    layout.projectDirectory.dir("src/androidTest").asFile.exists()
+
             tasks.withType<Test>().configureEach {
-                onlyIf {
-                    project.file("src/test").exists() || project.file("src/androidTest").exists()
-                }
+                onlyIf { hasTestSources }
             }
         }
     }
