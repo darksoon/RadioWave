@@ -12,14 +12,23 @@ val keystoreProperties = Properties().apply {
     }
 }
 val hasReleaseSigning = keystorePropertiesFile.exists()
+val appVersionCode = providers
+    .gradleProperty("app.versionCode")
+    .orNull
+    ?.toIntOrNull()
+    ?: 7
+val appVersionName = providers
+    .gradleProperty("app.versionName")
+    .orNull
+    ?: "0.1.0-beta.1"
 
 android {
     namespace = "de.radiowave"
 
     defaultConfig {
         applicationId = "de.radiowave"
-        versionCode = 7
-        versionName = "0.1.0-beta.1"
+        versionCode = appVersionCode
+        versionName = appVersionName
     }
 
     signingConfigs {
