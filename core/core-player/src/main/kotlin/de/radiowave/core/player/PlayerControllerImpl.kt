@@ -1164,9 +1164,13 @@ class PlayerControllerImpl @Inject constructor(
         val metadataText = listOfNotNull(
             metadata?.artist?.trim().takeUnless { it.isNullOrBlank() },
             metadata?.title?.trim().takeUnless { it.isNullOrBlank() },
-        ).joinToString(" - ")
+        ).joinToString(" • ")
         if (metadataText.isNotBlank()) return metadataText
-        return if (isPlaying) "Live stream playing" else "Playback paused"
+        return if (isPlaying) {
+            context.getString(R.string.notification_playing_fallback)
+        } else {
+            context.getString(R.string.notification_paused_fallback)
+        }
     }
 
     private fun stopForegroundPlaybackServiceIfRunning() {

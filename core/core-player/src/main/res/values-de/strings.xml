@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_app_name">RadioWave</string>
+    <string name="notification_channel_name">Radio-Wiedergabe</string>
+    <string name="notification_channel_description">Haelt die Radio-Wiedergabe im Hintergrund aktiv</string>
+    <string name="notification_status_live">LIVE</string>
+    <string name="notification_status_paused">Pausiert</string>
+    <string name="notification_playing_fallback">Live-Stream laeuft</string>
+    <string name="notification_paused_fallback">Wiedergabe pausiert</string>
+    <string name="notification_action_previous">Zurueck</string>
+    <string name="notification_action_play">Play</string>
+    <string name="notification_action_pause">Pause</string>
+    <string name="notification_action_next">Weiter</string>
+    <string name="notification_action_stop">Stop</string>
+</resources>

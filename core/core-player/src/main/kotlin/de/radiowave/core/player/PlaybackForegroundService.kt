@@ -10,7 +10,9 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.media.app.NotificationCompat.MediaStyle
 import de.radiowave.core.model.AppSettings
+import de.radiowave.core.player.R
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -80,11 +82,14 @@ class PlaybackForegroundService : Service() {
         val showNext = prefs.getBoolean(AppSettings.KEY_NOTIFICATION_SHOW_NEXT, true)
         val showStop = prefs.getBoolean(AppSettings.KEY_NOTIFICATION_SHOW_STOP, true)
 
-        val titleText = stationName.ifBlank { "RadioWave" }
+        val titleText = stationName.ifBlank { getString(R.string.notification_app_name) }
         val contentText = subtitle.ifBlank {
-            if (isPlaying) "Live stream playing" else "Playback paused"
+            defaultPlaybackStatusText(isPlaying)
         }
-        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+            action = ACTION_OPEN_PLAYER
+            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
         val contentIntent = launchIntent?.let {
             PendingIntent.getActivity(
                 this,
@@ -98,29 +103,56 @@ class PlaybackForegroundService : Service() {
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentTitle(titleText)
             .setContentText(contentText)
+            .setSubText(
+                if (isPlaying) {
+                    getString(R.string.notification_status_live)
+                } else {
+                    getString(R.string.notification_status_paused)
+                },
+            )
             .setOngoing(isPlaying)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOnlyAlertOnce(true)
+            .setSilent(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
+            .setShowWhen(false)
+            .setStyle(MediaStyle())
 
         if (contentIntent != null) {
             builder.setContentIntent(contentIntent)
         }
 
+        var compactActionIndex = 0
+
         if (showPrevious) {
             builder.addAction(
                 NotificationCompat.Action(
                     android.R.drawable.ic_media_previous,
-                    "Previous",
+                    getString(R.string.notification_action_previous),
                     createServicePendingIntent(ACTION_PREVIOUS, REQUEST_PREVIOUS),
                 ),
             )
+            compactActionIndex++
         }
         if (showPlayPause) {
+            val playPauseCompactIndex = compactActionIndex
             builder.addAction(
                 NotificationCompat.Action(
                     if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
-                    if (isPlaying) "Pause" else "Play",
+                    if (isPlaying) {
+                        getString(R.string.notification_action_pause)
+                    } else {
+                        getString(R.string.notification_action_play)
+                    },
                     createServicePendingIntent(ACTION_TOGGLE_PLAY_PAUSE, REQUEST_TOGGLE),
+                ),
+            )
+            compactActionIndex++
+            builder.setStyle(
+                MediaStyle().setShowActionsInCompactView(
+                    if (showPrevious) playPauseCompactIndex - 1 else playPauseCompactIndex,
+                    playPauseCompactIndex,
                 ),
             )
         }
@@ -128,16 +160,17 @@ class PlaybackForegroundService : Service() {
             builder.addAction(
                 NotificationCompat.Action(
                     android.R.drawable.ic_media_next,
-                    "Next",
+                    getString(R.string.notification_action_next),
                     createServicePendingIntent(ACTION_NEXT, REQUEST_NEXT),
                 ),
             )
+            compactActionIndex++
         }
         if (showStop) {
             builder.addAction(
                 NotificationCompat.Action(
                     android.R.drawable.ic_menu_close_clear_cancel,
-                    "Stop",
+                    getString(R.string.notification_action_stop),
                     createServicePendingIntent(ACTION_STOP_PLAYBACK, REQUEST_STOP_PLAYBACK),
                 ),
             )
@@ -187,9 +220,17 @@ class PlaybackForegroundService : Service() {
         val metadataText = listOfNotNull(
             metadataArtist?.trim().takeUnless { it.isNullOrBlank() },
             metadataTitle?.trim().takeUnless { it.isNullOrBlank() },
-        ).joinToString(" - ")
+        ).joinToString(" • ")
         if (metadataText.isNotBlank()) return metadataText
-        return if (isPlaying) "Live stream playing" else "Playback paused"
+        return defaultPlaybackStatusText(isPlaying)
+    }
+
+    private fun defaultPlaybackStatusText(isPlaying: Boolean): String {
+        return if (isPlaying) {
+            getString(R.string.notification_playing_fallback)
+        } else {
+            getString(R.string.notification_paused_fallback)
+        }
     }
 
     private fun createNotificationChannel() {
@@ -197,10 +238,10 @@ class PlaybackForegroundService : Service() {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Radio playback",
+            getString(R.string.notification_channel_name),
             NotificationManager.IMPORTANCE_LOW,
         ).apply {
-            description = "Keeps radio playback active in background"
+            description = getString(R.string.notification_channel_description)
             setShowBadge(false)
         }
         notificationManager.createNotificationChannel(channel)
@@ -218,6 +259,7 @@ class PlaybackForegroundService : Service() {
         private const val ACTION_NEXT = "de.radiowave.core.player.ACTION_NEXT"
         private const val ACTION_TOGGLE_PLAY_PAUSE = "de.radiowave.core.player.ACTION_TOGGLE_PLAY_PAUSE"
         private const val ACTION_STOP_PLAYBACK = "de.radiowave.core.player.ACTION_STOP_PLAYBACK"
+        private const val ACTION_OPEN_PLAYER = "de.radiowave.action.OPEN_PLAYER"
         private const val REQUEST_CONTENT = 1001
         private const val REQUEST_PREVIOUS = 1002
         private const val REQUEST_TOGGLE = 1003

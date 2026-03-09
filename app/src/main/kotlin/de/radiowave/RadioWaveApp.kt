@@ -8,5 +8,6 @@ class RadioWaveApp : Application() {
     override fun onCreate() {
         super.onCreate()
         AppLanguageManager.applyFromPrefs(this)
+        AppShortcuts.sync(this)
     }
 }

@@ -12,6 +12,7 @@ dependencies {
     implementation(project(":core:core-data"))
 
     implementation(libs.bundles.media3)
+    implementation(libs.androidx.media)
     implementation(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit)

@@ -68,6 +68,7 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 
 ## Spaeter
 - Android Auto Ausbau (Queue/Recommendations, Car-spezifische UX)
+- Android TV / Google TV Basis (Leanback-Launcher, D-Pad-/Focus-Navigation, TV-Layout-MVP)
 - Chromecast Ausbau
 - Widget fuer schnellen Playback-Zugriff
 - Weitere Animationen/Transitions/Shimmer
@@ -78,6 +79,10 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
   - RadioBrowser API liefert primaer Radiosender, keine saubere Podcast-Episodenstruktur
   - fuer Podcasts daher eigener Provider noetig (z. B. RSS-basiert / dedizierte Podcast-API)
   - UI-Konzept: getrennte Listen `Sender` / `Podcasts` in Favoriten moeglich
+- Wear OS Companion:
+  - eher Remote-/Companion-Use-Case statt vollwertiger Radio-Client
+  - Fokus auf Play/Pause, Favoriten, Recents und Player-Status
+  - nur sinnvoll nach Phone/Auto/TV/Chromecast-Basis
 - Cache-DB fuer Browse/Suche:
   - `cached_stations` als zentrale Quelle in Room
   - Cache-first Repository-Flow (erst lokal, dann Netzwerk-Refresh)

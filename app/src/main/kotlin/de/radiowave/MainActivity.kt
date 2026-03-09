@@ -703,8 +703,6 @@ private fun buildUpdateProgressText(context: Context, progress: UpdateDownloadPr
 }
 
 private const val UPDATE_CHECK_INTERVAL_MS = 6L * 60L * 60L * 1000L
-private const val ACTION_OPEN_SHORTCUT = "de.radiowave.action.OPEN_SHORTCUT"
-private const val EXTRA_SHORTCUT_TARGET = "shortcut_target"
 
 private object ShortcutTarget {
     const val BROWSE = "browse"
@@ -715,5 +713,17 @@ private object ShortcutTarget {
 
 private val Intent?.shortcutTarget: String?
     get() = this
-        ?.takeIf { it.action == ACTION_OPEN_SHORTCUT }
-        ?.getStringExtra(EXTRA_SHORTCUT_TARGET)
+        ?.let { intent ->
+            when (intent.action) {
+                ACTION_OPEN_SEARCH -> ShortcutTarget.BROWSE
+                ACTION_OPEN_FAVORITES -> ShortcutTarget.FAVORITES
+                ACTION_OPEN_PLAYER -> ShortcutTarget.PLAYER
+                ACTION_OPEN_SETTINGS -> ShortcutTarget.SETTINGS
+                else -> null
+            }
+        }
+
+const val ACTION_OPEN_SEARCH = "de.radiowave.action.OPEN_SEARCH"
+const val ACTION_OPEN_FAVORITES = "de.radiowave.action.OPEN_FAVORITES"
+const val ACTION_OPEN_PLAYER = "de.radiowave.action.OPEN_PLAYER"
+const val ACTION_OPEN_SETTINGS = "de.radiowave.action.OPEN_SETTINGS"
