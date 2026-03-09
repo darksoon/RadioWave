@@ -2,6 +2,7 @@ package de.radiowave
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -46,6 +47,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -95,9 +97,13 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+    private var shortcutTarget by mutableStateOf<String?>(null)
+    private var shortcutRequestNonce by mutableIntStateOf(0)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        shortcutTarget = intent.shortcutTarget
         enableEdgeToEdge()
         setContent {
             val context = LocalContext.current
@@ -146,10 +152,21 @@ class MainActivity : AppCompatActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
-                    RadioWaveMainScreen()
+                    RadioWaveMainScreen(
+                        shortcutTarget = shortcutTarget,
+                        shortcutRequestNonce = shortcutRequestNonce,
+                        onShortcutConsumed = { shortcutTarget = null },
+                    )
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        shortcutTarget = intent.shortcutTarget
+        shortcutRequestNonce++
     }
 }
 
@@ -196,7 +213,11 @@ val bottomNavItems = listOf(
 )
 
 @Composable
-fun RadioWaveMainScreen() {
+fun RadioWaveMainScreen(
+    shortcutTarget: String? = null,
+    shortcutRequestNonce: Int = 0,
+    onShortcutConsumed: () -> Unit = {},
+) {
     val navController = rememberNavController()
     val context = LocalContext.current
     val view = LocalView.current
@@ -309,6 +330,36 @@ fun RadioWaveMainScreen() {
             }
             launchSingleTop = true
             restoreState = true
+        }
+    }
+
+    LaunchedEffect(shortcutRequestNonce, shortcutTarget, currentStation) {
+        when (shortcutTarget) {
+            ShortcutTarget.BROWSE -> {
+                navigateToTopLevel(BottomNavItem.Browse.route)
+                onShortcutConsumed()
+            }
+            ShortcutTarget.FAVORITES -> {
+                navigateToTopLevel(BottomNavItem.Favorites.route)
+                onShortcutConsumed()
+            }
+            ShortcutTarget.SETTINGS -> {
+                navigateToTopLevel(BottomNavItem.Settings.route)
+                onShortcutConsumed()
+            }
+            ShortcutTarget.PLAYER -> {
+                if (currentStation != null) {
+                    showFullscreenPlayer = true
+                } else {
+                    navigateToTopLevel(BottomNavItem.Home.route)
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.shortcut_player_unavailable),
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+                onShortcutConsumed()
+            }
         }
     }
 
@@ -652,3 +703,17 @@ private fun buildUpdateProgressText(context: Context, progress: UpdateDownloadPr
 }
 
 private const val UPDATE_CHECK_INTERVAL_MS = 6L * 60L * 60L * 1000L
+private const val ACTION_OPEN_SHORTCUT = "de.radiowave.action.OPEN_SHORTCUT"
+private const val EXTRA_SHORTCUT_TARGET = "shortcut_target"
+
+private object ShortcutTarget {
+    const val BROWSE = "browse"
+    const val FAVORITES = "favorites"
+    const val PLAYER = "player"
+    const val SETTINGS = "settings"
+}
+
+private val Intent?.shortcutTarget: String?
+    get() = this
+        ?.takeIf { it.action == ACTION_OPEN_SHORTCUT }
+        ?.getStringExtra(EXTRA_SHORTCUT_TARGET)

@@ -22,4 +22,13 @@
     <string name="update_progress_preparing">preparing…</string>
     <string name="update_progress_known">%1$.1f / %2$.1f MB  %3$d%%</string>
     <string name="update_progress_unknown">%1$.1f MB</string>
+    <string name="shortcut_search_short">Search</string>
+    <string name="shortcut_search_long">Open station search</string>
+    <string name="shortcut_favorites_short">Favorites</string>
+    <string name="shortcut_favorites_long">Open favorites</string>
+    <string name="shortcut_player_short">Player</string>
+    <string name="shortcut_player_long">Open current player</string>
+    <string name="shortcut_settings_short">Settings</string>
+    <string name="shortcut_settings_long">Open settings</string>
+    <string name="shortcut_player_unavailable">No active playback right now</string>
 </resources>
