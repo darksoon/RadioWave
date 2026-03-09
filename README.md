@@ -38,6 +38,7 @@ Die öffentliche Roadmap findest du hier: **[ROADMAP.md](./ROADMAP.md)**
 - **Album-Cover** – automatisch von iTunes API (basiert auf Song-Metadaten)
 - **Launcher Quick Actions** – Suche, Favoriten, Player und Settings direkt per Long-Press
 - **Android Auto** Support mit Favorites, Quick Access, Suche und Prev/Next im Car-Player
+- **In-App Updater** mit APK-Download, Fortschritt und Installer-Start direkt aus der App
 - **Chromecast** Support
 - **Material You** UI mit klarem Anthrazit/Weiss-Theme (Dark/Light)
 
@@ -141,7 +142,11 @@ cp keystore.properties.example keystore.properties
 - In den Settings unter `Updates` gibt es:
   - `Jetzt pruefen / Check now` (manuelle Pruefung)
   - `Update-Popup testen / Test update popup` (zeigt den gleichen Dialog wie beim Auto-Treffer)
-- If an update is found, the dialog links directly to the GitHub release page for download/install.
+- Stable/Beta-Kanal ist waehlbar:
+  - `Beta-Updates erhalten` aus: nur stabile Releases
+  - `Beta-Updates erhalten` an: GitHub Pre-Releases werden mit angeboten
+- Wenn ein Update gefunden wird, laedt die App die APK direkt herunter und startet den Installer aus der App.
+- Beim ersten Update auf manchen Geraeten muss `Installationen aus unbekannten Quellen` einmal fuer RadioWave erlaubt werden.
 
 ### Sicherheit
 - Lade die APK nur von der offiziellen GitHub-Release-Seite.
@@ -180,6 +185,18 @@ Im Repository unter **Actions → Manual Android Build → Run workflow**.
 ### PR CI
 - Läuft automatisch bei **Push** und **Pull Requests** auf `main`
 - Zusätzlich manuell startbar über **workflow_dispatch**
+
+### Release Build
+- Signed Releases laufen ueber **Actions → Release Build**
+- Workflow:
+  - setzt `app.versionName` und `app.versionCode`
+  - baut eine signierte Release-APK
+  - erstellt Tag + GitHub Release
+  - haengt die APK direkt als Release-Asset an
+- Tag-Format: `v0.1.0-beta.2`
+- Wichtig fuer den Update-Checker:
+  - stabile App-Updates nur mit normalem Release
+  - Beta-Updates nur fuer Nutzer mit aktiviertem Beta-Kanal
 
 ## 📦 Projektstruktur
 

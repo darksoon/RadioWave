@@ -7,9 +7,13 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Launcher quick actions via app-icon long press (`Search`, `Favorites`, `Player`, `Settings`).
 - Runtime shortcut sync for better launcher compatibility on OEM devices.
+- Stable/Beta update channel toggle in settings for GitHub release checks.
+- Manual signed release workflow with app version metadata sourced from `gradle.properties`.
 
 ### Fixed
 - Prevented app startup crash on devices that reject dynamic manipulation of manifest-defined launcher shortcuts.
+- Settings manual update flow now uses the same in-app APK download/install path as the main update dialog.
+- In-app APK installer hardened with better package-installer fallback behavior and clearer error states.
 
 ### Improved
 - Playback notification polished with cleaner media controls and direct player open action.
@@ -18,6 +22,7 @@ All notable changes to this project will be documented in this file.
 - Android Auto `Quick Access` now combines favorites and recents instead of mirroring favorites only.
 - Android Auto search ranking improved with combined local/remote results and broader token/country/tag matching.
 - Android Auto player controls now expose working previous/next navigation for queue-capable in-car playback.
+- CI/release workflows now use stronger Gradle caching and configuration cache for faster repeat runs.
 
 ## [0.1.0-beta.1] - 2026-03-05
 

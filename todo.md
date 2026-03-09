@@ -46,6 +46,8 @@ Ziel: Eine zentrale lokale Datei statt separatem `PHASEN.md` + `todo.md`.
 - [x] Android Auto: Low-Load-Modus automatisch aktiv waehrend Verbindung
 - [x] Android Auto Feinschliff (lokalisierte Browse-Texte, Quick Access, robustere Suche, Prev/Next im Car-Player)
 - [x] Launcher Quick Actions per App-Icon-Long-Press (Suche, Favoriten, Player, Settings)
+- [x] In-App Updater: Settings-Check nutzt denselben APK-Download/Installer wie der Hauptdialog
+- [x] Stable/Beta-Updatekanal fuer GitHub Releases
 - [ ] Android TV / Google TV Basis (Leanback-Launcher, D-Pad-/Focus-Navigation, TV-UI-MVP)
 - [ ] Podcasts MVP als eigener Bereich (Bottom-Bar + Suche + Episodenliste)
 - [ ] Favoriten getrennt darstellbar machen: `Sender` / `Podcasts`
@@ -59,6 +61,7 @@ Ziel: Eine zentrale lokale Datei statt separatem `PHASEN.md` + `todo.md`.
 
 ### Qualitaet
 - [x] Unit-Tests fuer Player-Flow und Repositories ausbauen
+- [x] Release-/CI-Workflows fuer Gradle-Cache und Signed Release Build auf aktuellen Stand gebracht
 - [ ] Compose UI-Tests fuer Home/Player/Favoriten erweitern
 - [ ] Device-Testmatrix fuer aggressive Akku-Optimierer (Xiaomi/Huawei/Samsung)
 

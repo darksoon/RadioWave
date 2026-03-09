@@ -42,6 +42,8 @@ Diese Datei ist fuer GitHub gedacht und zeigt den Produktstatus kompakt.
 - In-App Updateflow ueber GitHub Releases integriert (Hinweisdialog + APK-Download + Installer)
 - Update-Settings-Seite integriert (Popup an/aus, Auto-Check an/aus, manuelle Pruefung, Versionsstatus)
 - Update-Dialog zeigt Download-Fortschritt live (MB/% + Progressbar)
+- Stable/Beta-Updatekanal in Settings integriert (Pre-Releases optional)
+- Manueller Signed-Release-Workflow mit Versionspflege ueber `gradle.properties` integriert
 - Android Auto Developer-Mode Anleitung fuer Sideload/Beta hinterlegt (Settings + Docs)
 - Android Auto Shortcut in Settings mit Fallbacks (kein Launcher -> Settings/App-Info)
 - Launcher Quick Actions per App-Icon-Long-Press integriert (`Search`, `Favorites`, `Player`, `Settings`)
