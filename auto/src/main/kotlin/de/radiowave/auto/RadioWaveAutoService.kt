@@ -17,6 +17,7 @@ import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSession.ConnectionResult
 import androidx.media3.session.SessionError
+import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
@@ -101,15 +102,29 @@ class RadioWaveAutoService : MediaLibraryService() {
             controller: MediaSession.ControllerInfo,
         ): ConnectionResult {
             val base = super.onConnect(session, controller)
+            val sessionCommands = base.availableSessionCommands
+                .buildUpon()
+                .add(CUSTOM_COMMAND_PREVIOUS)
+                .add(CUSTOM_COMMAND_NEXT)
+                .build()
             val playerCommands = base.availablePlayerCommands
                 .buildUpon()
                 .add(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
                 .add(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
                 .build()
             return ConnectionResult.accept(
-                base.availableSessionCommands,
+                sessionCommands,
                 playerCommands,
             )
+        }
+
+        override fun onPostConnect(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+        ) {
+            super.onPostConnect(session, controller)
+            session.setSessionExtras(controller, buildAutoSessionExtras())
+            session.setMediaButtonPreferences(controller, buildAutoMediaButtons())
         }
 
         override fun onGetLibraryRoot(
@@ -248,6 +263,28 @@ class RadioWaveAutoService : MediaLibraryService() {
             }
         }
 
+        override fun onCustomCommand(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            customCommand: SessionCommand,
+            args: Bundle,
+        ): ListenableFuture<SessionResult> {
+            val resultCode = when (customCommand.customAction) {
+                CUSTOM_ACTION_PREVIOUS -> {
+                    if (playAdjacentFavorite(-1)) SessionResult.RESULT_SUCCESS
+                    else SessionResult.RESULT_ERROR_NOT_SUPPORTED
+                }
+
+                CUSTOM_ACTION_NEXT -> {
+                    if (playAdjacentFavorite(+1)) SessionResult.RESULT_SUCCESS
+                    else SessionResult.RESULT_ERROR_NOT_SUPPORTED
+                }
+
+                else -> SessionResult.RESULT_ERROR_NOT_SUPPORTED
+            }
+            return Futures.immediateFuture(SessionResult(resultCode))
+        }
+
         override fun onSearch(
             session: MediaLibrarySession,
             browser: MediaSession.ControllerInfo,
@@ -328,9 +365,44 @@ class RadioWaveAutoService : MediaLibraryService() {
         playerController.playStation(selectedStation)
         recentRepository.addRecentStation(selectedStation)
         val activePlayer = playerController.ensureSessionPlayer()
+        applyAutoQueue(activePlayer, selectedStation)
         mediaLibrarySession?.setPlayer(activePlayer)
+        refreshConnectedAutoControllers()
         activePlayer.playWhenReady = true
         activePlayer.play()
+    }
+
+    private fun applyAutoQueue(player: Player, selectedStation: Station) {
+        val queue = buildAutoQueue(selectedStation)
+        if (queue.size <= 1) return
+
+        val startIndex = queue.indexOfFirst { candidate ->
+            candidate.uuid == selectedStation.uuid || candidate.streamUrl == selectedStation.streamUrl
+        }
+        if (startIndex == -1) return
+
+        val mediaItems = queue.map(::stationItem)
+        player.setMediaItems(mediaItems, startIndex, 0L)
+        player.prepare()
+    }
+
+    private fun buildAutoQueue(selectedStation: Station): List<Station> {
+        val favorites = loadFavorites()
+        val quickAccess = loadQuickAccess()
+        val source = when {
+            favorites.any { it.uuid == selectedStation.uuid || it.streamUrl == selectedStation.streamUrl } -> favorites
+            quickAccess.any { it.uuid == selectedStation.uuid || it.streamUrl == selectedStation.streamUrl } -> quickAccess
+            else -> listOf(selectedStation)
+        }
+        return source
+            .map { station ->
+                if (station.uuid == selectedStation.uuid || station.streamUrl == selectedStation.streamUrl) {
+                    selectedStation
+                } else {
+                    station
+                }
+            }
+            .distinctBy { it.uuid }
     }
 
     private fun loadTopStations(): List<Station> = runBlocking {
@@ -653,6 +725,11 @@ class RadioWaveAutoService : MediaLibraryService() {
         const val STATION_PREFIX = "station:"
         const val MAX_CHILDREN = 50
         const val MAX_GENRES = 40
+        const val CUSTOM_ACTION_PREVIOUS = "de.radiowave.auto.action.PREVIOUS"
+        const val CUSTOM_ACTION_NEXT = "de.radiowave.auto.action.NEXT"
+
+        val CUSTOM_COMMAND_PREVIOUS = SessionCommand(CUSTOM_ACTION_PREVIOUS, Bundle.EMPTY)
+        val CUSTOM_COMMAND_NEXT = SessionCommand(CUSTOM_ACTION_NEXT, Bundle.EMPTY)
     }
 
     private fun logInfo(message: String) {
@@ -669,16 +746,28 @@ class RadioWaveAutoService : MediaLibraryService() {
     private fun buildAutoMediaButtons(): List<CommandButton> {
         return listOf(
             CommandButton.Builder(CommandButton.ICON_PREVIOUS)
-                .setPlayerCommand(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+                .setSessionCommand(CUSTOM_COMMAND_PREVIOUS)
                 .setDisplayName(getString(R.string.auto_previous))
+                .setEnabled(true)
                 .setSlots(CommandButton.SLOT_BACK)
                 .build(),
             CommandButton.Builder(CommandButton.ICON_NEXT)
-                .setPlayerCommand(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
+                .setSessionCommand(CUSTOM_COMMAND_NEXT)
                 .setDisplayName(getString(R.string.auto_next))
+                .setEnabled(true)
                 .setSlots(CommandButton.SLOT_FORWARD)
                 .build(),
         )
+    }
+
+    private fun refreshConnectedAutoControllers() {
+        val session = mediaLibrarySession ?: return
+        val extras = buildAutoSessionExtras()
+        val buttons = buildAutoMediaButtons()
+        session.connectedControllers.forEach { controller ->
+            session.setSessionExtras(controller, extras)
+            session.setMediaButtonPreferences(controller, buttons)
+        }
     }
 
     private fun tryAutoResumeOnConnect() {
