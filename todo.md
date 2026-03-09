@@ -63,6 +63,7 @@ Ziel: Eine zentrale lokale Datei statt separatem `PHASEN.md` + `todo.md`.
 ### Qualitaet
 - [x] Unit-Tests fuer Player-Flow und Repositories ausbauen
 - [x] Release-/CI-Workflows fuer Gradle-Cache und Signed Release Build auf aktuellen Stand gebracht
+- [x] PR-CI nach Configuration-Cache-Einfuehrung repariert (test gating config-cache-safe)
 - [ ] Compose UI-Tests fuer Home/Player/Favoriten erweitern
 - [ ] Device-Testmatrix fuer aggressive Akku-Optimierer (Xiaomi/Huawei/Samsung)
 

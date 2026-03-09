@@ -44,11 +44,12 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - Live download progress for updates
 - Stable/beta update channel toggle
 - Manual signed release workflow with version metadata in `gradle.properties`
+- GPL-3.0-or-later licensing with SPDX headers for Kotlin sources
 - Android Auto dev-mode guide linked in app and docs
 - Launcher quick actions (`Search`, `Favorites`, `Player`, `Settings`)
 - Android Auto browse/player polish: localized labels, quick access, stronger search, prev/next
 - DE/EN language basis with in-app language selection
-- CI and release pipelines hardened
+- CI and release pipelines hardened, including configuration-cache-safe test gating
 
 ## In Progress
 

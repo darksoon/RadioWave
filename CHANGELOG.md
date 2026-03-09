@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 - Prevented app startup crash on devices that reject dynamic manipulation of manifest-defined launcher shortcuts.
 - Settings manual update flow now uses the same in-app APK download/install path as the main update dialog.
 - In-app APK installer hardened with better package-installer fallback behavior and clearer error states.
+- PR CI fixed after Gradle configuration-cache rollout by making test gating configuration-cache safe.
 
 ### Improved
 - Playback notification polished with cleaner media controls and direct player open action.
@@ -25,6 +26,7 @@ All notable changes to this project will be documented in this file.
 - Android Auto player controls now expose working previous/next navigation for queue-capable in-car playback.
 - CI/release workflows now use stronger Gradle caching and configuration cache for faster repeat runs.
 - Support links now point to Ko-fi in app and GitHub documentation.
+- Project relicensed to GPL-3.0-or-later with SPDX headers on Kotlin sources for F-Droid/Open Source distribution.
 
 ## [0.1.0-beta.1] - 2026-03-05
 

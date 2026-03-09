@@ -159,6 +159,8 @@ Unter `Actions -> Manual Android Build -> Run workflow`.
 
 - Laeuft automatisch bei Pushes und Pull Requests auf `main`
 - Kann auch manuell gestartet werden
+- Nutzt Gradle Build Cache plus Configuration Cache
+- Die Test-Task-Steuerung ist configuration-cache-sicher, damit CI bei Modulen ohne Unit-Tests nicht mehr kippt
 
 ### Release Build
 
@@ -180,6 +182,8 @@ Unter `Actions -> Manual Android Build -> Run workflow`.
 
 RadioWave steht unter der GNU General Public License v3.0 oder spaeter.
 Siehe [LICENSE.txt](./LICENSE.txt).
+
+Fuer Kotlin-Quelldateien wird `SPDX-License-Identifier: GPL-3.0-or-later` verwendet.
 
 ## Support
 
