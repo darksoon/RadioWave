@@ -60,8 +60,8 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Build signed release APK
-        run: ./gradlew assembleRelease --stacktrace
+      - name: Build signed release APK and App Bundle
+        run: ./gradlew :app:assembleRelease :app:bundleRelease --stacktrace --build-cache
 
       - name: Verify APK signature
         run: |
@@ -76,9 +76,16 @@ jobs:
           fi
           "$APKSIGNER" verify --verbose app/build/outputs/apk/release/app-release.apk
 
-      - name: Upload signed APK
+      - name: Verify App Bundle signature
+        run: |
+          ls -la app/build/outputs/bundle/release/
+          jarsigner -verify app/build/outputs/bundle/release/app-release.aab
+
+      - name: Upload signed APK and App Bundle
         uses: actions/upload-artifact@v4
         with:
-          name: signed-release-apk
-          path: app/build/outputs/apk/release/app-release.apk
+          name: signed-release-artifacts
+          path: |
+            app/build/outputs/apk/release/app-release.apk
+            app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error

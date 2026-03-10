@@ -131,8 +131,8 @@ jobs:
           git add gradle.properties
           git commit -m "chore(release): prepare ${VERSION_NAME}" -m "DE: Aktualisiert app.versionName auf ${VERSION_NAME} und erhoeht app.versionCode auf ${VERSION_CODE} fuer den automatischen Signed-Release-Build." -m "EN: Updates app.versionName to ${VERSION_NAME} and increments app.versionCode to ${VERSION_CODE} for the automated signed release build."
 
-      - name: Build signed release APK
-        run: ./gradlew :app:assembleRelease --stacktrace --build-cache
+      - name: Build signed release APK and App Bundle
+        run: ./gradlew :app:assembleRelease :app:bundleRelease --stacktrace --build-cache
 
       - name: Verify APK signature
         shell: bash
@@ -158,6 +158,28 @@ jobs:
           APK_NAME="RadioWave-${VERSION}.apk"
           cp "$APK_SOURCE" "$APK_NAME"
           echo "APK_PATH=$APK_NAME" >> "$GITHUB_ENV"
+
+      - name: Verify App Bundle signature
+        shell: bash
+        run: |
+          AAB_SOURCE="app/build/outputs/bundle/release/app-release.aab"
+          if [ ! -f "$AAB_SOURCE" ]; then
+            echo "Release App Bundle not found at $AAB_SOURCE" >&2
+            exit 1
+          fi
+          jarsigner -verify "$AAB_SOURCE"
+
+      - name: Rename App Bundle
+        shell: bash
+        run: |
+          AAB_SOURCE="app/build/outputs/bundle/release/app-release.aab"
+          if [ ! -f "$AAB_SOURCE" ]; then
+            echo "Release App Bundle not found at $AAB_SOURCE" >&2
+            exit 1
+          fi
+          AAB_NAME="RadioWave-${VERSION}.aab"
+          cp "$AAB_SOURCE" "$AAB_NAME"
+          echo "AAB_PATH=$AAB_NAME" >> "$GITHUB_ENV"
 
       - name: Generate changelog
         shell: bash
@@ -203,7 +225,9 @@ jobs:
           name: "RadioWave ${{ env.VERSION }}"
           body: ${{ env.CHANGELOG }}
           prerelease: ${{ github.event.inputs.prerelease }}
-          files: ${{ env.APK_PATH }}
+          files: |
+            ${{ env.APK_PATH }}
+            ${{ env.AAB_PATH }}
           generate_release_notes: false
 
       - name: Cleanup secrets
