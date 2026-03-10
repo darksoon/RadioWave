@@ -64,6 +64,7 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - Favorites export/import (JSON)
 - Custom stations and M3U/PLS import
 - Visible data-usage estimate based on bitrate
+- Play Store readiness: native debug symbols for App Bundle crash/ANR diagnostics
 
 ## Later
 
