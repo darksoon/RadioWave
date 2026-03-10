@@ -167,7 +167,7 @@ Available under `Actions -> Manual Android Build -> Run workflow`.
 - Signed releases are created through `Actions -> Release Build`
 - The workflow:
   - updates `app.versionName` and `app.versionCode`
-  - builds a signed release APK and signed App Bundle (`.aab`)
+  - builds a signed GitHub APK plus a Play Store App Bundle (`.aab`)
   - creates a tag and GitHub release
   - uploads both artifacts as release assets
 

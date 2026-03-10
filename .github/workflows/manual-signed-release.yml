@@ -60,12 +60,12 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Build signed release APK and App Bundle
-        run: ./gradlew :app:assembleRelease :app:bundleRelease --stacktrace --build-cache
+      - name: Build signed GitHub APK and Play App Bundle
+        run: ./gradlew :app:assembleGithubRelease :app:bundlePlayRelease --stacktrace --build-cache
 
       - name: Verify APK signature
         run: |
-          ls -la app/build/outputs/apk/release/
+          ls -la app/build/outputs/apk/github/release/
           APKSIGNER=$(find "${ANDROID_SDK_ROOT:-$ANDROID_HOME}" -type f -name apksigner | sort | tail -1)
           if [ -z "$APKSIGNER" ]; then
             APKSIGNER=$(command -v apksigner || true)
@@ -74,18 +74,18 @@ jobs:
             echo "apksigner not found in Android SDK build-tools" >&2
             exit 1
           fi
-          "$APKSIGNER" verify --verbose app/build/outputs/apk/release/app-release.apk
+          "$APKSIGNER" verify --verbose app/build/outputs/apk/github/release/app-github-release.apk
 
       - name: Verify App Bundle signature
         run: |
-          ls -la app/build/outputs/bundle/release/
-          jarsigner -verify app/build/outputs/bundle/release/app-release.aab
+          ls -la app/build/outputs/bundle/playRelease/
+          jarsigner -verify app/build/outputs/bundle/playRelease/app-play-release.aab
 
       - name: Upload signed APK and App Bundle
         uses: actions/upload-artifact@v4
         with:
           name: signed-release-artifacts
           path: |
-            app/build/outputs/apk/release/app-release.apk
-            app/build/outputs/bundle/release/app-release.aab
+            app/build/outputs/apk/github/release/app-github-release.apk
+            app/build/outputs/bundle/playRelease/app-play-release.aab
           if-no-files-found: error

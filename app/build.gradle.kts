@@ -25,10 +25,21 @@ val appVersionName = providers
 android {
     namespace = "de.radiowave"
 
+    flavorDimensions += "distribution"
+
     defaultConfig {
         applicationId = "de.radiowave"
         versionCode = appVersionCode
         versionName = appVersionName
+    }
+
+    productFlavors {
+        create("github") {
+            dimension = "distribution"
+        }
+        create("play") {
+            dimension = "distribution"
+        }
     }
 
     signingConfigs {

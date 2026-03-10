@@ -95,6 +95,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import de.radiowave.core.data.update.GitHubReleaseInfo
 import de.radiowave.core.data.update.GitHubReleaseUpdater
 import de.radiowave.core.data.update.UpdateDownloadProgress
+import de.radiowave.core.data.update.AppUpdateSupport
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -250,6 +251,7 @@ fun RadioWaveMainScreen(
     var updateProgress by remember { mutableStateOf<UpdateDownloadProgress?>(null) }
 
     suspend fun checkForAppUpdate(force: Boolean) {
+        if (!AppUpdateSupport.isInAppUpdaterEnabled(context)) return
         val autoCheckEnabled = prefs.getBoolean(AppSettings.KEY_UPDATE_CHECK_ENABLED, true)
         if (!autoCheckEnabled) return
         val now = System.currentTimeMillis()

@@ -69,6 +69,7 @@ import de.radiowave.core.model.AppSettings
 import de.radiowave.core.data.update.GitHubReleaseUpdater
 import de.radiowave.core.data.update.LocalIssueReporter
 import de.radiowave.core.data.update.UpdateDownloadProgress
+import de.radiowave.core.data.update.AppUpdateSupport
 import de.radiowave.core.ui.theme.DarkCardBackground
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.TealAccent
@@ -89,6 +90,7 @@ fun SettingsScreen(
     val uriHandler = LocalUriHandler.current
     val prefs = context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
     val updateUiState by viewModel.updateUiState.collectAsState()
+    val supportsInAppUpdater = remember(context) { AppUpdateSupport.isInAppUpdaterEnabled(context) }
     val coroutineScope = rememberCoroutineScope()
     var issueReportRefreshKey by remember { mutableLongStateOf(0L) }
     val latestIssueReport = remember(context, issueReportRefreshKey) {
@@ -549,141 +551,152 @@ fun SettingsScreen(
 
                     SettingsCategory.UPDATES -> SettingsCard(title = stringResource(R.string.settings_category_updates_title)) {
                         InfoTextRow(label = stringResource(R.string.settings_updates_installed_version), value = appVersion)
-                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                        InfoTextRow(
-                            label = stringResource(R.string.settings_updates_latest_release),
-                            value = updateUiState.latestRelease?.tag ?: stringResource(R.string.settings_updates_not_checked),
-                        )
-                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                        InfoTextRow(
-                            label = stringResource(R.string.settings_updates_status),
-                            value = when {
-                                updateUiState.latestRelease == null -> stringResource(R.string.settings_updates_status_unknown)
-                                updateUiState.hasUpdate -> stringResource(R.string.settings_updates_status_available)
-                                else -> stringResource(R.string.settings_updates_status_current)
-                            },
-                        )
-                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                        SettingToggleRow(
-                            title = stringResource(R.string.settings_updates_auto_check_title),
-                            subtitle = stringResource(R.string.settings_updates_auto_check_subtitle),
-                            checked = updateCheckEnabled,
-                            onCheckedChange = { checked ->
-                                updateCheckEnabled = checked
-                                prefs.edit().putBoolean(AppSettings.KEY_UPDATE_CHECK_ENABLED, checked).apply()
-                            },
-                        )
-                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                        SettingToggleRow(
-                            title = stringResource(R.string.settings_updates_popup_title),
-                            subtitle = stringResource(R.string.settings_updates_popup_subtitle),
-                            checked = updatePopupEnabled,
-                            onCheckedChange = { checked ->
-                                updatePopupEnabled = checked
-                                prefs.edit().putBoolean(AppSettings.KEY_UPDATE_POPUP_ENABLED, checked).apply()
-                            },
-                        )
-                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                        SettingToggleRow(
-                            title = stringResource(R.string.settings_updates_beta_channel_title),
-                            subtitle = stringResource(R.string.settings_updates_beta_channel_subtitle),
-                            checked = updateBetaChannelEnabled,
-                            onCheckedChange = { checked ->
-                                updateBetaChannelEnabled = checked
-                                prefs.edit()
-                                    .putBoolean(AppSettings.KEY_UPDATE_BETA_CHANNEL_ENABLED, checked)
-                                    .apply()
-                            },
-                        )
-                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                        SettingActionRow(
-                            title = stringResource(R.string.settings_updates_manual_title),
-                            subtitle = buildUpdateCheckSubtitle(context, updateUiState.lastCheckedAtMs, updateUiState.lastError),
-                            actionLabel = if (updateUiState.isChecking) {
-                                stringResource(R.string.settings_updates_manual_checking)
-                            } else {
-                                stringResource(R.string.settings_updates_manual_check)
-                            },
-                            onActionClick = {
-                                if (!updateUiState.isChecking) {
-                                    manualUpdateCheckRequested = true
-                                    viewModel.checkForUpdates(
-                                        currentVersionName = appVersion,
-                                        includePrerelease = updateBetaChannelEnabled,
-                                    )
-                                }
-                            },
-                            secondaryActionLabel = stringResource(R.string.settings_updates_manual_release_page),
-                            onSecondaryActionClick = {
-                                val releaseUrl = updateUiState.latestRelease?.htmlUrl
-                                    ?: "https://github.com/darksoon/RadioWave/releases"
-                                uriHandler.openUri(releaseUrl)
-                            },
-                        )
-                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                        SettingActionRow(
-                            title = tr("Update-Popup testen", "Test update popup"),
-                            subtitle = tr(
-                                "Zeigt denselben Dialog wie bei einem automatischen Update-Treffer.",
-                                "Shows the same dialog used when an automatic update is found.",
-                            ),
-                            actionLabel = tr("Popup zeigen", "Show popup"),
-                            onActionClick = {
-                                when {
-                                    updateUiState.hasUpdate && updateUiState.latestRelease != null -> {
-                                        showUpdateAvailableDialog = true
-                                    }
-                                    updateUiState.isChecking -> Unit
-                                    else -> {
+                        if (supportsInAppUpdater) {
+                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                            InfoTextRow(
+                                label = stringResource(R.string.settings_updates_latest_release),
+                                value = updateUiState.latestRelease?.tag ?: stringResource(R.string.settings_updates_not_checked),
+                            )
+                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                            InfoTextRow(
+                                label = stringResource(R.string.settings_updates_status),
+                                value = when {
+                                    updateUiState.latestRelease == null -> stringResource(R.string.settings_updates_status_unknown)
+                                    updateUiState.hasUpdate -> stringResource(R.string.settings_updates_status_available)
+                                    else -> stringResource(R.string.settings_updates_status_current)
+                                },
+                            )
+                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                            SettingToggleRow(
+                                title = stringResource(R.string.settings_updates_auto_check_title),
+                                subtitle = stringResource(R.string.settings_updates_auto_check_subtitle),
+                                checked = updateCheckEnabled,
+                                onCheckedChange = { checked ->
+                                    updateCheckEnabled = checked
+                                    prefs.edit().putBoolean(AppSettings.KEY_UPDATE_CHECK_ENABLED, checked).apply()
+                                },
+                            )
+                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                            SettingToggleRow(
+                                title = stringResource(R.string.settings_updates_popup_title),
+                                subtitle = stringResource(R.string.settings_updates_popup_subtitle),
+                                checked = updatePopupEnabled,
+                                onCheckedChange = { checked ->
+                                    updatePopupEnabled = checked
+                                    prefs.edit().putBoolean(AppSettings.KEY_UPDATE_POPUP_ENABLED, checked).apply()
+                                },
+                            )
+                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                            SettingToggleRow(
+                                title = stringResource(R.string.settings_updates_beta_channel_title),
+                                subtitle = stringResource(R.string.settings_updates_beta_channel_subtitle),
+                                checked = updateBetaChannelEnabled,
+                                onCheckedChange = { checked ->
+                                    updateBetaChannelEnabled = checked
+                                    prefs.edit()
+                                        .putBoolean(AppSettings.KEY_UPDATE_BETA_CHANNEL_ENABLED, checked)
+                                        .apply()
+                                },
+                            )
+                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                            SettingActionRow(
+                                title = stringResource(R.string.settings_updates_manual_title),
+                                subtitle = buildUpdateCheckSubtitle(context, updateUiState.lastCheckedAtMs, updateUiState.lastError),
+                                actionLabel = if (updateUiState.isChecking) {
+                                    stringResource(R.string.settings_updates_manual_checking)
+                                } else {
+                                    stringResource(R.string.settings_updates_manual_check)
+                                },
+                                onActionClick = {
+                                    if (!updateUiState.isChecking) {
                                         manualUpdateCheckRequested = true
                                         viewModel.checkForUpdates(
                                             currentVersionName = appVersion,
                                             includePrerelease = updateBetaChannelEnabled,
                                         )
-                                        Toast.makeText(
-                                            context,
-                                            tr("Pruefe auf Update...", "Checking for update..."),
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
                                     }
+                                },
+                                secondaryActionLabel = stringResource(R.string.settings_updates_manual_release_page),
+                                onSecondaryActionClick = {
+                                    val releaseUrl = updateUiState.latestRelease?.htmlUrl
+                                        ?: "https://github.com/darksoon/RadioWave/releases"
+                                    uriHandler.openUri(releaseUrl)
+                                },
+                            )
+                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                            SettingActionRow(
+                                title = tr("Update-Popup testen", "Test update popup"),
+                                subtitle = tr(
+                                    "Zeigt denselben Dialog wie bei einem automatischen Update-Treffer.",
+                                    "Shows the same dialog used when an automatic update is found.",
+                                ),
+                                actionLabel = tr("Popup zeigen", "Show popup"),
+                                onActionClick = {
+                                    when {
+                                        updateUiState.hasUpdate && updateUiState.latestRelease != null -> {
+                                            showUpdateAvailableDialog = true
+                                        }
+                                        updateUiState.isChecking -> Unit
+                                        else -> {
+                                            manualUpdateCheckRequested = true
+                                            viewModel.checkForUpdates(
+                                                currentVersionName = appVersion,
+                                                includePrerelease = updateBetaChannelEnabled,
+                                            )
+                                            Toast.makeText(
+                                                context,
+                                                tr("Pruefe auf Update...", "Checking for update..."),
+                                                Toast.LENGTH_SHORT,
+                                            ).show()
+                                        }
+                                    }
+                                },
+                                secondaryActionLabel = tr("Release-Seite", "Release page"),
+                                onSecondaryActionClick = {
+                                    val releaseUrl = updateUiState.latestRelease?.htmlUrl
+                                        ?: "https://github.com/darksoon/RadioWave/releases"
+                                    uriHandler.openUri(releaseUrl)
+                                },
+                            )
+                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                            InfoTextBlockRow(
+                                label = stringResource(R.string.settings_updates_auto_beta_label),
+                                value = stringResource(R.string.settings_updates_auto_beta_text),
+                            )
+                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                            SettingActionRow(
+                                title = stringResource(R.string.settings_updates_auto_help_title),
+                                subtitle = stringResource(R.string.settings_updates_auto_help_subtitle),
+                                actionLabel = stringResource(R.string.settings_updates_auto_open),
+                                onActionClick = { openAndroidAutoApp(context) },
+                                secondaryActionLabel = stringResource(R.string.settings_updates_auto_guide),
+                                onSecondaryActionClick = {
+                                    uriHandler.openUri("https://github.com/darksoon/RadioWave/blob/main/docs/ANDROID_AUTO_DEV_MODE.md")
+                                },
+                            )
+                            updateUiState.latestRelease?.body
+                                ?.takeIf { it.isNotBlank() }
+                                ?.let { notes ->
+                                    HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                                    InfoTextBlockRow(
+                                        label = stringResource(R.string.settings_updates_notes_preview),
+                                        value = notes.lineSequence()
+                                            .map { it.trim() }
+                                            .filter { it.isNotBlank() }
+                                            .take(6)
+                                            .joinToString("\n"),
+                                    )
                                 }
-                            },
-                            secondaryActionLabel = tr("Release-Seite", "Release page"),
-                            onSecondaryActionClick = {
-                                val releaseUrl = updateUiState.latestRelease?.htmlUrl
-                                    ?: "https://github.com/darksoon/RadioWave/releases"
-                                uriHandler.openUri(releaseUrl)
-                            },
-                        )
-                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                        InfoTextBlockRow(
-                            label = stringResource(R.string.settings_updates_auto_beta_label),
-                            value = stringResource(R.string.settings_updates_auto_beta_text),
-                        )
-                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                        SettingActionRow(
-                            title = stringResource(R.string.settings_updates_auto_help_title),
-                            subtitle = stringResource(R.string.settings_updates_auto_help_subtitle),
-                            actionLabel = stringResource(R.string.settings_updates_auto_open),
-                            onActionClick = { openAndroidAutoApp(context) },
-                            secondaryActionLabel = stringResource(R.string.settings_updates_auto_guide),
-                            onSecondaryActionClick = {
-                                uriHandler.openUri("https://github.com/darksoon/RadioWave/blob/main/docs/ANDROID_AUTO_DEV_MODE.md")
-                            },
-                        )
-                        updateUiState.latestRelease?.body
-                            ?.takeIf { it.isNotBlank() }
-                            ?.let { notes ->
-                                HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                                InfoTextBlockRow(
-                                    label = stringResource(R.string.settings_updates_notes_preview),
-                                    value = notes.lineSequence()
-                                        .map { it.trim() }
-                                        .filter { it.isNotBlank() }
-                                        .take(6)
-                                        .joinToString("\n"),
-                                )
-                            }
+                        } else {
+                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                            InfoTextBlockRow(
+                                label = tr("Play-Store-Updates", "Play Store updates"),
+                                value = tr(
+                                    "Dieser Build nutzt keine direkte APK-Installation. Updates werden hier ueber den Google Play Store ausgeliefert.",
+                                    "This build does not use direct APK installation. Updates are delivered through Google Play Store here.",
+                                ),
+                            )
+                        }
                     }
 
                     SettingsCategory.INFO -> SettingsCard(title = stringResource(R.string.settings_category_info_title)) {
