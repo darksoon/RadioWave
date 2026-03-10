@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 - Settings manual update flow now uses the same in-app APK download/install path as the main update dialog.
 - In-app APK installer hardened with better package-installer fallback behavior and clearer error states.
 - PR CI fixed after Gradle configuration-cache rollout by making test gating configuration-cache safe.
+- Play Store distribution now excludes direct APK installation permission and GitHub sideload updater flow.
 
 ### Improved
 - Playback notification polished with cleaner media controls and direct player open action.
@@ -27,6 +28,7 @@ All notable changes to this project will be documented in this file.
 - CI/release workflows now use stronger Gradle caching and configuration cache for faster repeat runs.
 - Support links now point to Ko-fi in app and GitHub documentation.
 - Project relicensed to GPL-3.0-or-later with SPDX headers on Kotlin sources for F-Droid/Open Source distribution.
+- Release workflows now split signed output into GitHub APK (`github`) and Play Store App Bundle (`play`).
 
 ## [0.1.0-beta.1] - 2026-03-05
 

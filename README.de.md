@@ -94,6 +94,12 @@ chmod +x gradlew
 
 # Debug APK installieren
 ./gradlew installDebug
+
+# Direktdownload-Debug-Build mit eingebautem Updater
+./gradlew :app:assembleGithubDebug
+
+# Play-Store-Debug-Build ohne Sideload-Updater
+./gradlew :app:assemblePlayDebug
 ```
 
 ### Restriktive Netzwerke / Proxy
@@ -170,6 +176,9 @@ Unter `Actions -> Manual Android Build -> Run workflow`.
   - baut eine signierte GitHub-APK plus ein Play-Store-App-Bundle (`.aab`)
   - erstellt Tag und GitHub Release
   - haengt beide Artefakte als Release-Assets an
+- Rollen der Artefakte:
+  - `github`-APK: fuer GitHub-Releases / Direktdownload, mit eingebautem Updater
+  - `play`-AAB: fuer Google Play, ohne direkte APK-Install-/Update-Permission
 
 ## Datenschutz
 

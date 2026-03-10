@@ -50,6 +50,7 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - Android Auto browse/player polish: localized labels, quick access, stronger search, prev/next
 - DE/EN language basis with in-app language selection
 - CI and release pipelines hardened, including configuration-cache-safe test gating
+- Release/distribution split for GitHub APK (`github`) and Play Store App Bundle (`play`)
 
 ## In Progress
 
