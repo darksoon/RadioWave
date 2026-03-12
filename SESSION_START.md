@@ -7,10 +7,11 @@ Nutze fuer neue Chat-Sessions diesen Start:
 ## Schritte fuer den Agenten
 
 1. Lies diese Dateien in genau dieser Reihenfolge:
-   - `AGENTS.md`
    - `README.md`
    - `todo.md`
-   - `Audits/AUDIT_ALPHA5.md`
+   - `CHANGELOG.md`
+   - `ROADMAP.md`
+   - `Audits/_audit_extract/word/document.xml` (aktuelles Audit, falls vorhanden)
    - `.agents/WORKFLOW_NOTES.md` (lokale Commit/Release-Regeln)
 2. Fasse den aktuellen Stand in 5-10 Bullet Points zusammen.
 3. Nenne offene Blocker und Risiken (falls vorhanden).
@@ -23,6 +24,7 @@ Nutze fuer neue Chat-Sessions diesen Start:
 - Release Build erzeugt jetzt zwei Distributionen:
   - `github`: signierte APK mit eingebautem GitHub-Updater
   - `play`: signiertes AAB ohne direkten APK-Updater / ohne `REQUEST_INSTALL_PACKAGES`
+- GitHub Releases und Tags sind die Source of Truth fuer den aktuellen Release-Stand.
 - Release-Status explizit pruefen (`Latest` / `prerelease`) und wie gewuenscht setzen.
 - Update-Checker beachten:
   - stable = normaler Release

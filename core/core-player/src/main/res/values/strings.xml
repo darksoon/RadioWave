@@ -7,9 +7,13 @@
     <string name="notification_status_paused">Paused</string>
     <string name="notification_playing_fallback">Live stream playing</string>
     <string name="notification_paused_fallback">Playback paused</string>
+    <string name="notification_buffering">Buffering…</string>
     <string name="notification_action_previous">Previous</string>
     <string name="notification_action_play">Play</string>
     <string name="notification_action_pause">Pause</string>
     <string name="notification_action_next">Next</string>
     <string name="notification_action_stop">Stop</string>
+    <string name="player_error_unknown">Unknown error</string>
+    <string name="player_error_wifi_required">Wi-Fi required (mobile data disabled)</string>
+    <string name="player_error_audio_focus_unavailable">Audio focus not available</string>
 </resources>

@@ -55,6 +55,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -65,6 +66,7 @@ import coil.compose.SubcomposeAsyncImage
 import de.radiowave.core.model.PlayerState
 import de.radiowave.core.ui.components.MarqueeText
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
+import de.radiowave.feature.player.R
 import kotlinx.coroutines.delay
 
 @Composable
@@ -189,7 +191,7 @@ fun PlayerScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.KeyboardArrowDown,
-                        contentDescription = "Schliessen",
+                        contentDescription = stringResource(R.string.player_screen_close),
                         tint = Color.White.copy(alpha = 0.9f),
                         modifier = Modifier
                             .size(30.dp)
@@ -198,7 +200,7 @@ fun PlayerScreen(
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = "Fullscreen Player",
+                    text = stringResource(R.string.player_screen_title),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                     ),
@@ -320,7 +322,7 @@ fun PlayerScreen(
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = "LIVE",
+                    text = stringResource(R.string.player_live),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White.copy(alpha = 0.68f),
                 )
@@ -419,7 +421,11 @@ private fun MainPlaybackButton(
             ) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                    contentDescription = if (isPlaying) "Pause" else "Play",
+                    contentDescription = if (isPlaying) {
+                        stringResource(R.string.player_pause)
+                    } else {
+                        stringResource(R.string.player_play)
+                    },
                     tint = Color.White,
                     modifier = Modifier.size(34.dp),
                 )

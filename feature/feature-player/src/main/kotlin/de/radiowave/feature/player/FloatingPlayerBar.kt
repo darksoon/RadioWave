@@ -42,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -53,6 +54,7 @@ import de.radiowave.core.ui.components.StationLogoImage
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.radiowave.core.ui.theme.TealAccent
+import de.radiowave.feature.player.R
 import kotlinx.coroutines.delay
 
 @Composable
@@ -172,7 +174,7 @@ fun FloatingPlayerBar(
 
                     val showMetadataLine = isBuffering || (showMetadata && compactMetadata != null) || sessionDurationLabel.isNotBlank()
                     val secondaryLine = when {
-                        isBuffering -> "Wird geladen..."
+                        isBuffering -> stringResource(R.string.player_loading)
                         showMetadata -> compactMetadata
                         else -> null
                     }
@@ -221,7 +223,11 @@ fun FloatingPlayerBar(
                     ) {
                         Icon(
                             imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                            contentDescription = if (isFavorite) "Favorit entfernen" else "Zu Favoriten",
+                            contentDescription = if (isFavorite) {
+                                stringResource(R.string.player_remove_favorite)
+                            } else {
+                                stringResource(R.string.player_add_favorite)
+                            },
                             tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.92f),
                             modifier = Modifier
                                 .size(32.dp)
@@ -255,7 +261,11 @@ fun FloatingPlayerBar(
                         ) {
                             Icon(
                                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = if (isPlaying) "Pause" else "Play",
+                                contentDescription = if (isPlaying) {
+                                    stringResource(R.string.player_pause)
+                                } else {
+                                    stringResource(R.string.player_play)
+                                },
                                 tint = Color.White,
                                 modifier = Modifier
                                     .size(32.dp)

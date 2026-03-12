@@ -761,7 +761,7 @@ class PlayerControllerImpl @Inject constructor(
             PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND,
             -> PlayerError.StreamBroken
 
-            else -> PlayerError.Unknown(error.message ?: "Unknown Error")
+            else -> PlayerError.Unknown(error.message ?: context.getString(R.string.player_error_unknown))
         }
     }
 
@@ -958,7 +958,7 @@ class PlayerControllerImpl @Inject constructor(
             _playerState.update {
                 it.copy(
                     currentStation = station,
-                    error = PlayerError.Unknown("WLAN erforderlich (Mobile Daten deaktiviert)"),
+                    error = PlayerError.Unknown(context.getString(R.string.player_error_wifi_required)),
                     isPlaying = false,
                     isLoading = false,
                     isBuffering = false,
@@ -971,7 +971,7 @@ class PlayerControllerImpl @Inject constructor(
             _playerState.update {
                 it.copy(
                     currentStation = station,
-                    error = PlayerError.Unknown("Audio focus not available"),
+                    error = PlayerError.Unknown(context.getString(R.string.player_error_audio_focus_unavailable)),
                     isPlaying = false,
                     isLoading = false,
                     isBuffering = false,
@@ -996,7 +996,7 @@ class PlayerControllerImpl @Inject constructor(
         val player = getOrCreatePlayer()
         ensureForegroundPlaybackServiceRunning(
             stationName = station.name,
-            subtitle = "Buffering...",
+            subtitle = context.getString(R.string.notification_buffering),
         )
         restartStream(player, station)
     }
@@ -1027,7 +1027,7 @@ class PlayerControllerImpl @Inject constructor(
                 if (!requestAudioFocus()) {
                     _playerState.update {
                         it.copy(
-                            error = PlayerError.Unknown("Audio focus not available"),
+                            error = PlayerError.Unknown(context.getString(R.string.player_error_audio_focus_unavailable)),
                             isPlaying = false,
                             isLoading = false,
                             isBuffering = false,

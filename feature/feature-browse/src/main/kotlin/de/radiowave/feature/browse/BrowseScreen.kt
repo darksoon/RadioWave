@@ -72,8 +72,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -85,6 +85,7 @@ import de.radiowave.core.ui.components.StationLogoImage
 import de.radiowave.core.model.AppSettings
 import de.radiowave.core.model.Station
 import de.radiowave.core.ui.theme.TealAccent
+import de.radiowave.feature.browse.R
 import de.radiowave.feature.home.HomeUiState
 import de.radiowave.feature.home.HomeViewModel
 import de.radiowave.feature.home.SortOption
@@ -92,41 +93,46 @@ import kotlinx.coroutines.launch
 
 private data class CountryItem(
     val code: String,
-    val name: String,
+    val nameRes: Int,
     val flag: String,
 )
 
 private val topCountries = listOf(
-    CountryItem("DE", "Deutschland", "\uD83C\uDDE9\uD83C\uDDEA"),
-    CountryItem("US", "USA", "\uD83C\uDDFA\uD83C\uDDF8"),
-    CountryItem("GB", "UK", "\uD83C\uDDEC\uD83C\uDDE7"),
-    CountryItem("FR", "Frankreich", "\uD83C\uDDEB\uD83C\uDDF7"),
-    CountryItem("IT", "Italien", "\uD83C\uDDEE\uD83C\uDDF9"),
-    CountryItem("ES", "Spanien", "\uD83C\uDDEA\uD83C\uDDF8"),
-    CountryItem("NL", "Niederlande", "\uD83C\uDDF3\uD83C\uDDF1"),
-    CountryItem("PL", "Polen", "\uD83C\uDDF5\uD83C\uDDF1"),
-    CountryItem("AT", "Oesterreich", "\uD83C\uDDE6\uD83C\uDDF9"),
-    CountryItem("CH", "Schweiz", "\uD83C\uDDE8\uD83C\uDDED"),
-    CountryItem("JP", "Japan", "\uD83C\uDDEF\uD83C\uDDF5"),
-    CountryItem("KR", "Suedkorea", "\uD83C\uDDF0\uD83C\uDDF7"),
-    CountryItem("CA", "Kanada", "\uD83C\uDDE8\uD83C\uDDE6"),
+    CountryItem("DE", R.string.browse_country_germany, "\uD83C\uDDE9\uD83C\uDDEA"),
+    CountryItem("US", R.string.browse_country_usa, "\uD83C\uDDFA\uD83C\uDDF8"),
+    CountryItem("GB", R.string.browse_country_uk, "\uD83C\uDDEC\uD83C\uDDE7"),
+    CountryItem("FR", R.string.browse_country_france, "\uD83C\uDDEB\uD83C\uDDF7"),
+    CountryItem("IT", R.string.browse_country_italy, "\uD83C\uDDEE\uD83C\uDDF9"),
+    CountryItem("ES", R.string.browse_country_spain, "\uD83C\uDDEA\uD83C\uDDF8"),
+    CountryItem("NL", R.string.browse_country_netherlands, "\uD83C\uDDF3\uD83C\uDDF1"),
+    CountryItem("PL", R.string.browse_country_poland, "\uD83C\uDDF5\uD83C\uDDF1"),
+    CountryItem("AT", R.string.browse_country_austria, "\uD83C\uDDE6\uD83C\uDDF9"),
+    CountryItem("CH", R.string.browse_country_switzerland, "\uD83C\uDDE8\uD83C\uDDED"),
+    CountryItem("JP", R.string.browse_country_japan, "\uD83C\uDDEF\uD83C\uDDF5"),
+    CountryItem("KR", R.string.browse_country_south_korea, "\uD83C\uDDF0\uD83C\uDDF7"),
+    CountryItem("CA", R.string.browse_country_canada, "\uD83C\uDDE8\uD83C\uDDE6"),
+)
+
+private data class GenreItem(
+    val labelRes: Int,
+    val tag: String,
 )
 
 private val popularGenres = listOf(
-    "Techno" to "techno",
-    "Dance" to "dance",
-    "Rock" to "rock",
-    "Jazz" to "jazz",
-    "80s" to "80s",
-    "Pop" to "pop",
-    "Classical" to "classical",
-    "Hip Hop" to "hip hop",
-    "Chill" to "chill",
-    "House" to "house",
+    GenreItem(R.string.browse_genre_techno, "techno"),
+    GenreItem(R.string.browse_genre_dance, "dance"),
+    GenreItem(R.string.browse_genre_rock, "rock"),
+    GenreItem(R.string.browse_genre_jazz, "jazz"),
+    GenreItem(R.string.browse_genre_80s, "80s"),
+    GenreItem(R.string.browse_genre_pop, "pop"),
+    GenreItem(R.string.browse_genre_classical, "classical"),
+    GenreItem(R.string.browse_genre_hip_hop, "hip hop"),
+    GenreItem(R.string.browse_genre_chill, "chill"),
+    GenreItem(R.string.browse_genre_house, "house"),
 )
 
 private data class QuickGenreItem(
-    val label: String,
+    val labelRes: Int,
     val tag: String,
     val icon: ImageVector,
     val gradient: List<Color>,
@@ -134,25 +140,25 @@ private data class QuickGenreItem(
 
 private val quickGenres = listOf(
     QuickGenreItem(
-        label = "Techno",
+        labelRes = R.string.browse_genre_techno,
         tag = "techno",
         icon = Icons.Filled.Memory,
         gradient = listOf(Color(0xFF5B4BFF), Color(0xFFB948FF)),
     ),
     QuickGenreItem(
-        label = "Rock",
+        labelRes = R.string.browse_genre_rock,
         tag = "rock",
         icon = Icons.Filled.MusicNote,
         gradient = listOf(Color(0xFF9F1C2B), Color(0xFFFF4D64)),
     ),
     QuickGenreItem(
-        label = "Jazz",
+        labelRes = R.string.browse_genre_jazz,
         tag = "jazz",
         icon = Icons.Filled.Piano,
         gradient = listOf(Color(0xFF8A4E10), Color(0xFFFFB347)),
     ),
     QuickGenreItem(
-        label = "Chillout",
+        labelRes = R.string.browse_genre_chillout,
         tag = "chill",
         icon = Icons.Filled.Waves,
         gradient = listOf(Color(0xFF0C666B), Color(0xFF2EE6D6)),
@@ -245,14 +251,10 @@ private fun BrowseContent(
     onToggleFavorite: (Station) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val configuration = LocalConfiguration.current
-    val isGerman = configuration.locales[0]?.language?.equals("de", ignoreCase = true) == true
-    fun tr(de: String, en: String): String = if (isGerman) de else en
-
     val sortOptionsLocalized = listOf(
-        SortOption.POPULARITY to tr("Beliebtheit", "Popularity"),
-        SortOption.NAME to tr("Name", "Name"),
-        SortOption.COUNTRY to tr("Land", "Country"),
+        SortOption.POPULARITY to stringResource(R.string.browse_sort_popularity),
+        SortOption.NAME to stringResource(R.string.browse_sort_name),
+        SortOption.COUNTRY to stringResource(R.string.browse_sort_country),
     )
 
     val favoriteIds = uiState.favoriteStations.map { station -> station.uuid }.toSet()
@@ -294,7 +296,7 @@ private fun BrowseContent(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = tr("Entdecken & Suche", "Discover & Search"),
+                    text = stringResource(R.string.browse_title),
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 26.sp,
@@ -305,7 +307,7 @@ private fun BrowseContent(
                 IconButton(onClick = onRefresh) {
                     Icon(
                         Icons.Default.Refresh,
-                        contentDescription = tr("Aktualisieren", "Refresh"),
+                        contentDescription = stringResource(R.string.browse_refresh),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -319,7 +321,7 @@ private fun BrowseContent(
                     .padding(horizontal = 20.dp),
                 placeholder = {
                     Text(
-                        tr("Sender, Genre, Land...", "Station, genre, country..."),
+                        stringResource(R.string.browse_search_placeholder),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 },
@@ -352,7 +354,7 @@ private fun BrowseContent(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = tr("Schnell-Genres", "Quick Genres"),
+                        text = stringResource(R.string.browse_quick_genres),
                         style = MaterialTheme.typography.titleSmall.copy(
                             fontWeight = FontWeight.SemiBold,
                         ),
@@ -395,7 +397,7 @@ private fun BrowseContent(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                text = tr("Weitere Filter", "More filters"),
+                                text = stringResource(R.string.browse_more_filters),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f),
@@ -431,7 +433,7 @@ private fun BrowseContent(
                                             onClick = { onCountrySelected(if (isSelected) null else country.code) },
                                             label = {
                                                 Text(
-                                                    text = "${country.flag} ${country.name}",
+                                                    text = "${country.flag} ${stringResource(country.nameRes)}",
                                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                                     fontSize = 13.sp,
                                                 )
@@ -453,14 +455,14 @@ private fun BrowseContent(
                                     contentPadding = PaddingValues(horizontal = 10.dp),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 ) {
-                                    items(popularGenres) { (displayName, tag) ->
-                                        val isSelected = selectedGenre == tag
+                                    items(popularGenres) { genre ->
+                                        val isSelected = selectedGenre == genre.tag
                                         FilterChip(
                                             selected = isSelected,
-                                            onClick = { onGenreSelected(if (isSelected) null else tag) },
+                                            onClick = { onGenreSelected(if (isSelected) null else genre.tag) },
                                             label = {
                                                 Text(
-                                                    text = displayName,
+                                                    text = stringResource(genre.labelRes),
                                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                                 )
                                             },
@@ -491,11 +493,11 @@ private fun BrowseContent(
             ) {
                 Text(
                     text = if (uiState.searchResultCount > 0) {
-                        tr("${visibleStations.size} Sender gefunden", "${visibleStations.size} stations found")
+                        stringResource(R.string.browse_results_found, visibleStations.size)
                     } else if (searchQuery.isBlank() && selectedCountry == null) {
-                        tr("Top Sender", "Top stations")
+                        stringResource(R.string.browse_top_stations)
                     } else {
-                        tr("Sender", "Stations")
+                        stringResource(R.string.browse_stations)
                     },
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.SemiBold,
@@ -512,15 +514,15 @@ private fun BrowseContent(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         val currentSortLabel = sortOptionsLocalized.find { it.first == uiState.sortOption }?.second
-                            ?: tr("Beliebtheit", "Popularity")
+                            ?: stringResource(R.string.browse_sort_popularity)
                         Text(
-                            text = tr("Sort: ", "Sort: ") + currentSortLabel,
+                            text = stringResource(R.string.browse_sort_prefix, currentSortLabel),
                             style = MaterialTheme.typography.labelMedium,
                             color = TealAccent,
                         )
                         Icon(
                             Icons.Default.KeyboardArrowDown,
-                            contentDescription = tr("Sortierung waehlen", "Choose sorting"),
+                            contentDescription = stringResource(R.string.browse_choose_sort),
                             tint = TealAccent,
                             modifier = Modifier.size(18.dp),
                         )
@@ -560,7 +562,7 @@ private fun BrowseContent(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = tr("Lade Sender...", "Loading stations..."),
+                            text = stringResource(R.string.browse_loading_stations),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -573,7 +575,7 @@ private fun BrowseContent(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = tr("Gib einen Suchbegriff ein\noder waehle ein Genre/Land", "Enter a search term\nor pick a genre/country"),
+                            text = stringResource(R.string.browse_empty_prompt),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyLarge,
                             textAlign = TextAlign.Center,
@@ -584,7 +586,6 @@ private fun BrowseContent(
                     EmptyState(
                         searchQuery = searchQuery,
                         selectedCountry = selectedCountry,
-                        isGerman = isGerman,
                         onSuggestionClick = { suggestion ->
                             onSearchQueryChange(suggestion)
                         },
@@ -648,7 +649,7 @@ private fun BrowseContent(
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Filled.KeyboardArrowUp,
-                        contentDescription = tr("Nach oben", "To top"),
+                        contentDescription = stringResource(R.string.browse_to_top),
                         tint = TealAccent,
                     )
                 }
@@ -692,7 +693,7 @@ private fun QuickGenreCard(
                 modifier = Modifier.size(22.dp),
             )
             Text(
-                text = item.label,
+                text = stringResource(item.labelRes),
                 color = Color.White,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.SemiBold,
@@ -708,12 +709,16 @@ private fun QuickGenreCard(
 private fun EmptyState(
     searchQuery: String,
     selectedCountry: String?,
-    isGerman: Boolean,
     onSuggestionClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    fun tr(de: String, en: String): String = if (isGerman) de else en
-    val suggestions = listOf("Rock", "Jazz", "Pop", "Dance", "Classical")
+    val suggestions = listOf(
+        GenreItem(R.string.browse_genre_rock, "rock"),
+        GenreItem(R.string.browse_genre_jazz, "jazz"),
+        GenreItem(R.string.browse_genre_pop, "pop"),
+        GenreItem(R.string.browse_genre_dance, "dance"),
+        GenreItem(R.string.browse_genre_classical, "classical"),
+    )
     
     Column(
         modifier = modifier.padding(horizontal = 32.dp),
@@ -721,7 +726,7 @@ private fun EmptyState(
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = tr("Keine Sender gefunden", "No stations found"),
+            text = stringResource(R.string.browse_no_stations),
             color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.titleMedium.copy(
                 fontWeight = FontWeight.SemiBold,
@@ -732,13 +737,17 @@ private fun EmptyState(
         
         val contextText = when {
             searchQuery.isNotBlank() && selectedCountry != null -> {
-                val countryName = topCountries.find { it.code == selectedCountry }?.name ?: selectedCountry
-                tr("Fuer \"$searchQuery\" in $countryName", "For \"$searchQuery\" in $countryName")
+                val countryName = topCountries.find { it.code == selectedCountry }?.let {
+                    stringResource(it.nameRes)
+                } ?: selectedCountry
+                stringResource(R.string.browse_context_for_in, searchQuery, countryName)
             }
-            searchQuery.isNotBlank() -> tr("Fuer \"$searchQuery\"", "For \"$searchQuery\"")
+            searchQuery.isNotBlank() -> stringResource(R.string.browse_context_for, searchQuery)
             selectedCountry != null -> {
-                val countryName = topCountries.find { it.code == selectedCountry }?.name ?: selectedCountry
-                tr("In $countryName", "In $countryName")
+                val countryName = topCountries.find { it.code == selectedCountry }?.let {
+                    stringResource(it.nameRes)
+                } ?: selectedCountry
+                stringResource(R.string.browse_context_in, countryName)
             }
             else -> ""
         }
@@ -753,7 +762,7 @@ private fun EmptyState(
         }
         
         Text(
-            text = tr("Vorschlaege:", "Suggestions:"),
+            text = stringResource(R.string.browse_suggestions),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.labelMedium,
         )
@@ -766,9 +775,9 @@ private fun EmptyState(
             items(suggestions) { suggestion ->
                 FilterChip(
                     selected = false,
-                    onClick = { onSuggestionClick(suggestion) },
+                    onClick = { onSuggestionClick(suggestion.tag) },
                     label = {
-                        Text(text = suggestion)
+                        Text(text = stringResource(suggestion.labelRes))
                     },
                     colors = FilterChipDefaults.filterChipColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -863,7 +872,7 @@ private fun StationGridCard(
                         .padding(top = 8.dp, start = 8.dp),
                 ) {
                     Text(
-                        text = "HTTP",
+                        text = stringResource(R.string.browse_http_badge),
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
                         ),

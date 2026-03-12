@@ -4,19 +4,39 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.0-beta.3-HOTFIX] - 2026-03-10
+
+### Fixed
+- Play Store distribution now excludes direct APK installation permission and GitHub sideload updater flow.
+
+### Improved
+- Release output split finalized for GitHub APK (`github`) and Play Store App Bundle (`play`).
+- Session/release docs clarified the two distribution targets and their intended usage.
+
+## [0.1.0-beta.3] - 2026-03-10
+
 ### Added
-- Launcher quick actions via app-icon long press (`Search`, `Favorites`, `Player`, `Settings`).
-- Runtime shortcut sync for better launcher compatibility on OEM devices.
 - Stable/Beta update channel toggle in settings for GitHub release checks.
-- Manual signed release workflow with app version metadata sourced from `gradle.properties`.
 - Local crash-report export flow with share action and prefilled GitHub issue handoff.
 
 ### Fixed
-- Prevented app startup crash on devices that reject dynamic manipulation of manifest-defined launcher shortcuts.
 - Settings manual update flow now uses the same in-app APK download/install path as the main update dialog.
 - In-app APK installer hardened with better package-installer fallback behavior and clearer error states.
 - PR CI fixed after Gradle configuration-cache rollout by making test gating configuration-cache safe.
-- Play Store distribution now excludes direct APK installation permission and GitHub sideload updater flow.
+
+### Improved
+- CI/release workflows now use stronger Gradle caching and configuration cache for faster repeat runs.
+- Support links now point to Ko-fi in app and GitHub documentation.
+- Project relicensed to GPL-3.0-or-later with SPDX headers on Kotlin sources for F-Droid/Open Source distribution.
+
+## [0.1.0-beta.2] - 2026-03-09
+
+### Added
+- Launcher quick actions via app-icon long press (`Search`, `Favorites`, `Player`, `Settings`).
+- Runtime shortcut sync for better launcher compatibility on OEM devices.
+
+### Fixed
+- Prevented app startup crash on devices that reject dynamic manipulation of manifest-defined launcher shortcuts.
 
 ### Improved
 - Playback notification polished with cleaner media controls and direct player open action.
@@ -25,10 +45,7 @@ All notable changes to this project will be documented in this file.
 - Android Auto `Quick Access` now combines favorites and recents instead of mirroring favorites only.
 - Android Auto search ranking improved with combined local/remote results and broader token/country/tag matching.
 - Android Auto player controls now expose working previous/next navigation for queue-capable in-car playback.
-- CI/release workflows now use stronger Gradle caching and configuration cache for faster repeat runs.
-- Support links now point to Ko-fi in app and GitHub documentation.
-- Project relicensed to GPL-3.0-or-later with SPDX headers on Kotlin sources for F-Droid/Open Source distribution.
-- Release workflows now split signed output into GitHub APK (`github`) and Play Store App Bundle (`play`).
+- Manual signed release workflow now sources app version metadata from `gradle.properties`.
 
 ## [0.1.0-beta.1] - 2026-03-05
 
@@ -217,6 +234,9 @@ All notable changes to this project will be documented in this file.
 - Added `ACCESS_NETWORK_STATE` permission declaration in `core-player` to satisfy lint and ensure network callback safety.
 
 [0.1.0-beta.1]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-beta.1
+[0.1.0-beta.2]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-beta.2
+[0.1.0-beta.3]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-beta.3
+[0.1.0-beta.3-HOTFIX]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-beta.3-HOTFIX
 [0.1.0-alpha.6]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.6
 [0.1.0-alpha.5]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.5
 [0.1.0-alpha.3]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.3

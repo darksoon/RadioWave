@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_section_favorites">Favoriten</string>
+    <string name="home_section_all">Alle</string>
+    <string name="home_section_recent">Zuletzt gehört</string>
+    <string name="home_section_discover">Entdecken</string>
+    <string name="home_empty_title">Baue deinen Radio-Feed</string>
+    <string name="home_empty_subtitle">Entdecke trendende Sender und starte deine erste Favoritenliste.</string>
+    <string name="home_play_station">Sender %1$s abspielen</string>
+</resources>

@@ -38,7 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -49,6 +49,7 @@ import de.radiowave.core.ui.components.ErrorState
 import de.radiowave.core.ui.components.LoadingState
 import de.radiowave.core.ui.components.StationLogoImage
 import de.radiowave.core.ui.theme.TealAccent
+import de.radiowave.feature.favorites.R
 
 @Composable
 fun FavoritesScreen(
@@ -56,10 +57,6 @@ fun FavoritesScreen(
     viewModel: FavoritesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val configuration = LocalConfiguration.current
-    val isGerman = configuration.locales[0]?.language?.equals("de", ignoreCase = true) == true
-    fun tr(de: String, en: String): String = if (isGerman) de else en
-
     when {
         uiState.isLoading -> {
             LoadingState(modifier = modifier)
@@ -67,7 +64,7 @@ fun FavoritesScreen(
 
         uiState.error != null -> {
             ErrorState(
-                message = uiState.error ?: tr("Unbekannter Fehler", "Unknown error"),
+                message = uiState.error ?: stringResource(R.string.favorites_unknown_error),
                 onRetry = {},
                 modifier = modifier,
             )
@@ -75,7 +72,6 @@ fun FavoritesScreen(
 
         uiState.stations.isEmpty() -> {
             EmptyFavorites(
-                isGerman = isGerman,
                 modifier = modifier,
             )
         }
@@ -268,10 +264,8 @@ private fun LogoFallback(
 
 @Composable
 private fun EmptyFavorites(
-    isGerman: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    fun tr(de: String, en: String): String = if (isGerman) de else en
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -290,7 +284,7 @@ private fun EmptyFavorites(
             )
             Spacer(modifier = Modifier.height(14.dp))
             Text(
-                text = tr("Noch keine Favoriten", "No favorites yet"),
+                text = stringResource(R.string.favorites_empty_title),
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Bold,
                 ),
@@ -298,10 +292,7 @@ private fun EmptyFavorites(
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = tr(
-                    "Tippe bei einem Sender auf das Herz, um ihn hier zu speichern.",
-                    "Tap the heart on a station to save it here.",
-                ),
+                text = stringResource(R.string.favorites_empty_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

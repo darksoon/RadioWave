@@ -27,9 +27,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import de.radiowave.core.model.Station
+import de.radiowave.core.ui.R
 
 @Composable
 fun StationItem(
@@ -108,7 +110,7 @@ fun StationItem(
                 ) {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "Play ${station.name}",
+                        contentDescription = stringResource(R.string.core_ui_play_station, station.name),
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }

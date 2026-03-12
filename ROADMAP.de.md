@@ -2,7 +2,7 @@
 
 [Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Stand: 2026-03-09
+Stand: 2026-03-10
 
 Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus kompakt.
 
@@ -44,6 +44,7 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Live-Download-Fortschritt fuer Updates
 - Stable/Beta-Updatekanal
 - Manueller Signed-Release-Workflow mit Versionspflege in `gradle.properties`
+- Release-/Distributions-Split fuer GitHub-APK (`github`) und Play-Store-AAB (`play`)
 - Android-Auto-Dev-Mode-Anleitung in App und Doku verlinkt
 - Launcher Quick Actions (`Suche`, `Favoriten`, `Player`, `Settings`)
 - Android-Auto-Browse/Player-Polish: lokalisierte Labels, Quick Access, bessere Suche, Prev/Next
@@ -63,6 +64,7 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Favoriten Export/Import (JSON)
 - Custom Stations und M3U/PLS-Import
 - Sichtbare Datennutzungs-Schaetzung auf Basis der Bitrate
+- Play Store: Native Debug Symbols fuer AAB/Crash- und ANR-Auswertung
 
 ## Spaeter
 

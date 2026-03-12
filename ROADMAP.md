@@ -2,7 +2,7 @@
 
 [Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Status: 2026-03-09
+Status: 2026-03-10
 
 This roadmap is intended for GitHub and keeps the public product status compact.
 

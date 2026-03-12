@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">RadioWave</string>
-    <string name="nav_home">Home</string>
+    <string name="nav_home">Start</string>
     <string name="nav_browse">Suchen</string>
     <string name="nav_favorites">Favoriten</string>
     <string name="nav_settings">Einstellungen</string>
@@ -9,7 +9,7 @@
     <string name="toast_favorite_removed">Aus Favoriten entfernt</string>
     <string name="update_dialog_title">Neues Update verfuegbar</string>
     <string name="update_dialog_version">Version: %1$s</string>
-    <string name="update_dialog_release_notes_fallback">Keine Release Notes verfuegbar.</string>
+    <string name="update_dialog_release_notes_fallback">Keine Versionshinweise verfuegbar.</string>
     <string name="update_dialog_download_running">Download laeuft: %1$s</string>
     <string name="update_dialog_downloading">Lade…</string>
     <string name="update_dialog_update_action">Update</string>
@@ -28,9 +28,9 @@
     <string name="shortcut_search_long">Sender-Suche oeffnen</string>
     <string name="shortcut_favorites_short">Favoriten</string>
     <string name="shortcut_favorites_long">Favoriten oeffnen</string>
-    <string name="shortcut_player_short">Player</string>
-    <string name="shortcut_player_long">Aktuellen Player oeffnen</string>
-    <string name="shortcut_settings_short">Settings</string>
+    <string name="shortcut_player_short">Wiedergabe</string>
+    <string name="shortcut_player_long">Aktuelle Wiedergabe oeffnen</string>
+    <string name="shortcut_settings_short">Einstellungen</string>
     <string name="shortcut_settings_long">Einstellungen oeffnen</string>
     <string name="shortcut_player_unavailable">Aktuell laeuft kein Stream</string>
 </resources>

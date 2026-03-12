@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -38,6 +39,7 @@ import de.radiowave.core.ui.theme.DarkCardBackground
 import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.radiowave.core.ui.theme.TealAccent
+import de.radiowave.feature.home.R
 
 @Composable
 fun StationListItem(
@@ -122,7 +124,7 @@ fun StationListItem(
             ) {
                 Icon(
                     imageVector = Icons.Default.PlayArrow,
-                    contentDescription = "Play ${station.name}",
+                    contentDescription = stringResource(R.string.home_play_station, station.name),
                     tint = Color.Black,
                     modifier = Modifier.size(26.dp),
                 )

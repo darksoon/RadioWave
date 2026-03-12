@@ -1,6 +1,6 @@
 RadioWave - Master Backlog (Lokal)
 
-Stand: 2026-03-09
+Stand: 2026-03-10
 
 Ziel: Eine zentrale lokale Datei statt separatem `PHASEN.md` + `todo.md`.
 

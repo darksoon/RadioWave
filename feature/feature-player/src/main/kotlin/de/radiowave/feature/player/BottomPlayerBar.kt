@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -42,6 +43,7 @@ import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.radiowave.core.ui.theme.TealAccent
 import de.radiowave.core.ui.theme.TealLight
+import de.radiowave.feature.player.R
 
 @Composable
 fun BottomPlayerBar(
@@ -115,7 +117,7 @@ fun BottomPlayerBar(
 
                         if (isBuffering) {
                             Text(
-                                text = "Wird geladen...",
+                                text = stringResource(R.string.player_loading),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = TealLight,
                                 maxLines = 1,
@@ -123,7 +125,7 @@ fun BottomPlayerBar(
                             )
                         } else {
                             Text(
-                                text = metadataTitle ?: "Live Stream",
+                                text = metadataTitle ?: stringResource(R.string.player_live_stream),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = DarkOnSurfaceVariant,
                                 maxLines = 1,
@@ -144,7 +146,11 @@ fun BottomPlayerBar(
                     ) {
                         Icon(
                             imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = if (isPlaying) "Pause" else "Play",
+                            contentDescription = if (isPlaying) {
+                                stringResource(R.string.player_pause)
+                            } else {
+                                stringResource(R.string.player_play)
+                            },
                             tint = Color.Black,
                             modifier = Modifier.size(32.dp),
                         )

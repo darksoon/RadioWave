@@ -63,6 +63,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -80,6 +81,7 @@ import de.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.radiowave.core.ui.theme.MintAccent
 import de.radiowave.core.ui.theme.TealAccent
+import de.radiowave.feature.home.R
 import kotlin.math.abs
 import kotlin.math.PI
 import kotlin.math.sin
@@ -114,10 +116,6 @@ private fun HomeContent(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val configuration = LocalConfiguration.current
-    val isGerman = configuration.locales[0]?.language?.equals("de", ignoreCase = true) == true
-    fun tr(de: String, en: String): String = if (isGerman) de else en
-
     when {
         uiState.isLoading -> {
             LoadingState(modifier = modifier)
@@ -169,8 +167,8 @@ private fun HomeContent(
                 ) {
                     if (favoriteStations.isNotEmpty()) {
                         SectionTitle(
-                            title = tr("Favoriten", "Favorites"),
-                            actionLabel = tr("Alle", "All"),
+                            title = stringResource(R.string.home_section_favorites),
+                            actionLabel = stringResource(R.string.home_section_all),
                             onActionClick = onViewAllFavorites,
                         )
                         FavoriteStationCarousel(
@@ -181,7 +179,7 @@ private fun HomeContent(
 
                     if (recentStations.isNotEmpty()) {
                         SectionTitle(
-                            title = tr("Zuletzt gehoert", "Recently played"),
+                            title = stringResource(R.string.home_section_recent),
                         )
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 20.dp),
@@ -198,7 +196,7 @@ private fun HomeContent(
 
                     if (discoverStations.isNotEmpty()) {
                         SectionTitle(
-                            title = tr("Entdecken", "Discover"),
+                            title = stringResource(R.string.home_section_discover),
                         )
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 20.dp),
@@ -220,7 +218,6 @@ private fun HomeContent(
                     ) {
                         Spacer(modifier = Modifier.height(18.dp))
                         EmptyStartCard(
-                            isGerman = isGerman,
                             onNavigateToBrowse = onNavigateToBrowse,
                         )
                     }
@@ -893,11 +890,9 @@ private val defaultFallbackColors = listOf(
 
 @Composable
 private fun EmptyStartCard(
-    isGerman: Boolean,
     onNavigateToBrowse: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    fun tr(de: String, en: String): String = if (isGerman) de else en
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -916,7 +911,7 @@ private fun EmptyStartCard(
             modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
         ) {
             Text(
-                text = tr("Baue deinen Radio-Feed", "Build your radio feed"),
+                text = stringResource(R.string.home_empty_title),
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
                 ),
@@ -924,10 +919,7 @@ private fun EmptyStartCard(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = tr(
-                    "Entdecke trendende Sender und starte deine erste Favoritenliste.",
-                    "Discover trending stations and start your first favorites collection.",
-                ),
+                text = stringResource(R.string.home_empty_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
