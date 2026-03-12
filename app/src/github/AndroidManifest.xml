@@ -5,7 +5,7 @@
 
     <application>
         <meta-data
-            android:name="de.radiowave.IN_APP_UPDATER_ENABLED"
+            android:name="de.darksoon.radiowave.IN_APP_UPDATER_ENABLED"
             android:value="true" />
     </application>
 

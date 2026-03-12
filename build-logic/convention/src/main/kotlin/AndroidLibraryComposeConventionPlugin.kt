@@ -1,7 +1,7 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import com.android.build.api.dsl.LibraryExtension
-import de.radiowave.convention.libs
+import de.darksoon.radiowave.convention.libs
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure

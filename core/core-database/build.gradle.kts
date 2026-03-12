@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "de.radiowave.core.database"
+    namespace = "de.darksoon.radiowave.core.database"
 }
 
 ksp {

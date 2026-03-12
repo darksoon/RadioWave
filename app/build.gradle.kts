@@ -23,12 +23,12 @@ val appVersionName = providers
     ?: "0.1.0-beta.3-HOTFIX"
 
 android {
-    namespace = "de.radiowave"
+    namespace = "de.darksoon.radiowave"
 
     flavorDimensions += "distribution"
 
     defaultConfig {
-        applicationId = "de.radiowave"
+        applicationId = "de.darksoon.radiowave"
         versionCode = appVersionCode
         versionName = appVersionName
     }

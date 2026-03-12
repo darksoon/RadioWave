@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "de.radiowave.auto"
+    namespace = "de.darksoon.radiowave.auto"
 }
 
 dependencies {

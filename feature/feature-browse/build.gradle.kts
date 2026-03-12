@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "de.radiowave.feature.browse"
+    namespace = "de.darksoon.radiowave.feature.browse"
 }
 
 dependencies {

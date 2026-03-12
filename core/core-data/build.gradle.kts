@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "de.radiowave.core.data"
+    namespace = "de.darksoon.radiowave.core.data"
 }
 
 dependencies {

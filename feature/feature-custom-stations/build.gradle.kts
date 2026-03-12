@@ -3,5 +3,5 @@ plugins {
 }
 
 android {
-    namespace = "de.radiowave.feature.customstations"
+    namespace = "de.darksoon.radiowave.feature.customstations"
 }

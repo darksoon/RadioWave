@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "de.radiowave.core.network"
+    namespace = "de.darksoon.radiowave.core.network"
     buildFeatures {
         buildConfig = true
     }

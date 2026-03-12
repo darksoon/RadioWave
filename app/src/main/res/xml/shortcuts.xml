@@ -7,9 +7,9 @@
         android:shortcutShortLabel="@string/shortcut_search_short"
         android:shortcutLongLabel="@string/shortcut_search_long">
         <intent
-            android:action="de.radiowave.action.OPEN_SEARCH"
-            android:targetClass="de.radiowave.MainActivity"
-            android:targetPackage="de.radiowave" />
+            android:action="de.darksoon.radiowave.action.OPEN_SEARCH"
+            android:targetClass="de.darksoon.radiowave.MainActivity"
+            android:targetPackage="de.darksoon.radiowave" />
     </shortcut>
 
     <shortcut
@@ -19,9 +19,9 @@
         android:shortcutShortLabel="@string/shortcut_favorites_short"
         android:shortcutLongLabel="@string/shortcut_favorites_long">
         <intent
-            android:action="de.radiowave.action.OPEN_FAVORITES"
-            android:targetClass="de.radiowave.MainActivity"
-            android:targetPackage="de.radiowave" />
+            android:action="de.darksoon.radiowave.action.OPEN_FAVORITES"
+            android:targetClass="de.darksoon.radiowave.MainActivity"
+            android:targetPackage="de.darksoon.radiowave" />
     </shortcut>
 
     <shortcut
@@ -31,9 +31,9 @@
         android:shortcutShortLabel="@string/shortcut_player_short"
         android:shortcutLongLabel="@string/shortcut_player_long">
         <intent
-            android:action="de.radiowave.action.OPEN_PLAYER"
-            android:targetClass="de.radiowave.MainActivity"
-            android:targetPackage="de.radiowave" />
+            android:action="de.darksoon.radiowave.action.OPEN_PLAYER"
+            android:targetClass="de.darksoon.radiowave.MainActivity"
+            android:targetPackage="de.darksoon.radiowave" />
     </shortcut>
 
     <shortcut
@@ -43,8 +43,8 @@
         android:shortcutShortLabel="@string/shortcut_settings_short"
         android:shortcutLongLabel="@string/shortcut_settings_long">
         <intent
-            android:action="de.radiowave.action.OPEN_SETTINGS"
-            android:targetClass="de.radiowave.MainActivity"
-            android:targetPackage="de.radiowave" />
+            android:action="de.darksoon.radiowave.action.OPEN_SETTINGS"
+            android:targetClass="de.darksoon.radiowave.MainActivity"
+            android:targetPackage="de.darksoon.radiowave" />
     </shortcut>
 </shortcuts>

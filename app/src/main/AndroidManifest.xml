@@ -46,7 +46,7 @@
         </activity>
 
         <service
-            android:name="de.radiowave.auto.RadioWaveAutoService"
+            android:name="de.darksoon.radiowave.auto.RadioWaveAutoService"
             android:exported="true"
             android:foregroundServiceType="mediaPlayback"
             tools:ignore="Instantiatable">

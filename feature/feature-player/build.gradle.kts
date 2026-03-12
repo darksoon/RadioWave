@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "de.radiowave.feature.player"
+    namespace = "de.darksoon.radiowave.feature.player"
 }
 
 dependencies {

@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "de.radiowave.feature.settings"
+    namespace = "de.darksoon.radiowave.feature.settings"
 }
 
 dependencies {

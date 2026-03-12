@@ -2,7 +2,7 @@ plugins {
     `kotlin-dsl`
 }
 
-group = "de.radiowave.buildlogic"
+group = "de.darksoon.radiowave.buildlogic"
 
 dependencies {
     compileOnly(libs.android.gradlePlugin)
