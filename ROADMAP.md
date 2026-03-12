@@ -2,7 +2,7 @@
 
 [Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Status: 2026-03-10
+Status: 2026-03-12
 
 This roadmap is intended for GitHub and keeps the public product status compact.
 
@@ -51,10 +51,13 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - DE/EN language basis with in-app language selection
 - CI and release pipelines hardened, including configuration-cache-safe test gating
 - Release/distribution split for GitHub APK (`github`) and Play Store App Bundle (`play`)
+- Android package/applicationId migrated to `de.darksoon.radiowave`
+- GitHub Actions workflows prepared for the Node 24 migration
 
 ## In Progress
 
 - Voice and Assistant play intents for station launch
+- Google Play Closed Testing preparation
 
 ## Planned Next
 

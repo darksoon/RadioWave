@@ -2,7 +2,7 @@
 
 [Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Stand: 2026-03-10
+Stand: 2026-03-12
 
 Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus kompakt.
 
@@ -50,10 +50,13 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Android-Auto-Browse/Player-Polish: lokalisierte Labels, Quick Access, bessere Suche, Prev/Next
 - DE/EN-Sprachbasis mit Sprachwahl in der App
 - CI- und Release-Pipelines gehaertet
+- Android-Paketname / `applicationId` auf `de.darksoon.radiowave` umgestellt
+- GitHub-Actions-Workflows fuer die Node-24-Umstellung vorbereitet
 
 ## In Arbeit
 
 - Voice- und Assistant-Play-Intents fuer Senderstarts
+- Google-Play-Closed-Testing vorbereiten
 
 ## Als Naechstes
 

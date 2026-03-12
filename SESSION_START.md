@@ -20,11 +20,14 @@ Nutze fuer neue Chat-Sessions diesen Start:
 ## Wichtige Arbeitsregeln (Merker)
 
 - Commit-Messages immer bilingual (DE + EN).
+- Aktueller App-Paketname / `applicationId`: `de.darksoon.radiowave`.
 - Signierte Release-Artefakte immer ueber GitHub Workflow bauen (`Release Build`), nicht lokal signieren.
 - Release Build erzeugt jetzt zwei Distributionen:
   - `github`: signierte APK mit eingebautem GitHub-Updater
   - `play`: signiertes AAB ohne direkten APK-Updater / ohne `REQUEST_INSTALL_PACKAGES`
 - GitHub Releases und Tags sind die Source of Truth fuer den aktuellen Release-Stand.
+- Aktuelle oeffentliche Release-Linie: `v0.1.0-beta.3-HOTFIX`
+- Aktuelle Repo-Entwicklung: `app.versionName=0.1.0-beta.4`, `app.versionCode=12`
 - Release-Status explizit pruefen (`Latest` / `prerelease`) und wie gewuenscht setzen.
 - Update-Checker beachten:
   - stable = normaler Release

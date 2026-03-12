@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Android package / `applicationId` renamed from `de.radiowave` to `de.darksoon.radiowave` for Google Play compatibility.
+- Documentation updated to reflect the current release workflow, package name, and Play Closed Testing split.
+
+### Improved
+- GitHub Actions workflows now use `actions/checkout@v5` and opt into Node 24 ahead of the runner default switch.
+
 ## [0.1.0-beta.3-HOTFIX] - 2026-03-10
 
 ### Fixed

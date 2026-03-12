@@ -1,6 +1,6 @@
 RadioWave - Master Backlog (Lokal)
 
-Stand: 2026-03-10
+Stand: 2026-03-12
 
 Ziel: Eine zentrale lokale Datei statt separatem `PHASEN.md` + `todo.md`.
 
@@ -21,6 +21,9 @@ Ziel: Eine zentrale lokale Datei statt separatem `PHASEN.md` + `todo.md`.
 
 ### Datenfunktionen
 - [ ] Favoriten Export/Import (JSON)
+
+### Release / Distribution
+- [ ] Google Play Closed Test sauber aufsetzen (Listing, Testergruppe, Rollout pruefen)
 
 ## 2) Als Naechstes
 
@@ -65,6 +68,8 @@ Ziel: Eine zentrale lokale Datei statt separatem `PHASEN.md` + `todo.md`.
 - [x] Release-/CI-Workflows fuer Gradle-Cache und Signed Release Build auf aktuellen Stand gebracht
 - [x] PR-CI nach Configuration-Cache-Einfuehrung repariert (test gating config-cache-safe)
 - [x] Distribution-Split fuer GitHub-APK (`github`) und Play-Store-AAB (`play`) eingefuehrt
+- [x] Paketname / `applicationId` fuer Google Play auf `de.darksoon.radiowave` umgestellt
+- [x] GitHub-Actions-Workflows fuer Node 24 vorbereitet (`actions/checkout@v5`)
 - [ ] Play Store: Native Debug Symbols fuer AAB/Crash- und ANR-Auswertung bereitstellen
 - [ ] Compose UI-Tests fuer Home/Player/Favoriten erweitern
 - [ ] Device-Testmatrix fuer aggressive Akku-Optimierer (Xiaomi/Huawei/Samsung)
