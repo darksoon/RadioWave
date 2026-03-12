@@ -11,7 +11,7 @@
     <string name="update_dialog_version">Version: %1$s</string>
     <string name="update_dialog_release_notes_fallback">Keine Versionshinweise verfuegbar.</string>
     <string name="update_dialog_download_running">Download laeuft: %1$s</string>
-    <string name="update_dialog_downloading">Lade…</string>
+    <string name="update_dialog_downloading">Wird geladen...</string>
     <string name="update_dialog_update_action">Update</string>
     <string name="update_dialog_later_action">Spaeter</string>
     <string name="update_dialog_failed">Update fehlgeschlagen: %1$s</string>
@@ -19,9 +19,9 @@
     <string name="update_dialog_install_permission_required">Erlaube Installationen aus unbekannten Quellen und tippe dann erneut auf Update.</string>
     <string name="update_dialog_no_installer">Auf diesem Geraet wurde kein Paket-Installer gefunden.</string>
     <string name="first_run_title">Willkommen bei RadioWave</string>
-    <string name="first_run_body">Kurzer Hinweis fuer den Start:\n- Android Auto nutzt automatisch ein sparsames Profil (max. 128 kbps).\n- Akku-Optimierung fuer die App sollte deaktiviert werden.\n- Updates werden ueber GitHub Releases erkannt und koennen direkt installiert werden.</string>
+    <string name="first_run_body">Kurze Hinweise zum Start:\n- Android Auto nutzt automatisch ein sparsames Profil (max. 128 kbps).\n- Die Akku-Optimierung fuer die App sollte deaktiviert werden.\n- Updates werden ueber GitHub Releases erkannt und koennen direkt installiert werden.</string>
     <string name="first_run_confirm">Verstanden</string>
-    <string name="update_progress_preparing">wird vorbereitet...</string>
+    <string name="update_progress_preparing">Wird vorbereitet...</string>
     <string name="update_progress_known">%1$.1f / %2$.1f MB  %3$d%%</string>
     <string name="update_progress_unknown">%1$.1f MB</string>
     <string name="shortcut_search_short">Suche</string>

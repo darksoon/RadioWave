@@ -7,7 +7,7 @@
     <string name="notification_status_paused">Pausiert</string>
     <string name="notification_playing_fallback">Live-Stream laeuft</string>
     <string name="notification_paused_fallback">Wiedergabe pausiert</string>
-    <string name="notification_buffering">Wird geladen…</string>
+    <string name="notification_buffering">Wird geladen...</string>
     <string name="notification_action_previous">Zurueck</string>
     <string name="notification_action_play">Wiedergabe</string>
     <string name="notification_action_pause">Pause</string>
@@ -15,5 +15,5 @@
     <string name="notification_action_stop">Stopp</string>
     <string name="player_error_unknown">Unbekannter Fehler</string>
     <string name="player_error_wifi_required">WLAN erforderlich (mobile Daten deaktiviert)</string>
-    <string name="player_error_audio_focus_unavailable">Audio-Fokus nicht verfügbar</string>
+    <string name="player_error_audio_focus_unavailable">Audio-Fokus nicht verfuegbar</string>
 </resources>

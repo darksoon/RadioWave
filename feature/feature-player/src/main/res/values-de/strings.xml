@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="player_screen_close">Schließen</string>
+    <string name="player_screen_close">Schliessen</string>
     <string name="player_screen_title">Wiedergabe</string>
     <string name="player_live">LIVE</string>
-    <string name="player_loading">Wird geladen…</string>
+    <string name="player_loading">Wird geladen...</string>
     <string name="player_live_stream">Live-Stream</string>
     <string name="player_play">Wiedergabe</string>
     <string name="player_pause">Pause</string>
-    <string name="player_add_favorite">Zu Favoriten hinzufügen</string>
+    <string name="player_add_favorite">Zu Favoriten hinzufuegen</string>
     <string name="player_remove_favorite">Aus Favoriten entfernen</string>
 </resources>
