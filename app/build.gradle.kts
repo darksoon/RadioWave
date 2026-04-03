@@ -16,11 +16,11 @@ val appVersionCode = providers
     .gradleProperty("app.versionCode")
     .orNull
     ?.toIntOrNull()
-    ?: 13
+    ?: 14
 val appVersionName = providers
     .gradleProperty("app.versionName")
     .orNull
-    ?: "0.1.0-beta.4-HOTFIX"
+    ?: "1.0.0-rc1"
 
 android {
     namespace = "de.darksoon.radiowave"

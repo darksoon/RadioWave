@@ -4,16 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-rc1] - 2026-04-03
+
 ### Added
-- Release readiness audit for the upcoming `1.0.0-rc1` preparation phase.
+- Restartable multi-step onboarding flow with a compact in-app product tour.
+- In-app "What’s new?" dialog plus release-notes access from settings.
+- Release readiness audit for the upcoming 1.0 line.
 
 ### Changed
 - Public README files now point to the dedicated RadioWave website and Google Play listing instead of pinning the project overview to an older beta/hotfix line.
 - Public roadmap refreshed for the current RC preparation phase.
+- Branding was polished around the existing purple/white app icon, including slogan integration and a refined splash screen.
 
 ### Improved
 - Android Auto quality handling is now configurable in settings.
+- Android Auto metadata prioritizes bitrate more clearly where car surfaces support it.
 - Browse scrolling and station-card sizing were polished further.
+- Browse and favorites grids now keep more consistent card heights.
+- Settings support/community area now uses cleaner inline links and stronger Ko-fi emphasis.
 
 ## [0.1.0-beta.4-HOTFIX] - 2026-03-12
 
@@ -258,6 +266,7 @@ All notable changes to this project will be documented in this file.
 ### Security/Infra
 - Added `ACCESS_NETWORK_STATE` permission declaration in `core-player` to satisfy lint and ensure network callback safety.
 
+[1.0.0-rc1]: https://github.com/darksoon/RadioWave/releases/tag/v1.0.0-rc1
 [0.1.0-beta.1]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-beta.1
 [0.1.0-beta.2]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-beta.2
 [0.1.0-beta.3]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-beta.3
