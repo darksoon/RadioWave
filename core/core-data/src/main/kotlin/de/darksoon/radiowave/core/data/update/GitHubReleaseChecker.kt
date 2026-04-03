@@ -46,6 +46,37 @@ object GitHubReleaseChecker {
         )
     }
 
+    suspend fun getReleaseByTag(tagName: String): GitHubReleaseInfo? = withContext(Dispatchers.IO) {
+        val normalizedTag = normalizeVersion(tagName)
+        val json = requestJsonArray(RELEASES_URL) ?: return@withContext null
+        for (index in 0 until json.length()) {
+            val release = json.optJSONObject(index) ?: continue
+            if (release.optBoolean("draft", false)) continue
+            val assets = release.optJSONArray("assets") ?: continue
+            val apkAsset = findApkAsset(assets) ?: continue
+            val tag = release.optString("tag_name").trim()
+            if (tag.isBlank()) continue
+            if (normalizeVersion(tag) != normalizedTag) continue
+
+            val name = release.optString("name").trim().ifBlank { tag }
+            val body = release.optString("body").trim()
+            val htmlUrl = release.optString("html_url").trim()
+            val downloadUrl = apkAsset.optString("browser_download_url").trim()
+            val fileName = apkAsset.optString("name").trim()
+            if (downloadUrl.isBlank() || fileName.isBlank()) continue
+
+            return@withContext GitHubReleaseInfo(
+                tag = tag,
+                title = name,
+                body = body,
+                htmlUrl = htmlUrl,
+                apkUrl = downloadUrl,
+                apkName = fileName,
+            )
+        }
+        null
+    }
+
     private fun parseLatestInstallableRelease(
         array: JSONArray,
         includePrerelease: Boolean,

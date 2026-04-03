@@ -127,7 +127,7 @@
     <string name="settings_issues_title">Issues / feedback</string>
     <string name="settings_issues_subtitle">Bugs and feature requests</string>
     <string name="settings_website_title">Website</string>
-    <string name="settings_website_value">sven-neurath.de</string>
+    <string name="settings_website_value">radiowave.sven-neurath.de</string>
     <string name="settings_kofi_title">Ko-fi</string>
     <string name="settings_kofi_subtitle">Support the project</string>
     <string name="settings_testers_title">Special thanks</string>
@@ -135,6 +135,13 @@
     <string name="settings_support_kevin_link_label">Kevin1321</string>
     <string name="settings_support_group_link_label">Google Group</string>
     <string name="settings_support_donate_button">Support on Ko-fi</string>
+    <string name="settings_onboarding_title">Introduction</string>
+    <string name="settings_onboarding_subtitle">Start the quick app tour again whenever you want.</string>
+    <string name="settings_onboarding_action">Start intro</string>
+    <string name="settings_whats_new_action">What’s new?</string>
+    <string name="settings_release_notes_title">Latest release notes</string>
+    <string name="settings_release_notes_subtitle">Open the newest GitHub release notes directly from the app.</string>
+    <string name="settings_release_notes_empty">No release notes are available right now.</string>
     <string name="settings_made_by_label">Made by</string>
     <string name="settings_made_by_value">Sven Neurath</string>
     <string name="settings_new_version_found">New version found: %1$s</string>

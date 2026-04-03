@@ -70,6 +70,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import de.darksoon.radiowave.core.model.AppSettings
+import de.darksoon.radiowave.core.data.update.GitHubReleaseChecker
+import de.darksoon.radiowave.core.data.update.GitHubReleaseInfo
 import de.darksoon.radiowave.core.data.update.GitHubReleaseUpdater
 import de.darksoon.radiowave.core.data.update.LocalIssueReporter
 import de.darksoon.radiowave.core.data.update.UpdateDownloadProgress
@@ -86,6 +88,8 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
+    onRestartOnboarding: () -> Unit = {},
+    onShowWhatsNew: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
@@ -172,6 +176,9 @@ fun SettingsScreen(
     }
     var manualUpdateCheckRequested by rememberSaveable { mutableStateOf(false) }
     var showUpdateAvailableDialog by rememberSaveable { mutableStateOf(false) }
+    var showReleaseNotesDialog by rememberSaveable { mutableStateOf(false) }
+    var releaseNotesLoading by remember { mutableStateOf(false) }
+    var releaseNotesInfo by remember { mutableStateOf<GitHubReleaseInfo?>(null) }
     var updateInstallInProgress by remember { mutableStateOf(false) }
     var updateInstallProgress by remember { mutableStateOf<UpdateDownloadProgress?>(null) }
 
@@ -775,7 +782,46 @@ fun SettingsScreen(
                         LinkRow(
                             title = stringResource(R.string.settings_website_title),
                             subtitle = stringResource(R.string.settings_website_value),
-                            onClick = { uriHandler.openUri("https://sven-neurath.de") },
+                            onClick = { uriHandler.openUri("https://radiowave.sven-neurath.de") },
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingActionRow(
+                            title = stringResource(R.string.settings_onboarding_title),
+                            subtitle = stringResource(R.string.settings_onboarding_subtitle),
+                            actionLabel = stringResource(R.string.settings_onboarding_action),
+                            onActionClick = onRestartOnboarding,
+                            secondaryActionLabel = stringResource(R.string.settings_whats_new_action),
+                            onSecondaryActionClick = onShowWhatsNew,
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingActionRow(
+                            title = stringResource(R.string.settings_release_notes_title),
+                            subtitle = stringResource(R.string.settings_release_notes_subtitle),
+                            actionLabel = if (releaseNotesLoading) {
+                                stringResource(R.string.settings_updates_manual_checking)
+                            } else {
+                                stringResource(R.string.settings_open)
+                            },
+                            onActionClick = {
+                                if (releaseNotesLoading) return@SettingActionRow
+                                releaseNotesLoading = true
+                                coroutineScope.launch {
+                                    val includePrerelease = prefs.getBoolean(AppSettings.KEY_UPDATE_BETA_CHANNEL_ENABLED, false)
+                                    releaseNotesInfo = GitHubReleaseChecker.getLatestInstallableRelease(includePrerelease)
+                                    releaseNotesLoading = false
+                                    if (releaseNotesInfo != null) {
+                                        showReleaseNotesDialog = true
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.settings_update_not_available),
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                    }
+                                }
+                            },
+                            secondaryActionLabel = stringResource(R.string.settings_updates_manual_release_page),
+                            onSecondaryActionClick = { uriHandler.openUri("https://github.com/darksoon/RadioWave/releases/latest") },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         LinkRow(
@@ -799,6 +845,32 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+
+    if (showReleaseNotesDialog && releaseNotesInfo != null) {
+        val release = releaseNotesInfo!!
+        AlertDialog(
+            onDismissRequest = { showReleaseNotesDialog = false },
+            title = { Text(text = release.tag) },
+            text = {
+                Column {
+                    Text(
+                        text = release.body.ifBlank { stringResource(R.string.settings_release_notes_empty) },
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { uriHandler.openUri(release.htmlUrl) }) {
+                    Text(stringResource(R.string.settings_updates_manual_release_page))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showReleaseNotesDialog = false }) {
+                    Text(stringResource(R.string.settings_later))
+                }
+            },
+        )
     }
 
     if (showUpdateAvailableDialog && updateUiState.latestRelease != null) {
