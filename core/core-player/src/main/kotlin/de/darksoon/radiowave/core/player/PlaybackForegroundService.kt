@@ -258,6 +258,39 @@ class PlaybackForegroundService : Service() {
     private fun ensureMediaSession() {
         if (mediaSession != null) return
         mediaSession = MediaSessionCompat(this, "RadioWavePlaybackSession").apply {
+            setFlags(
+                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+                    MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS,
+            )
+            setCallback(
+                object : MediaSessionCompat.Callback() {
+                    override fun onPlay() {
+                        playerController.togglePlayPause()
+                        refreshFromPlayerState()
+                    }
+
+                    override fun onPause() {
+                        playerController.togglePlayPause()
+                        refreshFromPlayerState()
+                    }
+
+                    override fun onSkipToPrevious() {
+                        playerController.playPreviousStation()
+                        refreshFromPlayerState()
+                    }
+
+                    override fun onSkipToNext() {
+                        playerController.playNextStation()
+                        refreshFromPlayerState()
+                    }
+
+                    override fun onStop() {
+                        playerController.stop()
+                        stopForeground(STOP_FOREGROUND_REMOVE)
+                        stopSelf()
+                    }
+                },
+            )
             isActive = true
         }
     }
