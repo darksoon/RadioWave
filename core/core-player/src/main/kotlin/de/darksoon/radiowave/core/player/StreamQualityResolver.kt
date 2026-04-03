@@ -21,18 +21,16 @@ class StreamQualityResolver @Inject constructor(
         automotiveMode: Boolean,
     ): Station {
         val qualitySetting = loadQualitySetting()
-        val effectiveQuality = effectiveQuality(
-            requested = qualitySetting,
-            automotiveMode = automotiveMode,
-        )
+        val limitAndroidAutoQuality = loadLimitAndroidAutoQualitySetting()
         val variants = stationRepository.getStationVariants(station)
             .filter { it.streamUrl.isNotBlank() }
             .ifEmpty { listOf(station) }
         return selectVariant(
             originalStation = station,
             candidates = variants,
-            quality = effectiveQuality,
+            quality = qualitySetting,
             automotiveMode = automotiveMode,
+            limitAndroidAutoQuality = limitAndroidAutoQuality,
         )
     }
 
@@ -42,11 +40,9 @@ class StreamQualityResolver @Inject constructor(
             ?: AppSettings.QUALITY_AUTO
     }
 
-    private fun effectiveQuality(
-        requested: String,
-        automotiveMode: Boolean,
-    ): String {
-        return requested
+    private fun loadLimitAndroidAutoQualitySetting(): Boolean {
+        val prefs = context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(AppSettings.KEY_LIMIT_ANDROID_AUTO_QUALITY, true)
     }
 
     private fun selectVariant(
@@ -54,6 +50,7 @@ class StreamQualityResolver @Inject constructor(
         candidates: List<Station>,
         quality: String,
         automotiveMode: Boolean,
+        limitAndroidAutoQuality: Boolean,
     ): Station {
         if (candidates.size == 1) return candidates.first()
         val withKnownBitrate = candidates.filter { (it.bitrate ?: 0) > 0 }
@@ -65,7 +62,7 @@ class StreamQualityResolver @Inject constructor(
             AppSettings.QUALITY_HIGH -> 192
             else -> 128
         }
-        val targetKbps = if (automotiveMode) {
+        val targetKbps = if (automotiveMode && limitAndroidAutoQuality) {
             minOf(baseTargetKbps, 128)
         } else {
             baseTargetKbps

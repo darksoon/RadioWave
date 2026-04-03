@@ -268,12 +268,6 @@ private fun BrowseContent(
     val stationGridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
     var advancedFiltersExpanded by remember { mutableStateOf(false) }
-    val showDiscoverChrome by remember {
-        derivedStateOf {
-            stationGridState.firstVisibleItemIndex == 0 &&
-                stationGridState.firstVisibleItemScrollOffset < 24
-        }
-    }
     val showScrollToTopButton by remember {
         derivedStateOf {
             stationGridState.firstVisibleItemIndex > 0 ||
@@ -345,137 +339,129 @@ private fun BrowseContent(
                 ),
             )
 
-            AnimatedVisibility(
-                visible = showDiscoverChrome,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically(),
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = stringResource(R.string.browse_quick_genres),
+                style = MaterialTheme.typography.titleSmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Column {
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = stringResource(R.string.browse_quick_genres),
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            fontWeight = FontWeight.SemiBold,
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 20.dp),
+                items(quickGenres) { item ->
+                    QuickGenreCard(
+                        item = item,
+                        isSelected = selectedGenre == item.tag,
+                        onClick = {
+                            onGenreSelected(if (selectedGenre == item.tag) null else item.tag)
+                        },
                     )
+                }
+            }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        items(quickGenres) { item ->
-                            QuickGenreCard(
-                                item = item,
-                                isSelected = selectedGenre == item.tag,
-                                onClick = {
-                                    onGenreSelected(if (selectedGenre == item.tag) null else item.tag)
-                                },
-                            )
-                        }
-                    }
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 20.dp)
+                    .fillMaxWidth()
+                    .animateContentSize(),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surface)
+                        .clickable { advancedFiltersExpanded = !advancedFiltersExpanded }
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.browse_more_filters),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Icon(
+                        imageVector = if (advancedFiltersExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
+                AnimatedVisibility(
+                    visible = advancedFiltersExpanded,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically(),
+                ) {
                     Column(
                         modifier = Modifier
-                            .padding(horizontal = 20.dp)
                             .fillMaxWidth()
-                            .animateContentSize(),
+                            .padding(top = 10.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.95f))
+                            .padding(vertical = 10.dp),
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surface)
-                                .clickable { advancedFiltersExpanded = !advancedFiltersExpanded }
-                                .padding(horizontal = 14.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Text(
-                                text = stringResource(R.string.browse_more_filters),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f),
-                            )
-                            Icon(
-                                imageVector = if (advancedFiltersExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            items(topCountries) { country ->
+                                val isSelected = selectedCountry == country.code
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = { onCountrySelected(if (isSelected) null else country.code) },
+                                    label = {
+                                        Text(
+                                            text = "${country.flag} ${stringResource(country.nameRes)}",
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 13.sp,
+                                        )
+                                    },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = TealAccent,
+                                        selectedLabelColor = Color.Black,
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        labelColor = MaterialTheme.colorScheme.onSurface,
+                                    ),
+                                    shape = RoundedCornerShape(20.dp),
+                                )
+                            }
                         }
 
-                        AnimatedVisibility(
-                            visible = advancedFiltersExpanded,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically(),
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 10.dp)
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.95f))
-                                    .padding(vertical = 10.dp),
-                            ) {
-                                LazyRow(
-                                    contentPadding = PaddingValues(horizontal = 10.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    items(topCountries) { country ->
-                                        val isSelected = selectedCountry == country.code
-                                        FilterChip(
-                                            selected = isSelected,
-                                            onClick = { onCountrySelected(if (isSelected) null else country.code) },
-                                            label = {
-                                                Text(
-                                                    text = "${country.flag} ${stringResource(country.nameRes)}",
-                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                    fontSize = 13.sp,
-                                                )
-                                            },
-                                            colors = FilterChipDefaults.filterChipColors(
-                                                selectedContainerColor = TealAccent,
-                                                selectedLabelColor = Color.Black,
-                                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                                labelColor = MaterialTheme.colorScheme.onSurface,
-                                            ),
-                                            shape = RoundedCornerShape(20.dp),
+                            items(popularGenres) { genre ->
+                                val isSelected = selectedGenre == genre.tag
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = { onGenreSelected(if (isSelected) null else genre.tag) },
+                                    label = {
+                                        Text(
+                                            text = stringResource(genre.labelRes),
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                         )
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                LazyRow(
-                                    contentPadding = PaddingValues(horizontal = 10.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    items(popularGenres) { genre ->
-                                        val isSelected = selectedGenre == genre.tag
-                                        FilterChip(
-                                            selected = isSelected,
-                                            onClick = { onGenreSelected(if (isSelected) null else genre.tag) },
-                                            label = {
-                                                Text(
-                                                    text = stringResource(genre.labelRes),
-                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                )
-                                            },
-                                            colors = FilterChipDefaults.filterChipColors(
-                                                selectedContainerColor = TealAccent,
-                                                selectedLabelColor = Color.Black,
-                                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                                labelColor = MaterialTheme.colorScheme.onSurface,
-                                            ),
-                                            shape = RoundedCornerShape(20.dp),
-                                        )
-                                    }
-                                }
+                                    },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = TealAccent,
+                                        selectedLabelColor = Color.Black,
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        labelColor = MaterialTheme.colorScheme.onSurface,
+                                    ),
+                                    shape = RoundedCornerShape(20.dp),
+                                )
                             }
                         }
                     }
@@ -801,7 +787,8 @@ private fun StationGridCard(
 ) {
     Card(
         modifier = modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .height(186.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
@@ -814,7 +801,7 @@ private fun StationGridCard(
         Box(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .padding(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -846,18 +833,16 @@ private fun StationGridCard(
                     modifier = Modifier.fillMaxWidth(),
                 )
 
-                station.country?.let { country ->
-                    Text(
-                        text = country,
-                        style = MaterialTheme.typography.labelSmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        color = TealAccent.copy(alpha = 0.8f),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 2.dp),
-                    )
-                }
+                Text(
+                    text = station.country?.takeIf { it.isNotBlank() } ?: " ",
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = TealAccent.copy(alpha = if (station.country.isNullOrBlank()) 0f else 0.8f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 2.dp),
+                )
             }
             if (showInsecureBadge && station.streamUrl.isInsecureHttpStream()) {
                 Surface(

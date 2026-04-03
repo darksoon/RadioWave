@@ -126,7 +126,9 @@ private fun FavoriteStationCard(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(196.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
@@ -134,45 +136,46 @@ private fun FavoriteStationCard(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                 .padding(horizontal = 10.dp, vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            StationLogo(
-                imageUrl = station.faviconUrl,
-                stationName = station.name,
-                modifier = Modifier.size(64.dp),
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                StationLogo(
+                    imageUrl = station.faviconUrl,
+                    stationName = station.name,
+                    modifier = Modifier.size(64.dp),
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = station.name,
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.SemiBold,
-                ),
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-
-            val subtitle = listOfNotNull(
-                station.country?.takeIf { it.isNotBlank() },
-                station.language?.takeIf { it.isNotBlank() },
-            ).joinToString(separator = " • ")
-
-            if (subtitle.isNotBlank()) {
                 Text(
-                    text = subtitle,
+                    text = station.name,
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+
+                val subtitle = listOfNotNull(
+                    station.country?.takeIf { it.isNotBlank() },
+                    station.language?.takeIf { it.isNotBlank() },
+                ).joinToString(separator = " • ")
+
+                Text(
+                    text = subtitle.ifBlank { " " },
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (subtitle.isBlank()) 0f else 1f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

@@ -616,24 +616,16 @@ class RadioWaveAutoService : MediaLibraryService() {
     }
 
     private fun buildStationSubtitle(station: Station): String? {
-        val codec = station.codec?.trim()?.uppercase(Locale.ROOT).takeUnless { it.isNullOrBlank() }
         val bitrate = station.bitrate?.takeIf { it > 0 }?.let { "${it} kbps" }
+        val codec = station.codec?.trim()?.uppercase(Locale.ROOT).takeUnless { it.isNullOrBlank() }
         val language = sanitizeAutoDisplayText(station.language).takeUnless { it.isBlank() }
-        val parts = listOfNotNull(codec, bitrate, language)
+        val parts = listOfNotNull(bitrate, codec, language)
         return parts.joinToString(" • ").takeIf { it.isNotBlank() }
     }
 
     private fun buildStationArtist(station: Station): String? {
-        val parts = mutableListOf<String>()
         val country = sanitizeAutoDisplayText(station.country).takeUnless { it.isBlank() }
-        val codec = station.codec?.trim()?.uppercase(Locale.ROOT).takeUnless { it.isNullOrBlank() }
-        val bitrate = station.bitrate?.takeIf { it > 0 }?.let { "${it} kbps" }
-
-        if (country != null) parts += country
-        if (codec != null) parts += codec
-        if (bitrate != null) parts += bitrate
-
-        return parts.joinToString(" • ").takeIf { it.isNotBlank() }
+        return country?.takeIf { it.isNotBlank() }
     }
 
     private fun sanitizeAutoDisplayText(value: String?): String {

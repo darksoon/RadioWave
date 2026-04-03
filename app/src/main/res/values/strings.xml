@@ -19,7 +19,7 @@
     <string name="update_dialog_install_permission_required">Allow installs from unknown apps, then tap Update again.</string>
     <string name="update_dialog_no_installer">No package installer was found on this device.</string>
     <string name="first_run_title">Welcome to RadioWave</string>
-    <string name="first_run_body">Quick setup notes:\n- Android Auto uses an efficient profile automatically (max 128 kbps).\n- Battery optimization should be disabled for the app.\n- Updates are detected via GitHub Releases and can be installed directly.</string>
+    <string name="first_run_body">Quick setup notes:\n- Android Auto can prefer efficient streams; you can change this in settings.\n- Battery optimization should be disabled for the app.\n- Updates are detected via GitHub Releases and can be installed directly.</string>
     <string name="first_run_confirm">Understood</string>
     <string name="update_progress_preparing">preparing…</string>
     <string name="update_progress_known">%1$.1f / %2$.1f MB  %3$d%%</string>

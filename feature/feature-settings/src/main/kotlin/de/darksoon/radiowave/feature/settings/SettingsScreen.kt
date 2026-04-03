@@ -158,6 +158,9 @@ fun SettingsScreen(
     var autoPlayOnAndroidAutoConnect by rememberSaveable {
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_AUTO_PLAY_ON_ANDROID_AUTO_CONNECT, true))
     }
+    var limitAndroidAutoQuality by rememberSaveable {
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_LIMIT_ANDROID_AUTO_QUALITY, true))
+    }
     var updateCheckEnabled by rememberSaveable {
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_UPDATE_CHECK_ENABLED, true))
     }
@@ -399,6 +402,18 @@ fun SettingsScreen(
                             },
                             enabled = true,
                             disabledHint = null,
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingToggleRow(
+                            title = stringResource(R.string.settings_android_auto_quality_limit_title),
+                            subtitle = stringResource(R.string.settings_android_auto_quality_limit_subtitle),
+                            checked = limitAndroidAutoQuality,
+                            onCheckedChange = { checked ->
+                                limitAndroidAutoQuality = checked
+                                prefs.edit()
+                                    .putBoolean(AppSettings.KEY_LIMIT_ANDROID_AUTO_QUALITY, checked)
+                                    .apply()
+                            },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingToggleRow(

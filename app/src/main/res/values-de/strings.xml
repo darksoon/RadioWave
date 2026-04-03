@@ -19,7 +19,7 @@
     <string name="update_dialog_install_permission_required">Erlaube Installationen aus unbekannten Quellen und tippe dann erneut auf Update.</string>
     <string name="update_dialog_no_installer">Auf diesem Geraet wurde kein Paket-Installer gefunden.</string>
     <string name="first_run_title">Willkommen bei RadioWave</string>
-    <string name="first_run_body">Kurze Hinweise zum Start:\n- Android Auto nutzt automatisch ein sparsames Profil (max. 128 kbps).\n- Die Akku-Optimierung fuer die App sollte deaktiviert werden.\n- Updates werden ueber GitHub Releases erkannt und koennen direkt installiert werden.</string>
+    <string name="first_run_body">Kurze Hinweise zum Start:\n- Android Auto kann sparsame Streams bevorzugen; das lässt sich in den Einstellungen anpassen.\n- Die Akku-Optimierung für die App sollte deaktiviert werden.\n- Updates werden über GitHub Releases erkannt und können direkt installiert werden.</string>
     <string name="first_run_confirm">Verstanden</string>
     <string name="update_progress_preparing">Wird vorbereitet...</string>
     <string name="update_progress_known">%1$.1f / %2$.1f MB  %3$d%%</string>

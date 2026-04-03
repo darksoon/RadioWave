@@ -81,6 +81,8 @@
     <string name="settings_quality_low">Low</string>
     <string name="settings_quality_medium">Medium</string>
     <string name="settings_quality_high">High</string>
+    <string name="settings_android_auto_quality_limit_title">Limit Android Auto to efficient quality</string>
+    <string name="settings_android_auto_quality_limit_subtitle">Prefers lighter streams in the car up to about 128 kbps. If disabled, Android Auto uses your normal quality choice too.</string>
     <string name="settings_auto_play_title">Autoplay on Android Auto connect</string>
     <string name="settings_auto_play_subtitle">Starts the last station automatically when Android Auto connects.</string>
     <string name="settings_notification_play_pause_title">Play/pause button</string>
