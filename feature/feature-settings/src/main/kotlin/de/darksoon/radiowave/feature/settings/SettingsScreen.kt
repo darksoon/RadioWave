@@ -244,6 +244,21 @@ fun SettingsScreen(
 
         if (selectedCategory == null) {
             item {
+                SettingsHeroCard(
+                    title = stringResource(R.string.settings_home_welcome_title),
+                    subtitle = stringResource(R.string.settings_home_welcome_subtitle),
+                    versionLabel = stringResource(R.string.settings_version_label),
+                    versionValue = appVersion,
+                    primaryActionLabel = stringResource(R.string.settings_category_updates_title),
+                    onPrimaryActionClick = { selectedCategory = SettingsCategory.UPDATES },
+                    secondaryActionLabel = stringResource(R.string.settings_category_info_title),
+                    onSecondaryActionClick = { selectedCategory = SettingsCategory.INFO },
+                )
+            }
+            item {
+                SettingsSectionLabel(text = stringResource(R.string.settings_home_customize_title))
+            }
+            item {
                 SettingsCategoryCard(
                     title = stringResource(R.string.settings_category_general_title),
                     subtitle = stringResource(R.string.settings_category_general_subtitle),
@@ -272,17 +287,18 @@ fun SettingsScreen(
                 )
             }
             item {
-                SettingsCategoryCard(
-                    title = stringResource(R.string.settings_category_updates_title),
-                    subtitle = stringResource(R.string.settings_category_updates_subtitle),
-                    onClick = { selectedCategory = SettingsCategory.UPDATES },
-                )
+                SettingsSectionLabel(text = stringResource(R.string.settings_home_support_title))
             }
             item {
-                SettingsCategoryCard(
-                    title = stringResource(R.string.settings_category_info_title),
-                    subtitle = stringResource(R.string.settings_category_info_subtitle),
-                    onClick = { selectedCategory = SettingsCategory.INFO },
+                SettingsSupportCard(
+                    title = stringResource(R.string.settings_home_support_card_title),
+                    subtitle = stringResource(R.string.settings_home_support_card_subtitle),
+                    thankYouTitle = stringResource(R.string.settings_testers_title),
+                    thankYouText = stringResource(R.string.settings_testers_value),
+                    primaryActionLabel = stringResource(R.string.settings_kofi_title),
+                    onPrimaryActionClick = { uriHandler.openUri("https://ko-fi.com/darksoon") },
+                    secondaryActionLabel = stringResource(R.string.settings_category_info_title),
+                    onSecondaryActionClick = { selectedCategory = SettingsCategory.INFO },
                 )
             }
         } else {
@@ -754,6 +770,11 @@ fun SettingsScreen(
                             onClick = { uriHandler.openUri("https://ko-fi.com/darksoon") },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        InfoTextBlockRow(
+                            label = stringResource(R.string.settings_testers_title),
+                            value = stringResource(R.string.settings_testers_value),
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         InfoTextRow(
                             label = stringResource(R.string.settings_made_by_label),
                             value = stringResource(R.string.settings_made_by_value),
@@ -908,6 +929,168 @@ private fun categoryTitle(category: SettingsCategory, context: Context): String 
         SettingsCategory.DATA -> context.getString(R.string.settings_category_data_title)
         SettingsCategory.UPDATES -> context.getString(R.string.settings_category_updates_title)
         SettingsCategory.INFO -> context.getString(R.string.settings_category_info_title)
+    }
+}
+
+@Composable
+private fun SettingsSectionLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+        color = TealAccent,
+        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+    )
+}
+
+@Composable
+private fun SettingsHeroCard(
+    title: String,
+    subtitle: String,
+    versionLabel: String,
+    versionValue: String,
+    primaryActionLabel: String,
+    onPrimaryActionClick: () -> Unit,
+    secondaryActionLabel: String,
+    onSecondaryActionClick: () -> Unit,
+) {
+    Card(
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = DarkCardBackground.copy(alpha = 0.78f),
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = Color.White,
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = DarkOnSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White.copy(alpha = 0.06f),
+                ),
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+                    Text(
+                        text = versionLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = DarkOnSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = versionValue,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = Color.White,
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedButton(
+                    onClick = onPrimaryActionClick,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(primaryActionLabel)
+                }
+                OutlinedButton(
+                    onClick = onSecondaryActionClick,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(secondaryActionLabel)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsSupportCard(
+    title: String,
+    subtitle: String,
+    thankYouTitle: String,
+    thankYouText: String,
+    primaryActionLabel: String,
+    onPrimaryActionClick: () -> Unit,
+    secondaryActionLabel: String,
+    onSecondaryActionClick: () -> Unit,
+) {
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = DarkCardBackground.copy(alpha = 0.72f),
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = Color.White,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = DarkOnSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White.copy(alpha = 0.05f),
+                ),
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+                    Text(
+                        text = thankYouTitle,
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                        color = TealAccent,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = thankYouText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = DarkOnSurfaceVariant,
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedButton(
+                    onClick = onPrimaryActionClick,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(primaryActionLabel)
+                }
+                OutlinedButton(
+                    onClick = onSecondaryActionClick,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(secondaryActionLabel)
+                }
+            }
+        }
     }
 }
 

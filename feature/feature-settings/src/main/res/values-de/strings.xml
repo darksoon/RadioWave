@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="settings_title">Einstellungen</string>
-    <string name="settings_overview">Uebersicht: Allgemein, Klang, Benachrichtigung, Daten, Updates, Info</string>
+    <string name="settings_overview">Passe Wiedergabe, Benachrichtigungen, Updates und alle wichtigen Projektinfos uebersichtlich an.</string>
+    <string name="settings_home_welcome_title">Dein Setup auf einen Blick</string>
+    <string name="settings_home_welcome_subtitle">Schneller Zugriff auf Updates, Support und die wichtigsten App-Bereiche.</string>
+    <string name="settings_home_customize_title">RadioWave anpassen</string>
+    <string name="settings_home_support_title">Support &amp; Danke</string>
+    <string name="settings_home_support_card_title">Projekt unterstuetzen und Tester sichtbar wertschaetzen</string>
+    <string name="settings_home_support_card_subtitle">Der Spendenlink bleibt schnell erreichbar und der Dank an Tester bekommt einen eigenen Platz.</string>
     <string name="settings_category_general_title">Allgemein</string>
     <string name="settings_category_general_subtitle">Design, dynamische Farben, Hinweise</string>
     <string name="settings_category_sound_title">Klang</string>
@@ -122,6 +128,8 @@
     <string name="settings_website_value">sven-neurath.de</string>
     <string name="settings_kofi_title">Ko-fi</string>
     <string name="settings_kofi_subtitle">Projekt unterstuetzen</string>
+    <string name="settings_testers_title">Besonderer Dank</string>
+    <string name="settings_testers_value">Kevin1321 (GitHub: https://github.com/Kevin1321), Littledarks, Levana, Dracexz, Blueray, madm1k3, WARRIOR`s ⚔️ (Beste Gilde), alle Tester aus unserer Google Group (https://groups.google.com/u/1/g/radiowave-beta-tester), die Reddit-Community und natuerlich alle, die getestet, Feedback gegeben, Bugs gemeldet oder RadioWave mit vorangebracht haben — auch die, die ich hier versehentlich vergessen habe. Danke.</string>
     <string name="settings_made_by_label">Entwickelt von</string>
     <string name="settings_made_by_value">Sven Neurath</string>
     <string name="settings_new_version_found">Neue Version gefunden: %1$s</string>
