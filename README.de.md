@@ -19,7 +19,7 @@
 
   <h3>Die moderne, werbefreie Internet-Radio-App fuer Android.</h3>
   <p>Schnell | Privacy-first | Kein Tracking | 45.000+ Sender</p>
-  <p>Entwickler-Website: <a href="https://sven-neurath.de">sven-neurath.de</a></p>
+  <p>Projekt-Website: <a href="https://radiowave.sven-neurath.de">radiowave.sven-neurath.de</a></p>
 </div>
 
 ---
@@ -29,13 +29,14 @@
 Die oeffentliche Roadmap liegt in [ROADMAP.de.md](./ROADMAP.de.md).
 
 - Fokus: Stabilitaet und Nutzerwert
-- Wird laufend mit Releases und Hotfixes aktualisiert
+- Wird laufend mit Releases und Polishing aktualisiert
 - Feedback gerne ueber GitHub Issues
 
-## Aktueller Stand
+## Verfuegbarkeit
 
-- Oeffentliche Release-Linie: `v0.1.0-beta.4-HOTFIX`
-- Aktueller Repo-Stand: `0.1.0-beta.4-HOTFIX` (`app.versionCode=13`)
+- Website: https://radiowave.sven-neurath.de
+- Google Play: https://play.google.com/store/apps/details?id=de.darksoon.radiowave
+- GitHub Releases: https://github.com/darksoon/RadioWave/releases/latest
 - Android-Paketname / `applicationId`: `de.darksoon.radiowave`
 
 ## Highlights
@@ -136,6 +137,14 @@ cp keystore.properties.example keystore.properties
 
 ## Installation
 
+### Google Play
+
+Installiere RadioWave ueber Google Play:
+
+https://play.google.com/store/apps/details?id=de.darksoon.radiowave
+
+### GitHub-APK
+
 1. Oeffne die aktuelle Release-Seite:
    `https://github.com/darksoon/RadioWave/releases/latest`
 2. Lade das aktuelle APK-Asset herunter.
@@ -204,10 +213,11 @@ Siehe [LICENSE.txt](./LICENSE.txt).
 
 Fuer Kotlin-Quelldateien wird `SPDX-License-Identifier: GPL-3.0-or-later` verwendet.
 
-## Support
+## Links
 
-Wenn du das Projekt unterstuetzen willst:
-
+- Website: https://radiowave.sven-neurath.de
+- Google Play: https://play.google.com/store/apps/details?id=de.darksoon.radiowave
+- GitHub Releases: https://github.com/darksoon/RadioWave/releases/latest
 - Ko-fi: https://ko-fi.com/darksoon
 
 ## Credits

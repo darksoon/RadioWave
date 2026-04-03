@@ -4,8 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### Docs
-- Repository documentation cleaned up and aligned with the current public release state.
+### Added
+- Release readiness audit for the upcoming `1.0.0-rc1` preparation phase.
+
+### Changed
+- Public README files now point to the dedicated RadioWave website and Google Play listing instead of pinning the project overview to an older beta/hotfix line.
+- Public roadmap refreshed for the current RC preparation phase.
+
+### Improved
+- Android Auto quality handling is now configurable in settings.
+- Browse scrolling and station-card sizing were polished further.
 
 ## [0.1.0-beta.4-HOTFIX] - 2026-03-12
 

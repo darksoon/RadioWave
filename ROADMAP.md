@@ -2,7 +2,7 @@
 
 [Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Status: 2026-03-12
+Status: 2026-04-03
 
 This roadmap is intended for GitHub and keeps the public product status compact.
 
@@ -37,7 +37,7 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - Duplicate media notification removed while Android Auto is connected
 - Optional thermal mode in settings
 - Android Auto low-load behavior applied automatically while connected
-- Android Auto bitrate capped at 128 kbps during car sessions
+- Android Auto quality limit is now configurable in settings for car sessions
 - First-run info dialog integrated
 - In-app update flow via GitHub Releases
 - Update settings page with popup toggle, auto-check toggle, manual check, and version state
@@ -57,7 +57,7 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 ## In Progress
 
 - Voice and Assistant play intents for station launch
-- Google Play release hardening and post-acceptance cleanup
+- 1.0.0-rc1 release preparation, changelog, and final smoke tests
 
 ## Planned Next
 

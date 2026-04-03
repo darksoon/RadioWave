@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version tag (e.g. v0.1.0-beta.2)"
+        description: "Version tag (e.g. v1.0.0-rc1 or v1.0.0)"
         required: true
         type: string
       prerelease:
@@ -36,7 +36,7 @@ jobs:
           VERSION="${{ github.event.inputs.version }}"
           if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
             echo "Invalid version format: $VERSION" >&2
-            echo "Expected examples: v0.1.0-beta.2 or v1.0.0" >&2
+            echo "Expected examples: v1.0.0-rc1 or v1.0.0" >&2
             exit 1
           fi
           if git rev-parse "$VERSION" >/dev/null 2>&1; then

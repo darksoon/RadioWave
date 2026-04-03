@@ -2,7 +2,7 @@
 
 [Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Stand: 2026-03-12
+Stand: 2026-04-03
 
 Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus kompakt.
 
@@ -37,7 +37,7 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Doppelte Media-Notification waehrend Android Auto entfernt
 - Optionaler Hitzemodus in Settings
 - Android-Auto-Low-Load-Verhalten automatisch waehrend Verbindung
-- Android Auto auf 128 kbps waehrend Car-Sessions begrenzt
+- Android-Auto-Qualitaetsbegrenzung in den Einstellungen fuer Car-Sessions konfigurierbar
 - Erststart-Info-Dialog integriert
 - In-App-Updateflow ueber GitHub Releases
 - Update-Settings mit Popup-Toggle, Auto-Check-Toggle, manueller Pruefung und Versionsstatus
@@ -56,7 +56,7 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 ## In Arbeit
 
 - Voice- und Assistant-Play-Intents fuer Senderstarts
-- Google-Play-Release-Haertung und Aufraeumen nach der Annahme
+- 1.0.0-rc1 Vorbereitung, Changelog und finale Smoke-Tests
 
 ## Als Naechstes
 
