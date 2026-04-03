@@ -17,13 +17,37 @@ Danke für deinen Beitrag zu RadioWave! 🎧
 
 ## Commit Style (empfohlen)
 
-- `feat: ...`
-- `fix: ...`
-- `chore: ...`
-- `docs: ...`
-- `refactor: ...`
-- `test: ...`
-- `ci: ...`
+- `feat(scope): ...`
+- `fix(scope): ...`
+- `perf(scope): ...`
+- `refactor(scope): ...`
+- `docs(scope): ...`
+- `test(scope): ...`
+- `ci(scope): ...`
+- `chore(scope): ...`
+
+## Release-Notes Hygiene
+
+Die GitHub-Release-Notes werden aus den Commit-Betreffzeilen erzeugt.
+Deshalb fuer user-sichtbare Aenderungen bitte bevorzugt:
+
+- `feat(...)` fuer neue Funktionen
+- `fix(...)` fuer echte Bugfixes
+- `perf(...)` fuer spuerbare Performance-Verbesserungen
+- `refactor(...)` nur wenn sich das Nutzerverhalten merklich verbessert
+
+Empfehlungen fuer den Betreff:
+
+- kurz und klar
+- moeglichst nutzerorientiert statt nur intern-technisch
+- gerne bilingual im Format `DE / EN`
+- keine generischen Titel wie `misc changes`, `update stuff`, `bugfix`
+
+Beispiele:
+
+- `fix(player): lockscreen-controls reparieren / fix lockscreen controls`
+- `fix(auto): stationsnamen bereinigen / sanitize station names`
+- `feat(settings): sleep timer hinzufuegen / add sleep timer`
 
 ## Lokale Checks vor PR
 

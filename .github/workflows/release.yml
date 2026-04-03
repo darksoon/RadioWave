@@ -184,7 +184,7 @@ jobs:
           cp "$AAB_SOURCE" "$AAB_NAME"
           echo "AAB_PATH=$AAB_NAME" >> "$GITHUB_ENV"
 
-      - name: Generate changelog
+      - name: Generate release notes
         shell: bash
         run: |
           if [ -n "$PREV_TAG" ]; then
@@ -193,21 +193,93 @@ jobs:
             RANGE="HEAD"
           fi
 
-          COMMITS=$(git log --pretty=format:"- %s (%h)" $RANGE)
-          CHANGELOG="## RadioWave ${VERSION}"$'\n'$'\n'
+          normalize_subject() {
+            local subject="$1"
+            subject="${subject#Merge pull request }"
+            printf '%s' "$subject" | sed -E 's/^[a-z]+(\([^)]+\))?!?:[[:space:]]*//'
+          }
 
-          if [ -n "$COMMITS" ]; then
-            CHANGELOG+="$COMMITS"$'\n'
-          else
-            CHANGELOG+="_Keine Commit-Details verfuegbar._"$'\n'
-          fi
+          de_subject() {
+            local normalized
+            normalized="$(normalize_subject "$1")"
+            printf '%s' "$normalized" | awk -F' / ' '{print $1}' | sed 's/[[:space:]]*$//'
+          }
 
-          CHANGELOG+=$'\n---\n'
-          CHANGELOG+="APK: Signed Release Build"$'\n'
+          append_section() {
+            local title="$1"
+            local content="$2"
+            if [ -n "$content" ]; then
+              CHANGELOG+="## ${title}"$'\n'$'\n'
+              CHANGELOG+="$content"$'\n'
+            fi
+          }
+
+          FEATURES=""
+          FIXES=""
+          IMPROVEMENTS=""
+          OTHER=""
+          PLAY_NOTES=""
+          PLAY_COUNT=0
+
+          while IFS='|' read -r subject short_hash; do
+            [ -z "$subject" ] && continue
+            if [[ "$subject" =~ ^chore\(release\):[[:space:]]prepare[[:space:]] ]]; then
+              continue
+            fi
+
+            normalized="$(normalize_subject "$subject")"
+            de_note="$(de_subject "$subject")"
+            entry="- ${normalized} (${short_hash})"
+
+            case "$subject" in
+              feat* )
+                FEATURES+="$entry"$'\n'
+                ;;
+              fix* )
+                FIXES+="$entry"$'\n'
+                ;;
+              perf*|refactor* )
+                IMPROVEMENTS+="$entry"$'\n'
+                ;;
+              * )
+                OTHER+="$entry"$'\n'
+                ;;
+            esac
+
+            case "$subject" in
+              feat*|fix*|perf*|refactor* )
+                if [ -n "$de_note" ] && [ $PLAY_COUNT -lt 5 ]; then
+                  PLAY_NOTES+="- ${de_note}"$'\n'
+                  PLAY_COUNT=$((PLAY_COUNT + 1))
+                fi
+                ;;
+            esac
+          done < <(git log --format='%s|%h' $RANGE --no-merges)
+
+          CHANGELOG="# RadioWave ${VERSION}"$'\n'$'\n'
           CHANGELOG+="VersionName: ${VERSION_NAME}"$'\n'
           CHANGELOG+="VersionCode: ${VERSION_CODE}"$'\n'
+          if [ -n "$PREV_TAG" ]; then
+            CHANGELOG+="Changes since ${PREV_TAG}"$'\n'
+          fi
+          CHANGELOG+=$'\n'
 
-          echo "$CHANGELOG" > CHANGELOG_RELEASE.md
+          append_section "Highlights" "$FEATURES"
+          append_section "Fixes" "$FIXES"
+          append_section "Improvements" "$IMPROVEMENTS"
+          append_section "Other" "$OTHER"
+
+          if [ -z "$FEATURES$FIXES$IMPROVEMENTS$OTHER" ]; then
+            CHANGELOG+="_No commit details available._"$'\n'
+          fi
+
+          if [ -n "$PLAY_NOTES" ]; then
+            CHANGELOG+=$'\n## Play Store short notes (DE)\n\n'
+            CHANGELOG+="$PLAY_NOTES"
+          fi
+
+          printf '%s\n' "$CHANGELOG" > CHANGELOG_RELEASE.md
+          printf '%s\n' "$PLAY_NOTES" > PLAY_STORE_NOTES.de.txt
           {
             echo "CHANGELOG<<EOF"
             echo "$CHANGELOG"
