@@ -261,6 +261,12 @@ private fun OnboardingDialog(
                     style = MaterialTheme.typography.labelLarge,
                     color = TealAccent,
                 )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = stringResource(R.string.app_slogan),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
                     text = stringResource(content.titleRes),

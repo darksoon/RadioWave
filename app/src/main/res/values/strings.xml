@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">RadioWave</string>
+    <string name="app_slogan">Internet radio, the way it should be.</string>
     <string name="nav_home">Home</string>
     <string name="nav_browse">Browse</string>
     <string name="nav_favorites">Favorites</string>

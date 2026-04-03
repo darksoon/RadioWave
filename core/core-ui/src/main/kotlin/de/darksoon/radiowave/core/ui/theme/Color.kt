@@ -12,29 +12,29 @@ val Purple40 = Color(0xFF6650a4)
 val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
 
-// Neutral Anthracite / White palette
-val DarkBackground = Color(0xFF1F2227)
-val DarkSurface = Color(0xFF262A31)
-val DarkSurfaceVariant = Color(0xFF30353D)
-val DarkCardBackground = Color(0xFF2A2F37)
+// Dark purple / white brand palette
+val DarkBackground = Color(0xFF14111D)
+val DarkSurface = Color(0xFF1C1730)
+val DarkSurfaceVariant = Color(0xFF27203D)
+val DarkCardBackground = Color(0xFF221B35)
 
-// Teal/Mint Accent Colors
-val TealAccent = Color(0xFF00BCD4)
-val TealLight = Color(0xFF4DD0E1)
-val MintAccent = Color(0xFF26A69A)
-val MintLight = Color(0xFF80CBC4)
+// Purple / soft-white accent colors
+val TealAccent = Color(0xFFB388FF)
+val TealLight = Color(0xFFD6BDFF)
+val MintAccent = Color(0xFFF3EEFF)
+val MintLight = Color(0xFFFFFFFF)
 
 // Additional UI Colors
-val DarkOnSurface = Color(0xFFF2F3F5)
-val DarkOnSurfaceVariant = Color(0xFFC5CAD1)
+val DarkOnSurface = Color(0xFFF6F3FF)
+val DarkOnSurfaceVariant = Color(0xFFD0C9E3)
 val DarkOverlay = Color(0x99000000)
-val DarkBorder = Color(0xFF434A55)
+val DarkBorder = Color(0xFF4B4462)
 
-val LightBackground = Color(0xFFFFFFFF)
-val LightSurface = Color(0xFFF6F7F9)
-val LightSurfaceVariant = Color(0xFFEDF0F4)
+val LightBackground = Color(0xFFFCFAFF)
+val LightSurface = Color(0xFFF5F1FB)
+val LightSurfaceVariant = Color(0xFFEEE8F8)
 val LightCardBackground = Color(0xFFFFFFFF)
-val LightOnSurface = Color(0xFF1A1D22)
-val LightOnSurfaceVariant = Color(0xFF5C6470)
-val LightBorder = Color(0xFFD6DBE2)
+val LightOnSurface = Color(0xFF1F1A2B)
+val LightOnSurfaceVariant = Color(0xFF665F78)
+val LightBorder = Color(0xFFD9D0EA)
 
