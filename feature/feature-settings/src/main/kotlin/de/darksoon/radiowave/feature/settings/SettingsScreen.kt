@@ -40,6 +40,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -200,6 +201,10 @@ fun SettingsScreen(
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
+    }
+
+    BackHandler(enabled = selectedCategory != null) {
+        selectedCategory = null
     }
 
     LaunchedEffect(Unit) {
@@ -828,11 +833,6 @@ fun SettingsScreen(
                             title = stringResource(R.string.settings_kofi_title),
                             subtitle = stringResource(R.string.settings_kofi_subtitle),
                             onClick = { uriHandler.openUri("https://ko-fi.com/darksoon") },
-                        )
-                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                        InfoTextBlockRow(
-                            label = stringResource(R.string.settings_testers_title),
-                            value = stringResource(R.string.settings_testers_value),
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         InfoTextRow(

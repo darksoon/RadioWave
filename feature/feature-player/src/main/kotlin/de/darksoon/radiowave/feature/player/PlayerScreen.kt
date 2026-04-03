@@ -257,7 +257,7 @@ fun PlayerScreen(
                 modifier = Modifier.fillMaxWidth(),
                 maxLines = 1,
                 enabled = true,
-                edgeFade = true,
+                edgeFade = false,
             )
             Spacer(modifier = Modifier.height(8.dp))
             // Station row with logo/name and optional kbps/codec on the same line
