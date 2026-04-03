@@ -16,14 +16,16 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
@@ -33,13 +35,15 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -92,6 +96,7 @@ import de.darksoon.radiowave.R
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import de.darksoon.radiowave.core.data.update.GitHubReleaseChecker
 import de.darksoon.radiowave.core.data.update.GitHubReleaseInfo
 import de.darksoon.radiowave.core.data.update.GitHubReleaseUpdater
 import de.darksoon.radiowave.core.data.update.UpdateDownloadProgress
@@ -215,6 +220,102 @@ val bottomNavItems = listOf(
     BottomNavItem.Settings,
 )
 
+private data class OnboardingStepContent(
+    @StringRes val titleRes: Int,
+    @StringRes val bodyRes: Int,
+)
+
+@Composable
+private fun OnboardingDialog(
+    step: Int,
+    onStepChange: (Int) -> Unit,
+    onSkip: () -> Unit,
+    onFinish: () -> Unit,
+) {
+    val steps = listOf(
+        OnboardingStepContent(R.string.onboarding_step_welcome_title, R.string.onboarding_step_welcome_body),
+        OnboardingStepContent(R.string.onboarding_step_search_title, R.string.onboarding_step_search_body),
+        OnboardingStepContent(R.string.onboarding_step_player_title, R.string.onboarding_step_player_body),
+        OnboardingStepContent(R.string.onboarding_step_auto_title, R.string.onboarding_step_auto_body),
+        OnboardingStepContent(R.string.onboarding_step_updates_title, R.string.onboarding_step_updates_body),
+    )
+    val safeStep = step.coerceIn(0, steps.lastIndex)
+    val content = steps[safeStep]
+    Dialog(
+        onDismissRequest = { },
+        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
+    ) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 8.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.first_run_title),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = TealAccent,
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = stringResource(content.titleRes),
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = stringResource(content.bodyRes),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = stringResource(R.string.onboarding_progress, safeStep + 1, steps.size),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = onSkip,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(stringResource(R.string.onboarding_skip))
+                    }
+                    if (safeStep > 0) {
+                        OutlinedButton(
+                            onClick = { onStepChange(safeStep - 1) },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(stringResource(R.string.onboarding_back))
+                        }
+                    }
+                    Button(
+                        onClick = {
+                            if (safeStep >= steps.lastIndex) onFinish() else onStepChange(safeStep + 1)
+                        },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(
+                            stringResource(
+                                if (safeStep >= steps.lastIndex) R.string.onboarding_finish else R.string.onboarding_next,
+                            ),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun RadioWaveMainScreen(
     shortcutTarget: String? = null,
@@ -241,11 +342,14 @@ fun RadioWaveMainScreen(
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_QUICK_TOASTS, true))
     }
     var showFullscreenPlayer by rememberSaveable { mutableStateOf(false) }
-    var showFirstRunInfo by rememberSaveable {
+    var showOnboarding by rememberSaveable {
         mutableStateOf(
             !prefs.getBoolean(AppSettings.KEY_FIRST_RUN_ONBOARDING_DONE, false),
         )
     }
+    var onboardingStep by rememberSaveable { mutableIntStateOf(0) }
+    var showWhatsNew by rememberSaveable { mutableStateOf(false) }
+    var whatsNewRelease by remember { mutableStateOf<GitHubReleaseInfo?>(null) }
     var availableUpdate by remember { mutableStateOf<GitHubReleaseInfo?>(null) }
     var updateInProgress by remember { mutableStateOf(false) }
     var updateProgress by remember { mutableStateOf<UpdateDownloadProgress?>(null) }
@@ -325,9 +429,25 @@ fun RadioWaveMainScreen(
         }
     }
 
-    LaunchedEffect(showFirstRunInfo) {
-        if (!showFirstRunInfo) {
+    LaunchedEffect(showOnboarding) {
+        if (!showOnboarding) {
             checkForAppUpdate(force = false)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        val versionName = readVersionName(context)
+        val lastSeenWhatsNew = prefs.getString(AppSettings.KEY_LAST_SEEN_WHATS_NEW_VERSION, null)
+        if (!versionName.equals(lastSeenWhatsNew, ignoreCase = true)) {
+            val release = runCatching {
+                GitHubReleaseChecker.getReleaseByTag(versionName)
+            }.getOrNull()
+            if (release != null) {
+                whatsNewRelease = release
+                showWhatsNew = true
+            } else {
+                prefs.edit().putString(AppSettings.KEY_LAST_SEEN_WHATS_NEW_VERSION, versionName).apply()
+            }
         }
     }
 
@@ -456,7 +576,27 @@ fun RadioWaveMainScreen(
                         FavoritesScreen()
                     }
                     composable(BottomNavItem.Settings.route) {
-                        SettingsScreen()
+                        SettingsScreen(
+                            onRestartOnboarding = {
+                                onboardingStep = 0
+                                showOnboarding = true
+                            },
+                            onShowWhatsNew = {
+                                coroutineScope.launch {
+                                    val versionName = readVersionName(context)
+                                    whatsNewRelease = GitHubReleaseChecker.getReleaseByTag(versionName)
+                                    if (whatsNewRelease != null) {
+                                        showWhatsNew = true
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.whats_new_empty),
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                    }
+                                }
+                            },
+                        )
                     }
                 }
             }
@@ -532,28 +672,70 @@ fun RadioWaveMainScreen(
                 }
             }
 
-            if (showFirstRunInfo) {
-                AlertDialog(
-                    onDismissRequest = { },
-                    title = {
-                        Text(stringResource(R.string.first_run_title))
+            if (showOnboarding) {
+                OnboardingDialog(
+                    step = onboardingStep,
+                    onStepChange = { onboardingStep = it },
+                    onSkip = {
+                        prefs.edit()
+                            .putBoolean(AppSettings.KEY_FIRST_RUN_ONBOARDING_DONE, true)
+                            .apply()
+                        showOnboarding = false
+                        onboardingStep = 0
+                        coroutineScope.launch {
+                            checkForAppUpdate(force = true)
+                        }
                     },
+                    onFinish = {
+                        prefs.edit()
+                            .putBoolean(AppSettings.KEY_FIRST_RUN_ONBOARDING_DONE, true)
+                            .apply()
+                        showOnboarding = false
+                        onboardingStep = 0
+                        coroutineScope.launch {
+                            checkForAppUpdate(force = true)
+                        }
+                    },
+                )
+            }
+
+            if (showWhatsNew && whatsNewRelease != null) {
+                val release = whatsNewRelease!!
+                AlertDialog(
+                    onDismissRequest = {
+                        prefs.edit().putString(AppSettings.KEY_LAST_SEEN_WHATS_NEW_VERSION, readVersionName(context)).apply()
+                        showWhatsNew = false
+                    },
+                    title = { Text(stringResource(R.string.whats_new_title, release.tag)) },
                     text = {
-                        Text(stringResource(R.string.first_run_body))
+                        Text(
+                            text = previewReleaseNotes(context, release.body),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
                     },
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                prefs.edit()
-                                    .putBoolean(AppSettings.KEY_FIRST_RUN_ONBOARDING_DONE, true)
-                                    .apply()
-                                showFirstRunInfo = false
-                                coroutineScope.launch {
-                                    checkForAppUpdate(force = true)
-                                }
+                                prefs.edit().putString(AppSettings.KEY_LAST_SEEN_WHATS_NEW_VERSION, readVersionName(context)).apply()
+                                showWhatsNew = false
                             },
                         ) {
-                            Text(stringResource(R.string.first_run_confirm))
+                            Text(stringResource(R.string.whats_new_confirm))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = {
+                                prefs.edit().putString(AppSettings.KEY_LAST_SEEN_WHATS_NEW_VERSION, readVersionName(context)).apply()
+                                showWhatsNew = false
+                                context.startActivity(
+                                    Intent(Intent.ACTION_VIEW).apply {
+                                        data = android.net.Uri.parse(release.htmlUrl)
+                                    },
+                                )
+                            },
+                        ) {
+                            Text(stringResource(R.string.whats_new_open_release))
                         }
                     },
                 )
