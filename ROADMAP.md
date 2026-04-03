@@ -57,7 +57,7 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 ## In Progress
 
 - Voice and Assistant play intents for station launch
-- Google Play Closed Testing preparation
+- Google Play release hardening and post-acceptance cleanup
 
 ## Planned Next
 

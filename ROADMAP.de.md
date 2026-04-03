@@ -56,7 +56,7 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 ## In Arbeit
 
 - Voice- und Assistant-Play-Intents fuer Senderstarts
-- Google-Play-Closed-Testing vorbereiten
+- Google-Play-Release-Haertung und Aufraeumen nach der Annahme
 
 ## Als Naechstes
 

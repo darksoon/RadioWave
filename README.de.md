@@ -34,8 +34,8 @@ Die oeffentliche Roadmap liegt in [ROADMAP.de.md](./ROADMAP.de.md).
 
 ## Aktueller Stand
 
-- Oeffentliche Release-Linie: `v0.1.0-beta.3-HOTFIX`
-- Aktueller Repo-Stand: `0.1.0-beta.4` (`app.versionCode=12`)
+- Oeffentliche Release-Linie: `v0.1.0-beta.4-HOTFIX`
+- Aktueller Repo-Stand: `0.1.0-beta.4-HOTFIX` (`app.versionCode=13`)
 - Android-Paketname / `applicationId`: `de.darksoon.radiowave`
 
 ## Highlights
@@ -125,7 +125,7 @@ systemProp.https.proxyPort=<proxy-port>
 Signierte Release-Builds laufen ueber GitHub Actions.
 
 - Fuer GitHub / Direktdownload ist die signierte `github`-APK gedacht
-- Fuer Google Play / Closed Testing ist das signierte `play`-App-Bundle (`.aab`) gedacht
+- Fuer die Google-Play-Auslieferung ist das signierte `play`-App-Bundle (`.aab`) gedacht
 
 Nur fuer lokale Experimente:
 
@@ -187,7 +187,7 @@ Unter `Actions -> Manual Android Build -> Run workflow`.
   - haengt beide Artefakte als Release-Assets an
 - Rollen der Artefakte:
   - `github`-APK: fuer GitHub-Releases / Direktdownload, mit eingebautem Updater
-  - `play`-AAB: fuer Google Play, ohne direkte APK-Install-/Update-Permission
+  - `play`-AAB: fuer die Google-Play-Auslieferung
 - Die Workflows sind fuer die GitHub-Actions-Node-24-Umstellung vorbereitet (`actions/checkout@v5`)
 
 ## Datenschutz

@@ -45,6 +45,12 @@ Thumbs.db
 *.temp
 *.swp
 *~
+/temp_*.py
+/temp_*.txt
+/update_bottom.py
+/docs/test.txt
+/fdroid/
+/release_*_notes.md
 
 # Test results
 /test-results/
@@ -62,10 +68,8 @@ keystore.properties
 # Local signing material
 /.local-secrets/
 
-# Local agent/session files (not for public repo)
-/AGENTS.md
+# Local helper files
 /.agents/
-/SESSION_START.md
 
 # Local mockups / ad-hoc images in repo root
 /*.png
@@ -77,6 +81,7 @@ keystore.properties
 /MARKTANALYSE.md
 /PHASEN.md
 /TODO.md
+/todo.md
 /bug.txt
 /log.txt
 /log.txt.txt

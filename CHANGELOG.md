@@ -4,9 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Docs
+- Repository documentation cleaned up and aligned with the current public release state.
+
+## [0.1.0-beta.4-HOTFIX] - 2026-03-12
+
+### Fixed
+- Release and project docs refreshed to match the current package name, workflow behavior, and distribution targets.
+
+## [0.1.0-beta.4] - 2026-03-12
+
 ### Changed
 - Android package / `applicationId` renamed from `de.radiowave` to `de.darksoon.radiowave` for Google Play compatibility.
-- Documentation updated to reflect the current release workflow, package name, and Play Closed Testing split.
+- Documentation updated to reflect the current release workflow, package name, and Google Play distribution split.
 
 ### Improved
 - GitHub Actions workflows now use `actions/checkout@v5` and opt into Node 24 ahead of the runner default switch.
@@ -34,7 +44,7 @@ All notable changes to this project will be documented in this file.
 ### Improved
 - CI/release workflows now use stronger Gradle caching and configuration cache for faster repeat runs.
 - Support links now point to Ko-fi in app and GitHub documentation.
-- Project relicensed to GPL-3.0-or-later with SPDX headers on Kotlin sources for F-Droid/Open Source distribution.
+- Project relicensed to GPL-3.0-or-later with SPDX headers on Kotlin sources for open-source distribution.
 
 ## [0.1.0-beta.2] - 2026-03-09
 
@@ -244,6 +254,8 @@ All notable changes to this project will be documented in this file.
 [0.1.0-beta.2]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-beta.2
 [0.1.0-beta.3]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-beta.3
 [0.1.0-beta.3-HOTFIX]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-beta.3-HOTFIX
+[0.1.0-beta.4]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-beta.4
+[0.1.0-beta.4-HOTFIX]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-beta.4-HOTFIX
 [0.1.0-alpha.6]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.6
 [0.1.0-alpha.5]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.5
 [0.1.0-alpha.3]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-alpha.3
