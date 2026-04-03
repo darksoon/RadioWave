@@ -105,7 +105,7 @@ class PlaybackForegroundService : Service() {
         }
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
             action = ACTION_OPEN_PLAYER
-            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         val contentIntent = launchIntent?.let {
             PendingIntent.getActivity(
