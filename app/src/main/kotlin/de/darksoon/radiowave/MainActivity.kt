@@ -280,16 +280,17 @@ private fun OnboardingDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
+                OutlinedButton(
+                    onClick = onSkip,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.onboarding_skip))
+                }
+                Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    OutlinedButton(
-                        onClick = onSkip,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text(stringResource(R.string.onboarding_skip))
-                    }
                     if (safeStep > 0) {
                         OutlinedButton(
                             onClick = { onStepChange(safeStep - 1) },
@@ -302,7 +303,7 @@ private fun OnboardingDialog(
                         onClick = {
                             if (safeStep >= steps.lastIndex) onFinish() else onStepChange(safeStep + 1)
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(if (safeStep > 0) 1f else 2f),
                     ) {
                         Text(
                             stringResource(
