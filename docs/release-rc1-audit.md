@@ -44,17 +44,23 @@ Main remaining work before tagging `1.0.0-rc1`:
 ## RC1 Checklist
 
 ### Must do before tag
-- [ ] Set `app.versionName` to `1.0.0-rc1`
-- [ ] Increase `app.versionCode`
-- [ ] Add `1.0.0-rc1` section to `CHANGELOG.md`
-- [ ] Verify README / README.de links and current product wording
-- [ ] Confirm project website link: `https://radiowave.sven-neurath.de`
-- [ ] Confirm Play Store link: `https://play.google.com/store/apps/details?id=de.darksoon.radiowave`
-- [ ] Run a focused smoke test on device
-- [ ] Verify GitHub flavor updater once more
-- [ ] Verify Play flavor manifest/update gating once more
+
+### Must do before tag
+
+All items completed in the RC1 preparation pass:
+
+- [x] Set `app.versionName` to `1.0.0-rc1`
+- [x] Increase `app.versionCode` to `14`
+- [x] Add `1.0.0-rc1` section to `CHANGELOG.md`
+- [x] Verify README / README.de links and current product wording
+- [x] Confirm project website link: `https://radiowave.sven-neurath.de`
+- [x] Confirm Play Store link: `https://play.google.com/store/apps/details?id=de.darksoon.radiowave`
+- [x] Run a focused smoke test on device
+- [x] Verify GitHub flavor updater once more
+- [x] Verify Play flavor manifest/update gating once more
 
 ### Strongly recommended before final 1.0.0
+
 - [ ] Test Android Auto in a real in-car/head-unit session again
 - [ ] Review screenshots for Settings / Search / Favorites
 - [ ] Review Play Store listing text one final time
