@@ -604,7 +604,7 @@ class RadioWaveAutoService : MediaLibraryService() {
             )
             .setMediaMetadata(
                 MediaMetadata.Builder()
-                    .setTitle(station.name)
+                    .setTitle(sanitizeAutoDisplayText(station.name))
                     .setArtist(buildStationArtist(station))
                     .setSubtitle(buildStationSubtitle(station))
                     .setArtworkUri(artworkUri)
@@ -617,23 +617,49 @@ class RadioWaveAutoService : MediaLibraryService() {
 
     private fun buildStationSubtitle(station: Station): String? {
         val codec = station.codec?.trim()?.uppercase(Locale.ROOT).takeUnless { it.isNullOrBlank() }
-        val bitrate = station.bitrate?.takeIf { it > 0 }?.let { "${it}kbps" }
-        val language = station.language?.trim().takeUnless { it.isNullOrBlank() }
+        val bitrate = station.bitrate?.takeIf { it > 0 }?.let { "${it} kbps" }
+        val language = sanitizeAutoDisplayText(station.language).takeUnless { it.isBlank() }
         val parts = listOfNotNull(codec, bitrate, language)
-        return parts.joinToString(" â€¢ ").takeIf { it.isNotBlank() }
+        return parts.joinToString(" • ").takeIf { it.isNotBlank() }
     }
 
     private fun buildStationArtist(station: Station): String? {
         val parts = mutableListOf<String>()
-        val country = station.country?.trim().takeUnless { it.isNullOrBlank() }
+        val country = sanitizeAutoDisplayText(station.country).takeUnless { it.isBlank() }
         val codec = station.codec?.trim()?.uppercase(Locale.ROOT).takeUnless { it.isNullOrBlank() }
-        val bitrate = station.bitrate?.takeIf { it > 0 }?.let { "${it}kbps" }
+        val bitrate = station.bitrate?.takeIf { it > 0 }?.let { "${it} kbps" }
 
         if (country != null) parts += country
         if (codec != null) parts += codec
         if (bitrate != null) parts += bitrate
 
-        return parts.joinToString(" â€¢ ").takeIf { it.isNotBlank() }
+        return parts.joinToString(" • ").takeIf { it.isNotBlank() }
+    }
+
+    private fun sanitizeAutoDisplayText(value: String?): String {
+        if (value.isNullOrBlank()) return ""
+        return value
+            .trim()
+            .replace("â€ž", "\"")
+            .replace("â€œ", "\"")
+            .replace("â€\u009c", "\"")
+            .replace("â€\u009d", "\"")
+            .replace("â€™", "'")
+            .replace("â€˜", "'")
+            .replace("â€“", "-")
+            .replace("â€”", "-")
+            .replace("â€¢", "•")
+            .replace("Ã¤", "ä", ignoreCase = true)
+            .replace("Ã¶", "ö", ignoreCase = true)
+            .replace("Ã¼", "ü", ignoreCase = true)
+            .replace("Ã„", "Ä")
+            .replace("Ã–", "Ö")
+            .replace("Ãœ", "Ü")
+            .replace("ÃŸ", "ß")
+            .trim()
+            .trim('"', '\'', '„', '“', '”', '‚', '‘', '’', '«', '»', '€')
+            .replace("\\s+".toRegex(), " ")
+            .trim()
     }
 
     private fun browsableItem(id: String, title: String): MediaItem {

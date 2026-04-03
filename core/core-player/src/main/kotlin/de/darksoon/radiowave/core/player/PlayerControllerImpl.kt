@@ -772,10 +772,13 @@ class PlayerControllerImpl @Inject constructor(
                 abandonAudioFocus()
             }
 
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK,
-            ->
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                pausePlaybackForAudioFocus(resumeWhenFocusReturns = true)
+            }
+
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
                 duckPlaybackForAudioFocus()
+            }
 
             AudioManager.AUDIOFOCUS_GAIN -> resumePlaybackAfterAudioFocusGainIfNeeded()
         }
@@ -790,6 +793,7 @@ class PlayerControllerImpl @Inject constructor(
         reconnectJob?.cancel()
         bufferingWatchdogJob?.cancel()
         playbackLostRecoveryJob?.cancel()
+        player.volume = if (_playerState.value.isMuted) 0f else 1f
         player.pause()
         unregisterNetworkCallbackIfNeeded()
         shouldResumeAfterAudioFocusGain = shouldResume

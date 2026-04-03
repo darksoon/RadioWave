@@ -19,6 +19,7 @@ captures/
 .cxx/
 
 # Kotlin
+.kotlin/
 *.class
 *.kotlin_module
 

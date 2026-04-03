@@ -13,6 +13,9 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.media.app.NotificationCompat.MediaStyle
+import android.support.v4.media.MediaMetadataCompat
+import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import de.darksoon.radiowave.core.model.AppSettings
 import de.darksoon.radiowave.core.player.R
 import dagger.hilt.android.AndroidEntryPoint
@@ -26,8 +29,11 @@ class PlaybackForegroundService : Service() {
     @Inject
     lateinit var playerController: PlayerController
 
+    private var mediaSession: MediaSessionCompat? = null
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         createNotificationChannel()
+        ensureMediaSession()
 
         when (intent?.action) {
             ACTION_STOP_SERVICE -> {
@@ -71,6 +77,15 @@ class PlaybackForegroundService : Service() {
         playerController.stop()
     }
 
+    override fun onDestroy() {
+        mediaSession?.apply {
+            isActive = false
+            release()
+        }
+        mediaSession = null
+        super.onDestroy()
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun buildNotification(
@@ -101,6 +116,8 @@ class PlaybackForegroundService : Service() {
             )
         }
 
+        updateMediaSession(stationName = titleText, subtitle = contentText, isPlaying = isPlaying)
+
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentTitle(titleText)
@@ -113,13 +130,13 @@ class PlaybackForegroundService : Service() {
                 },
             )
             .setOngoing(isPlaying)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setOnlyAlertOnce(true)
             .setSilent(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
             .setShowWhen(false)
-            .setStyle(MediaStyle())
+            .setStyle(MediaStyle().setMediaSession(mediaSession?.sessionToken))
 
         if (contentIntent != null) {
             builder.setContentIntent(contentIntent)
@@ -152,10 +169,12 @@ class PlaybackForegroundService : Service() {
             )
             compactActionIndex++
             builder.setStyle(
-                MediaStyle().setShowActionsInCompactView(
-                    if (showPrevious) playPauseCompactIndex - 1 else playPauseCompactIndex,
-                    playPauseCompactIndex,
-                ),
+                MediaStyle()
+                    .setMediaSession(mediaSession?.sessionToken)
+                    .setShowActionsInCompactView(
+                        if (showPrevious) playPauseCompactIndex - 1 else playPauseCompactIndex,
+                        playPauseCompactIndex,
+                    ),
             )
         }
         if (showNext) {
@@ -235,16 +254,55 @@ class PlaybackForegroundService : Service() {
         }
     }
 
+    private fun ensureMediaSession() {
+        if (mediaSession != null) return
+        mediaSession = MediaSessionCompat(this, "RadioWavePlaybackSession").apply {
+            isActive = true
+        }
+    }
+
+    private fun updateMediaSession(
+        stationName: String,
+        subtitle: String,
+        isPlaying: Boolean,
+    ) {
+        val session = mediaSession ?: return
+        session.setMetadata(
+            MediaMetadataCompat.Builder()
+                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, stationName)
+                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, subtitle)
+                .build(),
+        )
+        val playbackActions =
+            PlaybackStateCompat.ACTION_PLAY_PAUSE or
+                PlaybackStateCompat.ACTION_PLAY or
+                PlaybackStateCompat.ACTION_PAUSE or
+                PlaybackStateCompat.ACTION_STOP or
+                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
+                PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+        val playbackState = PlaybackStateCompat.Builder()
+            .setActions(playbackActions)
+            .setState(
+                if (isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED,
+                PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN,
+                if (isPlaying) 1f else 0f,
+            )
+            .build()
+        session.setPlaybackState(playbackState)
+        session.isActive = true
+    }
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channel = NotificationChannel(
             CHANNEL_ID,
             getString(R.string.notification_channel_name),
-            NotificationManager.IMPORTANCE_LOW,
+            NotificationManager.IMPORTANCE_DEFAULT,
         ).apply {
             description = getString(R.string.notification_channel_description)
             setShowBadge(false)
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
         }
         notificationManager.createNotificationChannel(channel)
     }
