@@ -23,8 +23,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -34,7 +37,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -55,7 +57,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.appcompat.app.AppCompatDelegate
@@ -244,18 +249,6 @@ fun SettingsScreen(
 
         if (selectedCategory == null) {
             item {
-                SettingsHeroCard(
-                    title = stringResource(R.string.settings_home_welcome_title),
-                    subtitle = stringResource(R.string.settings_home_welcome_subtitle),
-                    versionLabel = stringResource(R.string.settings_version_label),
-                    versionValue = appVersion,
-                    primaryActionLabel = stringResource(R.string.settings_category_updates_title),
-                    onPrimaryActionClick = { selectedCategory = SettingsCategory.UPDATES },
-                    secondaryActionLabel = stringResource(R.string.settings_category_info_title),
-                    onSecondaryActionClick = { selectedCategory = SettingsCategory.INFO },
-                )
-            }
-            item {
                 SettingsSectionLabel(text = stringResource(R.string.settings_home_customize_title))
             }
             item {
@@ -293,9 +286,15 @@ fun SettingsScreen(
                 SettingsSupportCard(
                     title = stringResource(R.string.settings_home_support_card_title),
                     subtitle = stringResource(R.string.settings_home_support_card_subtitle),
+                    donateTitle = stringResource(R.string.settings_kofi_title),
+                    donateSubtitle = stringResource(R.string.settings_kofi_subtitle),
                     thankYouTitle = stringResource(R.string.settings_testers_title),
                     thankYouText = stringResource(R.string.settings_testers_value),
-                    primaryActionLabel = stringResource(R.string.settings_kofi_title),
+                    kevinLinkLabel = stringResource(R.string.settings_support_kevin_link_label),
+                    onKevinLinkClick = { uriHandler.openUri("https://github.com/Kevin1321") },
+                    groupLinkLabel = stringResource(R.string.settings_support_group_link_label),
+                    onGroupLinkClick = { uriHandler.openUri("https://groups.google.com/u/1/g/radiowave-beta-tester") },
+                    primaryActionLabel = stringResource(R.string.settings_support_donate_button),
                     onPrimaryActionClick = { uriHandler.openUri("https://ko-fi.com/darksoon") },
                     secondaryActionLabel = stringResource(R.string.settings_category_info_title),
                     onSecondaryActionClick = { selectedCategory = SettingsCategory.INFO },
@@ -1022,8 +1021,14 @@ private fun SettingsHeroCard(
 private fun SettingsSupportCard(
     title: String,
     subtitle: String,
+    donateTitle: String,
+    donateSubtitle: String,
     thankYouTitle: String,
     thankYouText: String,
+    kevinLinkLabel: String,
+    onKevinLinkClick: () -> Unit,
+    groupLinkLabel: String,
+    onGroupLinkClick: () -> Unit,
     primaryActionLabel: String,
     onPrimaryActionClick: () -> Unit,
     secondaryActionLabel: String,
@@ -1045,12 +1050,42 @@ private fun SettingsSupportCard(
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = Color.White,
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = DarkOnSurfaceVariant,
-            )
+            if (subtitle.isNotBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = DarkOnSurfaceVariant,
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = TealAccent.copy(alpha = 0.14f),
+                ),
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+                    Text(
+                        text = donateTitle,
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = donateSubtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = DarkOnSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Button(
+                        onClick = onPrimaryActionClick,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(primaryActionLabel)
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(12.dp))
             Card(
                 colors = CardDefaults.cardColors(
@@ -1064,34 +1099,76 @@ private fun SettingsSupportCard(
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                         color = TealAccent,
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
+                    Spacer(modifier = Modifier.height(6.dp))
+                    SupportRichText(
                         text = thankYouText,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = DarkOnSurfaceVariant,
+                        kevinLinkLabel = kevinLinkLabel,
+                        onKevinLinkClick = onKevinLinkClick,
+                        groupLinkLabel = groupLinkLabel,
+                        onGroupLinkClick = onGroupLinkClick,
                     )
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
-            Row(
+            OutlinedButton(
+                onClick = onSecondaryActionClick,
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                OutlinedButton(
-                    onClick = onPrimaryActionClick,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(primaryActionLabel)
-                }
-                OutlinedButton(
-                    onClick = onSecondaryActionClick,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(secondaryActionLabel)
-                }
+                Text(secondaryActionLabel)
             }
         }
     }
+}
+
+@Composable
+private fun SupportRichText(
+    text: String,
+    kevinLinkLabel: String,
+    onKevinLinkClick: () -> Unit,
+    groupLinkLabel: String,
+    onGroupLinkClick: () -> Unit,
+) {
+    val annotatedText = remember(text, kevinLinkLabel, groupLinkLabel) {
+        buildAnnotatedString {
+            append(text)
+
+            val linkStyle = SpanStyle(
+                color = TealAccent,
+                textDecoration = TextDecoration.Underline,
+                fontWeight = FontWeight.Medium,
+            )
+
+            val kevinStart = text.indexOf(kevinLinkLabel)
+            if (kevinStart >= 0) {
+                val kevinEnd = kevinStart + kevinLinkLabel.length
+                addStyle(linkStyle, kevinStart, kevinEnd)
+                addStringAnnotation("URL", "kevin", kevinStart, kevinEnd)
+            }
+
+            val groupStart = text.indexOf(groupLinkLabel)
+            if (groupStart >= 0) {
+                val groupEnd = groupStart + groupLinkLabel.length
+                addStyle(linkStyle, groupStart, groupEnd)
+                addStringAnnotation("URL", "group", groupStart, groupEnd)
+            }
+        }
+    }
+
+    ClickableText(
+        text = annotatedText,
+        style = MaterialTheme.typography.bodySmall.copy(color = DarkOnSurfaceVariant),
+        onClick = { offset ->
+            annotatedText
+                .getStringAnnotations(tag = "URL", start = offset, end = offset)
+                .firstOrNull()
+                ?.let { annotation ->
+                    when (annotation.item) {
+                        "kevin" -> onKevinLinkClick()
+                        "group" -> onGroupLinkClick()
+                    }
+                }
+        },
+    )
 }
 
 @Composable

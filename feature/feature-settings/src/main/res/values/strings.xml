@@ -6,8 +6,8 @@
     <string name="settings_home_welcome_subtitle">Quick access to updates, support, and the most important app controls.</string>
     <string name="settings_home_customize_title">Customize RadioWave</string>
     <string name="settings_home_support_title">Support &amp; thanks</string>
-    <string name="settings_home_support_card_title">Support the project and the people behind the tests</string>
-    <string name="settings_home_support_card_subtitle">The donation link stays easy to reach, and tester thanks now have their own visible place.</string>
+    <string name="settings_home_support_card_title">Supporters &amp; community</string>
+    <string name="settings_home_support_card_subtitle"></string>
     <string name="settings_category_general_title">General</string>
     <string name="settings_category_general_subtitle">Theme, dynamic colors, hints</string>
     <string name="settings_category_sound_title">Sound</string>
@@ -129,7 +129,10 @@
     <string name="settings_kofi_title">Ko-fi</string>
     <string name="settings_kofi_subtitle">Support the project</string>
     <string name="settings_testers_title">Special thanks</string>
-    <string name="settings_testers_value">Kevin1321 (GitHub: https://github.com/Kevin1321), Littledarks, Levana, Dracexz, Blueray, madm1k3, WARRIOR`s ⚔️ (best guild), all testers from our Google Group (https://groups.google.com/u/1/g/radiowave-beta-tester), the Reddit community, and everyone else who tested, shared feedback, reported bugs, or helped shape RadioWave — including the ones I may have forgotten here. Thank you.</string>
+    <string name="settings_testers_value">Kevin1321, Littledarks, Levana, Dracexz, Blueray, madm1k3, WARRIOR`s ⚔️ (best guild), our Google Group, the Reddit community, and everyone else who tested, shared feedback, reported bugs, or helped shape RadioWave — including the ones I may have forgotten here. Thank you.</string>
+    <string name="settings_support_kevin_link_label">Kevin1321</string>
+    <string name="settings_support_group_link_label">Google Group</string>
+    <string name="settings_support_donate_button">Support on Ko-fi</string>
     <string name="settings_made_by_label">Made by</string>
     <string name="settings_made_by_value">Sven Neurath</string>
     <string name="settings_new_version_found">New version found: %1$s</string>
