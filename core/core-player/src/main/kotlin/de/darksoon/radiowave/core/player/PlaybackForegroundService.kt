@@ -200,8 +200,9 @@ class PlaybackForegroundService : Service() {
     }
 
     private fun createServicePendingIntent(action: String, requestCode: Int): PendingIntent {
-        val intent = Intent(this, PlaybackForegroundService::class.java).apply {
+        val intent = Intent(this@PlaybackForegroundService, PlaybackForegroundService::class.java).apply {
             this.action = action
+            setPackage(packageName)
         }
         return PendingIntent.getService(
             this,
