@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.1a] - 2026-04-09
+
+### Fixed
+- Notification and lockscreen media controls now respond reliably again via MediaSession callbacks.
+- Play/pause, previous, and next actions in the playback notification were repaired.
+- HLS playback crash fixed by bundling the missing `media3-exoplayer-hls` module for `.m3u8` streams.
+
+### Improved
+- Android 15 edge-to-edge handling was modernized to align better with current system bar and inset behavior.
+
 ## [1.0.0-rc1] - 2026-04-03
 
 ### Added
@@ -266,6 +276,7 @@ All notable changes to this project will be documented in this file.
 ### Security/Infra
 - Added `ACCESS_NETWORK_STATE` permission declaration in `core-player` to satisfy lint and ensure network callback safety.
 
+[1.0.1a]: https://github.com/darksoon/RadioWave/releases/tag/v1.0.1a
 [1.0.0-rc1]: https://github.com/darksoon/RadioWave/releases/tag/v1.0.0-rc1
 [0.1.0-beta.1]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-beta.1
 [0.1.0-beta.2]: https://github.com/darksoon/RadioWave/releases/tag/v0.1.0-beta.2
