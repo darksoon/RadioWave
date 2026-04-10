@@ -44,7 +44,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,16 +72,11 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import de.darksoon.radiowave.core.model.AppSettings
 import de.darksoon.radiowave.core.data.update.GitHubReleaseChecker
 import de.darksoon.radiowave.core.data.update.GitHubReleaseInfo
-import de.darksoon.radiowave.core.data.update.GitHubReleaseUpdater
 import de.darksoon.radiowave.core.data.update.LocalIssueReporter
-import de.darksoon.radiowave.core.data.update.UpdateDownloadProgress
-import de.darksoon.radiowave.core.data.update.AppUpdateSupport
 import de.darksoon.radiowave.core.ui.theme.DarkCardBackground
 import de.darksoon.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.darksoon.radiowave.core.ui.theme.TealAccent
 import de.darksoon.radiowave.feature.settings.R
-import java.text.DateFormat
-import java.util.Date
 import kotlinx.coroutines.launch
 
 @Composable
@@ -95,8 +89,6 @@ fun SettingsScreen(
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val prefs = context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
-    val updateUiState by viewModel.updateUiState.collectAsState()
-    val supportsInAppUpdater = remember(context) { AppUpdateSupport.isInAppUpdaterEnabled(context) }
     val coroutineScope = rememberCoroutineScope()
     var issueReportRefreshKey by remember { mutableLongStateOf(0L) }
     val latestIssueReport = remember(context, issueReportRefreshKey) {
@@ -166,22 +158,9 @@ fun SettingsScreen(
     var limitAndroidAutoQuality by rememberSaveable {
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_LIMIT_ANDROID_AUTO_QUALITY, true))
     }
-    var updateCheckEnabled by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_UPDATE_CHECK_ENABLED, true))
-    }
-    var updatePopupEnabled by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_UPDATE_POPUP_ENABLED, true))
-    }
-    var updateBetaChannelEnabled by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_UPDATE_BETA_CHANNEL_ENABLED, false))
-    }
-    var manualUpdateCheckRequested by rememberSaveable { mutableStateOf(false) }
-    var showUpdateAvailableDialog by rememberSaveable { mutableStateOf(false) }
     var showReleaseNotesDialog by rememberSaveable { mutableStateOf(false) }
     var releaseNotesLoading by remember { mutableStateOf(false) }
     var releaseNotesInfo by remember { mutableStateOf<GitHubReleaseInfo?>(null) }
-    var updateInstallInProgress by remember { mutableStateOf(false) }
-    var updateInstallProgress by remember { mutableStateOf<UpdateDownloadProgress?>(null) }
 
     val appVersion = rememberAppVersion(context)
     val dynamicColorsSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
@@ -211,30 +190,6 @@ fun SettingsScreen(
         if (themeMode != AppSettings.THEME_DARK) {
             themeMode = AppSettings.THEME_DARK
             prefs.edit().putString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_DARK).apply()
-        }
-    }
-
-    LaunchedEffect(updateUiState.isChecking, updateUiState.hasUpdate, manualUpdateCheckRequested) {
-        if (!manualUpdateCheckRequested || updateUiState.isChecking) return@LaunchedEffect
-        manualUpdateCheckRequested = false
-        when {
-            updateUiState.hasUpdate && updateUiState.latestRelease != null -> {
-                showUpdateAvailableDialog = true
-            }
-            updateUiState.lastError != null -> {
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.settings_update_check_failed),
-                    Toast.LENGTH_SHORT,
-                ).show()
-            }
-            else -> {
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.settings_update_not_available),
-                    Toast.LENGTH_SHORT,
-                ).show()
-            }
         }
     }
 
@@ -585,150 +540,6 @@ fun SettingsScreen(
                         }
                     }
 
-                    SettingsCategory.UPDATES -> SettingsCard(title = stringResource(R.string.settings_category_updates_title)) {
-                        InfoTextRow(label = stringResource(R.string.settings_updates_installed_version), value = appVersion)
-                        if (supportsInAppUpdater) {
-                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                            InfoTextRow(
-                                label = stringResource(R.string.settings_updates_latest_release),
-                                value = updateUiState.latestRelease?.tag ?: stringResource(R.string.settings_updates_not_checked),
-                            )
-                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                            InfoTextRow(
-                                label = stringResource(R.string.settings_updates_status),
-                                value = when {
-                                    updateUiState.latestRelease == null -> stringResource(R.string.settings_updates_status_unknown)
-                                    updateUiState.hasUpdate -> stringResource(R.string.settings_updates_status_available)
-                                    else -> stringResource(R.string.settings_updates_status_current)
-                                },
-                            )
-                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                            SettingToggleRow(
-                                title = stringResource(R.string.settings_updates_auto_check_title),
-                                subtitle = stringResource(R.string.settings_updates_auto_check_subtitle),
-                                checked = updateCheckEnabled,
-                                onCheckedChange = { checked ->
-                                    updateCheckEnabled = checked
-                                    prefs.edit().putBoolean(AppSettings.KEY_UPDATE_CHECK_ENABLED, checked).apply()
-                                },
-                            )
-                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                            SettingToggleRow(
-                                title = stringResource(R.string.settings_updates_popup_title),
-                                subtitle = stringResource(R.string.settings_updates_popup_subtitle),
-                                checked = updatePopupEnabled,
-                                onCheckedChange = { checked ->
-                                    updatePopupEnabled = checked
-                                    prefs.edit().putBoolean(AppSettings.KEY_UPDATE_POPUP_ENABLED, checked).apply()
-                                },
-                            )
-                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                            SettingToggleRow(
-                                title = stringResource(R.string.settings_updates_beta_channel_title),
-                                subtitle = stringResource(R.string.settings_updates_beta_channel_subtitle),
-                                checked = updateBetaChannelEnabled,
-                                onCheckedChange = { checked ->
-                                    updateBetaChannelEnabled = checked
-                                    prefs.edit()
-                                        .putBoolean(AppSettings.KEY_UPDATE_BETA_CHANNEL_ENABLED, checked)
-                                        .apply()
-                                },
-                            )
-                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                            SettingActionRow(
-                                title = stringResource(R.string.settings_updates_manual_title),
-                                subtitle = buildUpdateCheckSubtitle(context, updateUiState.lastCheckedAtMs, updateUiState.lastError),
-                                actionLabel = if (updateUiState.isChecking) {
-                                    stringResource(R.string.settings_updates_manual_checking)
-                                } else {
-                                    stringResource(R.string.settings_updates_manual_check)
-                                },
-                                onActionClick = {
-                                    if (!updateUiState.isChecking) {
-                                        manualUpdateCheckRequested = true
-                                        viewModel.checkForUpdates(
-                                            currentVersionName = appVersion,
-                                            includePrerelease = updateBetaChannelEnabled,
-                                        )
-                                    }
-                                },
-                                secondaryActionLabel = stringResource(R.string.settings_updates_manual_release_page),
-                                onSecondaryActionClick = {
-                                    val releaseUrl = updateUiState.latestRelease?.htmlUrl
-                                        ?: "https://github.com/darksoon/RadioWave/releases"
-                                    uriHandler.openUri(releaseUrl)
-                                },
-                            )
-                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                            SettingActionRow(
-                                title = stringResource(R.string.settings_test_update_popup_title),
-                                subtitle = stringResource(R.string.settings_test_update_popup_subtitle),
-                                actionLabel = stringResource(R.string.settings_show_popup),
-                                onActionClick = {
-                                    when {
-                                        updateUiState.hasUpdate && updateUiState.latestRelease != null -> {
-                                            showUpdateAvailableDialog = true
-                                        }
-                                        updateUiState.isChecking -> Unit
-                                        else -> {
-                                            manualUpdateCheckRequested = true
-                                            viewModel.checkForUpdates(
-                                                currentVersionName = appVersion,
-                                                includePrerelease = updateBetaChannelEnabled,
-                                            )
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(R.string.settings_checking_for_update),
-                                                Toast.LENGTH_SHORT,
-                                            ).show()
-                                        }
-                                    }
-                                },
-                                secondaryActionLabel = stringResource(R.string.settings_updates_manual_release_page),
-                                onSecondaryActionClick = {
-                                    val releaseUrl = updateUiState.latestRelease?.htmlUrl
-                                        ?: "https://github.com/darksoon/RadioWave/releases"
-                                    uriHandler.openUri(releaseUrl)
-                                },
-                            )
-                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                            InfoTextBlockRow(
-                                label = stringResource(R.string.settings_updates_auto_beta_label),
-                                value = stringResource(R.string.settings_updates_auto_beta_text),
-                            )
-                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                            SettingActionRow(
-                                title = stringResource(R.string.settings_updates_auto_help_title),
-                                subtitle = stringResource(R.string.settings_updates_auto_help_subtitle),
-                                actionLabel = stringResource(R.string.settings_updates_auto_open),
-                                onActionClick = { openAndroidAutoApp(context) },
-                                secondaryActionLabel = stringResource(R.string.settings_updates_auto_guide),
-                                onSecondaryActionClick = {
-                                    uriHandler.openUri("https://github.com/darksoon/RadioWave/blob/main/docs/ANDROID_AUTO_DEV_MODE.md")
-                                },
-                            )
-                            updateUiState.latestRelease?.body
-                                ?.takeIf { it.isNotBlank() }
-                                ?.let { notes ->
-                                    HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                                    InfoTextBlockRow(
-                                        label = stringResource(R.string.settings_updates_notes_preview),
-                                        value = notes.lineSequence()
-                                            .map { it.trim() }
-                                            .filter { it.isNotBlank() }
-                                            .take(6)
-                                            .joinToString("\n"),
-                                    )
-                                }
-                        } else {
-                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                            InfoTextBlockRow(
-                                label = stringResource(R.string.settings_play_store_updates_label),
-                                value = stringResource(R.string.settings_play_store_updates_text),
-                            )
-                        }
-                    }
-
                     SettingsCategory.INFO -> SettingsCard(title = stringResource(R.string.settings_category_info_title)) {
                         InfoTextRow(label = stringResource(R.string.settings_version_label), value = appVersion)
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
@@ -811,15 +622,14 @@ fun SettingsScreen(
                                 if (releaseNotesLoading) return@SettingActionRow
                                 releaseNotesLoading = true
                                 coroutineScope.launch {
-                                    val includePrerelease = prefs.getBoolean(AppSettings.KEY_UPDATE_BETA_CHANNEL_ENABLED, false)
-                                    releaseNotesInfo = GitHubReleaseChecker.getLatestInstallableRelease(includePrerelease)
+                                    releaseNotesInfo = GitHubReleaseChecker.getLatestInstallableRelease(includePrerelease = false)
                                     releaseNotesLoading = false
                                     if (releaseNotesInfo != null) {
                                         showReleaseNotesDialog = true
                                     } else {
                                         Toast.makeText(
                                             context,
-                                            context.getString(R.string.settings_update_not_available),
+                                            context.getString(R.string.settings_release_notes_empty),
                                             Toast.LENGTH_SHORT,
                                         ).show()
                                     }
@@ -873,120 +683,6 @@ fun SettingsScreen(
         )
     }
 
-    if (showUpdateAvailableDialog && updateUiState.latestRelease != null) {
-        val release = updateUiState.latestRelease!!
-        AlertDialog(
-            onDismissRequest = { showUpdateAvailableDialog = false },
-            title = { Text(text = stringResource(R.string.settings_updates_status_available)) },
-            text = {
-                Column {
-                    Text(
-                        text = stringResource(R.string.settings_new_version_found, release.tag),
-                    )
-                    release.body
-                        .takeIf { it.isNotBlank() }
-                        ?.let { notes ->
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = notes.lineSequence()
-                                    .map { it.trim() }
-                                    .filter { it.isNotBlank() }
-                                    .take(6)
-                                    .joinToString("\n"),
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                    if (updateInstallInProgress) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = stringResource(
-                                R.string.settings_update_download_running,
-                                buildUpdateProgressText(updateInstallProgress),
-                            ),
-                            color = TealAccent,
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        val percent = updateInstallProgress?.percent
-                        if (percent != null) {
-                            LinearProgressIndicator(
-                                progress = { percent / 100f },
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        } else {
-                            LinearProgressIndicator(
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        if (updateInstallInProgress) return@TextButton
-                        updateInstallInProgress = true
-                        updateInstallProgress = null
-                        coroutineScope.launch {
-                            val result = GitHubReleaseUpdater.downloadAndStartInstall(
-                                context = context,
-                                release = release,
-                                onProgress = { progress ->
-                                    updateInstallProgress = progress
-                                },
-                            )
-                            updateInstallInProgress = false
-                            result.onFailure { error ->
-                                val message = when (error.message) {
-                                    "Please allow installs from unknown apps and try again" -> {
-                                        context.getString(R.string.settings_update_install_permission_required)
-                                    }
-                                    "No package installer activity found" -> {
-                                        context.getString(R.string.settings_update_no_installer)
-                                    }
-                                    else -> {
-                                        error.message ?: context.getString(R.string.settings_unknown)
-                                    }
-                                }
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.settings_update_failed, message),
-                                    Toast.LENGTH_LONG,
-                                ).show()
-                            }
-                        }
-                    },
-                ) {
-                    Text(
-                        text = if (updateInstallInProgress) {
-                            stringResource(R.string.settings_updates_download_now)
-                        } else {
-                            stringResource(R.string.settings_update_action)
-                        },
-                    )
-                }
-            },
-            dismissButton = {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(
-                        onClick = {
-                            if (updateInstallInProgress) return@TextButton
-                            uriHandler.openUri(release.htmlUrl)
-                        },
-                    ) {
-                        Text(text = stringResource(R.string.settings_updates_manual_release_page))
-                    }
-                    TextButton(
-                        onClick = {
-                            if (updateInstallInProgress) return@TextButton
-                            showUpdateAvailableDialog = false
-                        },
-                    ) {
-                        Text(text = stringResource(R.string.settings_later))
-                    }
-                }
-            },
-        )
-    }
 }
 
 private enum class SettingsCategory {
@@ -994,7 +690,6 @@ private enum class SettingsCategory {
     SOUND,
     NOTIFICATION,
     DATA,
-    UPDATES,
     INFO,
 }
 
@@ -1013,7 +708,6 @@ private fun categoryTitle(category: SettingsCategory, context: Context): String 
         SettingsCategory.SOUND -> context.getString(R.string.settings_category_sound_title)
         SettingsCategory.NOTIFICATION -> context.getString(R.string.settings_category_notification_title)
         SettingsCategory.DATA -> context.getString(R.string.settings_category_data_title)
-        SettingsCategory.UPDATES -> context.getString(R.string.settings_category_updates_title)
         SettingsCategory.INFO -> context.getString(R.string.settings_category_info_title)
     }
 }
@@ -1610,61 +1304,6 @@ private fun openBatteryOptimizationSettings(context: Context) {
     val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     runCatching { context.startActivity(intent) }
-}
-
-private fun buildUpdateCheckSubtitle(context: Context, lastCheckedAtMs: Long?, error: String?): String {
-    val timePart = lastCheckedAtMs?.let {
-        val formatted = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
-            .format(Date(it))
-        context.getString(R.string.settings_update_last_check, formatted)
-    } ?: context.getString(R.string.settings_update_never_checked)
-    return if (error.isNullOrBlank()) {
-        timePart
-    } else {
-        "$timePart  ${context.getString(R.string.settings_update_error_prefix, error)}"
-    }
-}
-
-private fun buildUpdateProgressText(progress: UpdateDownloadProgress?): String {
-    if (progress == null) return "0 MB"
-    val downloadedMb = progress.downloadedBytes / (1024f * 1024f)
-    val totalMb = progress.totalBytes.takeIf { it > 0L }?.let { it / (1024f * 1024f) }
-    return if (totalMb != null) {
-        String.format("%.1f / %.1f MB (%d%%)", downloadedMb, totalMb, progress.percent ?: 0)
-    } else {
-        String.format("%.1f MB", downloadedMb)
-    }
-}
-
-private fun openAndroidAutoApp(context: Context) {
-    val packageName = "com.google.android.projection.gearhead"
-    val pm = context.packageManager
-    val launchIntent = pm.getLaunchIntentForPackage(packageName)
-    if (launchIntent != null && startActivitySafely(context, launchIntent)) {
-        return
-    }
-
-    val settingsIntent = Intent("com.google.android.projection.gearhead.SETTINGS")
-        .setPackage(packageName)
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    if (startActivitySafely(context, settingsIntent)) {
-        return
-    }
-
-    val appDetailsIntent = Intent(
-        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-        Uri.parse("package:$packageName"),
-    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    if (startActivitySafely(context, appDetailsIntent)) {
-        Toast.makeText(
-            context,
-            context.getString(R.string.settings_android_auto_fallback_toast),
-            Toast.LENGTH_SHORT,
-        ).show()
-        return
-    }
-
-    Toast.makeText(context, context.getString(R.string.settings_android_auto_not_available), Toast.LENGTH_SHORT).show()
 }
 
 private fun startActivitySafely(context: Context, intent: Intent): Boolean {

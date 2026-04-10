@@ -130,24 +130,22 @@ private fun HomeContent(
         }
 
         else -> {
-            val recentStations = if (uiState.recentStations.isNotEmpty()) {
-                uiState.recentStations
-            } else {
-                emptyList()
+            val recentStations = remember(uiState.recentStations) {
+                if (uiState.recentStations.isNotEmpty()) uiState.recentStations else emptyList()
             }
             val favoriteStations = uiState.favoriteStations
-            val excludedSuggestionIds = (
-                favoriteStations.map { station -> station.uuid } +
-                    recentStations.map { station -> station.uuid }
-                ).toSet()
-            val suggestionPool = (uiState.topStations + recentStations + favoriteStations)
-                .distinctBy { station -> station.uuid }
-                .filterNot { station -> station.uuid in excludedSuggestionIds }
-            val discoverPool = uiState.topStations
-                .distinctBy { station -> station.uuid }
-            val discoverStations = remember(
-                key1 = (discoverPool + suggestionPool).joinToString(separator = "|") { station -> station.uuid },
-            ) {
+            val excludedSuggestionIds = remember(favoriteStations, recentStations) {
+                (favoriteStations.map { station -> station.uuid } + recentStations.map { station -> station.uuid }).toSet()
+            }
+            val suggestionPool = remember(uiState.topStations, recentStations, favoriteStations, excludedSuggestionIds) {
+                (uiState.topStations + recentStations + favoriteStations)
+                    .distinctBy { station -> station.uuid }
+                    .filterNot { station -> station.uuid in excludedSuggestionIds }
+            }
+            val discoverPool = remember(uiState.topStations) {
+                uiState.topStations.distinctBy { station -> station.uuid }
+            }
+            val discoverStations = remember(discoverPool, suggestionPool) {
                 when {
                     suggestionPool.isNotEmpty() -> suggestionPool.shuffled().take(10)
                     discoverPool.isNotEmpty() -> discoverPool.shuffled().take(10)
@@ -185,7 +183,7 @@ private fun HomeContent(
                             contentPadding = PaddingValues(horizontal = 20.dp),
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
-                            items(recentStations) { station ->
+                            items(recentStations, key = { station -> station.uuid }) { station ->
                                 RecentStationCard(
                                     station = station,
                                     onClick = { onStationClick(station) },
@@ -202,7 +200,7 @@ private fun HomeContent(
                             contentPadding = PaddingValues(horizontal = 20.dp),
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
-                            items(discoverStations) { station ->
+                            items(discoverStations, key = { station -> station.uuid }) { station ->
                                 RecentStationCard(
                                     station = station,
                                     onClick = { onStationClick(station) },

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="settings_title">Einstellungen</string>
     <string name="settings_overview">Passe Wiedergabe, Benachrichtigungen, Updates und alle wichtigen Projektinfos übersichtlich an.</string>
@@ -7,7 +7,7 @@
     <string name="settings_home_customize_title">RadioWave anpassen</string>
     <string name="settings_home_support_title">Support &amp; Danke</string>
     <string name="settings_home_support_card_title">Supporter &amp; Community</string>
-    <string name="settings_home_support_card_subtitle"></string>
+    <string name="settings_home_support_card_subtitle" />
     <string name="settings_category_general_title">Allgemein</string>
     <string name="settings_category_general_subtitle">Design, dynamische Farben, Hinweise</string>
     <string name="settings_category_sound_title">Klang</string>
@@ -16,43 +16,14 @@
     <string name="settings_category_notification_subtitle">Schaltflächen in der Benachrichtigung</string>
     <string name="settings_category_data_title">Speicher &amp; Daten</string>
     <string name="settings_category_data_subtitle">Puffer, Streams, Cache, Verlauf</string>
-    <string name="settings_category_updates_title">Updates</string>
-    <string name="settings_category_updates_subtitle">Hinweisfenster, manuell prüfen, Versionsstatus</string>
     <string name="settings_category_info_title">Info</string>
     <string name="settings_category_info_subtitle">Version, Links, Projekt</string>
     <string name="settings_language_title">App-Sprache</string>
     <string name="settings_language_system">System</string>
     <string name="settings_language_de">Deutsch</string>
     <string name="settings_language_en">Englisch</string>
-    <string name="settings_updates_installed_version">Installierte Version</string>
-    <string name="settings_updates_latest_release">Letzte gefundene Version</string>
-    <string name="settings_updates_not_checked">Noch nicht geprüft</string>
-    <string name="settings_updates_status">Update-Status</string>
-    <string name="settings_updates_status_unknown">Unbekannt (noch nicht geprüft)</string>
-    <string name="settings_updates_status_available">Update verfügbar</string>
-    <string name="settings_updates_status_current">Aktuell</string>
-    <string name="settings_updates_auto_check_title">Automatisch nach Updates suchen</string>
-    <string name="settings_updates_auto_check_subtitle">Prüft regelmäßig GitHub-Releases im Hintergrund.</string>
-    <string name="settings_updates_popup_title">Update-Hinweis anzeigen</string>
-    <string name="settings_updates_popup_subtitle">Zeigt bei einer neuen Version automatisch den Update-Dialog.</string>
-    <string name="settings_updates_beta_channel_title">Beta-Updates erhalten</string>
-    <string name="settings_updates_beta_channel_subtitle">Bezieht GitHub-Vorabversionen in die Update-Prüfung ein.</string>
-    <string name="settings_updates_manual_title">Manuelle Update-Prüfung</string>
     <string name="settings_updates_manual_checking">Prüfe...</string>
-    <string name="settings_updates_manual_check">Jetzt prüfen</string>
     <string name="settings_updates_manual_release_page">Versionsseite</string>
-    <string name="settings_updates_auto_beta_label">Android Auto (Beta / Direktinstallation)</string>
-    <string name="settings_updates_auto_beta_text">Für Builds außerhalb des Play Store gibt es derzeit keinen echten Umweg: Android Auto verlangt den Entwicklermodus und unbekannte Quellen.\n\nSchritte:\n1) Android Auto öffnen\n2) In den Einstellungen mehrfach auf die Versionsnummer tippen\n3) Oben rechts die Entwicklereinstellungen öffnen\n4) Unbekannte Quellen aktivieren\n5) Auto neu verbinden</string>
-    <string name="settings_updates_auto_help_title">Android Auto Hilfe</string>
-    <string name="settings_updates_auto_help_subtitle">Direkt zu Android Auto springen oder die Schritt-für-Schritt-Anleitung öffnen.</string>
-    <string name="settings_updates_auto_open">Android Auto öffnen</string>
-    <string name="settings_updates_auto_guide">Anleitung</string>
-    <string name="settings_updates_notes_preview">Versionshinweise (Vorschau)</string>
-    <string name="settings_update_last_check">Letzte Prüfung: %1$s</string>
-    <string name="settings_update_never_checked">Noch keine manuelle Prüfung erfolgt.</string>
-    <string name="settings_update_error_prefix">Fehler: %1$s</string>
-    <string name="settings_update_check_failed">Update-Prüfung fehlgeschlagen</string>
-    <string name="settings_update_not_available">Kein Update verfügbar</string>
     <string name="settings_android_auto_fallback_toast">Android Auto hat keinen Launcher-Eintrag. Die App-Info wurde geöffnet.</string>
     <string name="settings_android_auto_not_available">Android Auto nicht verfügbar</string>
     <string name="settings_unknown">unbekannt</string>
@@ -115,12 +86,6 @@
     <string name="settings_clear_cache">Cache leeren</string>
     <string name="settings_history_cleared">Verlauf gelöscht</string>
     <string name="settings_clear_history">Verlauf löschen</string>
-    <string name="settings_test_update_popup_title">Update-Hinweis testen</string>
-    <string name="settings_test_update_popup_subtitle">Zeigt denselben Dialog wie bei einem automatisch gefundenen Update.</string>
-    <string name="settings_show_popup">Hinweis anzeigen</string>
-    <string name="settings_checking_for_update">Prüfe auf Update...</string>
-    <string name="settings_play_store_updates_label">Google-Play-Updates</string>
-    <string name="settings_play_store_updates_text">Dieser Build nutzt keine direkte APK-Installation. Updates werden hier über Google Play ausgeliefert.</string>
     <string name="settings_version_label">Version</string>
     <string name="settings_github_repository_title">GitHub-Repository</string>
     <string name="settings_github_repository_value">darksoon/RadioWave</string>
@@ -144,12 +109,5 @@
     <string name="settings_release_notes_empty">Gerade sind keine Versionshinweise verfügbar.</string>
     <string name="settings_made_by_label">Entwickelt von</string>
     <string name="settings_made_by_value">Sven Neurath</string>
-    <string name="settings_new_version_found">Neue Version gefunden: %1$s</string>
-    <string name="settings_update_download_running">Download läuft: %1$s</string>
-    <string name="settings_update_install_permission_required">Erlaube Installationen aus unbekannten Quellen und tippe dann erneut auf Update.</string>
-    <string name="settings_update_no_installer">Auf diesem Gerät wurde kein Paket-Installer gefunden.</string>
-    <string name="settings_update_failed">Update fehlgeschlagen: %1$s</string>
-    <string name="settings_updates_download_now">Wird geladen...</string>
-    <string name="settings_update_action">Update</string>
     <string name="settings_later">Später</string>
 </resources>
