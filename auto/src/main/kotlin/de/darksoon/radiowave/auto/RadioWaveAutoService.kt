@@ -337,11 +337,17 @@ class RadioWaveAutoService : MediaLibraryService() {
     private fun startStationPlayback(station: Station) {
         logInfo("Auto start playback '${station.name}' (${station.streamUrl})")
         serviceScope.launch {
-            performPlaybackStart(station)
-            delay(AUTO_RESUME_VERIFY_DELAY_MS)
-            if (shouldRetryPlayback(station)) {
-                logInfo("Auto playback verify failed, retrying '${station.name}'")
-                performPlaybackStart(station)
+            repeat(AUTO_RESUME_MAX_ATTEMPTS) { attemptIndex ->
+                val started = performPlaybackStart(station)
+                delay(AUTO_RESUME_VERIFY_DELAY_MS)
+                val shouldRetry = !started || shouldRetryPlayback(station)
+                if (!shouldRetry) return@launch
+                if (attemptIndex < AUTO_RESUME_MAX_ATTEMPTS - 1) {
+                    logInfo(
+                        "Auto playback verify failed, retrying '${station.name}' " +
+                            "(${attemptIndex + 2}/$AUTO_RESUME_MAX_ATTEMPTS)",
+                    )
+                }
             }
         }
     }
@@ -359,12 +365,26 @@ class RadioWaveAutoService : MediaLibraryService() {
         return !audiblePlaybackLikely
     }
 
-    private suspend fun performPlaybackStart(station: Station) {
+    private suspend fun performPlaybackStart(station: Station): Boolean {
         val selectedStation = streamQualityResolver.resolve(
             station = station,
             automotiveMode = true,
         )
         playerController.playStation(selectedStation)
+
+        val stateAfterStart = playerController.playerState.value
+        val sameStation = stateAfterStart.currentStation?.streamUrl == selectedStation.streamUrl
+        val blockedBeforePlayerStart =
+            sameStation &&
+                stateAfterStart.error != null &&
+                !stateAfterStart.isLoading &&
+                !stateAfterStart.isBuffering &&
+                !stateAfterStart.isPlaying
+        if (blockedBeforePlayerStart) {
+            logInfo("Auto playback start blocked for '${selectedStation.name}', will retry")
+            return false
+        }
+
         recentRepository.addRecentStation(selectedStation)
         val activePlayer = playerController.ensureSessionPlayer()
         applyAutoQueue(activePlayer, selectedStation)
@@ -372,6 +392,7 @@ class RadioWaveAutoService : MediaLibraryService() {
         refreshConnectedAutoControllers()
         activePlayer.playWhenReady = true
         activePlayer.play()
+        return true
     }
 
     private fun applyAutoQueue(player: Player, selectedStation: Station) {
@@ -734,6 +755,7 @@ class RadioWaveAutoService : MediaLibraryService() {
         const val LOG_TAG = "RadioWaveAuto"
         const val AUTO_RESUME_VERIFY_DELAY_MS = 1800L
         const val AUTO_RESUME_CONNECT_COOLDOWN_MS = 3500L
+        const val AUTO_RESUME_MAX_ATTEMPTS = 3
         const val SEARCH_REMOTE_TIMEOUT_MS = 3500L
         const val MAX_SEARCH_RESULTS = 20
         const val ROOT_ID = "root"
