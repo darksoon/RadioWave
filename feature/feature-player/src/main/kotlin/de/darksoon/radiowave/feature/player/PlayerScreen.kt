@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Share
@@ -32,11 +33,13 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Shuffle
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -47,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -82,11 +86,14 @@ fun PlayerScreen(
     onPlayPauseClick: () -> Unit,
     onVolumeToggle: () -> Unit,
     onRandomStationClick: () -> Unit,
+    onSleepTimerClick: (Int?) -> Unit,
+    sleepTimerRemainingMs: Long?,
     modifier: Modifier = Modifier,
     viewModel: PlayerViewModel = hiltViewModel(),
 ) {
     val station = playerState.currentStation ?: return
     val context = LocalContext.current
+    var showSleepTimerDialog by remember { mutableStateOf(false) }
     val isPlaying = playerState.isPlaying
     val metadataTitle = playerState.metadata?.title?.trim().takeUnless { it.isNullOrBlank() }
     val metadataArtist = playerState.metadata?.artist?.trim().takeUnless { it.isNullOrBlank() }
@@ -214,36 +221,56 @@ fun PlayerScreen(
                     color = Color.White,
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                Surface(
-                    onClick = {
-                        val shareUrl = station.homepageUrl?.takeIf { it.isNotBlank() } ?: station.streamUrl
-                        val shareText = buildString {
-                            append(context.getString(R.string.player_share_template, station.name))
-                            append("\n")
-                            append(shareUrl)
-                        }
-                        val shareIntent = Intent(Intent.ACTION_SEND)
-                            .setType("text/plain")
-                            .putExtra(Intent.EXTRA_SUBJECT, station.name)
-                            .putExtra(Intent.EXTRA_TEXT, shareText)
-                        context.startActivity(
-                            Intent.createChooser(
-                                shareIntent,
-                                context.getString(R.string.player_share),
-                            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Surface(
+                        onClick = { showSleepTimerDialog = true },
+                        shape = CircleShape,
+                        color = if (sleepTimerRemainingMs != null) {
+                            Color(0xFF52E3D9).copy(alpha = 0.18f)
+                        } else {
+                            Color.White.copy(alpha = 0.06f)
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.AccessTime,
+                            contentDescription = stringResource(R.string.player_sleep_timer),
+                            tint = Color.White.copy(alpha = 0.9f),
+                            modifier = Modifier
+                                .size(30.dp)
+                                .padding(6.dp),
                         )
-                    },
-                    shape = CircleShape,
-                    color = Color.White.copy(alpha = 0.06f),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Share,
-                        contentDescription = stringResource(R.string.player_share),
-                        tint = Color.White.copy(alpha = 0.9f),
-                        modifier = Modifier
-                            .size(30.dp)
-                            .padding(6.dp),
-                    )
+                    }
+                    Surface(
+                        onClick = {
+                            val shareUrl = station.homepageUrl?.takeIf { it.isNotBlank() } ?: station.streamUrl
+                            val shareText = buildString {
+                                append(context.getString(R.string.player_share_template, station.name))
+                                append("\n")
+                                append(shareUrl)
+                            }
+                            val shareIntent = Intent(Intent.ACTION_SEND)
+                                .setType("text/plain")
+                                .putExtra(Intent.EXTRA_SUBJECT, station.name)
+                                .putExtra(Intent.EXTRA_TEXT, shareText)
+                            context.startActivity(
+                                Intent.createChooser(
+                                    shareIntent,
+                                    context.getString(R.string.player_share),
+                                ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                            )
+                        },
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.06f),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Share,
+                            contentDescription = stringResource(R.string.player_share),
+                            tint = Color.White.copy(alpha = 0.9f),
+                            modifier = Modifier
+                                .size(30.dp)
+                                .padding(6.dp),
+                        )
+                    }
                 }
             }
 
@@ -359,7 +386,9 @@ fun PlayerScreen(
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = stringResource(R.string.player_live),
+                    text = sleepTimerRemainingMs?.let {
+                        stringResource(R.string.player_sleep_timer_active, formatRuntime(it))
+                    } ?: stringResource(R.string.player_live),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White.copy(alpha = 0.68f),
                 )
@@ -400,6 +429,62 @@ fun PlayerScreen(
             Spacer(modifier = Modifier.height(24.dp))
             Spacer(modifier = Modifier.navigationBarsPadding())
         }
+
+        if (showSleepTimerDialog) {
+            AlertDialog(
+                onDismissRequest = { showSleepTimerDialog = false },
+                title = { Text(stringResource(R.string.player_sleep_timer)) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SleepTimerOption(text = stringResource(R.string.player_sleep_timer_15m)) {
+                            onSleepTimerClick(15)
+                            showSleepTimerDialog = false
+                        }
+                        SleepTimerOption(text = stringResource(R.string.player_sleep_timer_30m)) {
+                            onSleepTimerClick(30)
+                            showSleepTimerDialog = false
+                        }
+                        SleepTimerOption(text = stringResource(R.string.player_sleep_timer_60m)) {
+                            onSleepTimerClick(60)
+                            showSleepTimerDialog = false
+                        }
+                        SleepTimerOption(text = stringResource(R.string.player_sleep_timer_90m)) {
+                            onSleepTimerClick(90)
+                            showSleepTimerDialog = false
+                        }
+                        if (sleepTimerRemainingMs != null) {
+                            SleepTimerOption(text = stringResource(R.string.player_sleep_timer_off)) {
+                                onSleepTimerClick(null)
+                                showSleepTimerDialog = false
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showSleepTimerDialog = false }) {
+                        Text(stringResource(R.string.player_screen_close))
+                    }
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SleepTimerOption(text: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(14.dp),
+        color = Color.White.copy(alpha = 0.06f),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyLarge,
+            color = Color.White,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+        )
     }
 }
 

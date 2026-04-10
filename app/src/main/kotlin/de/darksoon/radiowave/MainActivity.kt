@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.widget.Toast
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
@@ -349,6 +350,7 @@ fun RadioWaveMainScreen(
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_QUICK_TOASTS, true))
     }
     var showFullscreenPlayer by rememberSaveable { mutableStateOf(false) }
+    var sleepTimerEndsAtElapsedMs by rememberSaveable { mutableStateOf<Long?>(null) }
     var showOnboarding by rememberSaveable {
         mutableStateOf(
             !prefs.getBoolean(AppSettings.KEY_FIRST_RUN_ONBOARDING_DONE, false),
@@ -421,6 +423,17 @@ fun RadioWaveMainScreen(
             } else {
                 prefs.edit().putString(AppSettings.KEY_LAST_SEEN_WHATS_NEW_VERSION, versionName).apply()
             }
+        }
+    }
+
+    LaunchedEffect(sleepTimerEndsAtElapsedMs) {
+        val endsAt = sleepTimerEndsAtElapsedMs ?: return@LaunchedEffect
+        val delayMs = (endsAt - SystemClock.elapsedRealtime()).coerceAtLeast(0L)
+        kotlinx.coroutines.delay(delayMs)
+        if (sleepTimerEndsAtElapsedMs == endsAt) {
+            sleepTimerEndsAtElapsedMs = null
+            showFullscreenPlayer = false
+            homeViewModel.stopPlayback()
         }
     }
 
@@ -643,6 +656,14 @@ fun RadioWaveMainScreen(
                         onPreviousStationClick = { homeViewModel.playPreviousStation() },
                         onVolumeToggle = { homeViewModel.toggleMute() },
                         onRandomStationClick = { homeViewModel.playRandomStation() },
+                        onSleepTimerClick = { minutes ->
+                            sleepTimerEndsAtElapsedMs = minutes?.let {
+                                SystemClock.elapsedRealtime() + (it * 60_000L)
+                            }
+                        },
+                        sleepTimerRemainingMs = sleepTimerEndsAtElapsedMs?.let { endsAt ->
+                            (endsAt - SystemClock.elapsedRealtime()).coerceAtLeast(0L)
+                        },
                         onDismiss = { showFullscreenPlayer = false },
                         modifier = Modifier.fillMaxSize(),
                     )

@@ -11,4 +11,11 @@
     <string name="player_remove_favorite">Remove from favorites</string>
     <string name="player_share">Share</string>
     <string name="player_share_template">Listen to %1$s in RadioWave</string>
+    <string name="player_sleep_timer">Sleep timer</string>
+    <string name="player_sleep_timer_active">Sleep in %1$s</string>
+    <string name="player_sleep_timer_15m">15 minutes</string>
+    <string name="player_sleep_timer_30m">30 minutes</string>
+    <string name="player_sleep_timer_60m">60 minutes</string>
+    <string name="player_sleep_timer_90m">90 minutes</string>
+    <string name="player_sleep_timer_off">Turn off sleep timer</string>
 </resources>
