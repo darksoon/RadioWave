@@ -3,4 +3,6 @@
     <string name="favorites_unknown_error">Unbekannter Fehler</string>
     <string name="favorites_empty_title">Noch keine Favoriten</string>
     <string name="favorites_empty_subtitle">Tippe bei einem Sender auf das Herz, um ihn hier zu speichern.</string>
+    <string name="favorites_move_to_top">Ganz nach oben</string>
+    <string name="favorites_move_up">Nach oben</string>
 </resources>

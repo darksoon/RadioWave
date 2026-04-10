@@ -78,5 +78,29 @@ class FavoritesViewModel @Inject constructor(
             favoriteRepository.toggleFavorite(station)
         }
     }
+
+    fun moveFavoriteUp(station: Station) {
+        val current = _uiState.value.stations
+        val index = current.indexOfFirst { it.uuid == station.uuid }
+        if (index <= 0) return
+        val reordered = current.toMutableList().apply {
+            add(index - 1, removeAt(index))
+        }
+        viewModelScope.launch {
+            favoriteRepository.reorderFavorites(reordered.map { it.uuid })
+        }
+    }
+
+    fun moveFavoriteToTop(station: Station) {
+        val current = _uiState.value.stations
+        val index = current.indexOfFirst { it.uuid == station.uuid }
+        if (index <= 0) return
+        val reordered = current.toMutableList().apply {
+            add(0, removeAt(index))
+        }
+        viewModelScope.launch {
+            favoriteRepository.reorderFavorites(reordered.map { it.uuid })
+        }
+    }
 }
 

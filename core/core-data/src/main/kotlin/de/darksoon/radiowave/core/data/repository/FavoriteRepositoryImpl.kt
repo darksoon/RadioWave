@@ -64,7 +64,13 @@ class FavoriteRepositoryImpl @Inject constructor(
         if (isFav) {
             favoriteDao.deleteByUuid(station.uuid)
         } else {
-            favoriteDao.addFavorite(station.toFavoriteEntity())
+            val nextSortOrder = favoriteDao.getAllFavorites().firstOrNull().orEmpty()
+                .maxOfOrNull { favorite -> favorite.sortOrder }
+                ?.plus(1)
+                ?: 0
+            favoriteDao.addFavorite(
+                station.toFavoriteEntity().copy(sortOrder = nextSortOrder),
+            )
         }
     }
 

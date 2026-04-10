@@ -23,7 +23,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.VerticalAlignTop
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -81,6 +83,8 @@ fun FavoritesScreen(
                 stations = uiState.stations,
                 onPlayClick = viewModel::playStation,
                 onToggleFavorite = viewModel::toggleFavorite,
+                onMoveFavoriteUp = viewModel::moveFavoriteUp,
+                onMoveFavoriteToTop = viewModel::moveFavoriteToTop,
                 modifier = modifier,
             )
         }
@@ -92,6 +96,8 @@ private fun FavoritesContent(
     stations: List<Station>,
     onPlayClick: (Station) -> Unit,
     onToggleFavorite: (Station) -> Unit,
+    onMoveFavoriteUp: (Station) -> Unit,
+    onMoveFavoriteToTop: (Station) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyVerticalGrid(
@@ -113,6 +119,8 @@ private fun FavoritesContent(
                 station = station,
                 onPlayClick = { onPlayClick(station) },
                 onToggleFavorite = { onToggleFavorite(station) },
+                onMoveUpClick = { onMoveFavoriteUp(station) },
+                onMoveToTopClick = { onMoveFavoriteToTop(station) },
             )
         }
     }
@@ -123,6 +131,8 @@ private fun FavoriteStationCard(
     station: Station,
     onPlayClick: () -> Unit,
     onToggleFavorite: () -> Unit,
+    onMoveUpClick: () -> Unit,
+    onMoveToTopClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -181,6 +191,36 @@ private fun FavoriteStationCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                Surface(
+                    onClick = onMoveToTopClick,
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.VerticalAlignTop,
+                        contentDescription = stringResource(R.string.favorites_move_to_top),
+                        tint = TealAccent,
+                        modifier = Modifier
+                            .size(30.dp)
+                            .padding(6.dp),
+                    )
+                }
+                Surface(
+                    onClick = onMoveUpClick,
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.KeyboardArrowUp,
+                        contentDescription = stringResource(R.string.favorites_move_up),
+                        tint = TealAccent,
+                        modifier = Modifier
+                            .size(30.dp)
+                            .padding(5.dp),
+                    )
+                }
                 Surface(
                     onClick = onPlayClick,
                     shape = CircleShape,
