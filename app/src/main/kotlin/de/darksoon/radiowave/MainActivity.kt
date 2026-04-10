@@ -633,6 +633,10 @@ fun RadioWaveMainScreen(
                     },
                     onPlayPauseClick = { homeViewModel.togglePlayPause() },
                     onBarClick = { showFullscreenPlayer = true },
+                    onDismissed = {
+                        showFullscreenPlayer = false
+                        homeViewModel.stopPlayback()
+                    },
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(

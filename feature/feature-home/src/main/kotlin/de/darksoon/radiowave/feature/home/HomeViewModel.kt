@@ -450,5 +450,9 @@ class HomeViewModel @Inject constructor(
     fun toggleMute() {
         playerManager.toggleMute()
     }
+
+    fun stopPlayback() {
+        playerManager.stop()
+    }
 }
 

@@ -28,7 +28,10 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -65,6 +68,7 @@ fun FloatingPlayerBar(
     onFavoriteClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
     onBarClick: () -> Unit,
+    onDismissed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val currentStation: Station? = playerState.currentStation
@@ -97,185 +101,202 @@ fun FloatingPlayerBar(
         val sessionDurationLabel = formatStreamDuration((nowElapsedMs - effectiveSessionStartMs).coerceAtLeast(0L))
 
         val playerShape = RoundedCornerShape(32.dp)
-        Box(
-            modifier = modifier
-                .clickable(onClick = onBarClick)
-                .clip(playerShape)
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xE0202C3A),
-                            Color(0xCC161C2A),
-                        ),
-                    ),
-                )
-                .border(
-                    width = 1.dp,
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(
-                            TealAccent.copy(alpha = 0.72f),
-                            Color(0xFF7A56FF).copy(alpha = 0.72f),
-                        ),
-                    ),
-                    shape = playerShape,
-                ),
-        ) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .blur(18.dp)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.12f),
-                                Color.Transparent,
-                            ),
-                            radius = 420f,
-                        ),
-                    ),
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(72.dp)
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+        val dismissState = rememberSwipeToDismissBoxState(
+            confirmValueChange = { value ->
+                if (value != SwipeToDismissBoxValue.Settled) {
+                    onDismissed()
+                }
+                true
+            },
+        )
+        SwipeToDismissBox(
+            state = dismissState,
+            modifier = modifier,
+            enableDismissFromStartToEnd = true,
+            enableDismissFromEndToStart = true,
+            backgroundContent = {},
+            content = {
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(DarkSurfaceVariant),
-                ) {
-                    StationLogoImage(
-                        imageUrl = faviconUrl,
-                        contentDescription = stationName,
-                        modifier = Modifier.fillMaxWidth(),
-                        contentScale = ContentScale.Crop,
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(10.dp))
-
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Text(
-                        text = stationName,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp,
+                        .clickable(onClick = onBarClick)
+                        .clip(playerShape)
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(
+                                    Color(0xE0202C3A),
+                                    Color(0xCC161C2A),
+                                ),
+                            ),
+                        )
+                        .border(
+                            width = 1.dp,
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(
+                                    TealAccent.copy(alpha = 0.72f),
+                                    Color(0xFF7A56FF).copy(alpha = 0.72f),
+                                ),
+                            ),
+                            shape = playerShape,
                         ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        color = Color.White,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .blur(18.dp)
+                            .background(
+                                Brush.radialGradient(
+                                    colors = listOf(
+                                        Color.White.copy(alpha = 0.12f),
+                                        Color.Transparent,
+                                    ),
+                                    radius = 420f,
+                                ),
+                            ),
                     )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(72.dp)
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(DarkSurfaceVariant),
+                        ) {
+                            StationLogoImage(
+                                imageUrl = faviconUrl,
+                                contentDescription = stationName,
+                                modifier = Modifier.fillMaxWidth(),
+                                contentScale = ContentScale.Crop,
+                            )
+                        }
 
-                    val showMetadataLine = isBuffering || (showMetadata && compactMetadata != null) || sessionDurationLabel.isNotBlank()
-                    val secondaryLine = when {
-                        isBuffering -> stringResource(R.string.player_loading)
-                        showMetadata -> compactMetadata
-                        else -> null
-                    }
-                    val secondaryColor = if (isBuffering) TealAccent else DarkOnSurfaceVariant
+                        Spacer(modifier = Modifier.width(10.dp))
 
-                    if (showMetadataLine) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            Text(
+                                text = stationName,
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 14.sp,
+                                ),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                color = Color.White,
+                            )
+
+                            val showMetadataLine = isBuffering || (showMetadata && compactMetadata != null) || sessionDurationLabel.isNotBlank()
+                            val secondaryLine = when {
+                                isBuffering -> stringResource(R.string.player_loading)
+                                showMetadata -> compactMetadata
+                                else -> null
+                            }
+                            val secondaryColor = if (isBuffering) TealAccent else DarkOnSurfaceVariant
+
+                            if (showMetadataLine) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    MarqueeText(
+                                        text = secondaryLine ?: "",
+                                        textStyle = MaterialTheme.typography.bodySmall,
+                                        color = secondaryColor,
+                                        modifier = Modifier.weight(1f),
+                                        enabled = shouldEnableMiniPlayerMarquee(secondaryLine),
+                                        edgeFade = true,
+                                    )
+
+                                    StreamDurationBadge(
+                                        text = sessionDurationLabel,
+                                        modifier = Modifier.padding(start = 8.dp),
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(2.dp))
+
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.padding(end = 2.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            MarqueeText(
-                                text = secondaryLine ?: "",
-                                textStyle = MaterialTheme.typography.bodySmall,
-                                color = secondaryColor,
-                                modifier = Modifier.weight(1f),
-                                enabled = shouldEnableMiniPlayerMarquee(secondaryLine),
-                                edgeFade = true,
-                            )
+                            Surface(
+                                onClick = onFavoriteClick,
+                                shape = CircleShape,
+                                color = Color.White.copy(alpha = if (isFavorite) 0.24f else 0.12f),
+                                border = BorderStroke(
+                                    width = 1.dp,
+                                    color = if (isFavorite) {
+                                        Color(0xFFFF5A7A).copy(alpha = 0.75f)
+                                    } else {
+                                        Color.White.copy(alpha = 0.2f)
+                                    },
+                                ),
+                            ) {
+                                Icon(
+                                    imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                                    contentDescription = if (isFavorite) {
+                                        stringResource(R.string.player_remove_favorite)
+                                    } else {
+                                        stringResource(R.string.player_add_favorite)
+                                    },
+                                    tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.92f),
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .padding(7.dp),
+                                )
+                            }
 
-                            StreamDurationBadge(
-                                text = sessionDurationLabel,
-                                modifier = Modifier.padding(start = 8.dp),
-                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Box(
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (isBuffering) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(40.dp),
+                                        strokeWidth = 1.25.dp,
+                                        color = TealAccent.copy(alpha = 0.95f),
+                                        trackColor = Color.White.copy(alpha = 0.2f),
+                                    )
+                                }
+
+                                Surface(
+                                    onClick = onPlayPauseClick,
+                                    shape = CircleShape,
+                                    color = Color.White.copy(alpha = 0.16f),
+                                    border = BorderStroke(
+                                        width = 1.dp,
+                                        color = Color.White.copy(alpha = 0.24f),
+                                    ),
+                                    enabled = !isBuffering,
+                                ) {
+                                    Icon(
+                                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                        contentDescription = if (isPlaying) {
+                                            stringResource(R.string.player_pause)
+                                        } else {
+                                            stringResource(R.string.player_play)
+                                        },
+                                        tint = Color.White,
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .padding(6.dp),
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.width(2.dp))
-
-                Row(
-                    modifier = Modifier.padding(end = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Surface(
-                        onClick = onFavoriteClick,
-                        shape = CircleShape,
-                        color = Color.White.copy(alpha = if (isFavorite) 0.24f else 0.12f),
-                        border = BorderStroke(
-                            width = 1.dp,
-                            color = if (isFavorite) {
-                                Color(0xFFFF5A7A).copy(alpha = 0.75f)
-                            } else {
-                                Color.White.copy(alpha = 0.2f)
-                            },
-                        ),
-                    ) {
-                        Icon(
-                            imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                            contentDescription = if (isFavorite) {
-                                stringResource(R.string.player_remove_favorite)
-                            } else {
-                                stringResource(R.string.player_add_favorite)
-                            },
-                            tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.92f),
-                            modifier = Modifier
-                                .size(32.dp)
-                                .padding(7.dp),
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Box(
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        if (isBuffering) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(40.dp),
-                                strokeWidth = 1.25.dp,
-                                color = TealAccent.copy(alpha = 0.95f),
-                                trackColor = Color.White.copy(alpha = 0.2f),
-                            )
-                        }
-
-                        Surface(
-                            onClick = onPlayPauseClick,
-                            shape = CircleShape,
-                            color = Color.White.copy(alpha = 0.16f),
-                            border = BorderStroke(
-                                width = 1.dp,
-                                color = Color.White.copy(alpha = 0.24f),
-                            ),
-                            enabled = !isBuffering,
-                        ) {
-                            Icon(
-                                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = if (isPlaying) {
-                                    stringResource(R.string.player_pause)
-                                } else {
-                                    stringResource(R.string.player_play)
-                                },
-                                tint = Color.White,
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .padding(6.dp),
-                            )
-                        }
-                    }
-                }
-            }
-        }
+            },
+        )
     }
 }
 
