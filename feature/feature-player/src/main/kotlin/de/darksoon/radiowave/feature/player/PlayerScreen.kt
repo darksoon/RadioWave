@@ -2,6 +2,7 @@
 
 package de.darksoon.radiowave.feature.player
 
+import android.content.Intent
 import android.os.SystemClock
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipPrevious
@@ -55,6 +57,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -83,6 +86,7 @@ fun PlayerScreen(
     viewModel: PlayerViewModel = hiltViewModel(),
 ) {
     val station = playerState.currentStation ?: return
+    val context = LocalContext.current
     val isPlaying = playerState.isPlaying
     val metadataTitle = playerState.metadata?.title?.trim().takeUnless { it.isNullOrBlank() }
     val metadataArtist = playerState.metadata?.artist?.trim().takeUnless { it.isNullOrBlank() }
@@ -210,7 +214,37 @@ fun PlayerScreen(
                     color = Color.White,
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                Spacer(modifier = Modifier.size(30.dp))
+                Surface(
+                    onClick = {
+                        val shareUrl = station.homepageUrl?.takeIf { it.isNotBlank() } ?: station.streamUrl
+                        val shareText = buildString {
+                            append(context.getString(R.string.player_share_template, station.name))
+                            append("\n")
+                            append(shareUrl)
+                        }
+                        val shareIntent = Intent(Intent.ACTION_SEND)
+                            .setType("text/plain")
+                            .putExtra(Intent.EXTRA_SUBJECT, station.name)
+                            .putExtra(Intent.EXTRA_TEXT, shareText)
+                        context.startActivity(
+                            Intent.createChooser(
+                                shareIntent,
+                                context.getString(R.string.player_share),
+                            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                        )
+                    },
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = 0.06f),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Share,
+                        contentDescription = stringResource(R.string.player_share),
+                        tint = Color.White.copy(alpha = 0.9f),
+                        modifier = Modifier
+                            .size(30.dp)
+                            .padding(6.dp),
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(20.dp))

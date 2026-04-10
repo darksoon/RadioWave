@@ -9,4 +9,6 @@
     <string name="player_pause">Pause</string>
     <string name="player_add_favorite">Zu Favoriten hinzufuegen</string>
     <string name="player_remove_favorite">Aus Favoriten entfernen</string>
+    <string name="player_share">Teilen</string>
+    <string name="player_share_template">Höre %1$s in RadioWave</string>
 </resources>
