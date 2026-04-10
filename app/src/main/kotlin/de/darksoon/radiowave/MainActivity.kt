@@ -334,7 +334,7 @@ fun RadioWaveMainScreen(
     val view = LocalView.current
     val homeViewModel: HomeViewModel = hiltViewModel()
     val playerState: PlayerState by homeViewModel.playerState.collectAsStateWithLifecycle()
-    val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
+    val favoriteStationIds by homeViewModel.favoriteStationIds.collectAsStateWithLifecycle()
     val prefs = remember(context) {
         context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
     }
@@ -399,7 +399,7 @@ fun RadioWaveMainScreen(
     val currentStation = playerState.currentStation
     val showPlayerBar = currentStation != null && !isSettingsRoute
     val isCurrentFavorite = currentStation?.uuid?.let { stationUuid ->
-        homeUiState.favoriteStations.any { station -> station.uuid == stationUuid }
+        stationUuid in favoriteStationIds
     } ?: false
 
     LaunchedEffect(showPlayerBar) {

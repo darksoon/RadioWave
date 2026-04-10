@@ -257,7 +257,9 @@ private fun BrowseContent(
         SortOption.COUNTRY to stringResource(R.string.browse_sort_country),
     )
 
-    val favoriteIds = uiState.favoriteStations.map { station -> station.uuid }.toSet()
+    val favoriteIds = remember(uiState.favoriteStations) {
+        uiState.favoriteStations.map { station -> station.uuid }.toSet()
+    }
     val visibleStations = remember(uiState.topStations, showInsecureStreams) {
         if (showInsecureStreams) {
             uiState.topStations
@@ -356,7 +358,7 @@ private fun BrowseContent(
                 contentPadding = PaddingValues(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                items(quickGenres) { item ->
+                items(quickGenres, key = { item -> item.tag }) { item ->
                     QuickGenreCard(
                         item = item,
                         isSelected = selectedGenre == item.tag,
@@ -414,7 +416,7 @@ private fun BrowseContent(
                             contentPadding = PaddingValues(horizontal = 10.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            items(topCountries) { country ->
+                            items(topCountries, key = { country -> country.code }) { country ->
                                 val isSelected = selectedCountry == country.code
                                 FilterChip(
                                     selected = isSelected,
@@ -443,7 +445,7 @@ private fun BrowseContent(
                             contentPadding = PaddingValues(horizontal = 10.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            items(popularGenres) { genre ->
+                            items(popularGenres, key = { genre -> genre.tag }) { genre ->
                                 val isSelected = selectedGenre == genre.tag
                                 FilterChip(
                                     selected = isSelected,
@@ -758,7 +760,7 @@ private fun EmptyState(
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            items(suggestions) { suggestion ->
+            items(suggestions, key = { suggestion -> suggestion.tag }) { suggestion ->
                 FilterChip(
                     selected = false,
                     onClick = { onSuggestionClick(suggestion.tag) },
