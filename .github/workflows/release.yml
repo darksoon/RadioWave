@@ -134,8 +134,8 @@ jobs:
           git add gradle.properties
           git commit -m "chore(release): prepare ${VERSION_NAME}" -m "DE: Aktualisiert app.versionName auf ${VERSION_NAME} und erhoeht app.versionCode auf ${VERSION_CODE} fuer den automatischen Signed-Release-Build." -m "EN: Updates app.versionName to ${VERSION_NAME} and increments app.versionCode to ${VERSION_CODE} for the automated signed release build."
 
-      - name: Build signed GitHub APK and Play App Bundle
-        run: ./gradlew :app:assembleGithubRelease :app:bundlePlayRelease --stacktrace --build-cache
+      - name: Build signed APK and Play App Bundle
+        run: ./gradlew :app:assemblePlayRelease :app:bundlePlayRelease --stacktrace --build-cache
 
       - name: Verify APK signature
         shell: bash
@@ -148,12 +148,12 @@ jobs:
             echo "apksigner not found" >&2
             exit 1
           fi
-          "$APKSIGNER" verify --verbose app/build/outputs/apk/github/release/app-github-release.apk
+          "$APKSIGNER" verify --verbose app/build/outputs/apk/play/release/app-play-release.apk
 
       - name: Rename APK
         shell: bash
         run: |
-          APK_SOURCE="app/build/outputs/apk/github/release/app-github-release.apk"
+          APK_SOURCE="app/build/outputs/apk/play/release/app-play-release.apk"
           if [ ! -f "$APK_SOURCE" ]; then
             echo "Release APK not found at $APK_SOURCE" >&2
             exit 1

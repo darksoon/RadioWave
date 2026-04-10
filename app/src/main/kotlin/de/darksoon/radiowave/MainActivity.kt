@@ -39,7 +39,6 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -99,9 +98,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import de.darksoon.radiowave.core.data.update.GitHubReleaseChecker
 import de.darksoon.radiowave.core.data.update.GitHubReleaseInfo
-import de.darksoon.radiowave.core.data.update.GitHubReleaseUpdater
-import de.darksoon.radiowave.core.data.update.UpdateDownloadProgress
-import de.darksoon.radiowave.core.data.update.AppUpdateSupport
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -361,34 +357,6 @@ fun RadioWaveMainScreen(
     var onboardingStep by rememberSaveable { mutableIntStateOf(0) }
     var showWhatsNew by rememberSaveable { mutableStateOf(false) }
     var whatsNewRelease by remember { mutableStateOf<GitHubReleaseInfo?>(null) }
-    var availableUpdate by remember { mutableStateOf<GitHubReleaseInfo?>(null) }
-    var updateInProgress by remember { mutableStateOf(false) }
-    var updateProgress by remember { mutableStateOf<UpdateDownloadProgress?>(null) }
-
-    suspend fun checkForAppUpdate(force: Boolean) {
-        if (!AppUpdateSupport.isInAppUpdaterEnabled(context)) return
-        val autoCheckEnabled = prefs.getBoolean(AppSettings.KEY_UPDATE_CHECK_ENABLED, true)
-        if (!autoCheckEnabled) return
-        val now = System.currentTimeMillis()
-        val lastCheckAt = prefs.getLong(AppSettings.KEY_LAST_UPDATE_CHECK_AT_MS, 0L)
-        if (!force && now - lastCheckAt < UPDATE_CHECK_INTERVAL_MS) return
-        prefs.edit().putLong(AppSettings.KEY_LAST_UPDATE_CHECK_AT_MS, now).apply()
-        val versionName = readVersionName(context)
-        val includePrerelease = prefs.getBoolean(AppSettings.KEY_UPDATE_BETA_CHANNEL_ENABLED, false)
-        runCatching {
-            GitHubReleaseUpdater.checkForUpdate(
-                currentVersionName = versionName,
-                includePrerelease = includePrerelease,
-            )
-        }.onSuccess { update ->
-            if (update == null) return@onSuccess
-            val popupEnabled = prefs.getBoolean(AppSettings.KEY_UPDATE_POPUP_ENABLED, true)
-            if (!popupEnabled) return@onSuccess
-            val dismissedTag = prefs.getString(AppSettings.KEY_LAST_DISMISSED_UPDATE_TAG, null)
-            if (dismissedTag.equals(update.tag, ignoreCase = true)) return@onSuccess
-            availableUpdate = update
-        }
-    }
 
     BackHandler(enabled = showFullscreenPlayer) {
         showFullscreenPlayer = false
@@ -437,12 +405,6 @@ fun RadioWaveMainScreen(
     LaunchedEffect(showPlayerBar) {
         if (!showPlayerBar) {
             showFullscreenPlayer = false
-        }
-    }
-
-    LaunchedEffect(showOnboarding) {
-        if (!showOnboarding) {
-            checkForAppUpdate(force = false)
         }
     }
 
@@ -697,9 +659,6 @@ fun RadioWaveMainScreen(
                             .apply()
                         showOnboarding = false
                         onboardingStep = 0
-                        coroutineScope.launch {
-                            checkForAppUpdate(force = true)
-                        }
                     },
                     onFinish = {
                         prefs.edit()
@@ -707,9 +666,6 @@ fun RadioWaveMainScreen(
                             .apply()
                         showOnboarding = false
                         onboardingStep = 0
-                        coroutineScope.launch {
-                            checkForAppUpdate(force = true)
-                        }
                     },
                 )
             }
@@ -756,103 +712,6 @@ fun RadioWaveMainScreen(
                 )
             }
 
-            val updateRelease = availableUpdate
-            if (updateRelease != null) {
-                AlertDialog(
-                    onDismissRequest = { },
-                    title = { Text(stringResource(R.string.update_dialog_title)) },
-                    text = {
-                        Column {
-                            Text(
-                                "${stringResource(R.string.update_dialog_version, updateRelease.tag)}\n\n" +
-                                    "${previewReleaseNotes(context, updateRelease.body)}",
-                            )
-                            if (updateInProgress) {
-                                Spacer(modifier = Modifier.height(12.dp))
-                                val progress = updateProgress
-                                val progressText = buildUpdateProgressText(context, progress)
-                                Text(
-                                    text = stringResource(R.string.update_dialog_download_running, progressText),
-                                    color = TealAccent,
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                val percent = progress?.percent
-                                if (percent != null) {
-                                    LinearProgressIndicator(
-                                        progress = { percent / 100f },
-                                        modifier = Modifier.fillMaxWidth(),
-                                    )
-                                } else {
-                                    LinearProgressIndicator(
-                                        modifier = Modifier.fillMaxWidth(),
-                                    )
-                                }
-                            }
-                        }
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                if (updateInProgress) return@TextButton
-                                updateInProgress = true
-                                updateProgress = null
-                                coroutineScope.launch {
-                                    val result = GitHubReleaseUpdater.downloadAndStartInstall(
-                                        context = context,
-                                        release = updateRelease,
-                                        onProgress = { progress ->
-                                            updateProgress = progress
-                                        },
-                                    )
-                                    updateInProgress = false
-                                    result.onFailure { error ->
-                                        val message = when (error.message) {
-                                            "Please allow installs from unknown apps and try again" -> {
-                                                context.getString(R.string.update_dialog_install_permission_required)
-                                            }
-                                            "No package installer activity found" -> {
-                                                context.getString(R.string.update_dialog_no_installer)
-                                            }
-                                            else -> {
-                                                error.message ?: context.getString(R.string.update_dialog_failed_unknown)
-                                            }
-                                        }
-                                        Toast.makeText(
-                                            context,
-                                            context.getString(
-                                                R.string.update_dialog_failed,
-                                                message,
-                                            ),
-                                            Toast.LENGTH_LONG,
-                                        ).show()
-                                    }
-                                }
-                            },
-                        ) {
-                            Text(
-                                if (updateInProgress) {
-                                    stringResource(R.string.update_dialog_downloading)
-                                } else {
-                                    stringResource(R.string.update_dialog_update_action)
-                                },
-                            )
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(
-                            onClick = {
-                                if (updateInProgress) return@TextButton
-                                prefs.edit()
-                                    .putString(AppSettings.KEY_LAST_DISMISSED_UPDATE_TAG, updateRelease.tag)
-                                    .apply()
-                                availableUpdate = null
-                            },
-                        ) {
-                            Text(stringResource(R.string.update_dialog_later_action))
-                        }
-                    },
-                )
-            }
         }
     }
 }
@@ -902,23 +761,6 @@ private fun readVersionName(context: Context): String {
     }.getOrDefault("")
 }
 
-private fun buildUpdateProgressText(context: Context, progress: UpdateDownloadProgress?): String {
-    if (progress == null) return context.getString(R.string.update_progress_preparing)
-    val downloadedMb = progress.downloadedBytes / (1024f * 1024f)
-    val totalMb = progress.totalBytes.takeIf { it > 0L }?.let { it / (1024f * 1024f) }
-    return if (totalMb != null) {
-        context.getString(
-            R.string.update_progress_known,
-            downloadedMb,
-            totalMb,
-            progress.percent ?: 0,
-        )
-    } else {
-        context.getString(R.string.update_progress_unknown, downloadedMb)
-    }
-}
-
-private const val UPDATE_CHECK_INTERVAL_MS = 6L * 60L * 60L * 1000L
 
 private object ShortcutTarget {
     const val BROWSE = "browse"
