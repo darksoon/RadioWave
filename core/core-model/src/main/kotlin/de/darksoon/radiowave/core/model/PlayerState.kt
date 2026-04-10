@@ -12,6 +12,7 @@ data class PlayerState(
     val isBuffering: Boolean = false,
     val isLoading: Boolean = false,
     val sessionStartedAtElapsedMs: Long? = null,
+    val playedDurationMs: Long = 0L,
     val error: PlayerError? = null,
     val metadata: StreamMetadata? = null,
 )

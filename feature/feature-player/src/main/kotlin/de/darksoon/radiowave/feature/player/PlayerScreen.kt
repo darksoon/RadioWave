@@ -107,21 +107,24 @@ fun PlayerScreen(
     val stationLine = station.name
     val qualityLabel = formatStreamQualityLabel(station.codec, station.bitrate)
 
-    val sessionStart = playerState.sessionStartedAtElapsedMs ?: remember(station.uuid) {
-        SystemClock.elapsedRealtime()
-    }
-    var nowElapsedMs by remember(sessionStart) {
+    val playedDurationMs = playerState.playedDurationMs
+    var nowElapsedMs by remember(station.uuid, playedDurationMs) {
         mutableLongStateOf(SystemClock.elapsedRealtime())
     }
 
-    LaunchedEffect(sessionStart, isPlaying, playerState.isBuffering) {
-        while (isPlaying || playerState.isBuffering) {
+    LaunchedEffect(station.uuid, isPlaying, playedDurationMs) {
+        while (isPlaying) {
             nowElapsedMs = SystemClock.elapsedRealtime()
             delay(1_000L)
         }
     }
 
-    val runtimeLabel = formatRuntime((nowElapsedMs - sessionStart).coerceAtLeast(0L))
+    val livePlayedDurationMs = playedDurationMs + if (isPlaying) {
+        (nowElapsedMs - (playerState.sessionStartedAtElapsedMs ?: nowElapsedMs)).coerceAtLeast(0L)
+    } else {
+        0L
+    }
+    val runtimeLabel = formatRuntime(livePlayedDurationMs.coerceAtLeast(0L))
     val liveBarTransition = rememberInfiniteTransition(label = "liveBar")
     val liveBarAlpha by liveBarTransition.animateFloat(
         initialValue = 0.72f,

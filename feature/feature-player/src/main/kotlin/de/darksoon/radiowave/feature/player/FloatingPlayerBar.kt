@@ -79,26 +79,28 @@ fun FloatingPlayerBar(
         metadataTitle = playerState.metadata?.title,
         metadataArtist = playerState.metadata?.artist,
     )
-    val sessionStartedAtMs: Long? = playerState.sessionStartedAtElapsedMs
+    val playedDurationMs: Long = playerState.playedDurationMs
 
     if (currentStation != null) {
         val stationName: String = currentStation.name
         val faviconUrl: String? = currentStation.faviconUrl
-        val effectiveSessionStartMs = sessionStartedAtMs ?: remember(currentStation.uuid) {
-            SystemClock.elapsedRealtime()
-        }
-        var nowElapsedMs by remember(effectiveSessionStartMs) {
+        var nowElapsedMs by remember(currentStation.uuid, playedDurationMs) {
             mutableLongStateOf(SystemClock.elapsedRealtime())
         }
 
-        LaunchedEffect(effectiveSessionStartMs, isPlaying, isBuffering) {
-            while (isPlaying || isBuffering) {
+        LaunchedEffect(currentStation.uuid, isPlaying, playedDurationMs) {
+            while (isPlaying) {
                 nowElapsedMs = SystemClock.elapsedRealtime()
                 delay(1_000L)
             }
         }
 
-        val sessionDurationLabel = formatStreamDuration((nowElapsedMs - effectiveSessionStartMs).coerceAtLeast(0L))
+        val livePlayedDurationMs = playedDurationMs + if (isPlaying) {
+            (nowElapsedMs - (playerState.sessionStartedAtElapsedMs ?: nowElapsedMs)).coerceAtLeast(0L)
+        } else {
+            0L
+        }
+        val sessionDurationLabel = formatStreamDuration(livePlayedDurationMs.coerceAtLeast(0L))
 
         val playerShape = RoundedCornerShape(32.dp)
         val dismissState = rememberSwipeToDismissBoxState(

@@ -72,15 +72,15 @@ class PlayerControllerImpl @Inject constructor(
     private var playbackLostRecoveryAttempts = 0
     private var userPausedPlayback = false
     private var isStopping = false
-    private val maxReconnectAttempts = 8
-    private val maxPlaybackLostRecoveryAttempts = 3
-    private val initialReconnectDelayMs = 1_500L
-    private val maxReconnectDelayMs = 25_000L
-    private val networkRecoveryDelayMs = 350L
-    private val networkRecoveryCooldownMs = 1_500L
-    private val playbackLostRecoveryDelayMs = 450L
-    private val defaultBufferingStallThresholdMs = 18_000L
-    private val timeshiftGuardBufferingStallThresholdMs = 45_000L
+    private val maxReconnectAttempts = 10
+    private val maxPlaybackLostRecoveryAttempts = 4
+    private val initialReconnectDelayMs = 1_000L
+    private val maxReconnectDelayMs = 18_000L
+    private val networkRecoveryDelayMs = 250L
+    private val networkRecoveryCooldownMs = 2_500L
+    private val playbackLostRecoveryDelayMs = 700L
+    private val defaultBufferingStallThresholdMs = 24_000L
+    private val timeshiftGuardBufferingStallThresholdMs = 60_000L
     private val controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val connectivityManager: ConnectivityManager? =
         context.getSystemService(ConnectivityManager::class.java)
@@ -98,6 +98,7 @@ class PlayerControllerImpl @Inject constructor(
     private var wasDuckedForAudioFocus = false
     private var activeBufferProfile: String? = null
     private var lastMetadataUpdateAtElapsedMs = 0L
+    private var lastPlaybackResumedAtElapsedMs: Long? = null
     private val playbackBackStack = ArrayDeque<Station>()
     private val playbackForwardStack = ArrayDeque<Station>()
     private var stationPool: List<Station> = emptyList()
@@ -223,8 +224,8 @@ class PlayerControllerImpl @Inject constructor(
     private fun createPlayer(bufferProfile: String): ExoPlayer {
         val httpDataSourceFactory = DefaultHttpDataSource.Factory()
             .setUserAgent("RadioWave/1.0")
-            .setConnectTimeoutMs(12_000)
-            .setReadTimeoutMs(20_000)
+            .setConnectTimeoutMs(15_000)
+            .setReadTimeoutMs(30_000)
             .setAllowCrossProtocolRedirects(true)
         val bufferDurations = resolveBufferDurations(bufferProfile)
 
@@ -309,24 +310,24 @@ class PlayerControllerImpl @Inject constructor(
     private fun resolveBufferDurations(profile: String): BufferDurations {
         return when (profile) {
             AppSettings.BUFFER_SMALL -> BufferDurations(
-                minBufferMs = 20_000,
-                maxBufferMs = 90_000,
-                bufferForPlaybackMs = 1_500,
-                bufferForPlaybackAfterRebufferMs = 3_000,
+                minBufferMs = 30_000,
+                maxBufferMs = 120_000,
+                bufferForPlaybackMs = 1_800,
+                bufferForPlaybackAfterRebufferMs = 4_000,
             )
 
             AppSettings.BUFFER_LARGE -> BufferDurations(
-                minBufferMs = 60_000,
-                maxBufferMs = 240_000,
-                bufferForPlaybackMs = 3_000,
-                bufferForPlaybackAfterRebufferMs = 6_500,
+                minBufferMs = 75_000,
+                maxBufferMs = 300_000,
+                bufferForPlaybackMs = 3_500,
+                bufferForPlaybackAfterRebufferMs = 8_000,
             )
 
             else -> BufferDurations(
-                minBufferMs = 45_000,
-                maxBufferMs = 180_000,
-                bufferForPlaybackMs = 2_500,
-                bufferForPlaybackAfterRebufferMs = 5_000,
+                minBufferMs = 55_000,
+                maxBufferMs = 210_000,
+                bufferForPlaybackMs = 2_800,
+                bufferForPlaybackAfterRebufferMs = 6_000,
             )
         }
     }
@@ -342,16 +343,29 @@ class PlayerControllerImpl @Inject constructor(
     private fun setupPlayerListeners(player: ExoPlayer) {
         player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
+                val now = SystemClock.elapsedRealtime()
                 _playerState.update {
+                    val accumulatedDuration = when {
+                        !isPlaying && lastPlaybackResumedAtElapsedMs != null -> {
+                            it.playedDurationMs + (now - (lastPlaybackResumedAtElapsedMs ?: now)).coerceAtLeast(0L)
+                        }
+                        else -> it.playedDurationMs
+                    }
                     it.copy(
                         isPlaying = isPlaying,
                         sessionStartedAtElapsedMs = when {
                             it.sessionStartedAtElapsedMs != null -> it.sessionStartedAtElapsedMs
-                            isPlaying -> SystemClock.elapsedRealtime()
+                            isPlaying -> now
                             else -> null
                         },
+                        playedDurationMs = accumulatedDuration,
                         error = if (isPlaying) null else it.error,
                     )
+                }
+                if (isPlaying) {
+                    lastPlaybackResumedAtElapsedMs = now
+                } else {
+                    lastPlaybackResumedAtElapsedMs = null
                 }
                 if (isPlaying) {
                     userPausedPlayback = false
@@ -430,7 +444,9 @@ class PlayerControllerImpl @Inject constructor(
                 bufferingWatchdogJob?.cancel()
 
                 if (station != null && reconnectAttempts < maxReconnectAttempts) {
-                    scheduleReconnect(station)
+                    val mappedError = mapPlayerError(error)
+                    val fastRetryDelayMs = if (mappedError is PlayerError.NetworkError) 350L else null
+                    scheduleReconnect(station, delayOverrideMs = fastRetryDelayMs)
                     return
                 }
 
@@ -820,8 +836,13 @@ class PlayerControllerImpl @Inject constructor(
         if (userPausedPlayback) return
 
         registerNetworkCallbackIfNeeded()
-        player.playWhenReady = true
-        player.play()
+        val currentStation = _playerState.value.currentStation
+        if (currentStation != null && (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED)) {
+            restartStream(player, currentStation)
+        } else {
+            player.playWhenReady = true
+            player.play()
+        }
     }
 
     private fun requestAudioFocus(): Boolean {
@@ -985,13 +1006,15 @@ class PlayerControllerImpl @Inject constructor(
         }
         recreatePlayerForBufferProfileIfNeeded()
 
+        lastPlaybackResumedAtElapsedMs = null
         _playerState.update {
             it.copy(
                 currentStation = station,
                 error = null,
                 isLoading = true,
                 isBuffering = true,
-                sessionStartedAtElapsedMs = SystemClock.elapsedRealtime(),
+                sessionStartedAtElapsedMs = null,
+                playedDurationMs = 0L,
                 metadata = null,
             )
         }
@@ -1041,8 +1064,13 @@ class PlayerControllerImpl @Inject constructor(
                 }
                 userPausedPlayback = false
                 registerNetworkCallbackIfNeeded()
-                player.playWhenReady = true
-                player.play()
+                val currentStation = _playerState.value.currentStation
+                if (currentStation != null && (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED)) {
+                    restartStream(player, currentStation)
+                } else {
+                    player.playWhenReady = true
+                    player.play()
+                }
             }
         }
     }
@@ -1096,6 +1124,7 @@ class PlayerControllerImpl @Inject constructor(
         userPausedPlayback = false
         shouldResumeAfterAudioFocusGain = false
         wasDuckedForAudioFocus = false
+        lastPlaybackResumedAtElapsedMs = null
         exoPlayer?.stop()
         playbackBackStack.clear()
         playbackForwardStack.clear()
@@ -1119,6 +1148,7 @@ class PlayerControllerImpl @Inject constructor(
         userPausedPlayback = false
         shouldResumeAfterAudioFocusGain = false
         wasDuckedForAudioFocus = false
+        lastPlaybackResumedAtElapsedMs = null
         stationPoolJob?.cancel()
         playbackBackStack.clear()
         playbackForwardStack.clear()
@@ -1289,7 +1319,7 @@ private class RadioLoadErrorHandlingPolicy : DefaultLoadErrorHandlingPolicy() {
     }
 
     override fun getMinimumLoadableRetryCount(dataType: Int): Int {
-        return if (dataType == C.DATA_TYPE_MEDIA) 12 else 6
+        return if (dataType == C.DATA_TYPE_MEDIA) 16 else 8
     }
 }
 
