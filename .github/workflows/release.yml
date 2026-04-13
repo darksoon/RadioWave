@@ -314,8 +314,13 @@ jobs:
       - name: Rebase release commit onto latest main
         shell: bash
         run: |
+          set -euo pipefail
           git fetch origin main
+          git stash push --include-untracked -m release-workflow-temp || true
           git rebase origin/main
+          if git stash list | grep -q 'release-workflow-temp'; then
+            git stash pop
+          fi
 
       - name: Create and push release tag
         shell: bash
