@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Fullscreen player now includes a direct share action for the current station.
+- Fullscreen player now includes a built-in sleep timer with quick presets.
+- Favorites can now be moved up or sent directly to the top for faster manual ordering.
+
+### Fixed
+- Playback timer now pauses correctly during buffering instead of continuing through interruptions.
+- Player recovery tests were aligned with the updated reconnect/recovery tuning so CI passes again.
+
+### Improved
+- Playback recovery is more tolerant of short network interruptions with more reconnect attempts, milder backoff, faster network-return recovery, and slightly larger buffers.
+- Release workflow and manual build artifacts now also preserve native debug-symbol outputs for Play Console debugging.
+
 ## [1.0.1a] - 2026-04-09
 
 ### Fixed

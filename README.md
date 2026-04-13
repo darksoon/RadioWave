@@ -47,7 +47,7 @@ The public roadmap is available in [ROADMAP.md](./ROADMAP.md).
 - Album art lookup via the iTunes Search API
 - Launcher quick actions for `Search`, `Favorites`, `Player`, and `Settings`
 - Android Auto support with favorites, quick access, search, and previous/next in the car player
-- Built-in updater with APK download, progress, and installer handoff
+- Sleep timer and direct share action in the fullscreen player
 - Local crash-report export with share action and prefilled GitHub issue handoff
 - Chromecast support
 
@@ -102,10 +102,10 @@ chmod +x gradlew
 # Install debug APK
 ./gradlew installDebug
 
-# Direct-download debug build with built-in updater
+# GitHub-flavor debug build
 ./gradlew :app:assembleGithubDebug
 
-# Play Store debug build without sideload updater
+# Play Store debug build
 ./gradlew :app:assemblePlayDebug
 ```
 
@@ -151,18 +151,12 @@ https://play.google.com/store/apps/details?id=de.darksoon.radiowave
 3. Allow installs from unknown sources if your device asks for it.
 4. Open the APK and install it.
 
-## In-App Update System
+## Player Improvements
 
-- The app checks for updates on an interval, not on every single launch
-- In `Settings -> Updates` you can:
-  - run a manual update check
-  - test the update popup
-  - enable or disable automatic checks
-  - enable or disable popup behavior
-- Stable and beta channels are separated:
-  - beta disabled: only stable releases
-  - beta enabled: GitHub pre-releases are included
-- If an update is found, the app downloads the APK directly and starts the installer
+- Short network interruptions are handled more gracefully with improved reconnect tuning
+- The playback timer now reflects actual listening time and pauses during buffering
+- Fullscreen player includes a share action and a sleep timer
+- Favorites can be reordered more easily from the favorites screen
 
 ## Android Auto
 
@@ -191,12 +185,9 @@ Available under `Actions -> Manual Android Build -> Run workflow`.
 - Signed releases are created through `Actions -> Release Build`
 - The workflow:
   - updates `app.versionName` and `app.versionCode`
-  - builds a signed GitHub APK plus a Play Store App Bundle (`.aab`)
+  - builds a signed Play APK plus a Play Store App Bundle (`.aab`)
   - creates a tag and GitHub release
-  - uploads both artifacts as release assets
-- Artifact roles:
-  - `github` APK: for GitHub releases / direct download, includes the built-in updater
-  - `play` AAB: for Google Play release distribution
+  - uploads release assets, including native debug-symbol artifacts for Play Console troubleshooting
 - Workflows are prepared for the GitHub Actions Node 24 migration (`actions/checkout@v5`)
 
 ## Privacy
