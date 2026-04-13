@@ -37,7 +37,7 @@ jobs:
       - name: Run manual Gradle task
         run: ./gradlew ${{ github.event.inputs.gradle_task }} --stacktrace
 
-      - name: Upload APK/AAB artifacts
+      - name: Upload APK/AAB/native artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -45,4 +45,7 @@ jobs:
           path: |
             **/build/outputs/**/*.apk
             **/build/outputs/**/*.aab
+            **/build/outputs/**/mapping.txt
+            **/build/intermediates/merged_native_libs/**/out/lib/**/*.so
+            **/build/intermediates/native_debug_metadata/**/*
           if-no-files-found: warn
