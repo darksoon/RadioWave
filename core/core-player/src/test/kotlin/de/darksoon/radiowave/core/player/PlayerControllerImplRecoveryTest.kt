@@ -63,7 +63,7 @@ class PlayerControllerImplRecoveryTest {
     fun `triggerPlaybackLostRecovery sets network error when max attempts reached`() = runTest {
         val controller = createController()
         val station = station(uuid = "s2")
-        controller.testSetPlaybackLostRecoveryAttempts(3)
+        controller.testSetPlaybackLostRecoveryAttempts(4)
         controller.testTriggerPlaybackLostRecovery(station = station, reason = "test")
 
         assertEquals(PlayerError.NetworkError, controller.playerState.value.error)
@@ -96,7 +96,7 @@ class PlayerControllerImplRecoveryTest {
         runCurrent()
         assertEquals(0, controller.testPlaybackLostRecoveryAttempts())
 
-        advanceTimeBy(18_000L)
+        advanceTimeBy(24_000L)
         runCurrent()
 
         assertEquals(1, controller.testPlaybackLostRecoveryAttempts())
