@@ -2,17 +2,10 @@
 
 package de.darksoon.radiowave.feature.home
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
@@ -52,17 +45,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
+
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.geometry.Offset
+
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.painterResource
+
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -75,18 +68,17 @@ import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.ui.components.ErrorState
 import de.darksoon.radiowave.core.ui.components.LoadingState
 import de.darksoon.radiowave.core.ui.components.StationLogoImage
-import de.darksoon.radiowave.core.ui.R as CoreUiR
+
 import de.darksoon.radiowave.core.ui.theme.CardBodyStyle
 import de.darksoon.radiowave.core.ui.theme.CardCaptionStyle
 import de.darksoon.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.darksoon.radiowave.core.ui.theme.DarkSurfaceVariant
-import de.darksoon.radiowave.core.ui.theme.MintAccent
+
 import de.darksoon.radiowave.core.ui.theme.SectionTitleStyle
 import de.darksoon.radiowave.core.ui.theme.TealAccent
 import de.darksoon.radiowave.feature.home.R
 import kotlin.math.abs
-import kotlin.math.PI
-import kotlin.math.sin
+
 import kotlin.random.Random
 
 @Composable
@@ -155,7 +147,6 @@ private fun HomeContent(
                 modifier = modifier
                     .fillMaxSize(),
             ) {
-                HomePremiumBackground(modifier = Modifier.fillMaxSize())
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -222,259 +213,6 @@ private fun HomeContent(
             }
         }
     }
-}
-
-@Composable
-fun HomePremiumBackground(
-    modifier: Modifier = Modifier,
-) {
-    val transition = rememberInfiniteTransition(label = "premium-bg")
-    val twinkleProgress by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 10_000,
-                easing = LinearEasing,
-            ),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "star-twinkle-progress",
-    )
-    val nebulaFarDriftX by transition.animateFloat(
-        initialValue = -0.05f,
-        targetValue = 0.05f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 140_000,
-                easing = LinearEasing,
-            ),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "nebula-far-drift-x",
-    )
-    val nebulaFarDriftY by transition.animateFloat(
-        initialValue = -0.03f,
-        targetValue = 0.03f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 110_000,
-                easing = LinearEasing,
-            ),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "nebula-far-drift-y",
-    )
-    val nebulaNearDriftX by transition.animateFloat(
-        initialValue = 0.04f,
-        targetValue = -0.04f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 90_000,
-                easing = LinearEasing,
-            ),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "nebula-near-drift-x",
-    )
-    val nebulaNearDriftY by transition.animateFloat(
-        initialValue = -0.02f,
-        targetValue = 0.02f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 76_000,
-                easing = LinearEasing,
-            ),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "nebula-near-drift-y",
-    )
-    val nebulaBreath by transition.animateFloat(
-        initialValue = 0.92f,
-        targetValue = 1.08f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 48_000,
-                easing = LinearEasing,
-            ),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "nebula-breath",
-    )
-
-    Box(modifier = modifier.background(Color(0xFF050913))) {
-        Image(
-            painter = painterResource(id = CoreUiR.drawable.bg_nebula),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
-            alpha = 0.5f,
-        )
-        NebulaLayer(
-            farDriftX = nebulaFarDriftX,
-            farDriftY = nebulaFarDriftY,
-            nearDriftX = nebulaNearDriftX,
-            nearDriftY = nebulaNearDriftY,
-            breath = nebulaBreath,
-            modifier = Modifier.fillMaxSize(),
-        )
-        StarFieldLayer(
-            twinkleProgress = twinkleProgress,
-            modifier = Modifier.fillMaxSize(),
-        )
-    }
-}
-
-@Composable
-private fun NebulaLayer(
-    farDriftX: Float,
-    farDriftY: Float,
-    nearDriftX: Float,
-    nearDriftY: Float,
-    breath: Float,
-    modifier: Modifier = Modifier,
-) {
-    Canvas(
-        modifier = modifier,
-    ) {
-        val farShiftX = size.width * farDriftX
-        val farShiftY = size.height * farDriftY
-        val nearShiftX = size.width * nearDriftX
-        val nearShiftY = size.height * nearDriftY
-
-        drawRect(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    Color(0xFF0A1222),
-                    Color(0xFF081020),
-                    Color(0xFF050913),
-                ),
-                center = center.copy(
-                    x = center.x + farShiftX,
-                    y = center.y * 0.55f + farShiftY,
-                ),
-                radius = size.maxDimension * 0.95f,
-            ),
-        )
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    TealAccent.copy(alpha = 0.1f * breath),
-                    MintAccent.copy(alpha = 0.05f * breath),
-                    Color.Transparent,
-                ),
-                center = center.copy(
-                    x = center.x - size.width * 0.43f + farShiftX * 0.35f + nearShiftX * 0.22f,
-                    y = center.y * 0.25f + farShiftY * 0.45f + nearShiftY * 0.18f,
-                ),
-                radius = size.maxDimension * 0.58f,
-            ),
-            radius = size.maxDimension * 0.62f,
-            center = center.copy(
-                x = center.x - size.width * 0.43f + farShiftX * 0.35f + nearShiftX * 0.22f,
-                y = center.y * 0.25f + farShiftY * 0.45f + nearShiftY * 0.18f,
-            ),
-        )
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    Color(0xFF7C53D8).copy(alpha = 0.08f * breath),
-                    Color.Transparent,
-                ),
-                center = center.copy(
-                    x = center.x + size.width * 0.44f - farShiftX * 0.3f + nearShiftX * 0.4f,
-                    y = center.y * 0.72f - farShiftY * 0.35f + nearShiftY * 0.25f,
-                ),
-                radius = size.maxDimension * 0.54f,
-            ),
-            radius = size.maxDimension * 0.56f,
-            center = center.copy(
-                x = center.x + size.width * 0.44f - farShiftX * 0.3f + nearShiftX * 0.4f,
-                y = center.y * 0.72f - farShiftY * 0.35f + nearShiftY * 0.25f,
-            ),
-        )
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    Color(0xFF5ED3D6).copy(alpha = 0.06f * breath),
-                    Color.Transparent,
-                ),
-                center = center.copy(
-                    x = center.x + size.width * 0.04f + nearShiftX * 0.3f,
-                    y = center.y * 0.16f + nearShiftY * 0.4f,
-                ),
-                radius = size.maxDimension * 0.42f,
-            ),
-            radius = size.maxDimension * 0.45f,
-            center = center.copy(
-                x = center.x + size.width * 0.04f + nearShiftX * 0.3f,
-                y = center.y * 0.16f + nearShiftY * 0.4f,
-            ),
-        )
-        drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(
-                    Color.Transparent,
-                    Color.Black.copy(alpha = 0.14f),
-                    Color.Black.copy(alpha = 0.26f),
-                ),
-            ),
-        )
-    }
-}
-
-private data class StarParticle(
-    val xFactor: Float,
-    val yFactor: Float,
-    val radiusPx: Float,
-    val phase: Float,
-    val speed: Float,
-    val minAlpha: Float,
-    val maxAlpha: Float,
-)
-
-@Composable
-private fun StarFieldLayer(
-    twinkleProgress: Float,
-    modifier: Modifier = Modifier,
-) {
-    Canvas(
-        modifier = modifier.drawWithCache {
-            val random = Random(9917)
-            val starCount = 36
-            val stars = List(starCount) {
-                StarParticle(
-                    xFactor = random.nextFloat(),
-                    yFactor = random.nextFloat(),
-                    radiusPx = lerp(
-                        start = 1.dp.toPx(),
-                        stop = 3.dp.toPx(),
-                        fraction = random.nextFloat(),
-                    ),
-                    phase = random.nextFloat() * (2f * PI.toFloat()),
-                    speed = lerp(0.65f, 1.35f, random.nextFloat()),
-                    minAlpha = lerp(0.3f, 0.45f, random.nextFloat()),
-                    maxAlpha = lerp(0.55f, 0.85f, random.nextFloat()),
-                )
-            }
-
-            onDrawBehind {
-                val progressAngle = twinkleProgress * (2f * PI.toFloat())
-                stars.forEach { star ->
-                    val pulse = ((sin(progressAngle * star.speed + star.phase) + 1f) * 0.5f)
-                    val alpha = lerp(star.minAlpha, star.maxAlpha, pulse)
-                    drawCircle(
-                        color = Color.White.copy(alpha = alpha),
-                        radius = star.radiusPx,
-                        center = Offset(
-                            x = size.width * star.xFactor,
-                            y = size.height * star.yFactor,
-                        ),
-                    )
-                }
-            }
-        },
-    ) {}
 }
 
 @Composable
