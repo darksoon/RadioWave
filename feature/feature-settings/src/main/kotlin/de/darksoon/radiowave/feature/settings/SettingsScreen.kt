@@ -10,9 +10,11 @@ import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,12 +22,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -62,7 +73,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -203,9 +213,8 @@ fun SettingsScreen(
         item {
             Text(
                 text = stringResource(R.string.settings_title),
-                style = MaterialTheme.typography.headlineMedium.copy(
+                style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 30.sp,
                 ),
                 color = Color.White,
             )
@@ -225,6 +234,7 @@ fun SettingsScreen(
                 SettingsCategoryCard(
                     title = stringResource(R.string.settings_category_general_title),
                     subtitle = stringResource(R.string.settings_category_general_subtitle),
+                    icon = Icons.Filled.Tune,
                     onClick = { selectedCategory = SettingsCategory.GENERAL },
                 )
             }
@@ -232,6 +242,7 @@ fun SettingsScreen(
                 SettingsCategoryCard(
                     title = stringResource(R.string.settings_category_sound_title),
                     subtitle = stringResource(R.string.settings_category_sound_subtitle),
+                    icon = Icons.Filled.VolumeUp,
                     onClick = { selectedCategory = SettingsCategory.SOUND },
                 )
             }
@@ -239,6 +250,7 @@ fun SettingsScreen(
                 SettingsCategoryCard(
                     title = stringResource(R.string.settings_category_notification_title),
                     subtitle = stringResource(R.string.settings_category_notification_subtitle),
+                    icon = Icons.Filled.Notifications,
                     onClick = { selectedCategory = SettingsCategory.NOTIFICATION },
                 )
             }
@@ -246,6 +258,7 @@ fun SettingsScreen(
                 SettingsCategoryCard(
                     title = stringResource(R.string.settings_category_data_title),
                     subtitle = stringResource(R.string.settings_category_data_subtitle),
+                    icon = Icons.Filled.Storage,
                     onClick = { selectedCategory = SettingsCategory.DATA },
                 )
             }
@@ -723,82 +736,6 @@ private fun SettingsSectionLabel(text: String) {
 }
 
 @Composable
-private fun SettingsHeroCard(
-    title: String,
-    subtitle: String,
-    versionLabel: String,
-    versionValue: String,
-    primaryActionLabel: String,
-    onPrimaryActionClick: () -> Unit,
-    secondaryActionLabel: String,
-    onSecondaryActionClick: () -> Unit,
-) {
-    Card(
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = DarkCardBackground.copy(alpha = 0.78f),
-        ),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = Color.White,
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = DarkOnSurfaceVariant,
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White.copy(alpha = 0.06f),
-                ),
-                shape = RoundedCornerShape(16.dp),
-            ) {
-                Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
-                    Text(
-                        text = versionLabel,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = DarkOnSurfaceVariant,
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = versionValue,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = Color.White,
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                OutlinedButton(
-                    onClick = onPrimaryActionClick,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(primaryActionLabel)
-                }
-                OutlinedButton(
-                    onClick = onSecondaryActionClick,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(secondaryActionLabel)
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun SettingsSupportCard(
     title: String,
     subtitle: String,
@@ -817,13 +754,20 @@ private fun SettingsSupportCard(
 ) {
     Card(
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = DarkCardBackground.copy(alpha = 0.72f),
-        ),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.10f)),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.07f),
+                            Color.White.copy(alpha = 0.03f),
+                        ),
+                    ),
+                )
                 .padding(16.dp),
         ) {
             Text(
@@ -956,28 +900,50 @@ private fun SupportRichText(
 private fun SettingsCategoryCard(
     title: String,
     subtitle: String,
+    icon: ImageVector,
     onClick: () -> Unit,
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = DarkCardBackground.copy(alpha = 0.62f),
-        ),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.10f)),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.08f),
+                            Color.White.copy(alpha = 0.03f),
+                        ),
+                    ),
+                )
                 .padding(horizontal = 14.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(TealAccent.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = TealAccent,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = TealAccent,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = Color.White,
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
@@ -986,10 +952,11 @@ private fun SettingsCategoryCard(
                     color = DarkOnSurfaceVariant,
                 )
             }
-            Text(
-                text = ">",
-                style = MaterialTheme.typography.titleLarge,
-                color = Color.White.copy(alpha = 0.8f),
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.45f),
+                modifier = Modifier.size(20.dp),
             )
         }
     }
@@ -1008,7 +975,7 @@ private fun SettingsDetailHeader(
     ) {
         IconButton(onClick = onBack) {
             Icon(
-                imageVector = Icons.Default.ArrowBack,
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = stringResource(R.string.settings_back),
                 tint = Color.White,
             )
@@ -1028,11 +995,21 @@ private fun SettingsCard(
 ) {
     Card(
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = DarkCardBackground.copy(alpha = 0.62f),
-        ),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.10f)),
     ) {
-        Column(modifier = Modifier.padding(top = 10.dp, bottom = 4.dp)) {
+        Column(
+            modifier = Modifier
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.07f),
+                            Color.White.copy(alpha = 0.03f),
+                        ),
+                    ),
+                )
+                .padding(top = 10.dp, bottom = 4.dp),
+        ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -1251,30 +1228,6 @@ private fun rememberAppVersion(context: Context): String {
         } catch (_: Exception) {
             context.getString(R.string.settings_unknown)
         }
-    }
-}
-
-@Composable
-private fun InfoTextBlockRow(
-    label: String,
-    value: String,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = DarkOnSurfaceVariant,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.White,
-        )
     }
 }
 
