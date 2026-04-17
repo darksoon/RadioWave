@@ -7,4 +7,10 @@
     <string name="home_empty_title">Build your radio feed</string>
     <string name="home_empty_subtitle">Discover trending stations and start your first favorites collection.</string>
     <string name="home_play_station">Play %1$s</string>
+    <string name="home_error_load">Error loading: %1$s</string>
+    <string name="home_error_search">Search error: %1$s</string>
+    <string name="home_error_no_connection">No internet connection or DNS problem.</string>
+    <string name="home_error_timeout">Request timed out. Please try again.</string>
+    <string name="home_error_api">API error: %1$s</string>
+    <string name="home_error_unknown">Unknown error</string>
 </resources>

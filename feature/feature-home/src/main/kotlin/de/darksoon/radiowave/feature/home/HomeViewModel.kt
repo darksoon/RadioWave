@@ -2,11 +2,14 @@
 
 package de.darksoon.radiowave.feature.home
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import de.darksoon.radiowave.core.data.repository.FavoriteRepository
+import de.darksoon.radiowave.feature.home.R
 import de.darksoon.radiowave.core.data.repository.RecentRepository
 import de.darksoon.radiowave.core.data.repository.StationRepository
 import de.darksoon.radiowave.core.model.Station
@@ -35,6 +38,7 @@ import java.util.Locale
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val stationRepository: StationRepository,
     private val favoriteRepository: FavoriteRepository,
     private val recentRepository: RecentRepository,
@@ -121,7 +125,7 @@ class HomeViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = "Fehler beim Laden: ${error.message}"
+                        error = context.getString(R.string.home_error_load, error.message ?: context.getString(R.string.home_error_unknown)),
                     )
                 }
             }
@@ -168,7 +172,7 @@ class HomeViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = "Fehler bei der Suche: ${error.message}"
+                        error = context.getString(R.string.home_error_search, error.message ?: context.getString(R.string.home_error_unknown)),
                     )
                 }
             }
@@ -369,15 +373,14 @@ class HomeViewModel @Inject constructor(
                 }
             }
             .catch { error ->
-                Log.e("RadioWave", "API Fehler: ${error.message}", error)
+                Log.e("RadioWave", "API error: ${error.message}", error)
                 val errorMessage = when {
-                    error.message?.contains("UnknownHostException") == true -> 
-                        "DNS Fehler: Server nicht erreichbar. Bitte später erneut versuchen."
-                    error.message?.contains("timeout") == true -> 
-                        "Zeitüberschreitung beim Laden. Bitte versuche es erneut."
-                    error.message?.contains("Unable to resolve host") == true ->
-                        "Keine Internetverbindung oder DNS-Problem."
-                    else -> "API Fehler: ${error.message ?: "Unbekannter Fehler"}"
+                    error.message?.contains("UnknownHostException") == true ||
+                        error.message?.contains("Unable to resolve host") == true ->
+                        context.getString(R.string.home_error_no_connection)
+                    error.message?.contains("timeout") == true ->
+                        context.getString(R.string.home_error_timeout)
+                    else -> context.getString(R.string.home_error_api, error.message ?: context.getString(R.string.home_error_unknown))
                 }
                 _uiState.update {
                     it.copy(

@@ -7,4 +7,10 @@
     <string name="home_empty_title">Baue deinen Radio-Feed</string>
     <string name="home_empty_subtitle">Entdecke trendende Sender und starte deine erste Favoritenliste.</string>
     <string name="home_play_station">Sender %1$s abspielen</string>
+    <string name="home_error_load">Fehler beim Laden: %1$s</string>
+    <string name="home_error_search">Fehler bei der Suche: %1$s</string>
+    <string name="home_error_no_connection">Keine Internetverbindung oder DNS-Problem.</string>
+    <string name="home_error_timeout">Zeitüberschreitung. Bitte versuche es erneut.</string>
+    <string name="home_error_api">API-Fehler: %1$s</string>
+    <string name="home_error_unknown">Unbekannter Fehler</string>
 </resources>
