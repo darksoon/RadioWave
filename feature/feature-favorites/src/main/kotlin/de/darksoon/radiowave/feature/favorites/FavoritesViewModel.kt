@@ -32,6 +32,8 @@ class FavoritesViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(FavoritesUiState())
     val uiState: StateFlow<FavoritesUiState> = _uiState.asStateFlow()
 
+    val playerState = playerManager.playerState
+
     init {
         observeFavorites()
     }

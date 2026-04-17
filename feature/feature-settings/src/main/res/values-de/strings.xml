@@ -110,4 +110,7 @@
     <string name="settings_made_by_label">Entwickelt von</string>
     <string name="settings_made_by_value">Sven Neurath</string>
     <string name="settings_later">Später</string>
+    <string name="settings_confirm_remove_favorite_title">Favoriten-Entfernen bestätigen</string>
+    <string name="settings_confirm_remove_favorite_subtitle">Vor dem Entfernen eines Senders aus den Favoriten einen Bestätigungsdialog anzeigen.</string>
+    <string name="settings_sound_section_android_auto">Android Auto</string>
 </resources>

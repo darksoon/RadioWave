@@ -110,4 +110,7 @@
     <string name="settings_made_by_label">Made by</string>
     <string name="settings_made_by_value">Sven Neurath</string>
     <string name="settings_later">Later</string>
+    <string name="settings_confirm_remove_favorite_title">Confirm removing favorites</string>
+    <string name="settings_confirm_remove_favorite_subtitle">Show a confirmation dialog before removing a station from favorites.</string>
+    <string name="settings_sound_section_android_auto">Android Auto</string>
 </resources>

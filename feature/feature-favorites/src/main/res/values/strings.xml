@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="favorites_unknown_error">Unknown error</string>
+    <string name="favorites_screen_title">Favorites</string>
     <string name="favorites_empty_title">No favorites yet</string>
     <string name="favorites_empty_subtitle">Tap the heart on a station to save it here.</string>
     <string name="favorites_move_to_top">Move to top</string>
     <string name="favorites_move_up">Move up</string>
+    <string name="favorites_confirm_remove_title">Remove favorite?</string>
+    <string name="favorites_confirm_remove_message">Remove %1$s from your favorites?</string>
+    <string name="favorites_confirm_remove_yes">Remove</string>
+    <string name="favorites_confirm_remove_no">Cancel</string>
 </resources>

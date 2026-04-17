@@ -4,6 +4,8 @@
     <string name="home_section_all">All</string>
     <string name="home_section_recent">Recently played</string>
     <string name="home_section_discover">Discover</string>
+    <string name="home_section_similar">Similar Stations</string>
+    <string name="home_section_similar_because">Because you\'re listening to %1$s</string>
     <string name="home_empty_title">Build your radio feed</string>
     <string name="home_empty_subtitle">Discover trending stations and start your first favorites collection.</string>
     <string name="home_play_station">Play %1$s</string>

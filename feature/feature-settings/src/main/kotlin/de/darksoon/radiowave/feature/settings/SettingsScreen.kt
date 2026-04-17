@@ -33,6 +33,7 @@ import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Tune
@@ -168,6 +169,9 @@ fun SettingsScreen(
     var limitAndroidAutoQuality by rememberSaveable {
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_LIMIT_ANDROID_AUTO_QUALITY, true))
     }
+    var confirmRemoveFavorite by rememberSaveable {
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_CONFIRM_REMOVE_FAVORITE, false))
+    }
     var showReleaseNotesDialog by rememberSaveable { mutableStateOf(false) }
     var releaseNotesLoading by remember { mutableStateOf(false) }
     var releaseNotesInfo by remember { mutableStateOf<GitHubReleaseInfo?>(null) }
@@ -263,6 +267,14 @@ fun SettingsScreen(
                 )
             }
             item {
+                SettingsCategoryCard(
+                    title = stringResource(R.string.settings_category_info_title),
+                    subtitle = stringResource(R.string.settings_category_info_subtitle),
+                    icon = Icons.Filled.Info,
+                    onClick = { selectedCategory = SettingsCategory.INFO },
+                )
+            }
+            item {
                 SettingsSectionLabel(text = stringResource(R.string.settings_home_support_title))
             }
             item {
@@ -279,8 +291,8 @@ fun SettingsScreen(
                     onGroupLinkClick = { uriHandler.openUri("https://groups.google.com/u/1/g/radiowave-beta-tester") },
                     primaryActionLabel = stringResource(R.string.settings_support_donate_button),
                     onPrimaryActionClick = { uriHandler.openUri("https://ko-fi.com/darksoon") },
-                    secondaryActionLabel = stringResource(R.string.settings_category_info_title),
-                    onSecondaryActionClick = { selectedCategory = SettingsCategory.INFO },
+                    secondaryActionLabel = null,
+                    onSecondaryActionClick = null,
                 )
             }
         } else {
@@ -344,6 +356,16 @@ fun SettingsScreen(
                                 prefs.edit().putBoolean(AppSettings.KEY_SHOW_QUICK_TOASTS, checked).apply()
                             },
                         )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingToggleRow(
+                            title = stringResource(R.string.settings_confirm_remove_favorite_title),
+                            subtitle = stringResource(R.string.settings_confirm_remove_favorite_subtitle),
+                            checked = confirmRemoveFavorite,
+                            onCheckedChange = { checked ->
+                                confirmRemoveFavorite = checked
+                                prefs.edit().putBoolean(AppSettings.KEY_CONFIRM_REMOVE_FAVORITE, checked).apply()
+                            },
+                        )
                     }
 
                     SettingsCategory.SOUND -> SettingsCard(title = stringResource(R.string.settings_category_sound_title)) {
@@ -384,6 +406,12 @@ fun SettingsScreen(
                             disabledHint = null,
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        Text(
+                            text = stringResource(R.string.settings_sound_section_android_auto),
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = TealAccent,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        )
                         SettingToggleRow(
                             title = stringResource(R.string.settings_android_auto_quality_limit_title),
                             subtitle = stringResource(R.string.settings_android_auto_quality_limit_subtitle),
@@ -749,8 +777,8 @@ private fun SettingsSupportCard(
     onGroupLinkClick: () -> Unit,
     primaryActionLabel: String,
     onPrimaryActionClick: () -> Unit,
-    secondaryActionLabel: String,
-    onSecondaryActionClick: () -> Unit,
+    secondaryActionLabel: String? = null,
+    onSecondaryActionClick: (() -> Unit)? = null,
 ) {
     Card(
         shape = RoundedCornerShape(20.dp),
@@ -834,12 +862,14 @@ private fun SettingsSupportCard(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
-            OutlinedButton(
-                onClick = onSecondaryActionClick,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(secondaryActionLabel)
+            if (secondaryActionLabel != null && onSecondaryActionClick != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = onSecondaryActionClick,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(secondaryActionLabel)
+                }
             }
         }
     }
