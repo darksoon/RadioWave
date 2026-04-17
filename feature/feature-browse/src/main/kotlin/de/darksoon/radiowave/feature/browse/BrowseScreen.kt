@@ -277,11 +277,15 @@ private fun BrowseContent(
                 stationGridState.firstVisibleItemScrollOffset > 220
         }
     }
-    val showTitle by remember {
+    val showHeader by remember {
         derivedStateOf {
             stationGridState.firstVisibleItemIndex == 0 &&
                 stationGridState.firstVisibleItemScrollOffset < 160
         }
+    }
+
+    LaunchedEffect(showHeader) {
+        if (!showHeader) advancedFiltersExpanded = false
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -289,7 +293,7 @@ private fun BrowseContent(
             modifier = Modifier.fillMaxSize(),
         ) {
             AnimatedVisibility(
-                visible = showTitle,
+                visible = showHeader,
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut(),
             ) {
@@ -347,42 +351,48 @@ private fun BrowseContent(
                 ),
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = stringResource(R.string.browse_quick_genres),
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontWeight = FontWeight.SemiBold,
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 20.dp),
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            AnimatedVisibility(
+                visible = showHeader,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
             ) {
-                items(quickGenres, key = { item -> item.tag }) { item ->
-                    QuickGenreCard(
-                        item = item,
-                        isSelected = selectedGenre == item.tag,
-                        onClick = {
-                            onGenreSelected(if (selectedGenre == item.tag) null else item.tag)
-                        },
+                Column {
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = stringResource(R.string.browse_quick_genres),
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 20.dp),
                     )
-                }
-            }
 
-            Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-            Column(
-                modifier = Modifier
-                    .padding(horizontal = 20.dp)
-                    .fillMaxWidth()
-                    .animateContentSize(),
-            ) {
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        items(quickGenres, key = { item -> item.tag }) { item ->
+                            QuickGenreCard(
+                                item = item,
+                                isSelected = selectedGenre == item.tag,
+                                onClick = {
+                                    onGenreSelected(if (selectedGenre == item.tag) null else item.tag)
+                                },
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Column(
+                        modifier = Modifier
+                            .padding(horizontal = 20.dp)
+                            .fillMaxWidth()
+                            .animateContentSize(),
+                    ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -474,6 +484,8 @@ private fun BrowseContent(
                     }
                 }
             }
+                } // end AnimatedVisibility (genres + filters)
+            }     // end outer Column wrapper
 
             Spacer(modifier = Modifier.height(16.dp))
 
