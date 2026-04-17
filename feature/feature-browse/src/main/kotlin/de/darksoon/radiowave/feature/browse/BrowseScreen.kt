@@ -78,12 +78,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.darksoon.radiowave.core.ui.components.StationLogoImage
 import de.darksoon.radiowave.core.model.AppSettings
 import de.darksoon.radiowave.core.model.Station
+import de.darksoon.radiowave.core.ui.theme.CardBodyStyle
+import de.darksoon.radiowave.core.ui.theme.SectionTitleStyle
 import de.darksoon.radiowave.core.ui.theme.TealAccent
 import de.darksoon.radiowave.feature.browse.R
 import de.darksoon.radiowave.feature.home.HomeUiState
@@ -276,36 +277,41 @@ private fun BrowseContent(
                 stationGridState.firstVisibleItemScrollOffset > 220
         }
     }
+    val showTitle by remember {
+        derivedStateOf {
+            stationGridState.firstVisibleItemIndex == 0 &&
+                stationGridState.firstVisibleItemScrollOffset < 160
+        }
+    }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-    ) {
+    Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize(),
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            AnimatedVisibility(
+                visible = showTitle,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
             ) {
-                Text(
-                    text = stringResource(R.string.browse_title),
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 26.sp,
-                    ),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.weight(1f),
-                )
-                IconButton(onClick = onRefresh) {
-                    Icon(
-                        Icons.Default.Refresh,
-                        contentDescription = stringResource(R.string.browse_refresh),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.browse_title),
+                        style = SectionTitleStyle,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.weight(1f),
                     )
+                    IconButton(onClick = onRefresh) {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = stringResource(R.string.browse_refresh),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
 
@@ -425,7 +431,6 @@ private fun BrowseContent(
                                         Text(
                                             text = "${country.flag} ${stringResource(country.nameRes)}",
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                            fontSize = 13.sp,
                                         )
                                     },
                                     colors = FilterChipDefaults.filterChipColors(
@@ -792,15 +797,23 @@ private fun StationGridCard(
             .fillMaxWidth()
             .height(186.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp,
-        ),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         onClick = onClick,
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.09f),
+                            Color.White.copy(alpha = 0.03f),
+                        ),
+                    ),
+                ),
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -825,10 +838,7 @@ private fun StationGridCard(
 
                 Text(
                     text = station.name,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp,
-                    ),
+                    style = CardBodyStyle,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurface,
