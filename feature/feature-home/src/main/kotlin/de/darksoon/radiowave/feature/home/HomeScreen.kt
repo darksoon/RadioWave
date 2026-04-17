@@ -67,7 +67,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.lerp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -77,9 +76,12 @@ import de.darksoon.radiowave.core.ui.components.ErrorState
 import de.darksoon.radiowave.core.ui.components.LoadingState
 import de.darksoon.radiowave.core.ui.components.StationLogoImage
 import de.darksoon.radiowave.core.ui.R as CoreUiR
+import de.darksoon.radiowave.core.ui.theme.CardBodyStyle
+import de.darksoon.radiowave.core.ui.theme.CardCaptionStyle
 import de.darksoon.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.darksoon.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.darksoon.radiowave.core.ui.theme.MintAccent
+import de.darksoon.radiowave.core.ui.theme.SectionTitleStyle
 import de.darksoon.radiowave.core.ui.theme.TealAccent
 import de.darksoon.radiowave.feature.home.R
 import kotlin.math.abs
@@ -676,10 +678,7 @@ private fun SectionTitle(
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 26.sp,
-            ),
+            style = SectionTitleStyle,
             color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(modifier = Modifier.weight(1f))
@@ -782,10 +781,7 @@ private fun RecentStationCard(
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = station.name,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp,
-                    ),
+                    style = CardBodyStyle,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -795,9 +791,7 @@ private fun RecentStationCard(
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = country,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 9.sp,
-                        ),
+                        style = CardCaptionStyle,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
