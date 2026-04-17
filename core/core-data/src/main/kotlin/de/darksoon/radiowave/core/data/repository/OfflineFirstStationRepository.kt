@@ -154,6 +154,27 @@ class OfflineFirstStationRepository @Inject constructor(
             .ifEmpty { listOf(station) }
     }
 
+    override suspend fun getSimilarStations(station: Station): List<Station> {
+        val tags = station.tags.filter { it.isNotBlank() }.take(2)
+        val candidates = mutableListOf<Station>()
+        for (tag in tags) {
+            val results = runCatching {
+                api.searchByTag(tag, limit = 30).map { it.toDomain() }
+            }.getOrDefault(emptyList())
+            candidates += results
+            if (candidates.size >= 20) break
+        }
+        if (candidates.isEmpty() && !station.countryCode.isNullOrBlank()) {
+            candidates += runCatching {
+                api.searchByCountry(station.countryCode!!, limit = 30).map { it.toDomain() }
+            }.getOrDefault(emptyList())
+        }
+        return candidates
+            .filter { it.uuid != station.uuid }
+            .distinctBy { it.uuid }
+            .take(15)
+    }
+
     override fun getTags(): Flow<List<Genre>> = flow {
         emit(runCatching { api.getTags().map { it.toDomain() } }.getOrDefault(emptyList()))
     }

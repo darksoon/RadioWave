@@ -18,4 +18,5 @@
     <string name="player_sleep_timer_60m">60 minutes</string>
     <string name="player_sleep_timer_90m">90 minutes</string>
     <string name="player_sleep_timer_off">Turn off sleep timer</string>
+    <string name="player_similar_stations">Similar Stations</string>
 </resources>

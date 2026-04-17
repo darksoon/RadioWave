@@ -18,4 +18,5 @@
     <string name="player_sleep_timer_60m">60 Minuten</string>
     <string name="player_sleep_timer_90m">90 Minuten</string>
     <string name="player_sleep_timer_off">Sleep Timer ausschalten</string>
+    <string name="player_similar_stations">Ähnliche Sender</string>
 </resources>
