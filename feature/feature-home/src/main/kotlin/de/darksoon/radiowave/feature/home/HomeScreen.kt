@@ -40,6 +40,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -90,9 +91,22 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val playerState by viewModel.playerState.collectAsStateWithLifecycle()
+    val similarStations by viewModel.similarStations.collectAsStateWithLifecycle()
+    val currentStation = playerState.currentStation
+
+    LaunchedEffect(currentStation?.uuid) {
+        if (currentStation != null) {
+            viewModel.loadSimilarStationsFor(currentStation)
+        } else {
+            viewModel.clearSimilarStations()
+        }
+    }
 
     HomeContent(
         uiState = uiState,
+        currentStation = currentStation,
+        similarStations = similarStations,
         onStationClick = onStationClick,
         onViewAllFavorites = onViewAllFavorites,
         onNavigateToBrowse = onNavigateToBrowse,
@@ -104,6 +118,8 @@ fun HomeScreen(
 @Composable
 private fun HomeContent(
     uiState: HomeUiState,
+    currentStation: Station?,
+    similarStations: List<Station>,
     onStationClick: (Station) -> Unit,
     onViewAllFavorites: () -> Unit,
     onNavigateToBrowse: (String) -> Unit,
@@ -182,7 +198,22 @@ private fun HomeContent(
                         }
                     }
 
-                    if (discoverStations.isNotEmpty()) {
+                    if (currentStation != null && similarStations.isNotEmpty()) {
+                        SectionTitle(
+                            title = stringResource(R.string.home_section_similar_because, currentStation.name),
+                        )
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 20.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            items(similarStations, key = { station -> station.uuid }) { station ->
+                                RecentStationCard(
+                                    station = station,
+                                    onClick = { onStationClick(station) },
+                                )
+                            }
+                        }
+                    } else if (discoverStations.isNotEmpty()) {
                         SectionTitle(
                             title = stringResource(R.string.home_section_discover),
                         )
@@ -202,7 +233,8 @@ private fun HomeContent(
                     if (
                         recentStations.isEmpty() &&
                         favoriteStations.isEmpty() &&
-                        discoverStations.isEmpty()
+                        discoverStations.isEmpty() &&
+                        similarStations.isEmpty()
                     ) {
                         Spacer(modifier = Modifier.height(18.dp))
                         EmptyStartCard(

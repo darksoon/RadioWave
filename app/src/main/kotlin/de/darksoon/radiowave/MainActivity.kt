@@ -651,7 +651,6 @@ fun RadioWaveMainScreen(
                         onPreviousStationClick = { homeViewModel.playPreviousStation() },
                         onVolumeToggle = { homeViewModel.toggleMute() },
                         onRandomStationClick = { homeViewModel.playRandomStation() },
-                        onSimilarStationClick = { station -> homeViewModel.playStation(station) },
                         onSleepTimerClick = { minutes ->
                             sleepTimerEndsAtElapsedMs = minutes?.let {
                                 SystemClock.elapsedRealtime() + (it * 60_000L)

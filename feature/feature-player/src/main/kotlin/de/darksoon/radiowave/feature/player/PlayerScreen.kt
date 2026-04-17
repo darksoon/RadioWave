@@ -9,7 +9,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,8 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -94,7 +91,6 @@ fun PlayerScreen(
     onVolumeToggle: () -> Unit,
     onRandomStationClick: () -> Unit,
     onSleepTimerClick: (Int?) -> Unit,
-    onSimilarStationClick: (de.darksoon.radiowave.core.model.Station) -> Unit = {},
     sleepTimerRemainingMs: Long?,
     modifier: Modifier = Modifier,
     viewModel: PlayerViewModel = hiltViewModel(),
@@ -109,13 +105,9 @@ fun PlayerScreen(
     val fallbackLogoUrl = station.faviconUrl?.trim().takeUnless { it.isNullOrBlank() }
 
     val iTunesCoverUrl by viewModel.coverArtUrl.collectAsStateWithLifecycle()
-    val similarStations by viewModel.similarStations.collectAsStateWithLifecycle()
 
     LaunchedEffect(metadataArtist, metadataTitle) {
         viewModel.loadCoverArt(metadataArtist, metadataTitle)
-    }
-    LaunchedEffect(station.uuid) {
-        viewModel.loadSimilarStations(station)
     }
 
     val artworkUrl = iTunesCoverUrl ?: streamCoverUrl ?: fallbackLogoUrl
@@ -509,28 +501,6 @@ fun PlayerScreen(
                     onClick = onRandomStationClick,
                 )
             }
-            if (similarStations.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(20.dp))
-                Text(
-                    text = stringResource(R.string.player_similar_stations),
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-                    color = Color.White.copy(alpha = 0.65f),
-                    modifier = Modifier.padding(bottom = 10.dp),
-                )
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(end = 4.dp),
-                ) {
-                    items(similarStations, key = { it.uuid }) { similar ->
-                        SimilarStationCard(
-                            station = similar,
-                            onClick = { onSimilarStationClick(similar) },
-                        )
-                    }
-                }
-            }
             Spacer(modifier = Modifier.height(16.dp))
             Spacer(modifier = Modifier.navigationBarsPadding())
         }
@@ -570,59 +540,6 @@ fun PlayerScreen(
                         Text(stringResource(R.string.player_screen_close))
                     }
                 },
-            )
-        }
-    }
-}
-
-@Composable
-private fun SimilarStationCard(
-    station: de.darksoon.radiowave.core.model.Station,
-    onClick: () -> Unit,
-) {
-    androidx.compose.material3.Card(
-        onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
-        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
-        modifier = Modifier.width(80.dp),
-    ) {
-        Column(
-            modifier = Modifier
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.08f),
-                            Color.White.copy(alpha = 0.03f),
-                        ),
-                    ),
-                )
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(DarkSurface),
-            ) {
-                SubcomposeAsyncImage(
-                    model = station.faviconUrl,
-                    contentDescription = station.name,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                    loading = { ArtworkFallback(station.name) },
-                    error = { ArtworkFallback(station.name) },
-                )
-            }
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = station.name,
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.85f),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth(),
             )
         }
     }

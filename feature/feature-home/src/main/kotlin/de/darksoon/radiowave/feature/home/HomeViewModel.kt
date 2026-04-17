@@ -62,6 +62,9 @@ class HomeViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    private val _similarStations = MutableStateFlow<List<Station>>(emptyList())
+    val similarStations: StateFlow<List<Station>> = _similarStations.asStateFlow()
+
     private val _selectedCountry = MutableStateFlow<String?>(null)
     val selectedCountry: StateFlow<String?> = _selectedCountry.asStateFlow()
 
@@ -462,6 +465,16 @@ class HomeViewModel @Inject constructor(
 
     fun stopPlayback() {
         playerManager.stop()
+    }
+
+    fun loadSimilarStationsFor(station: Station) {
+        viewModelScope.launch {
+            _similarStations.value = stationRepository.getSimilarStations(station)
+        }
+    }
+
+    fun clearSimilarStations() {
+        _similarStations.value = emptyList()
     }
 }
 
