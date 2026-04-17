@@ -155,6 +155,7 @@ private fun HomeContent(
                 modifier = modifier
                     .fillMaxSize(),
             ) {
+                HomePremiumBackground(modifier = Modifier.fillMaxSize())
                 Column(
                     modifier = Modifier
                         .fillMaxSize()

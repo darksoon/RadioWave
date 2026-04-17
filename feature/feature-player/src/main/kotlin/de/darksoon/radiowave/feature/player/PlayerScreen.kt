@@ -146,6 +146,15 @@ fun PlayerScreen(
         ),
         label = "liveBarAlpha",
     )
+    val liveDotAlpha by liveBarTransition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 900),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "liveDotAlpha",
+    )
 
     Box(
         modifier = modifier
@@ -385,13 +394,30 @@ fun PlayerScreen(
                     color = Color.White.copy(alpha = 0.68f),
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = sleepTimerRemainingMs?.let {
-                        stringResource(R.string.player_sleep_timer_active, formatRuntime(it))
-                    } ?: stringResource(R.string.player_live),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.68f),
-                )
+                if (sleepTimerRemainingMs != null) {
+                    Text(
+                        text = stringResource(R.string.player_sleep_timer_active, formatRuntime(sleepTimerRemainingMs)),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.68f),
+                    )
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(androidx.compose.foundation.shape.CircleShape)
+                                .background(Color(0xFFFF3B3B).copy(alpha = liveDotAlpha)),
+                        )
+                        Text(
+                            text = stringResource(R.string.player_live),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White.copy(alpha = 0.68f),
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(28.dp))

@@ -83,6 +83,8 @@ import androidx.compose.ui.window.DialogProperties
 import dagger.hilt.android.AndroidEntryPoint
 import de.darksoon.radiowave.core.model.AppSettings
 import de.darksoon.radiowave.core.model.PlayerState
+import de.darksoon.radiowave.core.ui.components.AmbientBackground
+import de.darksoon.radiowave.core.ui.theme.DarkSurface
 import de.darksoon.radiowave.core.ui.theme.RadioWaveTheme
 import de.darksoon.radiowave.core.ui.theme.TealAccent
 import de.darksoon.radiowave.feature.browse.BrowseScreen
@@ -479,7 +481,7 @@ fun RadioWaveMainScreen(
         containerColor = Color.Transparent,
         bottomBar = {
             NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
+                containerColor = DarkSurface.copy(alpha = 0.92f),
                 tonalElevation = 0.dp,
             ) {
                 bottomNavItems.forEach { item ->
@@ -521,11 +523,7 @@ fun RadioWaveMainScreen(
         Box(
             modifier = Modifier.fillMaxSize(),
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
-            )
+            AmbientBackground(modifier = Modifier.fillMaxSize())
 
             Box(
                 modifier = Modifier
