@@ -71,6 +71,7 @@ keystore.properties
 
 # Local helper files
 /.agents/
+/.claude/
 
 # Local mockups / ad-hoc images in repo root
 /*.png
