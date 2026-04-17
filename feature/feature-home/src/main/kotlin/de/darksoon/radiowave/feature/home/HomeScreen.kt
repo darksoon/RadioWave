@@ -130,9 +130,7 @@ private fun HomeContent(
         }
 
         else -> {
-            val recentStations = remember(uiState.recentStations) {
-                if (uiState.recentStations.isNotEmpty()) uiState.recentStations else emptyList()
-            }
+            val recentStations = uiState.recentStations
             val favoriteStations = uiState.favoriteStations
             val excludedSuggestionIds = remember(favoriteStations, recentStations) {
                 (favoriteStations.map { station -> station.uuid } + recentStations.map { station -> station.uuid }).toSet()
@@ -146,11 +144,9 @@ private fun HomeContent(
                 uiState.topStations.distinctBy { station -> station.uuid }
             }
             val discoverStations = remember(discoverPool, suggestionPool) {
-                when {
-                    suggestionPool.isNotEmpty() -> suggestionPool.shuffled().take(10)
-                    discoverPool.isNotEmpty() -> discoverPool.shuffled().take(10)
-                    else -> emptyList()
-                }
+                val pool = if (suggestionPool.isNotEmpty()) suggestionPool else discoverPool
+                val seed = pool.fold(0L) { acc, s -> acc * 31 + s.uuid.hashCode() }
+                pool.shuffled(Random(seed)).take(10)
             }
 
             Box(
@@ -768,7 +764,7 @@ private fun RecentStationCard(
                         .clip(CircleShape)
                         .border(
                             width = 1.5.dp,
-                            color = Color(0xFFFF7043),
+                            color = TealAccent.copy(alpha = 0.7f),
                             shape = CircleShape,
                         )
                         .background(MaterialTheme.colorScheme.surface),

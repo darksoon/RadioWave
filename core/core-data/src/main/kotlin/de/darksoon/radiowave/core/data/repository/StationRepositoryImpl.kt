@@ -2,6 +2,7 @@
 
 package de.darksoon.radiowave.core.data.repository
 
+import android.util.Log
 import de.darksoon.radiowave.core.data.mapper.toDomain
 import de.darksoon.radiowave.core.model.Country
 import de.darksoon.radiowave.core.model.Genre
@@ -77,7 +78,7 @@ class StationRepositoryImpl @Inject constructor(
         try {
             api.registerClick(stationUuid)
         } catch (e: Exception) {
-            // Silently fail - not critical
+            Log.w("RadioWave", "registerClick failed for $stationUuid", e)
         }
     }
 
@@ -85,7 +86,7 @@ class StationRepositoryImpl @Inject constructor(
         try {
             api.reportBrokenStream(stationUuid)
         } catch (e: Exception) {
-            // Silently fail - not critical
+            Log.w("RadioWave", "reportBrokenStream failed for $stationUuid", e)
         }
     }
 
