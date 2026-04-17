@@ -119,11 +119,11 @@ fun PlayerScreen(
     val qualityLabel = formatStreamQualityLabel(station.codec, station.bitrate)
 
     val playedDurationMs = playerState.playedDurationMs
-    var nowElapsedMs by remember(station.uuid, playedDurationMs) {
+    var nowElapsedMs by remember(station.uuid) {
         mutableLongStateOf(SystemClock.elapsedRealtime())
     }
 
-    LaunchedEffect(station.uuid, isPlaying, playedDurationMs) {
+    LaunchedEffect(station.uuid, isPlaying) {
         while (isPlaying) {
             nowElapsedMs = SystemClock.elapsedRealtime()
             delay(1_000L)

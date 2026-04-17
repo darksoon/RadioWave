@@ -84,11 +84,11 @@ fun FloatingPlayerBar(
     if (currentStation != null) {
         val stationName: String = currentStation.name
         val faviconUrl: String? = currentStation.faviconUrl
-        var nowElapsedMs by remember(currentStation.uuid, playedDurationMs) {
+        var nowElapsedMs by remember(currentStation.uuid) {
             mutableLongStateOf(SystemClock.elapsedRealtime())
         }
 
-        LaunchedEffect(currentStation.uuid, isPlaying, playedDurationMs) {
+        LaunchedEffect(currentStation.uuid, isPlaying) {
             while (isPlaying) {
                 nowElapsedMs = SystemClock.elapsedRealtime()
                 delay(1_000L)
