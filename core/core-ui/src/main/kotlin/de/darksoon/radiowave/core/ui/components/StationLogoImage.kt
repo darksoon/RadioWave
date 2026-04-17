@@ -30,7 +30,7 @@ fun StationLogoImage(
     val request = remember(imageUrl, context) {
         ImageRequest.Builder(context)
             .data(imageUrl)
-            .crossfade(false)
+            .crossfade(200)
             .memoryCachePolicy(CachePolicy.ENABLED)
             .diskCachePolicy(CachePolicy.ENABLED)
             .networkCachePolicy(CachePolicy.ENABLED)
