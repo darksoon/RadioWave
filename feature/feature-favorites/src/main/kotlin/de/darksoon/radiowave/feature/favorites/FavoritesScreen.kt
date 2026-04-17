@@ -50,6 +50,7 @@ import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.ui.components.ErrorState
 import de.darksoon.radiowave.core.ui.components.LoadingState
 import de.darksoon.radiowave.core.ui.components.StationLogoImage
+import de.darksoon.radiowave.core.ui.components.StreamQualityBadge
 import de.darksoon.radiowave.core.ui.theme.TealAccent
 import de.darksoon.radiowave.feature.favorites.R
 
@@ -191,6 +192,12 @@ private fun FavoriteStationCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (subtitle.isBlank()) 0f else 1f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                )
+
+                StreamQualityBadge(
+                    codec = station.codec,
+                    bitrate = station.bitrate,
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
 

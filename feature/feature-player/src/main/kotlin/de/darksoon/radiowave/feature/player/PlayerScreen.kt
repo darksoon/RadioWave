@@ -72,6 +72,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.SubcomposeAsyncImage
 import de.darksoon.radiowave.core.model.PlayerState
 import de.darksoon.radiowave.core.ui.components.MarqueeText
+import de.darksoon.radiowave.core.ui.components.formatStreamQualityLabel
 import de.darksoon.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.darksoon.radiowave.feature.player.R
 import kotlinx.coroutines.delay
@@ -668,15 +669,4 @@ private fun formatRuntime(durationMs: Long): String {
     }
 }
 
-private fun formatStreamQualityLabel(codec: String?, bitrate: Int?): String? {
-    val normalizedCodec = codec?.trim().takeUnless { it.isNullOrBlank() }?.uppercase()
-    val normalizedBitrate = bitrate?.takeIf { it > 0 }
-
-    return when {
-        normalizedCodec != null && normalizedBitrate != null -> "$normalizedCodec ${normalizedBitrate} kbps"
-        normalizedCodec != null -> normalizedCodec
-        normalizedBitrate != null -> "${normalizedBitrate} kbps"
-        else -> null
-    }
-}
 
