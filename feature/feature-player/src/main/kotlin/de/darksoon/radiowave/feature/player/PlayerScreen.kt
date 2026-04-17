@@ -34,12 +34,14 @@ import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Shuffle
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -72,8 +74,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.SubcomposeAsyncImage
 import de.darksoon.radiowave.core.model.PlayerState
 import de.darksoon.radiowave.core.ui.components.MarqueeText
-import de.darksoon.radiowave.core.ui.components.formatStreamQualityLabel
-import de.darksoon.radiowave.core.ui.theme.DarkOnSurfaceVariant
+import de.darksoon.radiowave.core.ui.components.StreamQualityBadge
+import de.darksoon.radiowave.core.ui.theme.DarkBackground
+import de.darksoon.radiowave.core.ui.theme.DarkSurface
 import de.darksoon.radiowave.feature.player.R
 import kotlinx.coroutines.delay
 
@@ -117,8 +120,6 @@ fun PlayerScreen(
         artistLine.takeIf { !it.isNullOrBlank() },
     ).joinToString("  •  ")
     val stationLine = station.name
-    val qualityLabel = formatStreamQualityLabel(station.codec, station.bitrate)
-
     val playedDurationMs = playerState.playedDurationMs
     var nowElapsedMs by remember(station.uuid) {
         mutableLongStateOf(SystemClock.elapsedRealtime())
@@ -156,11 +157,20 @@ fun PlayerScreen(
         ),
         label = "liveDotAlpha",
     )
+    val artworkScale by liveBarTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.026f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "artworkScale",
+    )
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF11131A)),
+            .background(DarkBackground),
     ) {
         // Blur background from cover art or fallback gradient
         if (blurArtworkUrl != null) {
@@ -291,12 +301,18 @@ fun PlayerScreen(
                     .fillMaxWidth()
                     .height(330.dp)
                     .clip(RoundedCornerShape(26.dp))
-                    .background(Color(0xFF1A1E27)),
+                    .background(DarkSurface),
             ) {
                 SubcomposeAsyncImage(
                     model = artworkUrl,
                     contentDescription = station.name,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            val scale = if (isPlaying) artworkScale else 1f
+                            scaleX = scale
+                            scaleY = scale
+                        },
                     contentScale = ContentScale.Crop,
                     loading = {
                         ArtworkFallback(station.name)
@@ -318,6 +334,21 @@ fun PlayerScreen(
                             ),
                         ),
                 )
+                if (playerState.isBuffering) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(Color.Black.copy(alpha = 0.42f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(54.dp),
+                            strokeWidth = 2.dp,
+                            color = Color(0xFF52E3D9).copy(alpha = 0.9f),
+                            trackColor = Color.White.copy(alpha = 0.15f),
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -334,12 +365,10 @@ fun PlayerScreen(
                 edgeFade = false,
             )
             Spacer(modifier = Modifier.height(8.dp))
-            // Station row with logo/name and optional kbps/codec on the same line
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Station logo (16dp)
                 if (fallbackLogoUrl != null) {
                     SubcomposeAsyncImage(
                         model = fallbackLogoUrl,
@@ -359,17 +388,36 @@ fun PlayerScreen(
                     color = Color.White.copy(alpha = 0.7f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
                 )
-                if (qualityLabel != null) {
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = qualityLabel,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = DarkOnSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+            }
+
+            val visibleTags = remember(station.tags) {
+                station.tags.filter { it.isNotBlank() && it.length <= 20 }.take(3)
+            }
+            if (station.codec != null || station.bitrate != null || visibleTags.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    StreamQualityBadge(
+                        codec = station.codec,
+                        bitrate = station.bitrate,
                     )
+                    visibleTags.forEach { tag ->
+                        Text(
+                            text = tag.replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White.copy(alpha = 0.5f),
+                            maxLines = 1,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color.White.copy(alpha = 0.07f))
+                                .padding(horizontal = 5.dp, vertical = 2.dp),
+                        )
+                    }
                 }
             }
 

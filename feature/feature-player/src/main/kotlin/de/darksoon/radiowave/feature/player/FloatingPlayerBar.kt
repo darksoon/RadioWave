@@ -3,6 +3,11 @@
 package de.darksoon.radiowave.feature.player
 
 import android.os.SystemClock
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -102,6 +107,17 @@ fun FloatingPlayerBar(
         }
         val sessionDurationLabel = formatStreamDuration(livePlayedDurationMs.coerceAtLeast(0L))
 
+        val liveDotTransition = rememberInfiniteTransition(label = "miniLiveDot")
+        val liveDotAlpha by liveDotTransition.animateFloat(
+            initialValue = 0.3f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 900),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "miniLiveDotAlpha",
+        )
+
         val playerShape = RoundedCornerShape(32.dp)
         val dismissState = rememberSwipeToDismissBoxState(
             confirmValueChange = { value ->
@@ -193,10 +209,11 @@ fun FloatingPlayerBar(
                                 color = Color.White,
                             )
 
-                            val showMetadataLine = isBuffering || (showMetadata && compactMetadata != null) || sessionDurationLabel.isNotBlank()
+                            val showLiveDot = isPlaying && !isBuffering
+                            val showMetadataLine = isBuffering || (showMetadata && compactMetadata != null) || sessionDurationLabel.isNotBlank() || showLiveDot
                             val secondaryLine = when {
                                 isBuffering -> stringResource(R.string.player_loading)
-                                showMetadata -> compactMetadata
+                                showMetadata && compactMetadata != null -> compactMetadata
                                 else -> null
                             }
                             val secondaryColor = if (isBuffering) TealAccent else DarkOnSurfaceVariant
@@ -206,14 +223,34 @@ fun FloatingPlayerBar(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    MarqueeText(
-                                        text = secondaryLine ?: "",
-                                        textStyle = MaterialTheme.typography.bodySmall,
-                                        color = secondaryColor,
-                                        modifier = Modifier.weight(1f),
-                                        enabled = shouldEnableMiniPlayerMarquee(secondaryLine),
-                                        edgeFade = true,
-                                    )
+                                    if (showLiveDot) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(5.dp)
+                                                .clip(CircleShape)
+                                                .background(Color(0xFFFF3B3B).copy(alpha = liveDotAlpha)),
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                    }
+                                    if (secondaryLine != null) {
+                                        MarqueeText(
+                                            text = secondaryLine,
+                                            textStyle = MaterialTheme.typography.bodySmall,
+                                            color = secondaryColor,
+                                            modifier = Modifier.weight(1f),
+                                            enabled = shouldEnableMiniPlayerMarquee(secondaryLine),
+                                            edgeFade = true,
+                                        )
+                                    } else if (showLiveDot) {
+                                        Text(
+                                            text = stringResource(R.string.player_live),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color.White.copy(alpha = 0.55f),
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                    } else {
+                                        Spacer(modifier = Modifier.weight(1f))
+                                    }
 
                                     StreamDurationBadge(
                                         text = sessionDurationLabel,
