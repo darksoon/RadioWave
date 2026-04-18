@@ -10,25 +10,35 @@ import com.google.android.gms.cast.MediaMetadata
 import com.google.android.gms.cast.framework.CastContext
 import com.google.android.gms.cast.framework.CastSession
 import com.google.android.gms.cast.framework.SessionManagerListener
-import com.google.android.gms.cast.framework.media.RemoteMediaClient
 import com.google.android.gms.common.images.WebImage
 import dagger.hilt.android.qualifiers.ApplicationContext
+import de.darksoon.radiowave.core.model.PlayerState
+import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.player.RadioPlayerManager
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @Singleton
 class CastManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val radioPlayerManager: RadioPlayerManager,
 ) {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var castContext: CastContext? = null
     private var didRegisterListener = false
+    private var didStartObservingPlayerState = false
+    private var lastLoadedStationUuid: String? = null
 
     private val sessionListener = object : SessionManagerListener<CastSession> {
         override fun onSessionStarting(session: CastSession) = Unit
 
         override fun onSessionStarted(session: CastSession, sessionId: String) {
+            lastLoadedStationUuid = null
             loadCurrentStationIntoSession(session)
         }
 
@@ -37,6 +47,7 @@ class CastManager @Inject constructor(
         override fun onSessionResuming(session: CastSession, sessionId: String) = Unit
 
         override fun onSessionResumed(session: CastSession, wasSuspended: Boolean) {
+            lastLoadedStationUuid = null
             loadCurrentStationIntoSession(session)
         }
 
@@ -46,7 +57,9 @@ class CastManager @Inject constructor(
 
         override fun onSessionEnding(session: CastSession) = Unit
 
-        override fun onSessionEnded(session: CastSession, error: Int) = Unit
+        override fun onSessionEnded(session: CastSession, error: Int) {
+            lastLoadedStationUuid = null
+        }
     }
 
     fun initialize() {
@@ -62,11 +75,33 @@ class CastManager @Inject constructor(
             )
             didRegisterListener = true
         }
+        if (!didStartObservingPlayerState) {
+            observePlayerState()
+            didStartObservingPlayerState = true
+        }
+    }
+
+    private fun observePlayerState() {
+        scope.launch {
+            radioPlayerManager.playerState.collectLatest { playerState ->
+                val session = castContext?.sessionManager?.currentCastSession ?: return@collectLatest
+                loadStationIntoSessionIfNeeded(session, playerState)
+            }
+        }
     }
 
     private fun loadCurrentStationIntoSession(session: CastSession) {
-        val playerState = radioPlayerManager.playerState.value
+        loadStationIntoSessionIfNeeded(session, radioPlayerManager.playerState.value, force = true)
+    }
+
+    private fun loadStationIntoSessionIfNeeded(
+        session: CastSession,
+        playerState: PlayerState,
+        force: Boolean = false,
+    ) {
         val station = playerState.currentStation ?: return
+        if (!force && lastLoadedStationUuid == station.uuid) return
+
         val remoteMediaClient = session.remoteMediaClient ?: return
         val mediaInfo = buildMediaInfo(station)
         remoteMediaClient.load(
@@ -75,12 +110,13 @@ class CastManager @Inject constructor(
                 .setAutoplay(true)
                 .build(),
         )
+        lastLoadedStationUuid = station.uuid
         if (playerState.isPlaying) {
             radioPlayerManager.togglePlayPause()
         }
     }
 
-    private fun buildMediaInfo(station: de.darksoon.radiowave.core.model.Station): MediaInfo {
+    private fun buildMediaInfo(station: Station): MediaInfo {
         val metadata = MediaMetadata(MediaMetadata.MEDIA_TYPE_MUSIC_TRACK).apply {
             putString(MediaMetadata.KEY_TITLE, station.name)
             station.country?.takeIf { it.isNotBlank() }?.let {
@@ -100,7 +136,7 @@ class CastManager @Inject constructor(
             .build()
     }
 
-    private fun inferContentType(station: de.darksoon.radiowave.core.model.Station): String {
+    private fun inferContentType(station: Station): String {
         val codec = station.codec?.lowercase().orEmpty()
         val url = station.streamUrl.lowercase()
         return when {
