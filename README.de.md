@@ -3,12 +3,14 @@
 [Deutsch](README.de.md) | [English](README.md)
 
 <div align="center">
+
   <a href="https://github.com/darksoon/RadioWave/actions/workflows/pr-ci.yml">
-    <img src="https://github.com/darksoon/RadioWave/actions/workflows/pr-ci.yml/badge.svg?branch=main" alt="PR CI" />
+    <img src="https://github.com/darksoon/RadioWave/actions/workflows/pr-ci.yml/badge.svg?branch=main" alt="CI" />
   </a>
-  <a href="https://github.com/darksoon/RadioWave/actions/workflows/manual-build.yml">
-    <img src="https://github.com/darksoon/RadioWave/actions/workflows/manual-build.yml/badge.svg?branch=main" alt="Manual Build" />
+  <a href="https://github.com/darksoon/RadioWave/releases/latest">
+    <img src="https://img.shields.io/github/v/release/darksoon/RadioWave?include_prereleases&label=release&color=4CAF50" alt="Neueste Version" />
   </a>
+  <img src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white" alt="Android 8.0+" />
   <img src="https://img.shields.io/badge/Kotlin-2.1.0-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin 2.1.0" />
   <a href="./LICENSE.txt">
     <img src="https://img.shields.io/badge/License-GPL--3.0--or--later-blue" alt="License GPL-3.0-or-later" />
