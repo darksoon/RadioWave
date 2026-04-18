@@ -17,6 +17,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -121,12 +122,17 @@ class MainActivity : AppCompatActivity() {
             var dynamicColors by remember {
                 mutableStateOf(prefs.getBoolean(AppSettings.KEY_DYNAMIC_COLORS, false))
             }
-            val useDarkTheme = true
-
-            LaunchedEffect(Unit) {
-                if (prefs.getString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_DARK) != AppSettings.THEME_DARK) {
-                    prefs.edit().putString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_DARK).apply()
-                }
+            var themeMode by remember {
+                mutableStateOf(
+                    prefs.getString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_DARK)
+                        ?: AppSettings.THEME_DARK,
+                )
+            }
+            val systemInDark = isSystemInDarkTheme()
+            val useDarkTheme = when (themeMode) {
+                AppSettings.THEME_LIGHT -> false
+                AppSettings.THEME_DARK -> true
+                else -> systemInDark
             }
 
             DisposableEffect(prefs) {
@@ -142,6 +148,13 @@ class MainActivity : AppCompatActivity() {
 
                         AppSettings.KEY_DYNAMIC_COLORS -> {
                             dynamicColors = prefs.getBoolean(AppSettings.KEY_DYNAMIC_COLORS, false)
+                        }
+
+                        AppSettings.KEY_THEME_MODE -> {
+                            themeMode = prefs.getString(
+                                AppSettings.KEY_THEME_MODE,
+                                AppSettings.THEME_DARK,
+                            ) ?: AppSettings.THEME_DARK
                         }
                     }
                 }

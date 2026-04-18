@@ -200,13 +200,6 @@ fun SettingsScreen(
         selectedCategory = null
     }
 
-    LaunchedEffect(Unit) {
-        if (themeMode != AppSettings.THEME_DARK) {
-            themeMode = AppSettings.THEME_DARK
-            prefs.edit().putString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_DARK).apply()
-        }
-    }
-
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
