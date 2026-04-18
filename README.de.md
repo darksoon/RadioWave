@@ -49,7 +49,6 @@ Die oeffentliche Roadmap liegt in [ROADMAP.de.md](./ROADMAP.de.md).
 - Android Auto mit Favoriten, Quick Access, Suche und Vor/Zurueck im Car-Player
 - Sleep Timer und direkte Teilen-Aktion im Fullscreen-Player
 - Lokaler Crash-Report mit Export/Share und vorbereiteter GitHub-Issue-Erstellung
-- Chromecast-Unterstuetzung
 
 ## Screenshots
 

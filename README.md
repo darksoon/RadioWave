@@ -49,7 +49,6 @@ The public roadmap is available in [ROADMAP.md](./ROADMAP.md).
 - Android Auto support with favorites, quick access, search, and previous/next in the car player
 - Sleep timer and direct share action in the fullscreen player
 - Local crash-report export with share action and prefilled GitHub issue handoff
-- Chromecast support
 
 ## Screenshots
 
