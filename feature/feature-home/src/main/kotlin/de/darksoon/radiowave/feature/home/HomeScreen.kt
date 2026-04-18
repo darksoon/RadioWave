@@ -76,7 +76,7 @@ import de.darksoon.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.darksoon.radiowave.core.ui.theme.DarkSurfaceVariant
 
 import de.darksoon.radiowave.core.ui.theme.SectionTitleStyle
-import de.darksoon.radiowave.core.ui.theme.TealAccent
+import de.darksoon.radiowave.core.ui.theme.RadioAccent
 import de.darksoon.radiowave.feature.home.R
 import kotlin.math.abs
 
@@ -286,7 +286,7 @@ private fun FavoriteHeroCard(
                         Brush.radialGradient(
                             colors = listOf(
                                 Color.White.copy(alpha = 0.16f),
-                                TealAccent.copy(alpha = 0.1f),
+                                RadioAccent.copy(alpha = 0.1f),
                                 Color.Transparent,
                             ),
                             radius = 320f,
@@ -534,7 +534,7 @@ private fun RecentStationCard(
                         .clip(CircleShape)
                         .border(
                             width = 1.5.dp,
-                            color = TealAccent.copy(alpha = 0.7f),
+                            color = RadioAccent.copy(alpha = 0.7f),
                             shape = CircleShape,
                         )
                         .background(MaterialTheme.colorScheme.surface),
@@ -643,7 +643,7 @@ private fun ArtworkFallback(
 }
 
 private val defaultFallbackColors = listOf(
-    TealAccent.copy(alpha = 0.4f),
+    RadioAccent.copy(alpha = 0.4f),
     Color(0xFF1A1F2B),
 )
 

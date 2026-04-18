@@ -61,7 +61,7 @@ import de.darksoon.radiowave.core.ui.components.MarqueeText
 import de.darksoon.radiowave.core.ui.components.StationLogoImage
 import de.darksoon.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.darksoon.radiowave.core.ui.theme.DarkSurfaceVariant
-import de.darksoon.radiowave.core.ui.theme.TealAccent
+import de.darksoon.radiowave.core.ui.theme.RadioAccent
 import de.darksoon.radiowave.feature.player.R
 import kotlinx.coroutines.delay
 
@@ -151,7 +151,7 @@ fun FloatingPlayerBar(
                             width = 1.dp,
                             brush = Brush.horizontalGradient(
                                 colors = listOf(
-                                    TealAccent.copy(alpha = 0.72f),
+                                    RadioAccent.copy(alpha = 0.72f),
                                     Color(0xFF7A56FF).copy(alpha = 0.72f),
                                 ),
                             ),
@@ -218,7 +218,7 @@ fun FloatingPlayerBar(
                                 showMetadata && compactMetadata != null -> compactMetadata
                                 else -> null
                             }
-                            val secondaryColor = if (isBuffering || isCasting) TealAccent else DarkOnSurfaceVariant
+                            val secondaryColor = if (isBuffering || isCasting) RadioAccent else DarkOnSurfaceVariant
 
                             if (showMetadataLine) {
                                 Row(
@@ -304,7 +304,7 @@ fun FloatingPlayerBar(
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(40.dp),
                                         strokeWidth = 1.25.dp,
-                                        color = TealAccent.copy(alpha = 0.95f),
+                                        color = RadioAccent.copy(alpha = 0.95f),
                                         trackColor = Color.White.copy(alpha = 0.2f),
                                     )
                                 }

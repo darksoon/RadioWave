@@ -8,6 +8,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import de.darksoon.radiowave.core.data.repository.CoverArtRepository
 import de.darksoon.radiowave.core.data.repository.CoverArtRepositoryImpl
+import de.darksoon.radiowave.core.data.repository.CustomStationRepository
+import de.darksoon.radiowave.core.data.repository.CustomStationRepositoryImpl
 import de.darksoon.radiowave.core.data.repository.FavoriteRepository
 import de.darksoon.radiowave.core.data.repository.FavoriteRepositoryImpl
 import de.darksoon.radiowave.core.data.repository.OfflineFirstStationRepository
@@ -38,5 +40,10 @@ abstract class RepositoryModule {
     abstract fun bindCoverArtRepository(
         impl: CoverArtRepositoryImpl,
     ): CoverArtRepository
+
+    @Binds
+    abstract fun bindCustomStationRepository(
+        impl: CustomStationRepositoryImpl,
+    ): CustomStationRepository
 }
 

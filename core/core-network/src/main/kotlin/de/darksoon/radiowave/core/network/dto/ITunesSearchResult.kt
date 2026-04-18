@@ -10,6 +10,8 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class ITunesSearchResult(
+    @SerialName("artworkUrl600")
+    val artworkUrl600: String? = null,
     @SerialName("artworkUrl100")
     val artworkUrl100: String? = null,
     @SerialName("trackName")

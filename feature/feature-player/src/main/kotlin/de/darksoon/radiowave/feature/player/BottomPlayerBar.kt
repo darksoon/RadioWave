@@ -41,8 +41,8 @@ import de.darksoon.radiowave.core.ui.components.StationLogoImage
 import de.darksoon.radiowave.core.ui.theme.DarkCardBackground
 import de.darksoon.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.darksoon.radiowave.core.ui.theme.DarkSurfaceVariant
-import de.darksoon.radiowave.core.ui.theme.TealAccent
-import de.darksoon.radiowave.core.ui.theme.TealLight
+import de.darksoon.radiowave.core.ui.theme.RadioAccent
+import de.darksoon.radiowave.core.ui.theme.RadioAccentLight
 import de.darksoon.radiowave.feature.player.R
 
 @Composable
@@ -69,7 +69,7 @@ fun BottomPlayerBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(3.dp),
-                color = TealAccent,
+                color = RadioAccent,
                 trackColor = DarkSurfaceVariant,
             )
 
@@ -119,7 +119,7 @@ fun BottomPlayerBar(
                             Text(
                                 text = stringResource(R.string.player_loading),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = TealLight,
+                                color = RadioAccentLight,
                                 maxLines = 1,
                                 modifier = Modifier.padding(top = 2.dp),
                             )
@@ -142,7 +142,7 @@ fun BottomPlayerBar(
                         modifier = Modifier
                             .size(52.dp)
                             .clip(CircleShape)
-                            .background(TealAccent),
+                            .background(RadioAccent),
                     ) {
                         Icon(
                             imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,

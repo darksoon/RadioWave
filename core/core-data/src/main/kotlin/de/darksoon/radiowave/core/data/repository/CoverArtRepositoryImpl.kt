@@ -35,8 +35,7 @@ class CoverArtRepositoryImpl @Inject constructor(
 
             val artworkUrl = response.results
                 .firstOrNull()
-                ?.artworkUrl100
-                ?.replace("100x100", "600x600")
+                ?.let { it.artworkUrl600 ?: it.artworkUrl100?.replace("100x100", "600x600") }
 
             synchronized(cacheLock) {
                 cache[cacheKey] = artworkUrl

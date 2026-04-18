@@ -18,15 +18,15 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val PremiumDarkColorScheme = darkColorScheme(
-    primary = TealAccent,
+    primary = RadioAccent,
     onPrimary = Color.Black,
-    primaryContainer = TealLight,
+    primaryContainer = RadioAccentLight,
     onPrimaryContainer = Color.Black,
     secondary = MintAccent,
     onSecondary = Color.Black,
     secondaryContainer = MintLight,
     onSecondaryContainer = Color.Black,
-    tertiary = TealAccent,
+    tertiary = RadioAccent,
     background = DarkBackground,
     onBackground = DarkOnSurface,
     surface = DarkSurface,
@@ -38,15 +38,15 @@ private val PremiumDarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = TealAccent,
+    primary = RadioAccent,
     onPrimary = Color.White,
-    primaryContainer = TealLight,
+    primaryContainer = RadioAccentLight,
     onPrimaryContainer = Color.Black,
     secondary = MintAccent,
     onSecondary = Color.White,
     secondaryContainer = MintLight,
     onSecondaryContainer = Color.Black,
-    tertiary = TealAccent,
+    tertiary = RadioAccent,
     background = LightBackground,
     onBackground = LightOnSurface,
     surface = LightSurface,

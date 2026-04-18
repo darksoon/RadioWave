@@ -10,4 +10,15 @@
     <string name="favorites_empty_subtitle">Tippe bei einem Sender auf das Herz, um ihn hier zu speichern.</string>
     <string name="favorites_move_to_top">Ganz nach oben</string>
     <string name="favorites_move_up">Nach oben</string>
+    <string name="favorites_custom_section_title">Meine Sender</string>
+    <string name="favorites_add_custom_station">Sender hinzufuegen</string>
+    <string name="favorites_add_custom_dialog_title">Eigenen Sender hinzufuegen</string>
+    <string name="favorites_add_custom_name_hint">Sendername</string>
+    <string name="favorites_add_custom_url_hint">Stream-URL (http/https)</string>
+    <string name="favorites_add_custom_confirm">Hinzufuegen</string>
+    <string name="favorites_add_custom_cancel">Abbrechen</string>
+    <string name="favorites_delete_custom_station">Sender loeschen</string>
+    <string name="favorites_confirm_delete_custom_title">Sender loeschen?</string>
+    <string name="favorites_confirm_delete_custom_message">%1$s loeschen? Das kann nicht rueckgaengig gemacht werden.</string>
+    <string name="favorites_confirm_delete_custom_yes">Loeschen</string>
 </resources>

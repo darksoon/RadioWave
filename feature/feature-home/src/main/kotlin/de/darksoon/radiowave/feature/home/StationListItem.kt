@@ -38,7 +38,7 @@ import de.darksoon.radiowave.core.ui.components.StationLogoImage
 import de.darksoon.radiowave.core.ui.theme.DarkCardBackground
 import de.darksoon.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.darksoon.radiowave.core.ui.theme.DarkSurfaceVariant
-import de.darksoon.radiowave.core.ui.theme.TealAccent
+import de.darksoon.radiowave.core.ui.theme.RadioAccent
 import de.darksoon.radiowave.feature.home.R
 
 @Composable
@@ -120,7 +120,7 @@ fun StationListItem(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(CircleShape)
-                    .background(TealAccent),
+                    .background(RadioAccent),
             ) {
                 Icon(
                     imageVector = Icons.Default.PlayArrow,

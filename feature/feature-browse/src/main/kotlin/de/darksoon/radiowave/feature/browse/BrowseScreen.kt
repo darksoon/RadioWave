@@ -86,7 +86,7 @@ import de.darksoon.radiowave.core.model.AppSettings
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.ui.theme.CardBodyStyle
 import de.darksoon.radiowave.core.ui.theme.SectionTitleStyle
-import de.darksoon.radiowave.core.ui.theme.TealAccent
+import de.darksoon.radiowave.core.ui.theme.RadioAccent
 import de.darksoon.radiowave.feature.browse.R
 import de.darksoon.radiowave.feature.home.HomeUiState
 import de.darksoon.radiowave.feature.home.HomeViewModel
@@ -344,11 +344,11 @@ private fun BrowseContent(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedBorderColor = TealAccent,
+                    focusedBorderColor = RadioAccent,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    cursorColor = TealAccent,
+                    cursorColor = RadioAccent,
                 ),
             )
 
@@ -445,7 +445,7 @@ private fun BrowseContent(
                                         )
                                     },
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = TealAccent,
+                                        selectedContainerColor = RadioAccent,
                                         selectedLabelColor = Color.Black,
                                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
                                         labelColor = MaterialTheme.colorScheme.onSurface,
@@ -473,7 +473,7 @@ private fun BrowseContent(
                                         )
                                     },
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = TealAccent,
+                                        selectedContainerColor = RadioAccent,
                                         selectedLabelColor = Color.Black,
                                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
                                         labelColor = MaterialTheme.colorScheme.onSurface,
@@ -524,12 +524,12 @@ private fun BrowseContent(
                         Text(
                             text = stringResource(R.string.browse_sort_prefix, currentSortLabel),
                             style = MaterialTheme.typography.labelMedium,
-                            color = TealAccent,
+                            color = RadioAccent,
                         )
                         Icon(
                             Icons.Default.KeyboardArrowDown,
                             contentDescription = stringResource(R.string.browse_choose_sort),
-                            tint = TealAccent,
+                            tint = RadioAccent,
                             modifier = Modifier.size(18.dp),
                         )
                     }
@@ -543,7 +543,7 @@ private fun BrowseContent(
                                 text = {
                                     Text(
                                         text = label,
-                                        color = if (uiState.sortOption == option) TealAccent else MaterialTheme.colorScheme.onSurface,
+                                        color = if (uiState.sortOption == option) RadioAccent else MaterialTheme.colorScheme.onSurface,
                                         fontWeight = if (uiState.sortOption == option) FontWeight.Bold else FontWeight.Normal,
                                     )
                                 },
@@ -643,7 +643,7 @@ private fun BrowseContent(
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-                border = BorderStroke(1.dp, TealAccent.copy(alpha = 0.5f)),
+                border = BorderStroke(1.dp, RadioAccent.copy(alpha = 0.5f)),
                 modifier = Modifier
                     .size(44.dp)
                     .clickable {
@@ -656,7 +656,7 @@ private fun BrowseContent(
                     Icon(
                         imageVector = Icons.Filled.KeyboardArrowUp,
                         contentDescription = stringResource(R.string.browse_to_top),
-                        tint = TealAccent,
+                        tint = RadioAccent,
                     )
                 }
             }
@@ -678,7 +678,7 @@ private fun QuickGenreCard(
         ),
         border = BorderStroke(
             width = if (isSelected) 1.6.dp else 1.dp,
-            color = if (isSelected) TealAccent else Color.White.copy(alpha = 0.14f),
+            color = if (isSelected) RadioAccent else Color.White.copy(alpha = 0.14f),
         ),
         modifier = Modifier
             .width(86.dp)
@@ -787,7 +787,7 @@ private fun EmptyState(
                     },
                     colors = FilterChipDefaults.filterChipColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        labelColor = TealAccent,
+                        labelColor = RadioAccent,
                     ),
                     shape = RoundedCornerShape(20.dp),
                 )
@@ -863,7 +863,7 @@ private fun StationGridCard(
                     style = MaterialTheme.typography.labelSmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = TealAccent.copy(alpha = if (station.country.isNullOrBlank()) 0f else 0.8f),
+                    color = RadioAccent.copy(alpha = if (station.country.isNullOrBlank()) 0f else 0.8f),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 2.dp),

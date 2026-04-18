@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import de.darksoon.radiowave.core.ui.theme.TealAccent
+import de.darksoon.radiowave.core.ui.theme.RadioAccent
 
 @Composable
 fun StreamQualityBadge(
@@ -23,12 +23,12 @@ fun StreamQualityBadge(
     val label = formatStreamQualityLabel(codec, bitrate) ?: return
     val isHighQuality = (bitrate ?: 0) >= 128
     val badgeColor = if (isHighQuality) {
-        TealAccent.copy(alpha = 0.18f)
+        RadioAccent.copy(alpha = 0.18f)
     } else {
         Color.White.copy(alpha = 0.08f)
     }
     val textColor = if (isHighQuality) {
-        TealAccent.copy(alpha = 0.9f)
+        RadioAccent.copy(alpha = 0.9f)
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
     }

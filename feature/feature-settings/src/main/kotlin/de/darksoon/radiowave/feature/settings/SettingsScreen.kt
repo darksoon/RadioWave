@@ -86,7 +86,7 @@ import de.darksoon.radiowave.core.data.update.GitHubReleaseInfo
 import de.darksoon.radiowave.core.data.update.LocalIssueReporter
 import de.darksoon.radiowave.core.ui.theme.DarkCardBackground
 import de.darksoon.radiowave.core.ui.theme.DarkOnSurfaceVariant
-import de.darksoon.radiowave.core.ui.theme.TealAccent
+import de.darksoon.radiowave.core.ui.theme.RadioAccent
 import de.darksoon.radiowave.feature.settings.R
 import kotlinx.coroutines.launch
 
@@ -402,7 +402,7 @@ fun SettingsScreen(
                         Text(
                             text = stringResource(R.string.settings_sound_section_android_auto),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = TealAccent,
+                            color = RadioAccent,
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                         )
                         SettingToggleRow(
@@ -751,7 +751,7 @@ private fun SettingsSectionLabel(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-        color = TealAccent,
+        color = RadioAccent,
         modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
     )
 }
@@ -807,7 +807,7 @@ private fun SettingsSupportCard(
             Spacer(modifier = Modifier.height(12.dp))
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor = TealAccent.copy(alpha = 0.14f),
+                    containerColor = RadioAccent.copy(alpha = 0.14f),
                 ),
                 shape = RoundedCornerShape(16.dp),
             ) {
@@ -843,7 +843,7 @@ private fun SettingsSupportCard(
                     Text(
                         text = thankYouTitle,
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = TealAccent,
+                        color = RadioAccent,
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     SupportRichText(
@@ -881,7 +881,7 @@ private fun SupportRichText(
             append(text)
 
             val linkStyle = SpanStyle(
-                color = TealAccent,
+                color = RadioAccent,
                 textDecoration = TextDecoration.Underline,
                 fontWeight = FontWeight.Medium,
             )
@@ -951,13 +951,13 @@ private fun SettingsCategoryCard(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(TealAccent.copy(alpha = 0.14f)),
+                    .background(RadioAccent.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = TealAccent,
+                    tint = RadioAccent,
                     modifier = Modifier.size(22.dp),
                 )
             }
@@ -1036,7 +1036,7 @@ private fun SettingsCard(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = TealAccent,
+                color = RadioAccent,
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
             )
             content()

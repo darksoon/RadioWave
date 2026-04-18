@@ -88,7 +88,7 @@ import de.darksoon.radiowave.core.model.PlayerState
 import de.darksoon.radiowave.core.ui.components.AmbientBackground
 import de.darksoon.radiowave.core.ui.theme.DarkSurface
 import de.darksoon.radiowave.core.ui.theme.RadioWaveTheme
-import de.darksoon.radiowave.core.ui.theme.TealAccent
+import de.darksoon.radiowave.core.ui.theme.RadioAccent
 import de.darksoon.radiowave.feature.browse.BrowseScreen
 import de.darksoon.radiowave.feature.favorites.FavoritesScreen
 import de.darksoon.radiowave.feature.home.HomeScreen
@@ -279,7 +279,7 @@ private fun OnboardingDialog(
                 Text(
                     text = stringResource(R.string.first_run_title),
                     style = MaterialTheme.typography.labelLarge,
-                    color = TealAccent,
+                    color = RadioAccent,
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
@@ -548,11 +548,11 @@ fun RadioWaveMainScreen(
                             )
                         },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = TealAccent,
-                            selectedTextColor = TealAccent,
+                            selectedIconColor = RadioAccent,
+                            selectedTextColor = RadioAccent,
                             unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            indicatorColor = TealAccent.copy(alpha = 0.18f),
+                            indicatorColor = RadioAccent.copy(alpha = 0.18f),
                         ),
                     )
                 }

@@ -11,10 +11,15 @@ val DarkSurfaceVariant = Color(0xFF27203D)
 val DarkCardBackground = Color(0xFF221B35)
 
 // Purple / soft-white accent colors
-val TealAccent = Color(0xFFB388FF)
-val TealLight = Color(0xFFD6BDFF)
+val RadioAccent = Color(0xFFB388FF)
+val RadioAccentLight = Color(0xFFD6BDFF)
 val MintAccent = Color(0xFFF3EEFF)
 val MintLight = Color(0xFFFFFFFF)
+
+@Deprecated("Renamed to RadioAccent", replaceWith = ReplaceWith("RadioAccent"))
+val TealAccent = RadioAccent
+@Deprecated("Renamed to RadioAccentLight", replaceWith = ReplaceWith("RadioAccentLight"))
+val TealLight = RadioAccentLight
 
 // Additional UI Colors
 val DarkOnSurface = Color(0xFFF6F3FF)

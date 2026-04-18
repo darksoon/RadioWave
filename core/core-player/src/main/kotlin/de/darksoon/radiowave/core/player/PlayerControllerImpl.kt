@@ -1329,7 +1329,7 @@ private class RadioLoadErrorHandlingPolicy : DefaultLoadErrorHandlingPolicy() {
     }
 
     override fun getMinimumLoadableRetryCount(dataType: Int): Int {
-        return if (dataType == C.DATA_TYPE_MEDIA) 16 else 8
+        return if (dataType == C.DATA_TYPE_MEDIA) 3 else 3
     }
 }
 

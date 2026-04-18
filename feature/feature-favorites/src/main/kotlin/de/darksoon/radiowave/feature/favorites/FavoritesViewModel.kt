@@ -5,6 +5,7 @@ package de.darksoon.radiowave.feature.favorites
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.darksoon.radiowave.core.data.repository.CustomStationRepository
 import de.darksoon.radiowave.core.data.repository.FavoriteRepository
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.player.RadioPlayerManager
@@ -15,10 +16,12 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
 
 data class FavoritesUiState(
     val stations: List<Station> = emptyList(),
+    val customStations: List<Station> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
 )
@@ -26,6 +29,7 @@ data class FavoritesUiState(
 @HiltViewModel
 class FavoritesViewModel @Inject constructor(
     private val favoriteRepository: FavoriteRepository,
+    private val customStationRepository: CustomStationRepository,
     private val playerManager: RadioPlayerManager,
 ) : ViewModel() {
 
@@ -36,73 +40,74 @@ class FavoritesViewModel @Inject constructor(
 
     init {
         observeFavorites()
+        observeCustomStations()
     }
 
     private fun observeFavorites() {
         viewModelScope.launch {
             favoriteRepository.getFavorites()
                 .onStart {
-                    _uiState.update { state ->
-                        state.copy(
-                            isLoading = true,
-                            error = null,
-                        )
-                    }
+                    _uiState.update { it.copy(isLoading = true, error = null) }
                 }
                 .catch { throwable ->
-                    _uiState.update { state ->
-                        state.copy(
-                            isLoading = false,
-                            error = throwable.message ?: "Favoriten konnten nicht geladen werden.",
-                        )
-                    }
+                    _uiState.update { it.copy(isLoading = false, error = throwable.message) }
                 }
                 .collect { favorites ->
-                    _uiState.update { state ->
-                        state.copy(
-                            stations = favorites,
-                            isLoading = false,
-                            error = null,
-                        )
-                    }
+                    _uiState.update { it.copy(stations = favorites, isLoading = false, error = null) }
+                }
+        }
+    }
+
+    private fun observeCustomStations() {
+        viewModelScope.launch {
+            customStationRepository.getCustomStations()
+                .catch { }
+                .collect { custom ->
+                    _uiState.update { it.copy(customStations = custom) }
                 }
         }
     }
 
     fun playStation(station: Station) {
-        viewModelScope.launch {
-            playerManager.playStation(station)
-        }
+        viewModelScope.launch { playerManager.playStation(station) }
     }
 
     fun toggleFavorite(station: Station) {
-        viewModelScope.launch {
-            favoriteRepository.toggleFavorite(station)
-        }
+        viewModelScope.launch { favoriteRepository.toggleFavorite(station) }
     }
 
     fun moveFavoriteUp(station: Station) {
         val current = _uiState.value.stations
         val index = current.indexOfFirst { it.uuid == station.uuid }
         if (index <= 0) return
-        val reordered = current.toMutableList().apply {
-            add(index - 1, removeAt(index))
-        }
-        viewModelScope.launch {
-            favoriteRepository.reorderFavorites(reordered.map { it.uuid })
-        }
+        val reordered = current.toMutableList().apply { add(index - 1, removeAt(index)) }
+        viewModelScope.launch { favoriteRepository.reorderFavorites(reordered.map { it.uuid }) }
     }
 
     fun moveFavoriteToTop(station: Station) {
         val current = _uiState.value.stations
         val index = current.indexOfFirst { it.uuid == station.uuid }
         if (index <= 0) return
-        val reordered = current.toMutableList().apply {
-            add(0, removeAt(index))
-        }
+        val reordered = current.toMutableList().apply { add(0, removeAt(index)) }
+        viewModelScope.launch { favoriteRepository.reorderFavorites(reordered.map { it.uuid }) }
+    }
+
+    fun addCustomStation(name: String, streamUrl: String) {
         viewModelScope.launch {
-            favoriteRepository.reorderFavorites(reordered.map { it.uuid })
+            val station = Station(
+                uuid = "custom-${UUID.randomUUID()}",
+                name = name.trim(),
+                streamUrl = streamUrl.trim(),
+            )
+            customStationRepository.addCustomStation(station)
+            favoriteRepository.toggleFavorite(station.copy(isFavorite = false))
+        }
+    }
+
+    fun deleteCustomStation(station: Station) {
+        viewModelScope.launch {
+            customStationRepository.deleteCustomStation(station.uuid)
+            favoriteRepository.toggleFavorite(station.copy(isFavorite = true))
         }
     }
 }
-

@@ -10,4 +10,15 @@
     <string name="favorites_confirm_remove_message">Remove %1$s from your favorites?</string>
     <string name="favorites_confirm_remove_yes">Remove</string>
     <string name="favorites_confirm_remove_no">Cancel</string>
+    <string name="favorites_custom_section_title">My Stations</string>
+    <string name="favorites_add_custom_station">Add station</string>
+    <string name="favorites_add_custom_dialog_title">Add custom station</string>
+    <string name="favorites_add_custom_name_hint">Station name</string>
+    <string name="favorites_add_custom_url_hint">Stream URL (http/https)</string>
+    <string name="favorites_add_custom_confirm">Add</string>
+    <string name="favorites_add_custom_cancel">Cancel</string>
+    <string name="favorites_delete_custom_station">Delete station</string>
+    <string name="favorites_confirm_delete_custom_title">Delete station?</string>
+    <string name="favorites_confirm_delete_custom_message">Delete %1$s? This cannot be undone.</string>
+    <string name="favorites_confirm_delete_custom_yes">Delete</string>
 </resources>

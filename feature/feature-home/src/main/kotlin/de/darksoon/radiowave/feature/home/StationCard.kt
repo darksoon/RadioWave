@@ -30,7 +30,7 @@ import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.ui.components.StationLogoImage
 import de.darksoon.radiowave.core.ui.theme.DarkCardBackground
 import de.darksoon.radiowave.core.ui.theme.DarkSurfaceVariant
-import de.darksoon.radiowave.core.ui.theme.TealAccent
+import de.darksoon.radiowave.core.ui.theme.RadioAccent
 
 @Composable
 fun StationCard(
@@ -109,7 +109,7 @@ fun StationCard(
                         style = MaterialTheme.typography.labelSmall,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        color = TealAccent.copy(alpha = 0.8f),
+                        color = RadioAccent.copy(alpha = 0.8f),
                         modifier = Modifier.padding(top = 2.dp),
                     )
                 }
