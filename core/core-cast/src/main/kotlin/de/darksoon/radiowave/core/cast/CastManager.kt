@@ -10,6 +10,7 @@ import com.google.android.gms.cast.MediaMetadata
 import com.google.android.gms.cast.framework.CastContext
 import com.google.android.gms.cast.framework.CastSession
 import com.google.android.gms.cast.framework.SessionManagerListener
+import com.google.android.gms.cast.framework.media.RemoteMediaClient
 import com.google.android.gms.common.images.WebImage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.darksoon.radiowave.core.model.PlayerState
@@ -20,6 +21,9 @@ import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -33,12 +37,24 @@ class CastManager @Inject constructor(
     private var didRegisterListener = false
     private var didStartObservingPlayerState = false
     private var lastLoadedStationUuid: String? = null
+    private var attachedRemoteMediaClient: RemoteMediaClient? = null
+    private val _isCasting = MutableStateFlow(false)
+    val isCasting: StateFlow<Boolean> = _isCasting.asStateFlow()
+    private val _isRemotePlaying = MutableStateFlow(false)
+    val isRemotePlaying: StateFlow<Boolean> = _isRemotePlaying.asStateFlow()
+
+    private val remoteMediaClientCallback = object : RemoteMediaClient.Callback() {
+        override fun onStatusUpdated() {
+            updateRemotePlaybackState(attachedRemoteMediaClient)
+        }
+    }
 
     private val sessionListener = object : SessionManagerListener<CastSession> {
         override fun onSessionStarting(session: CastSession) = Unit
 
         override fun onSessionStarted(session: CastSession, sessionId: String) {
             lastLoadedStationUuid = null
+            attachRemoteMediaClient(session.remoteMediaClient)
             loadCurrentStationIntoSession(session)
         }
 
@@ -48,17 +64,21 @@ class CastManager @Inject constructor(
 
         override fun onSessionResumed(session: CastSession, wasSuspended: Boolean) {
             lastLoadedStationUuid = null
+            attachRemoteMediaClient(session.remoteMediaClient)
             loadCurrentStationIntoSession(session)
         }
 
         override fun onSessionResumeFailed(session: CastSession, error: Int) = Unit
 
-        override fun onSessionSuspended(session: CastSession, reason: Int) = Unit
+        override fun onSessionSuspended(session: CastSession, reason: Int) {
+            detachRemoteMediaClient()
+        }
 
         override fun onSessionEnding(session: CastSession) = Unit
 
         override fun onSessionEnded(session: CastSession, error: Int) {
             lastLoadedStationUuid = null
+            detachRemoteMediaClient()
         }
     }
 
@@ -68,6 +88,7 @@ class CastManager @Inject constructor(
         }.getOrNull() ?: return
 
         castContext = sharedCastContext
+        attachRemoteMediaClient(sharedCastContext.sessionManager.currentCastSession?.remoteMediaClient)
         if (!didRegisterListener) {
             sharedCastContext.sessionManager.addSessionManagerListener(
                 sessionListener,
@@ -132,6 +153,38 @@ class CastManager @Inject constructor(
             .setContentType(inferContentType(station))
             .setMetadata(metadata)
             .build()
+    }
+
+    fun isCastSessionActive(): Boolean = _isCasting.value
+
+    fun togglePlayback() {
+        val remoteMediaClient = attachedRemoteMediaClient ?: return
+        remoteMediaClient.togglePlayback()
+        updateRemotePlaybackState(remoteMediaClient)
+    }
+
+    private fun attachRemoteMediaClient(remoteMediaClient: RemoteMediaClient?) {
+        if (attachedRemoteMediaClient === remoteMediaClient) {
+            updateRemotePlaybackState(remoteMediaClient)
+            _isCasting.value = remoteMediaClient != null
+            return
+        }
+        attachedRemoteMediaClient?.unregisterCallback(remoteMediaClientCallback)
+        attachedRemoteMediaClient = remoteMediaClient
+        remoteMediaClient?.registerCallback(remoteMediaClientCallback)
+        _isCasting.value = remoteMediaClient != null
+        updateRemotePlaybackState(remoteMediaClient)
+    }
+
+    private fun detachRemoteMediaClient() {
+        attachedRemoteMediaClient?.unregisterCallback(remoteMediaClientCallback)
+        attachedRemoteMediaClient = null
+        _isCasting.value = false
+        _isRemotePlaying.value = false
+    }
+
+    private fun updateRemotePlaybackState(remoteMediaClient: RemoteMediaClient?) {
+        _isRemotePlaying.value = remoteMediaClient?.isPlaying == true || remoteMediaClient?.isBuffering == true
     }
 
     private fun inferContentType(station: Station): String {

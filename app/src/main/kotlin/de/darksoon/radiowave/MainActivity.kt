@@ -82,6 +82,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import dagger.hilt.android.AndroidEntryPoint
+import de.darksoon.radiowave.core.cast.CastManager
 import de.darksoon.radiowave.core.model.AppSettings
 import de.darksoon.radiowave.core.model.PlayerState
 import de.darksoon.radiowave.core.ui.components.AmbientBackground
@@ -105,6 +106,9 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+    @javax.inject.Inject
+    lateinit var castManager: CastManager
+
     private var shortcutTarget by mutableStateOf<String?>(null)
     private var shortcutRequestNonce by mutableIntStateOf(0)
 
@@ -177,6 +181,7 @@ class MainActivity : AppCompatActivity() {
                         shortcutTarget = shortcutTarget,
                         shortcutRequestNonce = shortcutRequestNonce,
                         onShortcutConsumed = { shortcutTarget = null },
+                        castManager = castManager,
                     )
                 }
             }
@@ -341,6 +346,7 @@ fun RadioWaveMainScreen(
     shortcutTarget: String? = null,
     shortcutRequestNonce: Int = 0,
     onShortcutConsumed: () -> Unit = {},
+    castManager: CastManager,
 ) {
     val navController = rememberNavController()
     val context = LocalContext.current
@@ -348,6 +354,8 @@ fun RadioWaveMainScreen(
     val homeViewModel: HomeViewModel = hiltViewModel()
     val playerState: PlayerState by homeViewModel.playerState.collectAsStateWithLifecycle()
     val favoriteStationIds by homeViewModel.favoriteStationIds.collectAsStateWithLifecycle()
+    val isCasting by castManager.isCasting.collectAsStateWithLifecycle()
+    val isRemotePlaying by castManager.isRemotePlaying.collectAsStateWithLifecycle()
     val prefs = remember(context) {
         context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
     }
@@ -371,6 +379,22 @@ fun RadioWaveMainScreen(
     var onboardingStep by rememberSaveable { mutableIntStateOf(0) }
     var showWhatsNew by rememberSaveable { mutableStateOf(false) }
     var whatsNewRelease by remember { mutableStateOf<GitHubReleaseInfo?>(null) }
+    val effectivePlayerState = if (isCasting) {
+        playerState.copy(
+            isPlaying = isRemotePlaying,
+            isBuffering = false,
+            isLoading = false,
+        )
+    } else {
+        playerState
+    }
+    val handlePlayPause = {
+        if (castManager.isCastSessionActive()) {
+            castManager.togglePlayback()
+        } else {
+            homeViewModel.togglePlayPause()
+        }
+    }
 
     BackHandler(enabled = showFullscreenPlayer) {
         showFullscreenPlayer = false
@@ -597,7 +621,7 @@ fun RadioWaveMainScreen(
 
             if (showPlayerBar) {
                 FloatingPlayerBar(
-                    playerState = playerState,
+                    playerState = effectivePlayerState,
                     isFavorite = isCurrentFavorite,
                     showMetadata = showMiniPlayerMetadata,
                     onFavoriteClick = {
@@ -614,7 +638,7 @@ fun RadioWaveMainScreen(
                             }
                         }
                     },
-                    onPlayPauseClick = { homeViewModel.togglePlayPause() },
+                    onPlayPauseClick = handlePlayPause,
                     onBarClick = { showFullscreenPlayer = true },
                     onDismissed = {
                         showFullscreenPlayer = false
@@ -644,7 +668,7 @@ fun RadioWaveMainScreen(
                     ),
                 ) {
                     PlayerScreen(
-                        playerState = playerState,
+                        playerState = effectivePlayerState,
                         isFavorite = isCurrentFavorite,
                         onFavoriteClick = {
                             currentStation?.let { station ->
@@ -660,7 +684,7 @@ fun RadioWaveMainScreen(
                                 }
                             }
                         },
-                        onPlayPauseClick = { homeViewModel.togglePlayPause() },
+                        onPlayPauseClick = handlePlayPause,
                         onPreviousStationClick = { homeViewModel.playPreviousStation() },
                         onVolumeToggle = { homeViewModel.toggleMute() },
                         onRandomStationClick = { homeViewModel.playRandomStation() },
