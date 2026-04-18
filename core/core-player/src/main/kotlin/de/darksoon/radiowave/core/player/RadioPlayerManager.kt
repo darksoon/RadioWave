@@ -37,15 +37,6 @@ class RadioPlayerManager @Inject constructor(
         playerController.playNextStation()
     }
 
-    fun playStation(url: String) {
-        // For simple URL playback without full station data
-        val tempStation = Station(
-            uuid = "temp-${System.currentTimeMillis()}",
-            name = "Custom Stream",
-            streamUrl = url,
-        )
-        // Note: This would need to be called from a coroutine in real usage
-    }
 
     fun stop() {
         playerController.stop()
