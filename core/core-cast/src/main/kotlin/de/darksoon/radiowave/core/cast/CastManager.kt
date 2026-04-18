@@ -65,7 +65,8 @@ class CastManager @Inject constructor(
     }
 
     private fun loadCurrentStationIntoSession(session: CastSession) {
-        val station = radioPlayerManager.playerState.value.currentStation ?: return
+        val playerState = radioPlayerManager.playerState.value
+        val station = playerState.currentStation ?: return
         val remoteMediaClient = session.remoteMediaClient ?: return
         val mediaInfo = buildMediaInfo(station)
         remoteMediaClient.load(
@@ -74,6 +75,9 @@ class CastManager @Inject constructor(
                 .setAutoplay(true)
                 .build(),
         )
+        if (playerState.isPlaying) {
+            radioPlayerManager.togglePlayPause()
+        }
     }
 
     private fun buildMediaInfo(station: de.darksoon.radiowave.core.model.Station): MediaInfo {
