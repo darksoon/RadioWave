@@ -88,6 +88,7 @@ import kotlinx.coroutines.delay
 fun PlayerScreen(
     playerState: PlayerState,
     isFavorite: Boolean,
+    isCasting: Boolean,
     onDismiss: () -> Unit,
     onFavoriteClick: () -> Unit,
     onPreviousStationClick: () -> Unit,
@@ -393,6 +394,18 @@ fun PlayerScreen(
                 edgeFade = false,
             )
             Spacer(modifier = Modifier.height(8.dp))
+            if (isCasting) {
+                Text(
+                    text = stringResource(R.string.player_casting_to_tv),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color(0xFF52E3D9),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(Color.White.copy(alpha = 0.08f))
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -489,7 +502,11 @@ fun PlayerScreen(
                                 .background(Color(0xFFFF3B3B).copy(alpha = liveDotAlpha)),
                         )
                         Text(
-                            text = stringResource(R.string.player_live),
+                            text = if (isCasting) {
+                                stringResource(R.string.player_casting_to_tv)
+                            } else {
+                                stringResource(R.string.player_live)
+                            },
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White.copy(alpha = 0.68f),
                         )

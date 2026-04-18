@@ -624,6 +624,7 @@ fun RadioWaveMainScreen(
                     playerState = effectivePlayerState,
                     isFavorite = isCurrentFavorite,
                     showMetadata = showMiniPlayerMetadata,
+                    isCasting = isCasting,
                     onFavoriteClick = {
                         currentStation?.let { station ->
                             val willBeFavorite = !isCurrentFavorite
@@ -670,6 +671,7 @@ fun RadioWaveMainScreen(
                     PlayerScreen(
                         playerState = effectivePlayerState,
                         isFavorite = isCurrentFavorite,
+                        isCasting = isCasting,
                         onFavoriteClick = {
                             currentStation?.let { station ->
                                 val willBeFavorite = !isCurrentFavorite

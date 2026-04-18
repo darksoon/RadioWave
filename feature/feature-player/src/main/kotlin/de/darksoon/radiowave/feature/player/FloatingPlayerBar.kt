@@ -70,6 +70,7 @@ fun FloatingPlayerBar(
     playerState: PlayerState,
     isFavorite: Boolean,
     showMetadata: Boolean,
+    isCasting: Boolean,
     onFavoriteClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
     onBarClick: () -> Unit,
@@ -209,14 +210,15 @@ fun FloatingPlayerBar(
                                 color = Color.White,
                             )
 
-                            val showLiveDot = isPlaying && !isBuffering
-                            val showMetadataLine = isBuffering || (showMetadata && compactMetadata != null) || sessionDurationLabel.isNotBlank() || showLiveDot
+                            val showLiveDot = isPlaying && !isBuffering && !isCasting
+                            val showMetadataLine = isCasting || isBuffering || (showMetadata && compactMetadata != null) || sessionDurationLabel.isNotBlank() || showLiveDot
                             val secondaryLine = when {
+                                isCasting -> stringResource(R.string.player_casting_to_tv)
                                 isBuffering -> stringResource(R.string.player_loading)
                                 showMetadata && compactMetadata != null -> compactMetadata
                                 else -> null
                             }
-                            val secondaryColor = if (isBuffering) TealAccent else DarkOnSurfaceVariant
+                            val secondaryColor = if (isBuffering || isCasting) TealAccent else DarkOnSurfaceVariant
 
                             if (showMetadataLine) {
                                 Row(
