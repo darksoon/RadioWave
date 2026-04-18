@@ -78,6 +78,8 @@ dependencies {
     implementation(project(":core:core-player"))
     implementation(project(":core:core-cast"))
     implementation(project(":core:core-ui"))
+
+    implementation(libs.media3.cast)
     
     implementation(project(":feature:feature-home"))
     implementation(project(":feature:feature-browse"))
