@@ -81,6 +81,7 @@ private class LocalStationRepositoryFake(
     override fun getStationsByCountry(countryCode: String): Flow<List<Station>> = flowOf(emptyList())
     override fun getStationsByTag(tag: String): Flow<List<Station>> = flowOf(emptyList())
     override suspend fun getStationVariants(station: Station): List<Station> = listOf(station)
+    override suspend fun getSimilarStations(station: Station): List<Station> = emptyList()
     override fun getTags(): Flow<List<Genre>> = flowOf(emptyList())
     override fun getCountries(): Flow<List<Country>> = flowOf(emptyList())
     override suspend fun registerClick(stationUuid: String) = Unit

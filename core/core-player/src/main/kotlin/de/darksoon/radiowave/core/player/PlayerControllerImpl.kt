@@ -142,7 +142,6 @@ class PlayerControllerImpl @Inject constructor(
     override val playerState: StateFlow<PlayerState> = _playerState.asStateFlow()
 
     init {
-        warmUpStationPool()
     }
 
     private fun getOrCreatePlayer(): ExoPlayer {
@@ -858,16 +857,19 @@ class PlayerControllerImpl @Inject constructor(
         manager.abandonAudioFocusRequest(audioFocusRequest)
     }
 
-    private fun warmUpStationPool() {
-        if (stationPoolJob?.isActive == true) return
-        stationPoolJob = controllerScope.launch(Dispatchers.IO) {
-            val loaded = stationRepository.getTopStations().firstOrNull().orEmpty()
-                .filter { it.streamUrl.isNotBlank() }
-                .distinctBy { it.uuid }
-            if (loaded.isNotEmpty()) {
-                stationPool = loaded
-            }
+    private suspend fun ensureStationPoolLoaded(): List<Station> {
+        if (stationPool.isNotEmpty()) return stationPool
+
+        stationPoolJob?.join()
+        if (stationPool.isNotEmpty()) return stationPool
+
+        val loaded = stationRepository.getTopStations().firstOrNull().orEmpty()
+            .filter { it.streamUrl.isNotBlank() }
+            .distinctBy { it.uuid }
+        if (loaded.isNotEmpty()) {
+            stationPool = loaded
         }
+        return stationPool
     }
 
     private fun rememberCurrentStationForBackNavigation(nextStation: Station) {
@@ -889,18 +891,7 @@ class PlayerControllerImpl @Inject constructor(
 
     private suspend fun pickNextStationCandidate(): Station? {
         val currentStationUuid = _playerState.value.currentStation?.uuid
-        val currentPool = if (stationPool.isNotEmpty()) {
-            stationPool
-        } else {
-            stationRepository.getTopStations().firstOrNull().orEmpty()
-                .filter { it.streamUrl.isNotBlank() }
-                .distinctBy { it.uuid }
-                .also { loaded ->
-                    if (loaded.isNotEmpty()) {
-                        stationPool = loaded
-                    }
-                }
-        }
+        val currentPool = ensureStationPoolLoaded()
 
         if (currentPool.isEmpty()) return null
 
