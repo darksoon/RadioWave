@@ -117,7 +117,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         shortcutTarget = intent.shortcutTarget
         enableEdgeToEdge()
-        window.isNavigationBarContrastEnforced = false
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
         setContent {
             val context = LocalContext.current
             val prefs = remember(context) {
