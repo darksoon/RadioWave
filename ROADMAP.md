@@ -2,7 +2,7 @@
 
 [Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Status: 2026-04-03
+Status: 2026-04-18
 
 This roadmap is intended for GitHub and keeps the public product status compact.
 
@@ -63,7 +63,6 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 ## In Progress
 
 - Voice and Assistant play intents for station launch
-- 1.0.0-rc1 release preparation, changelog, and final smoke tests
 
 ## Planned Next
 

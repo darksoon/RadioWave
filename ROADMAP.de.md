@@ -2,7 +2,7 @@
 
 [Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Stand: 2026-04-03
+Stand: 2026-04-18
 
 Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus kompakt.
 
@@ -62,7 +62,6 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 ## In Arbeit
 
 - Voice- und Assistant-Play-Intents fuer Senderstarts
-- 1.0.0-rc1 Vorbereitung, Changelog und finale Smoke-Tests
 
 ## Als Naechstes
 
