@@ -44,15 +44,21 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - Live download progress for updates
 - Stable/beta update channel toggle
 - Manual signed release workflow with version metadata in `gradle.properties`
-- GPL-3.0-or-later licensing with SPDX headers for Kotlin sources
+- Release/distribution split for GitHub APK (`github`) and Play Store App Bundle (`play`)
+- Android package/applicationId migrated to `de.darksoon.radiowave`
+- GitHub Actions workflows prepared for the Node 24 migration
 - Android Auto dev-mode guide linked in app and docs
 - Launcher quick actions (`Search`, `Favorites`, `Player`, `Settings`)
 - Android Auto browse/player polish: localized labels, quick access, stronger search, prev/next
 - DE/EN language basis with in-app language selection
-- CI and release pipelines hardened, including configuration-cache-safe test gating
-- Release/distribution split for GitHub APK (`github`) and Play Store App Bundle (`play`)
-- Android package/applicationId migrated to `de.darksoon.radiowave`
-- GitHub Actions workflows prepared for the Node 24 migration
+- CI and release pipelines hardened
+- GPL-3.0-or-later licensing with SPDX headers for Kotlin sources
+- Sleep timer (15/30/60/off)
+- Share action in the fullscreen player
+- Chromecast integration (MVP)
+- Favorites reordering (MVP)
+- Network recovery and stability improvements
+- Player timer pausing during buffering
 
 ## In Progress
 
@@ -62,8 +68,6 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 ## Planned Next
 
 - Radio timeshift beyond MVP (longer buffer, optional seek/live in fullscreen)
-- Sleep timer (15/30/60/off)
-- Share action in the fullscreen player
 - Podcasts MVP as a dedicated area
 - Favorites export/import (JSON)
 - Custom stations and M3U/PLS import

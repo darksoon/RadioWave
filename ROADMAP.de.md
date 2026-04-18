@@ -52,6 +52,12 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - CI- und Release-Pipelines gehaertet
 - Android-Paketname / `applicationId` auf `de.darksoon.radiowave` umgestellt
 - GitHub-Actions-Workflows fuer die Node-24-Umstellung vorbereitet
+- Sleep Timer (15/30/60/off)
+- Share-Action im Fullscreen-Player
+- Chromecast-Integration (MVP)
+- Favoriten-Sortierung (MVP)
+- Verbesserte Netzwerk-Recovery und Stabilitäten
+- Player-Timer pausiert bei Buffering
 
 ## In Arbeit
 
@@ -61,8 +67,6 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 ## Als Naechstes
 
 - Radio-Timeshift ueber MVP hinaus (laengerer Buffer, optionaler Seek/LIVE im Fullscreen)
-- Sleep Timer (15/30/60/off)
-- Share-Action im Fullscreen-Player
 - Podcasts-MVP als eigener Bereich
 - Favoriten Export/Import (JSON)
 - Custom Stations und M3U/PLS-Import

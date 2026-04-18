@@ -291,11 +291,19 @@ fun PlayerScreen(
                     }
                     Surface(
                         onClick = {
-                            val shareUrl = station.homepageUrl?.takeIf { it.isNotBlank() } ?: station.streamUrl
                             val shareText = buildString {
-                                append(context.getString(R.string.player_share_template, station.name))
-                                append("\n")
-                                append(shareUrl)
+                                if (metadataTitle != null && metadataArtist != null) {
+                                    append(context.getString(R.string.player_share_with_track, metadataArtist, metadataTitle, station.name))
+                                } else if (metadataTitle != null) {
+                                    append(context.getString(R.string.player_share_with_title, metadataTitle, station.name))
+                                } else {
+                                    append(context.getString(R.string.player_share_station, station.name))
+                                }
+                                val homepage = station.homepageUrl?.takeIf { it.isNotBlank() }
+                                if (homepage != null) {
+                                    append("\n")
+                                    append(homepage)
+                                }
                             }
                             val shareIntent = Intent(Intent.ACTION_SEND)
                                 .setType("text/plain")

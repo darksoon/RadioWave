@@ -10,7 +10,9 @@
     <string name="player_add_favorite">Zu Favoriten hinzufuegen</string>
     <string name="player_remove_favorite">Aus Favoriten entfernen</string>
     <string name="player_share">Teilen</string>
-    <string name="player_share_template">Höre %1$s in RadioWave</string>
+    <string name="player_share_station">Ich hoere gerade %1$s auf RadioWave</string>
+    <string name="player_share_with_title">Gerade laeuft \"%1$s\" auf %2$s — via RadioWave</string>
+    <string name="player_share_with_track">Gerade laeuft \"%1$s – %2$s\" auf %3$s — via RadioWave</string>
     <string name="player_sleep_timer">Sleep Timer</string>
     <string name="player_sleep_timer_active">Sleep in %1$s</string>
     <string name="player_sleep_timer_15m">15 Minuten</string>
