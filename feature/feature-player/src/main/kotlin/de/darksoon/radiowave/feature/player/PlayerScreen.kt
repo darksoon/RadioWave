@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -212,6 +213,7 @@ fun PlayerScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
+                .navigationBarsPadding()
                 .padding(horizontal = 24.dp, vertical = 12.dp),
         ) {
             Row(
@@ -299,7 +301,7 @@ fun PlayerScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(260.dp)
+                    .aspectRatio(1f)
                     .clip(RoundedCornerShape(22.dp))
                     .background(DarkSurface),
             ) {
@@ -421,8 +423,7 @@ fun PlayerScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(14.dp))
 
             LinearProgressIndicator(
                 progress = { 1f },
@@ -473,7 +474,9 @@ fun PlayerScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -502,8 +505,7 @@ fun PlayerScreen(
                     onClick = onRandomStationClick,
                 )
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            Spacer(modifier = Modifier.navigationBarsPadding())
+            Spacer(modifier = Modifier.height(12.dp))
         }
 
         if (showSleepTimerDialog) {
