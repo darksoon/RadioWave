@@ -56,6 +56,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -72,7 +73,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.mediarouter.app.MediaRouteButton
 import coil.compose.SubcomposeAsyncImage
+import com.google.android.gms.cast.framework.CastButtonFactory
 import de.darksoon.radiowave.core.model.PlayerState
 import de.darksoon.radiowave.core.ui.components.MarqueeText
 import de.darksoon.radiowave.core.ui.components.StreamQualityBadge
@@ -243,7 +246,10 @@ fun PlayerScreen(
                     color = Color.White,
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Surface(
                         onClick = { showSleepTimerDialog = true },
                         shape = CircleShape,
@@ -261,6 +267,26 @@ fun PlayerScreen(
                                 .size(30.dp)
                                 .padding(6.dp),
                         )
+                    }
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.06f),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .padding(6.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            AndroidView(
+                                factory = { castContext ->
+                                    MediaRouteButton(castContext).apply {
+                                        background = null
+                                        CastButtonFactory.setUpMediaRouteButton(castContext, this)
+                                    }
+                                },
+                            )
+                        }
                     }
                     Surface(
                         onClick = {
