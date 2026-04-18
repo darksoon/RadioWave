@@ -111,9 +111,7 @@ class CastManager @Inject constructor(
                 .build(),
         )
         lastLoadedStationUuid = station.uuid
-        if (playerState.isPlaying) {
-            radioPlayerManager.togglePlayPause()
-        }
+        radioPlayerManager.pauseForExternalPlayback()
     }
 
     private fun buildMediaInfo(station: Station): MediaInfo {

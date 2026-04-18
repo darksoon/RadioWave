@@ -1041,15 +1041,7 @@ class PlayerControllerImpl @Inject constructor(
     override fun togglePlayPause() {
         exoPlayer?.let { player ->
             if (player.isPlaying) {
-                userPausedPlayback = true
-                shouldResumeAfterAudioFocusGain = false
-                wasDuckedForAudioFocus = false
-                reconnectJob?.cancel()
-                bufferingWatchdogJob?.cancel()
-                playbackLostRecoveryJob?.cancel()
-                player.pause()
-                unregisterNetworkCallbackIfNeeded()
-                abandonAudioFocus()
+                pauseForExternalPlayback(markAsUserPaused = true)
             } else {
                 if (!requestAudioFocus()) {
                     _playerState.update {
@@ -1072,6 +1064,33 @@ class PlayerControllerImpl @Inject constructor(
                     player.play()
                 }
             }
+        }
+    }
+
+    override fun pauseForExternalPlayback() {
+        pauseForExternalPlayback(markAsUserPaused = false)
+    }
+
+    private fun pauseForExternalPlayback(markAsUserPaused: Boolean) {
+        val player = exoPlayer ?: return
+        userPausedPlayback = markAsUserPaused
+        shouldResumeAfterAudioFocusGain = false
+        wasDuckedForAudioFocus = false
+        reconnectJob?.cancel()
+        bufferingWatchdogJob?.cancel()
+        playbackLostRecoveryJob?.cancel()
+        restartGuardJob?.cancel()
+        player.playWhenReady = false
+        player.pause()
+        unregisterNetworkCallbackIfNeeded()
+        abandonAudioFocus()
+        _playerState.update {
+            it.copy(
+                isPlaying = false,
+                isLoading = false,
+                isBuffering = false,
+                error = null,
+            )
         }
     }
 

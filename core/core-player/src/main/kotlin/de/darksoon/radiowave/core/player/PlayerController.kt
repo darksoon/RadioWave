@@ -18,6 +18,7 @@ interface PlayerController {
     fun playPreviousStation()
     fun playNextStation()
     fun togglePlayPause()
+    fun pauseForExternalPlayback()
     fun toggleMute()
     fun ensureSessionPlayer(): Player
     fun setPlaybackNotificationEnabled(enabled: Boolean)

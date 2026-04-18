@@ -46,6 +46,10 @@ class RadioPlayerManager @Inject constructor(
         playerController.togglePlayPause()
     }
 
+    fun pauseForExternalPlayback() {
+        playerController.pauseForExternalPlayback()
+    }
+
     fun toggleMute() {
         playerController.toggleMute()
     }
