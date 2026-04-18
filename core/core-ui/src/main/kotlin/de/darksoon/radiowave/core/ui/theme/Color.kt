@@ -16,11 +16,6 @@ val RadioAccentLight = Color(0xFFD6BDFF)
 val MintAccent = Color(0xFFF3EEFF)
 val MintLight = Color(0xFFFFFFFF)
 
-@Deprecated("Renamed to RadioAccent", replaceWith = ReplaceWith("RadioAccent"))
-val TealAccent = RadioAccent
-@Deprecated("Renamed to RadioAccentLight", replaceWith = ReplaceWith("RadioAccentLight"))
-val TealLight = RadioAccentLight
-
 // Additional UI Colors
 val DarkOnSurface = Color(0xFFF6F3FF)
 val DarkOnSurfaceVariant = Color(0xFFD0C9E3)

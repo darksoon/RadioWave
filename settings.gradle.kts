@@ -31,7 +31,6 @@ include(":feature:feature-home")
 include(":feature:feature-browse")
 include(":feature:feature-favorites")
 include(":feature:feature-player")
-include(":feature:feature-custom-stations")
 include(":feature:feature-settings")
 
 // Android Auto

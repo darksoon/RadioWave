@@ -58,6 +58,7 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Favoriten-Sortierung (MVP)
 - Verbesserte Netzwerk-Recovery und Stabilitäten
 - Player-Timer pausiert bei Buffering
+- Eigene Sender mit Stream-URL in Favoriten (MVP)
 
 ## In Arbeit
 
@@ -68,7 +69,7 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Radio-Timeshift ueber MVP hinaus (laengerer Buffer, optionaler Seek/LIVE im Fullscreen)
 - Podcasts-MVP als eigener Bereich
 - Favoriten Export/Import (JSON)
-- Custom Stations und M3U/PLS-Import
+- Custom Stations M3U/PLS-Import
 - Sichtbare Datennutzungs-Schaetzung auf Basis der Bitrate
 - Play Store: Native Debug Symbols fuer AAB/Crash- und ANR-Auswertung
 

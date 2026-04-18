@@ -85,8 +85,7 @@ dependencies {
     implementation(project(":feature:feature-browse"))
     implementation(project(":feature:feature-favorites"))
     implementation(project(":feature:feature-player"))
-    implementation(project(":feature:feature-custom-stations"))
-    implementation(project(":feature:feature-settings"))
+implementation(project(":feature:feature-settings"))
     
     implementation(project(":auto"))
     
