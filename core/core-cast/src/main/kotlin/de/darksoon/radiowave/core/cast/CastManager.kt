@@ -163,6 +163,14 @@ class CastManager @Inject constructor(
         updateRemotePlaybackState(remoteMediaClient)
     }
 
+    fun stopCasting() {
+        attachedRemoteMediaClient?.stop()
+        castContext?.sessionManager?.endCurrentSession(true)
+        detachRemoteMediaClient()
+        lastLoadedStationUuid = null
+        radioPlayerManager.stop()
+    }
+
     private fun attachRemoteMediaClient(remoteMediaClient: RemoteMediaClient?) {
         if (attachedRemoteMediaClient === remoteMediaClient) {
             updateRemotePlaybackState(remoteMediaClient)

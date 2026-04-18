@@ -643,7 +643,11 @@ fun RadioWaveMainScreen(
                     onBarClick = { showFullscreenPlayer = true },
                     onDismissed = {
                         showFullscreenPlayer = false
-                        homeViewModel.stopPlayback()
+                        if (isCasting) {
+                            castManager.stopCasting()
+                        } else {
+                            homeViewModel.stopPlayback()
+                        }
                     },
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
