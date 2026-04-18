@@ -96,3 +96,5 @@ keystore.properties
 
 # Local audits
 /Audits/
+/docs/RADIOWAVE_AUDIT_FUER_CLAUDE_CODE.md
+/docs/RadioWave_Mega_Audit.md
