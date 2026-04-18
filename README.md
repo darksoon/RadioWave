@@ -47,6 +47,7 @@ The public roadmap is available in [ROADMAP.md](./ROADMAP.md).
 - Album art lookup via the iTunes Search API
 - Launcher quick actions for `Search`, `Favorites`, `Player`, and `Settings`
 - Android Auto support with favorites, quick access, search, and previous/next in the car player
+- Chromecast / Google Cast support with direct route selection from the player
 - Sleep timer and direct share action in the fullscreen player
 - Local crash-report export with share action and prefilled GitHub issue handoff
 
@@ -156,6 +157,7 @@ https://play.google.com/store/apps/details?id=de.darksoon.radiowave
 - The playback timer now reflects actual listening time and pauses during buffering
 - Fullscreen player includes a share action and a sleep timer
 - Favorites can be reordered more easily from the favorites screen
+- Active Chromecast sessions can be started directly from the fullscreen player, station changes are handed over to TV, and in-app play/pause controls route to the cast device
 
 ## Android Auto
 
@@ -165,6 +167,15 @@ https://play.google.com/store/apps/details?id=de.darksoon.radiowave
 - Previous/next in the car player now works as real station navigation
 
 See also: [docs/ANDROID_AUTO_DEV_MODE.md](docs/ANDROID_AUTO_DEV_MODE.md)
+
+## Chromecast / Google Cast
+
+- Cast devices can be selected directly from the fullscreen player
+- Starting a cast session moves the current station to TV and stops parallel phone playback
+- Changing stations while casting updates the TV stream instead of starting a separate local stream
+- In-app play/pause controls work on the active cast session
+- The player UI shows when playback is currently running on TV
+- Alexa / Echo streaming is **not** part of this cast integration and would require a separate Amazon-specific solution
 
 ## GitHub Actions
 

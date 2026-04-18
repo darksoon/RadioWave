@@ -8,14 +8,18 @@ All notable changes to this project will be documented in this file.
 - Fullscreen player now includes a direct share action for the current station.
 - Fullscreen player now includes a built-in sleep timer with quick presets.
 - Favorites can now be moved up or sent directly to the top for faster manual ordering.
+- Chromecast / Google Cast support now exists as a first MVP with route discovery, direct casting from the player, station handover to TV, and in-app play/pause routing for active cast sessions.
 
 ### Fixed
 - Playback timer now pauses correctly during buffering instead of continuing through interruptions.
 - Player recovery tests were aligned with the updated reconnect/recovery tuning so CI passes again.
+- Local phone playback now pauses correctly when a cast session starts or when the station is changed during active casting, preventing parallel playback on phone and TV.
+- Dismissing the player while casting now ends the cast session cleanly instead of only stopping local playback state.
 
 ### Improved
 - Playback recovery is more tolerant of short network interruptions with more reconnect attempts, milder backoff, faster network-return recovery, and slightly larger buffers.
 - Release workflow and manual build artifacts now also preserve native debug-symbol outputs for Play Console debugging.
+- Player UI now shows when playback is running on TV during an active cast session, instead of looking like ordinary local playback.
 
 ## [1.0.1a] - 2026-04-09
 

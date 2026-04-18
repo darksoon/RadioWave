@@ -47,6 +47,7 @@ Die oeffentliche Roadmap liegt in [ROADMAP.de.md](./ROADMAP.de.md).
 - Album-Cover ueber die iTunes Search API
 - Launcher Quick Actions fuer `Suche`, `Favoriten`, `Player` und `Settings`
 - Android Auto mit Favoriten, Quick Access, Suche und Vor/Zurueck im Car-Player
+- Chromecast / Google Cast mit direkter Geräteauswahl aus dem Player
 - Sleep Timer und direkte Teilen-Aktion im Fullscreen-Player
 - Lokaler Crash-Report mit Export/Share und vorbereiteter GitHub-Issue-Erstellung
 
@@ -156,6 +157,7 @@ https://play.google.com/store/apps/details?id=de.darksoon.radiowave
 - Der Wiedergabe-Timer zeigt jetzt echte Hoerzeit und pausiert bei Buffering
 - Im Fullscreen-Player gibt es jetzt Teilen und Sleep Timer
 - Favoriten lassen sich im Favoriten-Screen einfacher umsortieren
+- Aktive Chromecast-Sessions lassen sich direkt aus dem Fullscreen-Player starten, Senderwechsel werden an den TV uebergeben und Play/Pause in der App steuert das Cast-Ziel
 
 ## Android Auto
 
@@ -165,6 +167,15 @@ https://play.google.com/store/apps/details?id=de.darksoon.radiowave
 - Vor/Zurueck im Car-Player funktioniert als echte Sendernavigation
 
 Siehe auch: [docs/ANDROID_AUTO_DEV_MODE.de.md](docs/ANDROID_AUTO_DEV_MODE.de.md)
+
+## Chromecast / Google Cast
+
+- Cast-Geraete koennen direkt aus dem Fullscreen-Player ausgewaehlt werden
+- Beim Start einer Cast-Session wechselt der aktuelle Sender auf den TV und die parallele Handy-Wiedergabe wird gestoppt
+- Senderwechsel waehrend des Castens aktualisieren den TV-Stream statt lokal einen zweiten Stream zu starten
+- Play/Pause in der App steuert die aktive Cast-Session
+- Der Player zeigt sichtbar an, wenn die Wiedergabe gerade auf dem TV laeuft
+- Alexa / Echo ist **nicht** Teil dieser Cast-Integration und wuerde eine separate Amazon-spezifische Loesung brauchen
 
 ## GitHub Actions
 
