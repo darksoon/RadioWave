@@ -24,6 +24,7 @@ import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.SettableFuture
 import dagger.hilt.android.AndroidEntryPoint
 import de.darksoon.radiowave.core.data.repository.FavoriteRepository
 import de.darksoon.radiowave.core.data.repository.RecentRepository
@@ -40,7 +41,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.text.Normalizer
 import java.util.concurrent.ConcurrentHashMap
@@ -144,9 +145,11 @@ class RadioWaveAutoService : MediaLibraryService() {
             browser: MediaSession.ControllerInfo,
             mediaId: String,
         ): ListenableFuture<LibraryResult<MediaItem>> {
-            val item = resolveBrowsableItem(mediaId) ?: resolvePlayableItem(mediaId)
-                ?: return Futures.immediateFuture(LibraryResult.ofError(SessionError.ERROR_BAD_VALUE))
-            return Futures.immediateFuture(LibraryResult.ofItem(item, null))
+            return serviceFuture {
+                val item = resolveBrowsableItem(mediaId) ?: resolvePlayableItem(mediaId)
+                    ?: return@serviceFuture LibraryResult.ofError(SessionError.ERROR_BAD_VALUE)
+                LibraryResult.ofItem(item, null)
+            }
         }
 
         override fun onGetChildren(
@@ -157,34 +160,36 @@ class RadioWaveAutoService : MediaLibraryService() {
             pageSize: Int,
             params: MediaLibraryService.LibraryParams?,
         ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-            val children = when (parentId) {
-                ROOT_ID -> listOf(
-                    browsableItem(FAVORITES_ID, getString(R.string.auto_favorites)),
-                    // Some Android Auto surfaces prioritize this slot.
-                    // Offer a compact mix of favorites and recents on those surfaces.
-                    browsableItem(RECENTS_ID, getString(R.string.auto_quick_access)),
-                    browsableItem(TOP_STATIONS_ID, getString(R.string.auto_top_stations)),
-                    browsableItem(GENRES_ID, getString(R.string.auto_genres)),
-                )
+            return serviceFuture {
+                val children = when (parentId) {
+                    ROOT_ID -> listOf(
+                        browsableItem(FAVORITES_ID, getString(R.string.auto_favorites)),
+                        // Some Android Auto surfaces prioritize this slot.
+                        // Offer a compact mix of favorites and recents on those surfaces.
+                        browsableItem(RECENTS_ID, getString(R.string.auto_quick_access)),
+                        browsableItem(TOP_STATIONS_ID, getString(R.string.auto_top_stations)),
+                        browsableItem(GENRES_ID, getString(R.string.auto_genres)),
+                    )
 
-                FAVORITES_ID -> asStationChildren(loadFavorites())
-                RECENTS_ID -> asStationChildren(loadQuickAccess())
-                TOP_STATIONS_ID -> asStationChildren(loadTopStations())
-                GENRES_ID -> asGenreChildren(loadGenres())
-                else -> {
-                    val genreTag = parentId
-                        .removePrefix(GENRE_PREFIX)
-                        .trim()
-                        .takeUnless { it.isBlank() }
-                    if (genreTag != null) {
-                        asStationChildren(loadStationsByGenre(genreTag))
-                    } else {
-                        emptyList()
+                    FAVORITES_ID -> asStationChildren(loadFavorites())
+                    RECENTS_ID -> asStationChildren(loadQuickAccess())
+                    TOP_STATIONS_ID -> asStationChildren(loadTopStations())
+                    GENRES_ID -> asGenreChildren(loadGenres())
+                    else -> {
+                        val genreTag = parentId
+                            .removePrefix(GENRE_PREFIX)
+                            .trim()
+                            .takeUnless { it.isBlank() }
+                        if (genreTag != null) {
+                            asStationChildren(loadStationsByGenre(genreTag))
+                        } else {
+                            emptyList()
+                        }
                     }
                 }
+                val paged = paginate(children, page, pageSize)
+                LibraryResult.ofItemList(ImmutableList.copyOf(paged), params)
             }
-            val paged = paginate(children, page, pageSize)
-            return Futures.immediateFuture(LibraryResult.ofItemList(ImmutableList.copyOf(paged), params))
         }
 
         @UnstableApi
@@ -195,34 +200,33 @@ class RadioWaveAutoService : MediaLibraryService() {
             startIndex: Int,
             startPositionMs: Long,
         ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
-            val resolvedStartIndex = when {
-                startIndex >= 0 && startIndex < mediaItems.size -> startIndex
-                mediaItems.isNotEmpty() -> 0
-                else -> -1
-            }
-            val selected = mediaItems.getOrNull(resolvedStartIndex)
-            val station = selected?.let(::resolveOrCreateStation)
-            if (station != null) {
-                startStationPlayback(station)
-                val resolvedItem = stationItem(station)
-                return Futures.immediateFuture(
+            return serviceFuture {
+                val resolvedStartIndex = when {
+                    startIndex >= 0 && startIndex < mediaItems.size -> startIndex
+                    mediaItems.isNotEmpty() -> 0
+                    else -> -1
+                }
+                val selected = mediaItems.getOrNull(resolvedStartIndex)
+                val station = selected?.let { resolveOrCreateStation(it) }
+                if (station != null) {
+                    startStationPlayback(station)
+                    val resolvedItem = stationItem(station)
                     @UnstableApi
                     MediaSession.MediaItemsWithStartPosition(
                         mutableListOf(resolvedItem),
                         0,
                         0L,
-                    ),
-                )
+                    )
+                } else {
+                    logInfo("Auto onSetMediaItems unresolved; size=${mediaItems.size}, startIndex=$startIndex")
+                    @UnstableApi
+                    MediaSession.MediaItemsWithStartPosition(
+                        mediaItems,
+                        resolvedStartIndex,
+                        startPositionMs,
+                    )
+                }
             }
-            logInfo("Auto onSetMediaItems unresolved; size=${mediaItems.size}, startIndex=$startIndex")
-            return Futures.immediateFuture(
-                @UnstableApi
-                MediaSession.MediaItemsWithStartPosition(
-                    mediaItems,
-                    resolvedStartIndex,
-                    startPositionMs,
-                ),
-            )
         }
 
         override fun onAddMediaItems(
@@ -230,14 +234,16 @@ class RadioWaveAutoService : MediaLibraryService() {
             controller: MediaSession.ControllerInfo,
             mediaItems: MutableList<MediaItem>,
         ): ListenableFuture<List<MediaItem>> {
-            val mapped = mediaItems.mapNotNull { item ->
-                resolvePlayableItem(
-                    mediaId = item.mediaId,
-                    mediaUri = item.localConfiguration?.uri?.toString(),
-                ) ?: resolveOrCreateStation(item)?.let(::stationItem)
+            return serviceFuture {
+                val mapped = mediaItems.mapNotNull { item ->
+                    resolvePlayableItem(
+                        mediaId = item.mediaId,
+                        mediaUri = item.localConfiguration?.uri?.toString(),
+                    ) ?: resolveOrCreateStation(item)?.let(::stationItem)
+                }
+                logInfo("Auto onAddMediaItems mapped=${mapped.size}/${mediaItems.size}")
+                mapped
             }
-            logInfo("Auto onAddMediaItems mapped=${mapped.size}/${mediaItems.size}")
-            return Futures.immediateFuture(mapped)
         }
 
         override fun onPlayerCommandRequest(
@@ -247,7 +253,7 @@ class RadioWaveAutoService : MediaLibraryService() {
         ): Int {
             return when (playerCommand) {
                 Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM -> {
-                    if (playAdjacentFavorite(+1)) {
+                    if (playAdjacentFromCurrentQueue(+1)) {
                         SessionResult.RESULT_SUCCESS
                     } else {
                         SessionResult.RESULT_ERROR_NOT_SUPPORTED
@@ -255,7 +261,7 @@ class RadioWaveAutoService : MediaLibraryService() {
                 }
 
                 Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM -> {
-                    if (playAdjacentFavorite(-1)) {
+                    if (playAdjacentFromCurrentQueue(-1)) {
                         SessionResult.RESULT_SUCCESS
                     } else {
                         SessionResult.RESULT_ERROR_NOT_SUPPORTED
@@ -272,20 +278,22 @@ class RadioWaveAutoService : MediaLibraryService() {
             customCommand: SessionCommand,
             args: Bundle,
         ): ListenableFuture<SessionResult> {
-            val resultCode = when (customCommand.customAction) {
-                CUSTOM_ACTION_PREVIOUS -> {
-                    if (playAdjacentFavorite(-1)) SessionResult.RESULT_SUCCESS
-                    else SessionResult.RESULT_ERROR_NOT_SUPPORTED
-                }
+            return serviceFuture {
+                val resultCode = when (customCommand.customAction) {
+                    CUSTOM_ACTION_PREVIOUS -> {
+                        if (playAdjacentStation(-1)) SessionResult.RESULT_SUCCESS
+                        else SessionResult.RESULT_ERROR_NOT_SUPPORTED
+                    }
 
-                CUSTOM_ACTION_NEXT -> {
-                    if (playAdjacentFavorite(+1)) SessionResult.RESULT_SUCCESS
-                    else SessionResult.RESULT_ERROR_NOT_SUPPORTED
-                }
+                    CUSTOM_ACTION_NEXT -> {
+                        if (playAdjacentStation(+1)) SessionResult.RESULT_SUCCESS
+                        else SessionResult.RESULT_ERROR_NOT_SUPPORTED
+                    }
 
-                else -> SessionResult.RESULT_ERROR_NOT_SUPPORTED
+                    else -> SessionResult.RESULT_ERROR_NOT_SUPPORTED
+                }
+                SessionResult(resultCode)
             }
-            return Futures.immediateFuture(SessionResult(resultCode))
         }
 
         override fun onSearch(
@@ -296,11 +304,13 @@ class RadioWaveAutoService : MediaLibraryService() {
         ): ListenableFuture<LibraryResult<Void>> {
             val normalized = sanitizeSearchQuery(query)
             if (normalized.isBlank()) return Futures.immediateFuture(LibraryResult.ofVoid(params))
-            val results = searchStations(normalized)
-            searchCache[normalized.lowercase(Locale.ROOT)] = results
-            session.notifySearchResultChanged(browser, normalized, results.size, params)
-            logInfo("Auto search '$normalized' -> ${results.size} results")
-            return Futures.immediateFuture(LibraryResult.ofVoid(params))
+            return serviceFuture {
+                val results = searchStations(normalized)
+                searchCache[normalized.lowercase(Locale.ROOT)] = results
+                session.notifySearchResultChanged(browser, normalized, results.size, params)
+                logInfo("Auto search '$normalized' -> ${results.size} results")
+                LibraryResult.ofVoid(params)
+            }
         }
 
         override fun onGetSearchResult(
@@ -311,27 +321,29 @@ class RadioWaveAutoService : MediaLibraryService() {
             pageSize: Int,
             params: MediaLibraryService.LibraryParams?,
         ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-            val normalized = sanitizeSearchQuery(query).lowercase(Locale.ROOT)
-            val cached = searchCache[normalized].orEmpty()
-            val candidates = if (cached.isNotEmpty()) {
-                cached
-            } else {
-                searchStations(normalized).also { fresh ->
-                    searchCache[normalized] = fresh
+            return serviceFuture {
+                val normalized = sanitizeSearchQuery(query).lowercase(Locale.ROOT)
+                val cached = searchCache[normalized].orEmpty()
+                val candidates = if (cached.isNotEmpty()) {
+                    cached
+                } else {
+                    searchStations(normalized).also { fresh ->
+                        searchCache[normalized] = fresh
+                    }
                 }
+                val resolvedItems = if (candidates.isEmpty()) {
+                    listOf(
+                        infoItem(
+                            id = "info:no-search-results:${SystemClock.elapsedRealtime()}",
+                            title = getString(R.string.auto_no_results_for, query),
+                        ),
+                    )
+                } else {
+                    candidates.map(::stationItem)
+                }
+                val items = paginate(resolvedItems, page, pageSize)
+                LibraryResult.ofItemList(ImmutableList.copyOf(items), params)
             }
-            val resolvedItems = if (candidates.isEmpty()) {
-                listOf(
-                    infoItem(
-                        id = "info:no-search-results:${SystemClock.elapsedRealtime()}",
-                        title = getString(R.string.auto_no_results_for, query),
-                    ),
-                )
-            } else {
-                candidates.map(::stationItem)
-            }
-            val items = paginate(resolvedItems, page, pageSize)
-            return Futures.immediateFuture(LibraryResult.ofItemList(ImmutableList.copyOf(items), params))
         }
     }
 
@@ -351,6 +363,16 @@ class RadioWaveAutoService : MediaLibraryService() {
                 }
             }
         }
+    }
+
+    private fun <T> serviceFuture(block: suspend () -> T): ListenableFuture<T> {
+        val future = SettableFuture.create<T>()
+        serviceScope.launch {
+            runCatching { block() }
+                .onSuccess(future::set)
+                .onFailure(future::setException)
+        }
+        return future
     }
 
     private fun shouldRetryPlayback(station: Station): Boolean {
@@ -396,7 +418,7 @@ class RadioWaveAutoService : MediaLibraryService() {
         return true
     }
 
-    private fun applyAutoQueue(player: Player, selectedStation: Station) {
+    private suspend fun applyAutoQueue(player: Player, selectedStation: Station) {
         val queue = buildAutoQueue(selectedStation)
         currentAutoQueue = queue
         if (queue.size <= 1) return
@@ -411,7 +433,7 @@ class RadioWaveAutoService : MediaLibraryService() {
         player.prepare()
     }
 
-    private fun buildAutoQueue(selectedStation: Station): List<Station> {
+    private suspend fun buildAutoQueue(selectedStation: Station): List<Station> {
         val favorites = loadFavorites()
         val quickAccess = loadQuickAccess()
         val source = when {
@@ -430,42 +452,42 @@ class RadioWaveAutoService : MediaLibraryService() {
             .distinctBy { it.uuid }
     }
 
-    private fun loadTopStations(): List<Station> = runBlocking {
+    private suspend fun loadTopStations(): List<Station> = withContext(Dispatchers.IO) {
         runCatching { stationRepository.getTopStations().first().take(MAX_CHILDREN) }
             .getOrDefault(emptyList())
     }
 
-    private fun loadGenres(): List<Genre> = runBlocking {
+    private suspend fun loadGenres(): List<Genre> = withContext(Dispatchers.IO) {
         runCatching { stationRepository.getTags().first().take(MAX_GENRES) }
             .getOrDefault(emptyList())
     }
 
-    private fun loadStationsByGenre(tag: String): List<Station> = runBlocking {
+    private suspend fun loadStationsByGenre(tag: String): List<Station> = withContext(Dispatchers.IO) {
         runCatching { stationRepository.getStationsByTag(tag).first().take(MAX_CHILDREN) }
             .getOrDefault(emptyList())
     }
 
-    private fun loadFavorites(): List<Station> = runBlocking {
+    private suspend fun loadFavorites(): List<Station> = withContext(Dispatchers.IO) {
         runCatching { favoriteRepository.getFavorites().first().take(MAX_CHILDREN) }
             .getOrDefault(emptyList())
     }
 
-    private fun loadRecents(): List<Station> = runBlocking {
+    private suspend fun loadRecents(): List<Station> = withContext(Dispatchers.IO) {
         runCatching { recentRepository.getRecentStations(limit = MAX_CHILDREN).first() }
             .getOrDefault(emptyList())
     }
 
-    private fun loadQuickAccess(): List<Station> {
+    private suspend fun loadQuickAccess(): List<Station> {
         return (loadFavorites() + loadRecents())
             .distinctBy { it.uuid }
             .take(MAX_CHILDREN)
     }
 
-    private fun searchStations(query: String): List<Station> {
+    private suspend fun searchStations(query: String): List<Station> {
         val needle = sanitizeSearchQuery(query)
         if (needle.isBlank()) return emptyList()
         val localMatches = rankStationsByQuery(loadQuickAccess(), needle)
-        val remote = runBlocking {
+        val remote = withContext(Dispatchers.IO) {
             runCatching {
                 withTimeoutOrNull(SEARCH_REMOTE_TIMEOUT_MS) {
                     stationRepository.searchStations(needle).first()
@@ -530,7 +552,7 @@ class RadioWaveAutoService : MediaLibraryService() {
             .trim()
     }
 
-    private fun resolveStation(
+    private suspend fun resolveStation(
         mediaId: String?,
         mediaUri: String? = null,
     ): Station? {
@@ -564,7 +586,7 @@ class RadioWaveAutoService : MediaLibraryService() {
         }
     }
 
-    private fun resolvePlayableItem(
+    private suspend fun resolvePlayableItem(
         mediaId: String?,
         mediaUri: String? = null,
     ): MediaItem? {
@@ -572,7 +594,7 @@ class RadioWaveAutoService : MediaLibraryService() {
         return stationItem(station)
     }
 
-    private fun resolveOrCreateStation(item: MediaItem): Station? {
+    private suspend fun resolveOrCreateStation(item: MediaItem): Station? {
         val mediaUri = item.localConfiguration?.uri?.toString()
             ?: item.requestMetadata.mediaUri?.toString()
         val resolved = resolveStation(mediaId = item.mediaId, mediaUri = mediaUri)
@@ -732,7 +754,17 @@ class RadioWaveAutoService : MediaLibraryService() {
         return items.subList(from, to)
     }
 
-    private fun playAdjacentFavorite(step: Int): Boolean {
+    private fun playAdjacentFromCurrentQueue(step: Int): Boolean {
+        val current = playerController.playerState.value.currentStation ?: return false
+        val queue = currentAutoQueue
+            .takeIf { candidates ->
+                candidates.size > 1 && candidates.any { it.matches(current) }
+            }
+            ?: return false
+        return playAdjacentFromQueue(queue, current, step)
+    }
+
+    private suspend fun playAdjacentStation(step: Int): Boolean {
         val current = playerController.playerState.value.currentStation ?: return false
         val queue = currentAutoQueue
             .takeIf { candidates ->
@@ -745,6 +777,14 @@ class RadioWaveAutoService : MediaLibraryService() {
                 quickAccess.size > 1 && quickAccess.any { it.matches(current) }
             }
             ?: return false
+        return playAdjacentFromQueue(queue, current, step)
+    }
+
+    private fun playAdjacentFromQueue(
+        queue: List<Station>,
+        current: Station,
+        step: Int,
+    ): Boolean {
         val currentIndex = queue.indexOfFirst { candidate ->
             candidate.matches(current)
         }

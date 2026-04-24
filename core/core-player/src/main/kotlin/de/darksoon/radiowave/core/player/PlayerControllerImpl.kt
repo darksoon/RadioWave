@@ -190,12 +190,16 @@ class PlayerControllerImpl @Inject constructor(
                 logWarning("WakeLock acquire failed: ${error.message}")
             }
 
-            try {
-                if (wifiLock?.isHeld != true) {
-                    wifiLock?.acquire()
+            if (isActiveNetworkWifi()) {
+                try {
+                    if (wifiLock?.isHeld != true) {
+                        wifiLock?.acquire()
+                    }
+                } catch (error: SecurityException) {
+                    logWarning("WifiLock acquire failed: ${error.message}")
                 }
-            } catch (error: SecurityException) {
-                logWarning("WifiLock acquire failed: ${error.message}")
+            } else {
+                releaseWifiLock()
             }
         } else {
             releasePlaybackLocks()
@@ -203,6 +207,11 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private fun releasePlaybackLocks() {
+        releaseWakeLock()
+        releaseWifiLock()
+    }
+
+    private fun releaseWakeLock() {
         try {
             if (wakeLock?.isHeld == true) {
                 wakeLock?.release()
@@ -210,7 +219,9 @@ class PlayerControllerImpl @Inject constructor(
         } catch (error: RuntimeException) {
             logWarning("WakeLock release failed: ${error.message}")
         }
+    }
 
+    private fun releaseWifiLock() {
         try {
             if (wifiLock?.isHeld == true) {
                 wifiLock?.release()
@@ -288,6 +299,13 @@ class PlayerControllerImpl @Inject constructor(
 
     private fun isTimeshiftGuardEnabled(): Boolean {
         return settingsPrefs.getBoolean(AppSettings.KEY_TIMESHIFT_GUARD, true)
+    }
+
+    private fun isActiveNetworkWifi(): Boolean {
+        val manager = connectivityManager ?: return false
+        val activeNetwork = manager.activeNetwork ?: return false
+        val capabilities = manager.getNetworkCapabilities(activeNetwork) ?: return false
+        return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
     }
 
     private fun isPlaybackBlockedByMobileDataPolicy(): Boolean {
