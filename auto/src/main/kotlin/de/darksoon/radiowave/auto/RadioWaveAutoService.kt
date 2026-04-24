@@ -71,6 +71,7 @@ class RadioWaveAutoService : MediaLibraryService() {
     private val searchCache = ConcurrentHashMap<String, List<Station>>()
     private var lastAutoResumeAttemptAtMs = 0L
     private var mediaLibrarySession: MediaLibrarySession? = null
+    private var currentAutoQueue: List<Station> = emptyList()
 
     override fun onCreate() {
         super.onCreate()
@@ -143,7 +144,7 @@ class RadioWaveAutoService : MediaLibraryService() {
             browser: MediaSession.ControllerInfo,
             mediaId: String,
         ): ListenableFuture<LibraryResult<MediaItem>> {
-            val item = resolvePlayableItem(mediaId)
+            val item = resolveBrowsableItem(mediaId) ?: resolvePlayableItem(mediaId)
                 ?: return Futures.immediateFuture(LibraryResult.ofError(SessionError.ERROR_BAD_VALUE))
             return Futures.immediateFuture(LibraryResult.ofItem(item, null))
         }
@@ -397,6 +398,7 @@ class RadioWaveAutoService : MediaLibraryService() {
 
     private fun applyAutoQueue(player: Player, selectedStation: Station) {
         val queue = buildAutoQueue(selectedStation)
+        currentAutoQueue = queue
         if (queue.size <= 1) return
 
         val startIndex = queue.indexOfFirst { candidate ->
@@ -507,27 +509,6 @@ class RadioWaveAutoService : MediaLibraryService() {
             .toList()
     }
 
-    private fun normalize(value: String): String {
-        return Normalizer.normalize(value, Normalizer.Form.NFD)
-            .replace("\\p{Mn}+".toRegex(), "")
-            .replace("Ã¤", "ae", ignoreCase = true)
-            .replace("Ã¶", "oe", ignoreCase = true)
-            .replace("Ã¼", "ue", ignoreCase = true)
-            .replace("ÃŸ", "ss", ignoreCase = true)
-            .lowercase(Locale.ROOT)
-            .replace("[^a-z0-9]+".toRegex(), " ")
-            .trim()
-    }
-
-    private fun normalizeSearchQuery(value: String): String {
-        return value
-            .replace("â€ž", "\"")
-            .replace("â€œ", "\"")
-            .trim()
-            .trim('"', '\'', '\u201E', '\u201C', '\u201A', '\u2018', '\u2019', '\u00AB', '\u00BB')
-            .trim()
-    }
-
     private fun normalizeForMatch(value: String): String {
         return Normalizer.normalize(value, Normalizer.Form.NFD)
             .replace("\\p{Mn}+".toRegex(), "")
@@ -566,6 +547,20 @@ class RadioWaveAutoService : MediaLibraryService() {
             (stationUuid != null && station.uuid == stationUuid) ||
                 (!mediaId.isNullOrBlank() && station.uuid == mediaId) ||
                 (!mediaUri.isNullOrBlank() && station.streamUrl == mediaUri)
+        }
+    }
+
+    private fun resolveBrowsableItem(mediaId: String): MediaItem? {
+        return when (mediaId) {
+            ROOT_ID -> browsableItem(ROOT_ID, getString(R.string.auto_root_title))
+            FAVORITES_ID -> browsableItem(FAVORITES_ID, getString(R.string.auto_favorites))
+            RECENTS_ID -> browsableItem(RECENTS_ID, getString(R.string.auto_quick_access))
+            TOP_STATIONS_ID -> browsableItem(TOP_STATIONS_ID, getString(R.string.auto_top_stations))
+            GENRES_ID -> browsableItem(GENRES_ID, getString(R.string.auto_genres))
+            else -> mediaId
+                .removePrefix(GENRE_PREFIX)
+                .takeIf { mediaId.startsWith(GENRE_PREFIX) && it.isNotBlank() }
+                ?.let { genre -> browsableItem(mediaId, genre) }
         }
     }
 
@@ -738,17 +733,30 @@ class RadioWaveAutoService : MediaLibraryService() {
     }
 
     private fun playAdjacentFavorite(step: Int): Boolean {
-        val queue = loadFavorites().ifEmpty { loadQuickAccess() }
-        if (queue.isEmpty()) return false
         val current = playerController.playerState.value.currentStation ?: return false
+        val queue = currentAutoQueue
+            .takeIf { candidates ->
+                candidates.size > 1 && candidates.any { it.matches(current) }
+            }
+            ?: loadFavorites().takeIf { favorites ->
+                favorites.size > 1 && favorites.any { it.matches(current) }
+            }
+            ?: loadQuickAccess().takeIf { quickAccess ->
+                quickAccess.size > 1 && quickAccess.any { it.matches(current) }
+            }
+            ?: return false
         val currentIndex = queue.indexOfFirst { candidate ->
-            candidate.uuid == current.uuid || candidate.streamUrl == current.streamUrl
+            candidate.matches(current)
         }
         if (currentIndex == -1) return false
         val targetIndex = (currentIndex + step).mod(queue.size)
         val target = queue[targetIndex]
         startStationPlayback(target)
         return true
+    }
+
+    private fun Station.matches(other: Station): Boolean {
+        return uuid == other.uuid || streamUrl == other.streamUrl
     }
 
     private companion object {
