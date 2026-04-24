@@ -33,6 +33,7 @@ The public roadmap is available in [ROADMAP.md](./ROADMAP.md).
 - Focus: stability and user value
 - Updated continuously with releases and polish passes
 - Feedback is welcome through GitHub Issues
+- RadioWave is live on Google Play; beta/sideload notes now only apply to GitHub APKs and test installs
 
 ## Availability
 
@@ -167,6 +168,8 @@ https://play.google.com/store/apps/details?id=de.darksoon.radiowave
 - Quick Access combines favorites and recents
 - Search merges local and remote results more robustly
 - Previous/next in the car player now works as real station navigation
+- Browse/search callbacks run asynchronously so Android Auto is not blocked by repository or network work
+- The player only holds the WiFiLock while the active network is Wi-Fi; WakeLock stays active for stable playback
 
 See also: [docs/ANDROID_AUTO_DEV_MODE.md](docs/ANDROID_AUTO_DEV_MODE.md)
 

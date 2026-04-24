@@ -20,6 +20,10 @@ All notable changes to this project will be documented in this file.
 - Playback recovery is more tolerant of short network interruptions with more reconnect attempts, milder backoff, faster network-return recovery, and slightly larger buffers.
 - Release workflow and manual build artifacts now also preserve native debug-symbol outputs for Play Console debugging.
 - Player UI now shows when playback is running on TV during an active cast session, instead of looking like ordinary local playback.
+- Android Auto browse/search callbacks now avoid blocking repository and network work on the callback path.
+- Android Auto previous/next navigation now prefers the active in-car queue before falling back to quick access.
+- Playback only holds the WiFiLock while the active network is Wi-Fi, reducing unnecessary radio lock usage on mobile data.
+- Public docs now reflect the live Google Play status instead of current beta/closed-test planning.
 
 ## [1.0.1a] - 2026-04-09
 

@@ -2,9 +2,9 @@
 
 [Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Stand: 2026-04-18
+Stand: 2026-04-24
 
-Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus kompakt.
+Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus kompakt. RadioWave ist live auf Google Play; die Roadmap priorisiert deshalb Stabilitaet, Supportfaehigkeit und gezieltes UX-Polishing.
 
 ## Fertig
 
@@ -59,23 +59,31 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Verbesserte Netzwerk-Recovery und Stabilitäten
 - Player-Timer pausiert bei Buffering
 - Eigene Sender mit Stream-URL in Favoriten (MVP)
+- Google-Play-Verfuegbarkeit mit Paketname `de.darksoon.radiowave`
+- Android-Auto-Browse-Callbacks laufen asynchron statt blockierend
+- Android-Auto-Prev/Next nutzt die aktive Auto-Queue zuverlaessiger
+- WiFiLock wird nur noch bei aktiver WLAN-Verbindung gehalten
 
 ## In Arbeit
 
 - Voice- und Assistant-Play-Intents fuer Senderstarts
+- Laufende Live-App-Stabilisierung nach echten Geraete- und Nutzerfaellen
 
 ## Als Naechstes
 
+- UX-Polish fuer Live-Nutzer: bessere Empty States, klarere Fehlerzustaende und sichtbarer Feedback-Weg
+- Akku-/Datenverbrauch weiter messbar machen: Bitrate-basierte Schaetzung und gezielte Playback-Messungen
+- Android Auto Smoke-Test auf echtem Handy/Head-Unit nach Queue- und Callback-Optimierungen
 - Radio-Timeshift ueber MVP hinaus (laengerer Buffer, optionaler Seek/LIVE im Fullscreen)
-- Podcasts-MVP als eigener Bereich
-- Favoriten Export/Import (JSON)
-- Custom Stations M3U/PLS-Import
 - Sichtbare Datennutzungs-Schaetzung auf Basis der Bitrate
 - Play Store: Native Debug Symbols fuer AAB/Crash- und ANR-Auswertung
+- Favoriten Export/Import (JSON)
+- Custom Stations M3U/PLS-Import
 
 ## Spaeter
 
 - Weiterer Android-Auto-Ausbau (Recommendations, mehr car-spezifische UX)
+- Podcasts-MVP als eigener Bereich
 - Android TV / Google TV Basis (Leanback-Launcher, D-Pad-/Focus-Navigation, TV-Layout-MVP)
 - Chromecast-Ausbau
 - Schneller Playback-Widget-Zugriff

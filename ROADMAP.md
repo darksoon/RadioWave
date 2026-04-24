@@ -2,9 +2,9 @@
 
 [Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Status: 2026-04-18
+Status: 2026-04-24
 
-This roadmap is intended for GitHub and keeps the public product status compact.
+This roadmap is intended for GitHub and keeps the public product status compact. RadioWave is live on Google Play, so the roadmap prioritizes stability, supportability, and targeted UX polish.
 
 ## Done
 
@@ -60,23 +60,31 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - Network recovery and stability improvements
 - Player timer pausing during buffering
 - Custom stations with stream URL in favorites (MVP)
+- Google Play availability with package name `de.darksoon.radiowave`
+- Android Auto browse callbacks now run asynchronously instead of blocking
+- Android Auto previous/next navigation uses the active in-car queue more reliably
+- WiFiLock is only held while the active network is Wi-Fi
 
 ## In Progress
 
 - Voice and Assistant play intents for station launch
+- Ongoing live-app stabilization based on real device and user cases
 
 ## Planned Next
 
+- UX polish for live users: better empty states, clearer error states, and a visible feedback path
+- Make battery/data usage easier to understand: bitrate-based estimate and targeted playback measurements
+- Android Auto smoke test on a real phone/head unit after queue and callback optimizations
 - Radio timeshift beyond MVP (longer buffer, optional seek/live in fullscreen)
-- Podcasts MVP as a dedicated area
-- Favorites export/import (JSON)
-- Custom stations M3U/PLS import
 - Visible data-usage estimate based on bitrate
 - Play Store readiness: native debug symbols for App Bundle crash/ANR diagnostics
+- Favorites export/import (JSON)
+- Custom stations M3U/PLS import
 
 ## Later
 
 - Further Android Auto expansion (recommendations, more car-specific UX)
+- Podcasts MVP as a dedicated area
 - Android TV / Google TV base (Leanback launcher, D-pad/focus navigation, TV layout MVP)
 - Chromecast expansion
 - Quick-access playback widget
