@@ -81,26 +81,21 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import de.darksoon.radiowave.core.model.AppSettings
-import de.darksoon.radiowave.core.data.update.GitHubReleaseChecker
-import de.darksoon.radiowave.core.data.update.GitHubReleaseInfo
 import de.darksoon.radiowave.core.data.update.LocalIssueReporter
 import de.darksoon.radiowave.core.ui.theme.DarkCardBackground
 import de.darksoon.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.darksoon.radiowave.core.ui.theme.RadioAccent
 import de.darksoon.radiowave.feature.settings.R
-import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
     onRestartOnboarding: () -> Unit = {},
-    onShowWhatsNew: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val prefs = context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
-    val coroutineScope = rememberCoroutineScope()
     var issueReportRefreshKey by remember { mutableLongStateOf(0L) }
     val latestIssueReport = remember(context, issueReportRefreshKey) {
         LocalIssueReporter.getLatestReport(context)
@@ -172,10 +167,6 @@ fun SettingsScreen(
     var confirmRemoveFavorite by rememberSaveable {
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_CONFIRM_REMOVE_FAVORITE, false))
     }
-    var showReleaseNotesDialog by rememberSaveable { mutableStateOf(false) }
-    var releaseNotesLoading by remember { mutableStateOf(false) }
-    var releaseNotesInfo by remember { mutableStateOf<GitHubReleaseInfo?>(null) }
-
     val appVersion = rememberAppVersion(context)
     val dynamicColorsSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     var batteryOptimizationExcluded by remember {
@@ -640,37 +631,6 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_onboarding_subtitle),
                             actionLabel = stringResource(R.string.settings_onboarding_action),
                             onActionClick = onRestartOnboarding,
-                            secondaryActionLabel = stringResource(R.string.settings_whats_new_action),
-                            onSecondaryActionClick = onShowWhatsNew,
-                        )
-                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                        SettingActionRow(
-                            title = stringResource(R.string.settings_release_notes_title),
-                            subtitle = stringResource(R.string.settings_release_notes_subtitle),
-                            actionLabel = if (releaseNotesLoading) {
-                                stringResource(R.string.settings_updates_manual_checking)
-                            } else {
-                                stringResource(R.string.settings_open)
-                            },
-                            onActionClick = {
-                                if (releaseNotesLoading) return@SettingActionRow
-                                releaseNotesLoading = true
-                                coroutineScope.launch {
-                                    releaseNotesInfo = GitHubReleaseChecker.getLatestInstallableRelease(includePrerelease = false)
-                                    releaseNotesLoading = false
-                                    if (releaseNotesInfo != null) {
-                                        showReleaseNotesDialog = true
-                                    } else {
-                                        Toast.makeText(
-                                            context,
-                                            context.getString(R.string.settings_release_notes_empty),
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
-                                    }
-                                }
-                            },
-                            secondaryActionLabel = stringResource(R.string.settings_updates_manual_release_page),
-                            onSecondaryActionClick = { uriHandler.openUri("https://github.com/darksoon/RadioWave/releases/latest") },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         LinkRow(
@@ -689,32 +649,6 @@ fun SettingsScreen(
                 }
             }
         }
-    }
-
-    if (showReleaseNotesDialog && releaseNotesInfo != null) {
-        val release = releaseNotesInfo!!
-        AlertDialog(
-            onDismissRequest = { showReleaseNotesDialog = false },
-            title = { Text(text = release.tag) },
-            text = {
-                Column {
-                    Text(
-                        text = release.body.ifBlank { stringResource(R.string.settings_release_notes_empty) },
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { uriHandler.openUri(release.htmlUrl) }) {
-                    Text(stringResource(R.string.settings_updates_manual_release_page))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showReleaseNotesDialog = false }) {
-                    Text(stringResource(R.string.settings_later))
-                }
-            },
-        )
     }
 
 }
@@ -1163,8 +1097,8 @@ private fun SettingActionRow(
     subtitle: String,
     actionLabel: String,
     onActionClick: () -> Unit,
-    secondaryActionLabel: String,
-    onSecondaryActionClick: () -> Unit,
+    secondaryActionLabel: String? = null,
+    onSecondaryActionClick: (() -> Unit)? = null,
 ) {
     Column(
         modifier = Modifier
@@ -1193,11 +1127,13 @@ private fun SettingActionRow(
             ) {
                 Text(actionLabel)
             }
-            OutlinedButton(
-                onClick = onSecondaryActionClick,
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(secondaryActionLabel)
+            if (secondaryActionLabel != null && onSecondaryActionClick != null) {
+                OutlinedButton(
+                    onClick = onSecondaryActionClick,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(secondaryActionLabel)
+                }
             }
         }
     }

@@ -16,8 +16,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,8 +39,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Search
@@ -56,7 +66,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.res.stringResource
@@ -100,9 +109,6 @@ import de.darksoon.radiowave.R
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import de.darksoon.radiowave.core.data.update.GitHubReleaseChecker
-import de.darksoon.radiowave.core.data.update.GitHubReleaseInfo
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -243,6 +249,8 @@ val bottomNavItems = listOf(
 private data class OnboardingStepContent(
     @StringRes val titleRes: Int,
     @StringRes val bodyRes: Int,
+    val icon: ImageVector,
+    val accentColor: Color,
 )
 
 @Composable
@@ -253,91 +261,225 @@ private fun OnboardingDialog(
     onFinish: () -> Unit,
 ) {
     val steps = listOf(
-        OnboardingStepContent(R.string.onboarding_step_welcome_title, R.string.onboarding_step_welcome_body),
-        OnboardingStepContent(R.string.onboarding_step_search_title, R.string.onboarding_step_search_body),
-        OnboardingStepContent(R.string.onboarding_step_player_title, R.string.onboarding_step_player_body),
-        OnboardingStepContent(R.string.onboarding_step_auto_title, R.string.onboarding_step_auto_body),
-        OnboardingStepContent(R.string.onboarding_step_updates_title, R.string.onboarding_step_updates_body),
+        OnboardingStepContent(
+            titleRes = R.string.onboarding_step_welcome_title,
+            bodyRes = R.string.onboarding_step_welcome_body,
+            icon = Icons.Filled.Favorite,
+            accentColor = Color(0xFF52E3D9),
+        ),
+        OnboardingStepContent(
+            titleRes = R.string.onboarding_step_search_title,
+            bodyRes = R.string.onboarding_step_search_body,
+            icon = Icons.Filled.Search,
+            accentColor = Color(0xFFCA4D95),
+        ),
+        OnboardingStepContent(
+            titleRes = R.string.onboarding_step_player_title,
+            bodyRes = R.string.onboarding_step_player_body,
+            icon = Icons.Filled.PlayArrow,
+            accentColor = Color(0xFF52E3D9),
+        ),
+        OnboardingStepContent(
+            titleRes = R.string.onboarding_step_auto_title,
+            bodyRes = R.string.onboarding_step_auto_body,
+            icon = Icons.Filled.Star,
+            accentColor = Color(0xFFCA4D95),
+        ),
     )
     val safeStep = step.coerceIn(0, steps.lastIndex)
     val content = steps[safeStep]
+    val isLast = safeStep >= steps.lastIndex
+
     Dialog(
         onDismissRequest = { },
-        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
+        properties = DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false,
+        ),
     ) {
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 8.dp,
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
+                .fillMaxSize()
+                .background(Color(0xFF0E1018)),
         ) {
+            // Ambient gradient background
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                content.accentColor.copy(alpha = 0.18f),
+                                Color.Transparent,
+                            ),
+                            radius = 900f,
+                        ),
+                    ),
+            )
+
             Column(
-                modifier = Modifier.padding(20.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(
-                    text = stringResource(R.string.first_run_title),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = RadioAccent,
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = stringResource(R.string.app_slogan),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = stringResource(content.titleRes),
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = stringResource(content.bodyRes),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = stringResource(R.string.onboarding_progress, safeStep + 1, steps.size),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedButton(
-                    onClick = onSkip,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(stringResource(R.string.onboarding_skip))
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    if (safeStep > 0) {
-                        OutlinedButton(
-                            onClick = { onStepChange(safeStep - 1) },
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text(stringResource(R.string.onboarding_back))
+                Spacer(modifier = Modifier.weight(1f))
+
+                // Icon with glowing circle
+                Box(contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .size(120.dp)
+                            .background(
+                                brush = Brush.radialGradient(
+                                    colors = listOf(
+                                        content.accentColor.copy(alpha = 0.22f),
+                                        Color.Transparent,
+                                    ),
+                                ),
+                                shape = CircleShape,
+                            ),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .background(
+                                color = content.accentColor.copy(alpha = 0.12f),
+                                shape = CircleShape,
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        AnimatedContent(
+                            targetState = content.icon,
+                            transitionSpec = {
+                                (fadeIn() + slideInHorizontally { it / 3 })
+                                    .togetherWith(fadeOut() + slideOutHorizontally { -it / 3 })
+                            },
+                            label = "onboardingIcon",
+                        ) { icon ->
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = content.accentColor,
+                                modifier = Modifier.size(40.dp),
+                            )
                         }
                     }
-                    Button(
-                        onClick = {
-                            if (safeStep >= steps.lastIndex) onFinish() else onStepChange(safeStep + 1)
-                        },
-                        modifier = Modifier.weight(if (safeStep > 0) 1f else 2f),
-                    ) {
-                        Text(
-                            stringResource(
-                                if (safeStep >= steps.lastIndex) R.string.onboarding_finish else R.string.onboarding_next,
-                            ),
+                }
+
+                Spacer(modifier = Modifier.height(36.dp))
+
+                // Title
+                AnimatedContent(
+                    targetState = safeStep,
+                    transitionSpec = {
+                        (fadeIn() + slideInHorizontally { it / 4 })
+                            .togetherWith(fadeOut() + slideOutHorizontally { -it / 4 })
+                    },
+                    label = "onboardingTitle",
+                ) { s ->
+                    Text(
+                        text = stringResource(steps[s].titleRes),
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        color = Color.White,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Body
+                AnimatedContent(
+                    targetState = safeStep,
+                    transitionSpec = {
+                        (fadeIn()).togetherWith(fadeOut())
+                    },
+                    label = "onboardingBody",
+                ) { s ->
+                    Text(
+                        text = stringResource(steps[s].bodyRes),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.White.copy(alpha = 0.65f),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                // Page dots
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    steps.indices.forEach { index ->
+                        Box(
+                            modifier = Modifier
+                                .size(if (index == safeStep) 24.dp else 8.dp, 8.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(
+                                    if (index == safeStep) content.accentColor
+                                    else Color.White.copy(alpha = 0.25f),
+                                ),
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // Primary button
+                Button(
+                    onClick = { if (isLast) onFinish() else onStepChange(safeStep + 1) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = content.accentColor,
+                        contentColor = Color(0xFF0E1018),
+                    ),
+                ) {
+                    Text(
+                        text = stringResource(
+                            if (isLast) R.string.onboarding_finish else R.string.onboarding_next,
+                        ),
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Skip / Back row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (safeStep > 0) {
+                        TextButton(onClick = { onStepChange(safeStep - 1) }) {
+                            Text(
+                                text = stringResource(R.string.onboarding_back),
+                                color = Color.White.copy(alpha = 0.5f),
+                            )
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                    if (!isLast) {
+                        TextButton(onClick = onSkip) {
+                            Text(
+                                text = stringResource(R.string.onboarding_skip),
+                                color = Color.White.copy(alpha = 0.5f),
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
@@ -361,7 +503,6 @@ fun RadioWaveMainScreen(
     val prefs = remember(context) {
         context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
     }
-    val coroutineScope = rememberCoroutineScope()
     var showMiniPlayerMetadata by remember {
         mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_MINIPLAYER_METADATA, true))
     }
@@ -379,8 +520,6 @@ fun RadioWaveMainScreen(
         )
     }
     var onboardingStep by rememberSaveable { mutableIntStateOf(0) }
-    var showWhatsNew by rememberSaveable { mutableStateOf(false) }
-    var whatsNewRelease by remember { mutableStateOf<GitHubReleaseInfo?>(null) }
     val effectivePlayerState = if (isCasting) {
         playerState.copy(
             isPlaying = isRemotePlaying,
@@ -445,22 +584,6 @@ fun RadioWaveMainScreen(
     LaunchedEffect(showPlayerBar) {
         if (!showPlayerBar) {
             showFullscreenPlayer = false
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        val versionName = readVersionName(context)
-        val lastSeenWhatsNew = prefs.getString(AppSettings.KEY_LAST_SEEN_WHATS_NEW_VERSION, null)
-        if (!versionName.equals(lastSeenWhatsNew, ignoreCase = true)) {
-            val release = runCatching {
-                GitHubReleaseChecker.getReleaseByTag(versionName)
-            }.getOrNull()
-            if (release != null) {
-                whatsNewRelease = release
-                showWhatsNew = true
-            } else {
-                prefs.edit().putString(AppSettings.KEY_LAST_SEEN_WHATS_NEW_VERSION, versionName).apply()
-            }
         }
     }
 
@@ -601,21 +724,6 @@ fun RadioWaveMainScreen(
                                 onboardingStep = 0
                                 showOnboarding = true
                             },
-                            onShowWhatsNew = {
-                                coroutineScope.launch {
-                                    val versionName = readVersionName(context)
-                                    whatsNewRelease = GitHubReleaseChecker.getReleaseByTag(versionName)
-                                    if (whatsNewRelease != null) {
-                                        showWhatsNew = true
-                                    } else {
-                                        Toast.makeText(
-                                            context,
-                                            context.getString(R.string.whats_new_empty),
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
-                                    }
-                                }
-                            },
                         )
                     }
                 }
@@ -731,48 +839,6 @@ fun RadioWaveMainScreen(
                 )
             }
 
-            if (showWhatsNew && whatsNewRelease != null) {
-                val release = whatsNewRelease!!
-                AlertDialog(
-                    onDismissRequest = {
-                        prefs.edit().putString(AppSettings.KEY_LAST_SEEN_WHATS_NEW_VERSION, readVersionName(context)).apply()
-                        showWhatsNew = false
-                    },
-                    title = { Text(stringResource(R.string.whats_new_title, release.tag)) },
-                    text = {
-                        Text(
-                            text = previewReleaseNotes(context, release.body),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                prefs.edit().putString(AppSettings.KEY_LAST_SEEN_WHATS_NEW_VERSION, readVersionName(context)).apply()
-                                showWhatsNew = false
-                            },
-                        ) {
-                            Text(stringResource(R.string.whats_new_confirm))
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(
-                            onClick = {
-                                prefs.edit().putString(AppSettings.KEY_LAST_SEEN_WHATS_NEW_VERSION, readVersionName(context)).apply()
-                                showWhatsNew = false
-                                context.startActivity(
-                                    Intent(Intent.ACTION_VIEW).apply {
-                                        data = android.net.Uri.parse(release.htmlUrl)
-                                    },
-                                )
-                            },
-                        ) {
-                            Text(stringResource(R.string.whats_new_open_release))
-                        }
-                    },
-                )
-            }
-
         }
     }
 }
@@ -797,30 +863,6 @@ private fun EnsureNotificationPermission() {
     }
 }
 
-private fun previewReleaseNotes(context: Context, notes: String): String {
-    if (notes.isBlank()) return context.getString(R.string.update_dialog_release_notes_fallback)
-    return notes
-        .lineSequence()
-        .map { it.trim() }
-        .filter { it.isNotBlank() }
-        .take(10)
-        .joinToString("\n")
-}
-
-private fun readVersionName(context: Context): String {
-    return runCatching {
-        val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.packageManager.getPackageInfo(
-                context.packageName,
-                android.content.pm.PackageManager.PackageInfoFlags.of(0),
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            context.packageManager.getPackageInfo(context.packageName, 0)
-        }
-        packageInfo.versionName ?: ""
-    }.getOrDefault("")
-}
 
 
 private object ShortcutTarget {
