@@ -603,7 +603,7 @@ private fun BrowseContent(
                 else -> {
                     LazyVerticalGrid(
                         state = stationGridState,
-                        columns = GridCells.Fixed(3),
+                        columns = GridCells.Adaptive(minSize = 140.dp),
                         contentPadding = PaddingValues(
                             start = 16.dp,
                             end = 16.dp,

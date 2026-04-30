@@ -24,6 +24,8 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.layout.Arrangement
@@ -318,9 +320,14 @@ private fun OnboardingDialog(
                     ),
             )
 
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .widthIn(max = 520.dp)
+                    .fillMaxHeight()
                     .padding(horizontal = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -480,6 +487,7 @@ private fun OnboardingDialog(
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
+            }
             }
         }
     }
