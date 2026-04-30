@@ -168,7 +168,7 @@ class PlayerControllerImpl @Inject constructor(
         if (wifiLock == null) {
             val wifiManager = context.applicationContext.getSystemService(WifiManager::class.java)
             wifiLock = wifiManager?.createWifiLock(
-                WifiManager.WIFI_MODE_FULL_HIGH_PERF,
+                WifiManager.WIFI_MODE_FULL,
                 "RadioWave:PlayerWifiLock",
             )?.apply {
                 setReferenceCounted(false)
@@ -269,11 +269,11 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private fun getSelectedBufferProfile(): String {
-        if (isTimeshiftGuardEnabled()) {
-            return AppSettings.BUFFER_LARGE
-        }
         if (isLowLoadModeEnabled()) {
             return AppSettings.BUFFER_SMALL
+        }
+        if (isTimeshiftGuardEnabled()) {
+            return AppSettings.BUFFER_LARGE
         }
         val value = settingsPrefs.getString(
             AppSettings.KEY_BUFFER_PROFILE,
