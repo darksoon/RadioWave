@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -59,6 +60,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
@@ -171,6 +176,9 @@ fun PlayerScreen(
         ),
         label = "artworkScale",
     )
+
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     Box(
         modifier = modifier
@@ -331,232 +339,370 @@ fun PlayerScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(DarkSurface),
-            ) {
-                SubcomposeAsyncImage(
-                    model = artworkUrl,
-                    contentDescription = station.name,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            val scale = if (isPlaying) artworkScale else 1f
-                            scaleX = scale
-                            scaleY = scale
-                        },
-                    contentScale = ContentScale.Crop,
-                    loading = {
-                        ArtworkFallback(station.name)
-                    },
-                    error = {
-                        ArtworkFallback(station.name)
-                    },
-                )
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    Color.Black.copy(alpha = 0.2f),
-                                    Color.Black.copy(alpha = 0.4f),
-                                ),
-                            ),
-                        ),
-                )
-                if (playerState.isBuffering) {
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .background(Color.Black.copy(alpha = 0.42f)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(54.dp),
-                            strokeWidth = 2.dp,
-                            color = Color(0xFF52E3D9).copy(alpha = 0.9f),
-                            trackColor = Color.White.copy(alpha = 0.15f),
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            MarqueeText(
-                text = titleArtistLine,
-                textStyle = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.SemiBold,
-                ),
-                color = Color.White,
-                modifier = Modifier.fillMaxWidth(),
-                maxLines = 1,
-                enabled = true,
-                edgeFade = false,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            if (isCasting) {
-                Text(
-                    text = stringResource(R.string.player_casting_to_tv),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color(0xFF52E3D9),
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(Color.White.copy(alpha = 0.08f))
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (fallbackLogoUrl != null) {
-                    SubcomposeAsyncImage(
-                        model = fallbackLogoUrl,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(16.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        contentScale = ContentScale.Crop,
-                        loading = { StationLogoPlaceholder() },
-                        error = { StationLogoPlaceholder() },
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                }
-                Text(
-                    text = stationLine,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(alpha = 0.7f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-
             val visibleTags = remember(station.tags) {
                 station.tags.filter { it.isNotBlank() && it.length <= 20 }.take(3)
             }
-            if (station.codec != null || station.bitrate != null || visibleTags.isNotEmpty()) {
+
+            if (isLandscape) {
+                Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 5.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        .weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    StreamQualityBadge(
-                        codec = station.codec,
-                        bitrate = station.bitrate,
+                    // Artwork — left column, square, fills available height
+                    PlayerArtwork(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .aspectRatio(1f, matchHeightConstraintsFirst = true),
+                        artworkUrl = artworkUrl,
+                        stationName = station.name,
+                        isPlaying = isPlaying,
+                        isBuffering = playerState.isBuffering,
+                        artworkScale = artworkScale,
                     )
-                    visibleTags.forEach { tag ->
-                        Text(
-                            text = tag.replaceFirstChar { it.uppercase() },
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.5f),
+
+                    // Controls — right column, scrollable for very small landscape heights
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        MarqueeText(
+                            text = titleArtistLine,
+                            textStyle = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                            color = Color.White,
+                            modifier = Modifier.fillMaxWidth(),
                             maxLines = 1,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Color.White.copy(alpha = 0.07f))
-                                .padding(horizontal = 5.dp, vertical = 2.dp),
+                            enabled = true,
+                            edgeFade = false,
                         )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        if (isCasting) {
+                            Text(
+                                text = stringResource(R.string.player_casting_to_tv),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Color(0xFF52E3D9),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(999.dp))
+                                    .background(Color.White.copy(alpha = 0.08f))
+                                    .padding(horizontal = 10.dp, vertical = 5.dp),
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (fallbackLogoUrl != null) {
+                                SubcomposeAsyncImage(
+                                    model = fallbackLogoUrl,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .clip(RoundedCornerShape(4.dp)),
+                                    contentScale = ContentScale.Crop,
+                                    loading = { StationLogoPlaceholder() },
+                                    error = { StationLogoPlaceholder() },
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                            }
+                            Text(
+                                text = stationLine,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = Color.White.copy(alpha = 0.7f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        if (station.codec != null || station.bitrate != null || visibleTags.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 5.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                StreamQualityBadge(codec = station.codec, bitrate = station.bitrate)
+                                visibleTags.forEach { tag ->
+                                    Text(
+                                        text = tag.replaceFirstChar { it.uppercase() },
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White.copy(alpha = 0.5f),
+                                        maxLines = 1,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(Color.White.copy(alpha = 0.07f))
+                                            .padding(horizontal = 5.dp, vertical = 2.dp),
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        LinearProgressIndicator(
+                            progress = { 1f },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(4.dp)
+                                .clip(RoundedCornerShape(2.dp)),
+                            color = Color.White.copy(alpha = liveBarAlpha),
+                            trackColor = Color.White.copy(alpha = 0.22f),
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 6.dp),
+                        ) {
+                            Text(
+                                text = runtimeLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.68f),
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            if (sleepTimerRemainingMs != null) {
+                                Text(
+                                    text = stringResource(R.string.player_sleep_timer_active, formatRuntime(sleepTimerRemainingMs)),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White.copy(alpha = 0.68f),
+                                )
+                            } else {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .clip(androidx.compose.foundation.shape.CircleShape)
+                                            .background(Color(0xFFFF3B3B).copy(alpha = liveDotAlpha)),
+                                    )
+                                    Text(
+                                        text = if (isCasting) stringResource(R.string.player_casting_to_tv) else stringResource(R.string.player_live),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White.copy(alpha = 0.68f),
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            PlayerIconButton(
+                                icon = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                                tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.9f),
+                                onClick = onFavoriteClick,
+                            )
+                            PlayerIconButton(
+                                icon = Icons.Filled.SkipPrevious,
+                                tint = Color.White.copy(alpha = 0.78f),
+                                onClick = onPreviousStationClick,
+                            )
+                            MainPlaybackButton(isPlaying = isPlaying, onClick = onPlayPauseClick)
+                            PlayerIconButton(
+                                icon = if (playerState.isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+                                tint = if (playerState.isMuted) Color.White.copy(alpha = 0.58f) else Color.White.copy(alpha = 0.78f),
+                                onClick = onVolumeToggle,
+                            )
+                            PlayerIconButton(
+                                icon = Icons.Outlined.Shuffle,
+                                tint = Color.White.copy(alpha = 0.72f),
+                                onClick = onRandomStationClick,
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
-            }
+            } else {
+                // Portrait layout
+                Spacer(modifier = Modifier.height(20.dp))
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            LinearProgressIndicator(
-                progress = { 1f },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp)),
-                color = Color.White.copy(alpha = liveBarAlpha),
-                trackColor = Color.White.copy(alpha = 0.22f),
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 6.dp),
-            ) {
-                Text(
-                    text = runtimeLabel,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.68f),
+                PlayerArtwork(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f),
+                    artworkUrl = artworkUrl,
+                    stationName = station.name,
+                    isPlaying = isPlaying,
+                    isBuffering = playerState.isBuffering,
+                    artworkScale = artworkScale,
                 )
-                Spacer(modifier = Modifier.weight(1f))
-                if (sleepTimerRemainingMs != null) {
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                MarqueeText(
+                    text = titleArtistLine,
+                    textStyle = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                    color = Color.White,
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 1,
+                    enabled = true,
+                    edgeFade = false,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                if (isCasting) {
                     Text(
-                        text = stringResource(R.string.player_sleep_timer_active, formatRuntime(sleepTimerRemainingMs)),
+                        text = stringResource(R.string.player_casting_to_tv),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color(0xFF52E3D9),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(Color.White.copy(alpha = 0.08f))
+                            .padding(horizontal = 10.dp, vertical = 5.dp),
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (fallbackLogoUrl != null) {
+                        SubcomposeAsyncImage(
+                            model = fallbackLogoUrl,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(16.dp)
+                                .clip(RoundedCornerShape(4.dp)),
+                            contentScale = ContentScale.Crop,
+                            loading = { StationLogoPlaceholder() },
+                            error = { StationLogoPlaceholder() },
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+                    Text(
+                        text = stationLine,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.White.copy(alpha = 0.7f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+
+                if (station.codec != null || station.bitrate != null || visibleTags.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 5.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        StreamQualityBadge(
+                            codec = station.codec,
+                            bitrate = station.bitrate,
+                        )
+                        visibleTags.forEach { tag ->
+                            Text(
+                                text = tag.replaceFirstChar { it.uppercase() },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.5f),
+                                maxLines = 1,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color.White.copy(alpha = 0.07f))
+                                    .padding(horizontal = 5.dp, vertical = 2.dp),
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                LinearProgressIndicator(
+                    progress = { 1f },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp)),
+                    color = Color.White.copy(alpha = liveBarAlpha),
+                    trackColor = Color.White.copy(alpha = 0.22f),
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
+                ) {
+                    Text(
+                        text = runtimeLabel,
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.White.copy(alpha = 0.68f),
                     )
-                } else {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(androidx.compose.foundation.shape.CircleShape)
-                                .background(Color(0xFFFF3B3B).copy(alpha = liveDotAlpha)),
-                        )
+                    Spacer(modifier = Modifier.weight(1f))
+                    if (sleepTimerRemainingMs != null) {
                         Text(
-                            text = if (isCasting) {
-                                stringResource(R.string.player_casting_to_tv)
-                            } else {
-                                stringResource(R.string.player_live)
-                            },
+                            text = stringResource(R.string.player_sleep_timer_active, formatRuntime(sleepTimerRemainingMs)),
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White.copy(alpha = 0.68f),
                         )
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(androidx.compose.foundation.shape.CircleShape)
+                                    .background(Color(0xFFFF3B3B).copy(alpha = liveDotAlpha)),
+                            )
+                            Text(
+                                text = if (isCasting) {
+                                    stringResource(R.string.player_casting_to_tv)
+                                } else {
+                                    stringResource(R.string.player_live)
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.68f),
+                            )
+                        }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 4.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                PlayerIconButton(
-                    icon = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                    tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.9f),
-                    onClick = onFavoriteClick,
-                )
-                PlayerIconButton(
-                    icon = Icons.Filled.SkipPrevious,
-                    tint = Color.White.copy(alpha = 0.78f),
-                    onClick = onPreviousStationClick,
-                )
-                MainPlaybackButton(
-                    isPlaying = isPlaying,
-                    onClick = onPlayPauseClick,
-                )
-                PlayerIconButton(
-                    icon = if (playerState.isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
-                    tint = if (playerState.isMuted) Color.White.copy(alpha = 0.58f) else Color.White.copy(alpha = 0.78f),
-                    onClick = onVolumeToggle,
-                )
-                PlayerIconButton(
-                    icon = Icons.Outlined.Shuffle,
-                    tint = Color.White.copy(alpha = 0.72f),
-                    onClick = onRandomStationClick,
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    PlayerIconButton(
+                        icon = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                        tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.9f),
+                        onClick = onFavoriteClick,
+                    )
+                    PlayerIconButton(
+                        icon = Icons.Filled.SkipPrevious,
+                        tint = Color.White.copy(alpha = 0.78f),
+                        onClick = onPreviousStationClick,
+                    )
+                    MainPlaybackButton(
+                        isPlaying = isPlaying,
+                        onClick = onPlayPauseClick,
+                    )
+                    PlayerIconButton(
+                        icon = if (playerState.isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+                        tint = if (playerState.isMuted) Color.White.copy(alpha = 0.58f) else Color.White.copy(alpha = 0.78f),
+                        onClick = onVolumeToggle,
+                    )
+                    PlayerIconButton(
+                        icon = Icons.Outlined.Shuffle,
+                        tint = Color.White.copy(alpha = 0.72f),
+                        onClick = onRandomStationClick,
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
             }
-            Spacer(modifier = Modifier.height(12.dp))
         }
 
         if (showSleepTimerDialog) {
@@ -595,6 +741,65 @@ fun PlayerScreen(
                     }
                 },
             )
+        }
+    }
+}
+
+@Composable
+private fun PlayerArtwork(
+    modifier: Modifier,
+    artworkUrl: String?,
+    stationName: String,
+    isPlaying: Boolean,
+    isBuffering: Boolean,
+    artworkScale: Float,
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(22.dp))
+            .background(DarkSurface),
+    ) {
+        SubcomposeAsyncImage(
+            model = artworkUrl,
+            contentDescription = stationName,
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    val scale = if (isPlaying) artworkScale else 1f
+                    scaleX = scale
+                    scaleY = scale
+                },
+            contentScale = ContentScale.Crop,
+            loading = { ArtworkFallback(stationName) },
+            error = { ArtworkFallback(stationName) },
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color.Black.copy(alpha = 0.2f),
+                            Color.Black.copy(alpha = 0.4f),
+                        ),
+                    ),
+                ),
+        )
+        if (isBuffering) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color.Black.copy(alpha = 0.42f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(54.dp),
+                    strokeWidth = 2.dp,
+                    color = Color(0xFF52E3D9).copy(alpha = 0.9f),
+                    trackColor = Color.White.copy(alpha = 0.15f),
+                )
+            }
         }
     }
 }
