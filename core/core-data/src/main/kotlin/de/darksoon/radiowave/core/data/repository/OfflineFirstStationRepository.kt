@@ -2,8 +2,6 @@
 
 package de.darksoon.radiowave.core.data.repository
 
-import android.content.Context
-import dagger.hilt.android.qualifiers.ApplicationContext
 import de.darksoon.radiowave.core.data.mapper.toDomain
 import de.darksoon.radiowave.core.data.mapper.toEntity
 import de.darksoon.radiowave.core.database.dao.StationDao
@@ -11,7 +9,6 @@ import de.darksoon.radiowave.core.model.Country
 import de.darksoon.radiowave.core.model.Genre
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.network.RadioBrowserApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -21,7 +18,6 @@ import javax.inject.Singleton
 
 @Singleton
 class OfflineFirstStationRepository @Inject constructor(
-    @ApplicationContext private val context: Context,
     private val api: RadioBrowserApi,
     private val stationDao: StationDao,
 ) : StationRepository {
@@ -177,35 +173,6 @@ class OfflineFirstStationRepository @Inject constructor(
             .filter { it.uuid != station.uuid }
             .distinctBy { it.uuid }
             .take(15)
-    }
-
-    override suspend fun getNearbyStations(latitude: Double, longitude: Double, limit: Int): List<Station> {
-        // Derive country code from coordinates via Geocoder, then search by country.
-        // The Radio Browser geo-search only covers stations with voluntary GPS data (very few),
-        // while country-based search reliably returns regional/local stations.
-        val countryCode = runCatching {
-            val geocoder = android.location.Geocoder(context, java.util.Locale.getDefault())
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                var result: String? = null
-                geocoder.getFromLocation(latitude, longitude, 1) { addresses ->
-                    result = addresses.firstOrNull()?.countryCode
-                }
-                kotlinx.coroutines.delay(300)
-                result
-            } else {
-                @Suppress("DEPRECATION")
-                geocoder.getFromLocation(latitude, longitude, 1)?.firstOrNull()?.countryCode
-            }
-        }.getOrNull()
-
-        if (countryCode.isNullOrBlank()) return emptyList()
-
-        return runCatching {
-            api.searchByCountry(countryCode, limit = limit)
-                .map { it.toDomain() }
-                .filter { it.streamUrl.isNotBlank() }
-                .distinctBy { it.uuid }
-        }.getOrDefault(emptyList())
     }
 
     override fun getTags(): Flow<List<Genre>> = flow {

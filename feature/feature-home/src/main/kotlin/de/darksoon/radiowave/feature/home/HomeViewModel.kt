@@ -399,20 +399,6 @@ class HomeViewModel @Inject constructor(
         loadData()
     }
 
-    fun loadNearbyStations(latitude: Double, longitude: Double) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isNearbyLoading = true) }
-            val stations = runCatching {
-                stationRepository.getNearbyStations(latitude, longitude, limit = 25)
-            }.getOrDefault(emptyList())
-            _uiState.update { it.copy(nearbyStations = stations, isNearbyLoading = false) }
-        }
-    }
-
-    fun clearNearbyStations() {
-        _uiState.update { it.copy(nearbyStations = emptyList(), isNearbyLoading = false) }
-    }
-
     fun playStation(station: Station) {
         playStationInternal(station, addCurrentToHistory = true)
     }

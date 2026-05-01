@@ -2,22 +2,9 @@
 
 package de.darksoon.radiowave.feature.home
 
-import android.Manifest
-import android.annotation.SuppressLint
-import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
-import androidx.core.content.ContextCompat
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
-import com.google.android.gms.tasks.CancellationTokenSource
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
@@ -98,7 +85,6 @@ import kotlin.math.abs
 
 import kotlin.random.Random
 
-@SuppressLint("MissingPermission")
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -112,45 +98,6 @@ fun HomeScreen(
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
     val similarStations by viewModel.similarStations.collectAsStateWithLifecycle()
     val currentStation = playerState.currentStation
-    val context = LocalContext.current
-
-    var locationPermissionGranted by rememberSaveable {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED,
-        )
-    }
-
-    val locationPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions(),
-    ) { permissions ->
-        val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        locationPermissionGranted = granted
-        if (granted) {
-            val fusedClient = LocationServices.getFusedLocationProviderClient(context)
-            val cts = CancellationTokenSource()
-            fusedClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, cts.token)
-                .addOnSuccessListener { location ->
-                    if (location != null) {
-                        viewModel.loadNearbyStations(location.latitude, location.longitude)
-                    }
-                }
-        }
-    }
-
-    LaunchedEffect(locationPermissionGranted) {
-        if (locationPermissionGranted && uiState.nearbyStations.isEmpty() && !uiState.isNearbyLoading) {
-            val fusedClient = LocationServices.getFusedLocationProviderClient(context)
-            val cts = CancellationTokenSource()
-            fusedClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, cts.token)
-                .addOnSuccessListener { location ->
-                    if (location != null) {
-                        viewModel.loadNearbyStations(location.latitude, location.longitude)
-                    }
-                }
-        }
-    }
 
     LaunchedEffect(currentStation?.uuid) {
         if (currentStation != null) {
@@ -169,15 +116,6 @@ fun HomeScreen(
             uiState = uiState,
             currentStation = currentStation,
             similarStations = similarStations,
-            locationPermissionGranted = locationPermissionGranted,
-            onRequestLocationPermission = {
-                locationPermissionLauncher.launch(
-                    arrayOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION,
-                    ),
-                )
-            },
             onStationClick = onStationClick,
             onViewAllFavorites = onViewAllFavorites,
             onNavigateToBrowse = onNavigateToBrowse,
@@ -192,8 +130,6 @@ private fun HomeContent(
     uiState: HomeUiState,
     currentStation: Station?,
     similarStations: List<Station>,
-    locationPermissionGranted: Boolean,
-    onRequestLocationPermission: () -> Unit,
     onStationClick: (Station) -> Unit,
     onViewAllFavorites: () -> Unit,
     onNavigateToBrowse: (String) -> Unit,
@@ -271,15 +207,6 @@ private fun HomeContent(
                             }
                         }
                     }
-
-                    // Nearby stations section
-                    NearbyStationsSection(
-                        stations = uiState.nearbyStations,
-                        isLoading = uiState.isNearbyLoading,
-                        permissionGranted = locationPermissionGranted,
-                        onRequestPermission = onRequestLocationPermission,
-                        onStationClick = onStationClick,
-                    )
 
                     if (currentStation != null && similarStations.isNotEmpty()) {
                         SectionTitle(
@@ -729,116 +656,6 @@ private val defaultFallbackColors = listOf(
     RadioAccent.copy(alpha = 0.4f),
     Color(0xFF1A1F2B),
 )
-
-@Composable
-private fun NearbyStationsSection(
-    stations: List<Station>,
-    isLoading: Boolean,
-    permissionGranted: Boolean,
-    onRequestPermission: () -> Unit,
-    onStationClick: (Station) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier) {
-        SectionTitle(title = stringResource(R.string.home_section_nearby))
-        when {
-            !permissionGranted -> {
-                // CTA: Standort freigeben
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp)
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(
-                                    RadioAccent.copy(alpha = 0.10f),
-                                    Color.White.copy(alpha = 0.04f),
-                                ),
-                            ),
-                        )
-                        .border(1.dp, RadioAccent.copy(alpha = 0.22f), RoundedCornerShape(16.dp))
-                        .clickable(onClick = onRequestPermission)
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .background(RadioAccent.copy(alpha = 0.14f), CircleShape),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Search,
-                                contentDescription = null,
-                                tint = RadioAccent,
-                                modifier = Modifier.size(22.dp),
-                            )
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.home_nearby_permission_title),
-                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                                color = Color.White,
-                            )
-                            Spacer(modifier = Modifier.height(3.dp))
-                            Text(
-                                text = stringResource(R.string.home_nearby_permission_subtitle),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.55f),
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(RadioAccent.copy(alpha = 0.18f))
-                                .padding(horizontal = 10.dp, vertical = 4.dp),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.home_nearby_permission_cta),
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = RadioAccent,
-                            )
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            isLoading -> {
-                de.darksoon.radiowave.core.ui.components.SkeletonStationRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    cardWidth = 130,
-                    cardHeight = 150,
-                    count = 4,
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            stations.isNotEmpty() -> {
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    items(stations, key = { it.uuid }, contentType = { "station" }) { station ->
-                        RecentStationCard(
-                            station = station,
-                            onClick = { onStationClick(station) },
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            else -> {
-                // Permission granted but no results — nichts anzeigen
-            }
-        }
-    }
-}
 
 @Composable
 private fun EmptyStartCard(

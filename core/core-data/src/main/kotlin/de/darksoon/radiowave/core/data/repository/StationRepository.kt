@@ -17,7 +17,6 @@ interface StationRepository {
     fun getStationsByTag(tag: String): Flow<List<Station>>
     suspend fun getStationVariants(station: Station): List<Station>
     suspend fun getSimilarStations(station: Station): List<Station>
-    suspend fun getNearbyStations(latitude: Double, longitude: Double, limit: Int = 25): List<Station>
     fun getTags(): Flow<List<Genre>>
     fun getCountries(): Flow<List<Country>>
     suspend fun registerClick(stationUuid: String)
