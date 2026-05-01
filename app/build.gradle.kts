@@ -80,6 +80,7 @@ dependencies {
     implementation(project(":core:core-ui"))
 
     implementation(libs.media3.cast)
+    implementation(libs.google.material)
     
     implementation(project(":feature:feature-home"))
     implementation(project(":feature:feature-browse"))

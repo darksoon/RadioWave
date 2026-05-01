@@ -6,7 +6,7 @@
         <item name="postSplashScreenTheme">@style/Theme.RadioWave</item>
     </style>
 
-    <style name="Theme.RadioWave" parent="Theme.AppCompat.DayNight.NoActionBar">
+    <style name="Theme.RadioWave" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:windowBackground">#14111D</item>
     </style>
 </resources>
