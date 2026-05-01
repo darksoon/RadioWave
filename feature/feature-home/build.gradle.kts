@@ -11,4 +11,5 @@ dependencies {
     implementation(project(":core:core-data"))
     implementation(project(":core:core-player"))
     implementation(project(":core:core-ui"))
+    implementation(libs.play.services.location)
 }

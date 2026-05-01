@@ -175,6 +175,18 @@ class OfflineFirstStationRepository @Inject constructor(
             .take(15)
     }
 
+    override suspend fun getNearbyStations(latitude: Double, longitude: Double, limit: Int): List<Station> {
+        return runCatching {
+            api.searchStationsByGeo(
+                latitude = latitude,
+                longitude = longitude,
+                limit = limit,
+            ).map { it.toDomain() }
+                .filter { it.streamUrl.isNotBlank() }
+                .distinctBy { it.uuid }
+        }.getOrDefault(emptyList())
+    }
+
     override fun getTags(): Flow<List<Genre>> = flow {
         emit(runCatching { api.getTags().map { it.toDomain() } }.getOrDefault(emptyList()))
     }

@@ -16,4 +16,8 @@
     <string name="home_error_api">API-Fehler: %1$s</string>
     <string name="home_error_unknown">Unbekannter Fehler</string>
     <string name="home_empty_cta">Sender entdecken</string>
+    <string name="home_section_nearby">Radios in deiner Nähe</string>
+    <string name="home_nearby_permission_title">Lokale Sender entdecken</string>
+    <string name="home_nearby_permission_subtitle">Radiosender in deiner Nähe finden</string>
+    <string name="home_nearby_permission_cta">Erlauben</string>
 </resources>

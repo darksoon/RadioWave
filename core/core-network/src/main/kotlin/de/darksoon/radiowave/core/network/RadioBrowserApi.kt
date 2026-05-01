@@ -9,6 +9,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
+import retrofit2.http.QueryMap
 
 /**
  * Retrofit API interface for Radio Browser API.
@@ -46,6 +47,16 @@ interface RadioBrowserApi {
     suspend fun searchByCountry(
         @Path("code") countryCode: String,
         @Query("limit") limit: Int = 100,
+        @Query("order") order: String = "clickcount",
+        @Query("reverse") reverse: Boolean = true,
+        @Query("hidebroken") hideBroken: Boolean = true,
+    ): List<RadioBrowserStation>
+
+    @GET("json/stations/search")
+    suspend fun searchStationsByGeo(
+        @Query("geo_lat") latitude: Double,
+        @Query("geo_long") longitude: Double,
+        @Query("limit") limit: Int = 30,
         @Query("order") order: String = "clickcount",
         @Query("reverse") reverse: Boolean = true,
         @Query("hidebroken") hideBroken: Boolean = true,
