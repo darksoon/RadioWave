@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-05-01
+
+### Added
+- Fullscreen player now adapts to landscape orientation: artwork on the left, controls and metadata on the right.
+- Pull-to-refresh in Home and Browse — pull down to reload content at any time.
+- Skeleton loader with shimmer animation replaces the plain spinner while Home, Browse, and Favorites load for the first time.
+- Onboarding redesigned as a fullscreen experience with per-step icons, ambient glow background, page-dot indicator, and animated transitions.
+
+### Fixed
+- Android Auto buffer profile was incorrectly overridden by the timeshift guard, causing the automotive low-load mode to have no effect. The automotive mode now correctly takes priority, reducing CPU load and battery drain during car sessions.
+- Browse and Favorites grid now uses adaptive column counts instead of a fixed three-column layout, preventing overcrowded or cut-off grids in landscape orientation.
+
+### Improved
+- Empty states for Home, Browse, and Favorites redesigned with icons, glow effects, and contextual call-to-action elements.
+- Accessibility: favorite toggle, filter expand/collapse, and play/pause buttons across Browse and Favorites now include descriptive labels for screen readers.
+- Wi-Fi lock type downgraded from `WIFI_MODE_FULL_HIGH_PERF` to `WIFI_MODE_FULL` — sufficient for audio streaming, lower power draw.
+- Onboarding no longer mentions the GitHub updater, which was removed in a previous update.
+- `contentType` hints added to all lazy list and grid items for better Compose scroll performance.
+- Favorites card minimum height is now flexible instead of fixed, preventing content clipping on narrow columns in landscape.
+- Onboarding layout constrained to a maximum width of 520 dp and centered on wide tablet screens.
+
+### Removed
+- GitHub release checker and What's New dialog removed. RadioWave is now distributed exclusively via Google Play; updates are handled by the Play Store.
+- GitHub release notes section removed from Settings.
+
 ### Added
 - Fullscreen player now includes a direct share action for the current station.
 - Fullscreen player now includes a built-in sleep timer with quick presets.

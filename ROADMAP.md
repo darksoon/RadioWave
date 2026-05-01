@@ -2,7 +2,7 @@
 
 [Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Status: 2026-04-24
+Status: 2026-05-01
 
 This roadmap is intended for GitHub and keeps the public product status compact. RadioWave is live on Google Play, so the roadmap prioritizes stability, supportability, and targeted UX polish.
 
@@ -64,22 +64,29 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - Android Auto browse callbacks now run asynchronously instead of blocking
 - Android Auto previous/next navigation uses the active in-car queue more reliably
 - WiFiLock is only held while the active network is Wi-Fi
+- Landscape layout for fullscreen player (artwork left, controls right)
+- Landscape-adaptive grid layouts for Browse and Favorites
+- Redesigned onboarding as fullscreen experience with icons and animations
+- Pull-to-refresh in Home and Browse
+- Skeleton loader with shimmer animation in Home, Browse, and Favorites
+- Redesigned empty states for Home, Browse, and Favorites with icons and CTAs
+- Accessibility labels added to interactive icons across Browse and Favorites
+- Automotive mode now correctly takes priority over timeshift guard, reducing battery drain
+- Wi-Fi lock type downgraded from high-perf to standard mode for audio streaming
+- GitHub updater and What's New dialog removed — Play Store only going forward
 
 ## In Progress
 
 - Voice and Assistant play intents for station launch
-- Ongoing live-app stabilization based on real device and user cases
+- Live-app stabilization based on real device and user feedback
 
 ## Planned Next
 
-- UX polish for live users: better empty states, clearer error states, and a visible feedback path
-- Make battery/data usage easier to understand: bitrate-based estimate and targeted playback measurements
-- Android Auto smoke test on a real phone/head unit after queue and callback optimizations
-- Radio timeshift beyond MVP (longer buffer, optional seek/live in fullscreen)
-- Visible data-usage estimate based on bitrate
-- Play Store readiness: native debug symbols for App Bundle crash/ANR diagnostics
 - Favorites export/import (JSON)
 - Custom stations M3U/PLS import
+- Bitrate-based data usage estimate
+- Android Auto smoke test on real head unit
+- Radio timeshift beyond MVP (longer buffer, optional seek/live)
 
 ## Later
 

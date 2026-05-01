@@ -2,7 +2,7 @@
 
 [Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Stand: 2026-04-24
+Stand: 2026-05-01
 
 Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus kompakt. RadioWave ist live auf Google Play; die Roadmap priorisiert deshalb Stabilitaet, Supportfaehigkeit und gezieltes UX-Polishing.
 
@@ -63,6 +63,16 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Android-Auto-Browse-Callbacks laufen asynchron statt blockierend
 - Android-Auto-Prev/Next nutzt die aktive Auto-Queue zuverlaessiger
 - WiFiLock wird nur noch bei aktiver WLAN-Verbindung gehalten
+- Landscape-Layout fuer Vollbild-Player (Artwork links, Controls rechts)
+- Landscape-adaptives Grid-Layout in Browse und Favorites
+- Onboarding als Fullscreen-Erlebnis mit Icons und Animationen neu gestaltet
+- Pull-to-Refresh in Home und Browse
+- Skeleton-Loader mit Shimmer-Animation in Home, Browse und Favorites
+- Empty States in Home, Browse und Favorites mit Icons und CTAs neu gestaltet
+- Accessibility-Labels fuer interaktive Icons in Browse und Favorites ergaenzt
+- Automotive-Modus hat jetzt Vorrang vor Timeshift-Guard, reduziert Akku-Verbrauch im Auto
+- WiFi-Lock-Typ von High-Perf auf Standard reduziert (genuegt fuer Audio-Streaming)
+- GitHub-Updater und What's-New-Dialog entfernt — nur noch Play Store
 
 ## In Arbeit
 
@@ -71,14 +81,11 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 
 ## Als Naechstes
 
-- UX-Polish fuer Live-Nutzer: bessere Empty States, klarere Fehlerzustaende und sichtbarer Feedback-Weg
-- Akku-/Datenverbrauch weiter messbar machen: Bitrate-basierte Schaetzung und gezielte Playback-Messungen
-- Android Auto Smoke-Test auf echtem Handy/Head-Unit nach Queue- und Callback-Optimierungen
-- Radio-Timeshift ueber MVP hinaus (laengerer Buffer, optionaler Seek/LIVE im Fullscreen)
-- Sichtbare Datennutzungs-Schaetzung auf Basis der Bitrate
-- Play Store: Native Debug Symbols fuer AAB/Crash- und ANR-Auswertung
 - Favoriten Export/Import (JSON)
 - Custom Stations M3U/PLS-Import
+- Bitrate-basierte Datenverbrauchs-Schaetzung
+- Android Auto Smoke-Test auf echtem Head-Unit
+- Radio-Timeshift ueber MVP hinaus (laengerer Buffer, optionaler Seek/LIVE)
 
 ## Spaeter
 
