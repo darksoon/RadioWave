@@ -46,4 +46,10 @@
     <string name="browse_context_in">In %1$s</string>
     <string name="browse_suggestions">Suggestions:</string>
     <string name="browse_http_badge">HTTP</string>
+    <string name="browse_cd_toggle_favorite_add">Add to favorites</string>
+    <string name="browse_cd_toggle_favorite_remove">Remove from favorites</string>
+    <string name="browse_cd_filter_expand">Show filters</string>
+    <string name="browse_cd_filter_collapse">Hide filters</string>
+    <string name="browse_empty_title">No stations found</string>
+    <string name="browse_empty_subtitle">Try a different search or remove filters</string>
 </resources>

@@ -411,7 +411,10 @@ private fun BrowseContent(
                     )
                     Icon(
                         imageVector = if (advancedFiltersExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                        contentDescription = null,
+                        contentDescription = stringResource(
+                            if (advancedFiltersExpanded) R.string.browse_cd_filter_collapse
+                            else R.string.browse_cd_filter_expand,
+                        ),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -731,16 +734,54 @@ private fun EmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .background(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Color(0xFF52E3D9).copy(alpha = 0.18f),
+                            Color.Transparent,
+                        ),
+                    ),
+                    shape = androidx.compose.foundation.shape.CircleShape,
+                )
+                .then(
+                    Modifier.background(
+                        Color(0xFF52E3D9).copy(alpha = 0.10f),
+                        androidx.compose.foundation.shape.CircleShape,
+                    )
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = null,
+                tint = Color(0xFF52E3D9),
+                modifier = Modifier.size(32.dp),
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         Text(
-            text = stringResource(R.string.browse_no_stations),
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.SemiBold,
-            ),
+            text = stringResource(R.string.browse_empty_title),
+            color = Color.White,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = stringResource(R.string.browse_empty_subtitle),
+            color = Color.White.copy(alpha = 0.55f),
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
         val contextText = when {
             searchQuery.isNotBlank() && selectedCountry != null -> {
                 val countryName = topCountries.find { it.code == selectedCountry }?.let {
@@ -913,7 +954,10 @@ private fun StationGridCard(
             ) {
                 Icon(
                     imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                    contentDescription = null,
+                    contentDescription = stringResource(
+                        if (isFavorite) R.string.browse_cd_toggle_favorite_remove
+                        else R.string.browse_cd_toggle_favorite_add,
+                    ),
                     tint = if (isFavorite) Color(0xFFFF5A7A) else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .size(24.dp)

@@ -21,4 +21,7 @@
     <string name="favorites_confirm_delete_custom_title">Delete station?</string>
     <string name="favorites_confirm_delete_custom_message">Delete %1$s? This cannot be undone.</string>
     <string name="favorites_confirm_delete_custom_yes">Delete</string>
+    <string name="favorites_cd_play">Play station</string>
+    <string name="favorites_cd_pause">Pause</string>
+    <string name="favorites_cd_add">Add station</string>
 </resources>

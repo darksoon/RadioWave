@@ -21,4 +21,7 @@
     <string name="favorites_confirm_delete_custom_title">Sender loeschen?</string>
     <string name="favorites_confirm_delete_custom_message">%1$s loeschen? Das kann nicht rueckgaengig gemacht werden.</string>
     <string name="favorites_confirm_delete_custom_yes">Loeschen</string>
+    <string name="favorites_cd_play">Sender abspielen</string>
+    <string name="favorites_cd_pause">Pause</string>
+    <string name="favorites_cd_add">Sender hinzufügen</string>
 </resources>

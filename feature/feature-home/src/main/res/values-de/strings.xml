@@ -15,4 +15,5 @@
     <string name="home_error_timeout">Zeitüberschreitung. Bitte versuche es erneut.</string>
     <string name="home_error_api">API-Fehler: %1$s</string>
     <string name="home_error_unknown">Unbekannter Fehler</string>
+    <string name="home_empty_cta">Sender entdecken</string>
 </resources>

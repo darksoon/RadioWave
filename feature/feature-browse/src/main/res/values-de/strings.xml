@@ -46,4 +46,10 @@
     <string name="browse_context_in">In %1$s</string>
     <string name="browse_suggestions">Vorschlaege:</string>
     <string name="browse_http_badge">HTTP</string>
+    <string name="browse_cd_toggle_favorite_add">Zu Favoriten hinzufügen</string>
+    <string name="browse_cd_toggle_favorite_remove">Aus Favoriten entfernen</string>
+    <string name="browse_cd_filter_expand">Filter anzeigen</string>
+    <string name="browse_cd_filter_collapse">Filter ausblenden</string>
+    <string name="browse_empty_title">Keine Sender gefunden</string>
+    <string name="browse_empty_subtitle">Andere Suchbegriffe oder Filter ausprobieren</string>
 </resources>

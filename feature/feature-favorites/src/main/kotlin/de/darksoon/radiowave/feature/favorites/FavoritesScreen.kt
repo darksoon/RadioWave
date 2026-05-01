@@ -469,7 +469,10 @@ private fun FavoriteStationCard(
                     ) {
                         Icon(
                             imageVector = if (isActive && isAudioPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                            contentDescription = null,
+                            contentDescription = stringResource(
+                                if (isActive && isAudioPlaying) R.string.favorites_cd_pause
+                                else R.string.favorites_cd_play,
+                            ),
                             tint = RadioAccent,
                             modifier = Modifier.fillMaxSize().padding(7.dp),
                         )
@@ -566,41 +569,71 @@ private fun EmptyFavorites(onAddCustom: () -> Unit, modifier: Modifier = Modifie
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Icon(
-                imageVector = Icons.Outlined.FavoriteBorder,
-                contentDescription = null,
-                tint = RadioAccent.copy(alpha = 0.9f),
-                modifier = Modifier.size(56.dp),
-            )
-            Spacer(modifier = Modifier.height(14.dp))
+            // Icon mit Glow-Effekt
+            Box(
+                modifier = Modifier
+                    .size(88.dp)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                RadioAccent.copy(alpha = 0.22f),
+                                Color.Transparent,
+                            ),
+                        ),
+                        shape = CircleShape,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .background(RadioAccent.copy(alpha = 0.12f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.FavoriteBorder,
+                        contentDescription = null,
+                        tint = RadioAccent,
+                        modifier = Modifier.size(32.dp),
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(20.dp))
             Text(
                 text = stringResource(R.string.favorites_empty_title),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface,
+                color = Color.White,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = stringResource(R.string.favorites_empty_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = Color.White.copy(alpha = 0.55f),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             Surface(
                 onClick = onAddCustom,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 color = RadioAccent.copy(alpha = 0.14f),
-                border = BorderStroke(1.dp, RadioAccent.copy(alpha = 0.35f)),
+                border = BorderStroke(1.dp, RadioAccent.copy(alpha = 0.40f)),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
                 ) {
-                    Icon(Icons.Filled.Add, contentDescription = null, tint = RadioAccent, modifier = Modifier.size(18.dp))
+                    Icon(
+                        Icons.Filled.Add,
+                        contentDescription = stringResource(R.string.favorites_cd_add),
+                        tint = RadioAccent,
+                        modifier = Modifier.size(18.dp),
+                    )
                     Text(
                         text = stringResource(R.string.favorites_add_custom_station),
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                         color = RadioAccent,
-                        modifier = Modifier.padding(start = 6.dp),
+                        modifier = Modifier.padding(start = 8.dp),
                     )
                 }
             }
