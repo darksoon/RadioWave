@@ -65,6 +65,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.darksoon.radiowave.core.model.AppSettings
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.ui.components.ErrorState
+import de.darksoon.radiowave.core.ui.components.FavoritesSkeletonLoader
 import de.darksoon.radiowave.core.ui.components.LoadingState
 import de.darksoon.radiowave.core.ui.components.StationLogoImage
 import de.darksoon.radiowave.core.ui.components.StreamQualityBadge
@@ -90,7 +91,7 @@ fun FavoritesScreen(
     var showAddCustomDialog by remember { mutableStateOf(false) }
 
     when {
-        uiState.isLoading -> LoadingState(modifier = modifier)
+        uiState.isLoading -> FavoritesSkeletonLoader(modifier = modifier)
         uiState.error != null -> ErrorState(
             message = uiState.error ?: stringResource(R.string.favorites_unknown_error),
             onRetry = {},

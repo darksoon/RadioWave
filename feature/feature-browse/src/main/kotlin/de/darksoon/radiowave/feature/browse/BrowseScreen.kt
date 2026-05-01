@@ -80,6 +80,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.darksoon.radiowave.core.ui.components.BrowseSkeletonLoader
 import de.darksoon.radiowave.core.ui.components.StationLogoImage
 import de.darksoon.radiowave.core.ui.components.StreamQualityBadge
 import de.darksoon.radiowave.core.model.AppSettings
@@ -168,6 +169,7 @@ private val quickGenres = listOf(
 )
 
 @Composable
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 fun BrowseScreen(
     initialGenre: String = "",
     modifier: Modifier = Modifier,
@@ -204,37 +206,41 @@ fun BrowseScreen(
         }
     }
 
-    BrowseContent(
-        uiState = uiState,
-        searchQuery = searchQuery,
-        selectedCountry = selectedCountry,
-        selectedGenre = selectedGenre,
-        showInsecureStreams = showInsecureStreams,
-        onSearchQueryChange = { query ->
-            selectedGenre = null
-            viewModel.onSearchQueryChange(query)
-        },
-        onGenreSelected = { genre ->
-            selectedGenre = genre
-            viewModel.onSearchQueryChange(genre ?: "")
-        },
-        onCountrySelected = { countryCode ->
-            viewModel.onCountrySelected(countryCode)
-        },
-        onSortOptionChanged = { sortOption ->
-            viewModel.onSortOptionChanged(sortOption)
-        },
-        onRefresh = {
-            viewModel.refresh()
-        },
-        onStationClick = { station ->
-            viewModel.playStation(station)
-        },
-        onToggleFavorite = { station ->
-            viewModel.toggleFavorite(station)
-        },
+    androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+        isRefreshing = uiState.isLoading,
+        onRefresh = { viewModel.refresh() },
         modifier = modifier,
-    )
+    ) {
+        BrowseContent(
+            uiState = uiState,
+            searchQuery = searchQuery,
+            selectedCountry = selectedCountry,
+            selectedGenre = selectedGenre,
+            showInsecureStreams = showInsecureStreams,
+            onSearchQueryChange = { query ->
+                selectedGenre = null
+                viewModel.onSearchQueryChange(query)
+            },
+            onGenreSelected = { genre ->
+                selectedGenre = genre
+                viewModel.onSearchQueryChange(genre ?: "")
+            },
+            onCountrySelected = { countryCode ->
+                viewModel.onCountrySelected(countryCode)
+            },
+            onSortOptionChanged = { sortOption ->
+                viewModel.onSortOptionChanged(sortOption)
+            },
+            onRefresh = { viewModel.refresh() },
+            onStationClick = { station ->
+                viewModel.playStation(station)
+            },
+            onToggleFavorite = { station ->
+                viewModel.toggleFavorite(station)
+            },
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
 }
 
 @Composable
@@ -375,7 +381,7 @@ private fun BrowseContent(
                         contentPadding = PaddingValues(horizontal = 20.dp),
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        items(quickGenres, key = { item -> item.tag }) { item ->
+                        items(quickGenres, key = { item -> item.tag }, contentType = { "genre" }) { item ->
                             QuickGenreCard(
                                 item = item,
                                 isSelected = selectedGenre == item.tag,
@@ -436,7 +442,7 @@ private fun BrowseContent(
                             contentPadding = PaddingValues(horizontal = 10.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            items(topCountries, key = { country -> country.code }) { country ->
+                            items(topCountries, key = { country -> country.code }, contentType = { "country" }) { country ->
                                 val isSelected = selectedCountry == country.code
                                 FilterChip(
                                     selected = isSelected,
@@ -464,7 +470,7 @@ private fun BrowseContent(
                             contentPadding = PaddingValues(horizontal = 10.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            items(popularGenres, key = { genre -> genre.tag }) { genre ->
+                            items(popularGenres, key = { genre -> genre.tag }, contentType = { "genre" }) { genre ->
                                 val isSelected = selectedGenre == genre.tag
                                 FilterChip(
                                     selected = isSelected,
@@ -564,17 +570,11 @@ private fun BrowseContent(
 
             when {
                 uiState.isLoading -> {
-                    Box(
+                    BrowseSkeletonLoader(
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.browse_loading_stations),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    )
                 }
                 visibleStations.isEmpty() && searchQuery.isBlank() && selectedCountry == null -> {
                     Box(
@@ -819,7 +819,7 @@ private fun EmptyState(
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            items(suggestions, key = { suggestion -> suggestion.tag }) { suggestion ->
+            items(suggestions, key = { suggestion -> suggestion.tag }, contentType = { "genre" }) { suggestion ->
                 FilterChip(
                     selected = false,
                     onClick = { onSuggestionClick(suggestion.tag) },

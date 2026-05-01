@@ -69,6 +69,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.ui.components.ErrorState
+import de.darksoon.radiowave.core.ui.components.HomeSkeletonLoader
 import de.darksoon.radiowave.core.ui.components.LoadingState
 import de.darksoon.radiowave.core.ui.components.StationLogoImage
 
@@ -84,6 +85,7 @@ import kotlin.math.abs
 
 import kotlin.random.Random
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onStationClick: (Station) -> Unit,
@@ -105,16 +107,22 @@ fun HomeScreen(
         }
     }
 
-    HomeContent(
-        uiState = uiState,
-        currentStation = currentStation,
-        similarStations = similarStations,
-        onStationClick = onStationClick,
-        onViewAllFavorites = onViewAllFavorites,
-        onNavigateToBrowse = onNavigateToBrowse,
-        onRetry = { viewModel.refresh() },
+    androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+        isRefreshing = uiState.isLoading,
+        onRefresh = { viewModel.refresh() },
         modifier = modifier,
-    )
+    ) {
+        HomeContent(
+            uiState = uiState,
+            currentStation = currentStation,
+            similarStations = similarStations,
+            onStationClick = onStationClick,
+            onViewAllFavorites = onViewAllFavorites,
+            onNavigateToBrowse = onNavigateToBrowse,
+            onRetry = { viewModel.refresh() },
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
 }
 
 @Composable
@@ -130,7 +138,7 @@ private fun HomeContent(
 ) {
     when {
         uiState.isLoading -> {
-            LoadingState(modifier = modifier)
+            HomeSkeletonLoader(modifier = modifier)
         }
 
         uiState.error != null -> {
@@ -191,7 +199,7 @@ private fun HomeContent(
                             contentPadding = PaddingValues(horizontal = 20.dp),
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
-                            items(recentStations, key = { station -> station.uuid }) { station ->
+                            items(recentStations, key = { station -> station.uuid }, contentType = { "station" }) { station ->
                                 RecentStationCard(
                                     station = station,
                                     onClick = { onStationClick(station) },
@@ -208,7 +216,7 @@ private fun HomeContent(
                             contentPadding = PaddingValues(horizontal = 20.dp),
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
-                            items(similarStations, key = { station -> station.uuid }) { station ->
+                            items(similarStations, key = { station -> station.uuid }, contentType = { "station" }) { station ->
                                 RecentStationCard(
                                     station = station,
                                     onClick = { onStationClick(station) },
@@ -223,7 +231,7 @@ private fun HomeContent(
                             contentPadding = PaddingValues(horizontal = 20.dp),
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
-                            items(discoverStations, key = { station -> station.uuid }) { station ->
+                            items(discoverStations, key = { station -> station.uuid }, contentType = { "station" }) { station ->
                                 RecentStationCard(
                                     station = station,
                                     onClick = { onStationClick(station) },
@@ -382,7 +390,7 @@ private fun FavoriteStationCarousel(
             contentPadding = PaddingValues(horizontal = sidePadding),
             horizontalArrangement = Arrangement.spacedBy(itemSpacing),
         ) {
-            items(stations, key = { station -> station.uuid }) { station ->
+            items(stations, key = { station -> station.uuid }, contentType = { "station" }) { station ->
                 val transform = rememberCarouselTransform(listState, station.uuid)
                 FavoriteHeroCard(
                     station = station,
