@@ -2,6 +2,7 @@
 
 package de.darksoon.radiowave.auto
 
+import android.media.AudioManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
@@ -872,6 +873,13 @@ class RadioWaveAutoService : MediaLibraryService() {
         )
         if (!autoPlayEnabled) return
         if (playerController.playerState.value.isPlaying) return
+
+        // Don't auto-resume during an active phone call — the audio focus handoff
+        // after the call ends would otherwise cause the radio to start unexpectedly.
+        val audioManager = getSystemService(AudioManager::class.java)
+        if (audioManager?.mode == AudioManager.MODE_IN_CALL ||
+            audioManager?.mode == AudioManager.MODE_IN_COMMUNICATION
+        ) return
 
         val streamUrl = prefs.getString(AppSettings.KEY_LAST_STATION_STREAM_URL, null)
             ?.trim()
