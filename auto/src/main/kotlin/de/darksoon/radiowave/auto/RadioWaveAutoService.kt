@@ -874,11 +874,14 @@ class RadioWaveAutoService : MediaLibraryService() {
         if (!autoPlayEnabled) return
         if (playerController.playerState.value.isPlaying) return
 
-        // Don't auto-resume during an active phone call — the audio focus handoff
-        // after the call ends would otherwise cause the radio to start unexpectedly.
+        // Don't auto-resume during an active or incoming call — the audio focus handoff
+        // after the call/ringtone ends would otherwise cause the radio to start unexpectedly.
         val audioManager = getSystemService(AudioManager::class.java)
-        if (audioManager?.mode == AudioManager.MODE_IN_CALL ||
-            audioManager?.mode == AudioManager.MODE_IN_COMMUNICATION
+        if (audioManager?.mode in setOf(
+                AudioManager.MODE_IN_CALL,
+                AudioManager.MODE_IN_COMMUNICATION,
+                AudioManager.MODE_RINGTONE,
+            )
         ) return
 
         val streamUrl = prefs.getString(AppSettings.KEY_LAST_STATION_STREAM_URL, null)

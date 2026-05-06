@@ -522,7 +522,12 @@ fun PlayerScreen(
                     }
                 }
             } else {
-                // Portrait layout
+                // Portrait layout — scrollable for small screens / large font scale
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
+                ) {
                 Spacer(modifier = Modifier.height(20.dp))
 
                 PlayerArtwork(
@@ -702,6 +707,7 @@ fun PlayerScreen(
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
+                } // end portrait scroll Column
             }
         }
 

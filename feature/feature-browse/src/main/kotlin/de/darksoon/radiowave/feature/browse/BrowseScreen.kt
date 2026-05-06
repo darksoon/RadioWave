@@ -206,6 +206,14 @@ fun BrowseScreen(
         }
     }
 
+    val hasData = uiState.topStations.isNotEmpty()
+    val isInitialLoad = uiState.isLoading && !hasData
+
+    if (isInitialLoad) {
+        BrowseSkeletonLoader(modifier = modifier)
+        return@BrowseScreen
+    }
+
     androidx.compose.material3.pulltorefresh.PullToRefreshBox(
         isRefreshing = uiState.isLoading,
         onRefresh = { viewModel.refresh() },

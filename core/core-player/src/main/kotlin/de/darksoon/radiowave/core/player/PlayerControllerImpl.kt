@@ -10,7 +10,6 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.Uri
-import android.net.wifi.WifiManager
 import android.os.PowerManager
 import android.os.SystemClock
 import android.util.Log
@@ -67,7 +66,6 @@ class PlayerControllerImpl @Inject constructor(
     private var playbackLostRecoveryJob: Job? = null
     private var restartGuardJob: Job? = null
     private var wakeLock: PowerManager.WakeLock? = null
-    private var wifiLock: WifiManager.WifiLock? = null
     private var reconnectAttempts = 0
     private var playbackLostRecoveryAttempts = 0
     private var userPausedPlayback = false
@@ -164,16 +162,8 @@ class PlayerControllerImpl @Inject constructor(
                 setReferenceCounted(false)
             }
         }
-
-        if (wifiLock == null) {
-            val wifiManager = context.applicationContext.getSystemService(WifiManager::class.java)
-            wifiLock = wifiManager?.createWifiLock(
-                WifiManager.WIFI_MODE_FULL,
-                "RadioWave:PlayerWifiLock",
-            )?.apply {
-                setReferenceCounted(false)
-            }
-        }
+        // WifiLock removed: WIFI_MODE_FULL is a no-op since Android 10 (API 29).
+        // Modern Android keeps Wi-Fi awake for active streams without a lock.
     }
 
     private fun updatePlaybackLocks(player: ExoPlayer?) {
@@ -189,18 +179,6 @@ class PlayerControllerImpl @Inject constructor(
             } catch (error: SecurityException) {
                 logWarning("WakeLock acquire failed: ${error.message}")
             }
-
-            if (isActiveNetworkWifi()) {
-                try {
-                    if (wifiLock?.isHeld != true) {
-                        wifiLock?.acquire()
-                    }
-                } catch (error: SecurityException) {
-                    logWarning("WifiLock acquire failed: ${error.message}")
-                }
-            } else {
-                releaseWifiLock()
-            }
         } else {
             releasePlaybackLocks()
         }
@@ -208,7 +186,6 @@ class PlayerControllerImpl @Inject constructor(
 
     private fun releasePlaybackLocks() {
         releaseWakeLock()
-        releaseWifiLock()
     }
 
     private fun releaseWakeLock() {
@@ -218,16 +195,6 @@ class PlayerControllerImpl @Inject constructor(
             }
         } catch (error: RuntimeException) {
             logWarning("WakeLock release failed: ${error.message}")
-        }
-    }
-
-    private fun releaseWifiLock() {
-        try {
-            if (wifiLock?.isHeld == true) {
-                wifiLock?.release()
-            }
-        } catch (error: RuntimeException) {
-            logWarning("WifiLock release failed: ${error.message}")
         }
     }
 
@@ -299,13 +266,6 @@ class PlayerControllerImpl @Inject constructor(
 
     private fun isTimeshiftGuardEnabled(): Boolean {
         return settingsPrefs.getBoolean(AppSettings.KEY_TIMESHIFT_GUARD, true)
-    }
-
-    private fun isActiveNetworkWifi(): Boolean {
-        val manager = connectivityManager ?: return false
-        val activeNetwork = manager.activeNetwork ?: return false
-        val capabilities = manager.getNetworkCapabilities(activeNetwork) ?: return false
-        return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
     }
 
     private fun isPlaybackBlockedByMobileDataPolicy(): Boolean {
@@ -1189,7 +1149,6 @@ class PlayerControllerImpl @Inject constructor(
         exoPlayer = null
         activeBufferProfile = null
         wakeLock = null
-        wifiLock = null
         _playerState.update { PlayerState() }
         isStopping = false
     }

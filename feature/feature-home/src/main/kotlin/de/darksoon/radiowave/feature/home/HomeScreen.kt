@@ -107,21 +107,30 @@ fun HomeScreen(
         }
     }
 
-    androidx.compose.material3.pulltorefresh.PullToRefreshBox(
-        isRefreshing = uiState.isLoading,
-        onRefresh = { viewModel.refresh() },
-        modifier = modifier,
-    ) {
-        HomeContent(
-            uiState = uiState,
-            currentStation = currentStation,
-            similarStations = similarStations,
-            onStationClick = onStationClick,
-            onViewAllFavorites = onViewAllFavorites,
-            onNavigateToBrowse = onNavigateToBrowse,
-            onRetry = { viewModel.refresh() },
-            modifier = Modifier.fillMaxSize(),
-        )
+    val hasData = uiState.recentStations.isNotEmpty() ||
+        uiState.favoriteStations.isNotEmpty() ||
+        uiState.topStations.isNotEmpty()
+    val isInitialLoad = uiState.isLoading && !hasData
+
+    if (isInitialLoad) {
+        HomeSkeletonLoader(modifier = modifier)
+    } else {
+        androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+            isRefreshing = uiState.isLoading,
+            onRefresh = { viewModel.refresh() },
+            modifier = modifier,
+        ) {
+            HomeContent(
+                uiState = uiState,
+                currentStation = currentStation,
+                similarStations = similarStations,
+                onStationClick = onStationClick,
+                onViewAllFavorites = onViewAllFavorites,
+                onNavigateToBrowse = onNavigateToBrowse,
+                onRetry = { viewModel.refresh() },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -137,10 +146,6 @@ private fun HomeContent(
     modifier: Modifier = Modifier,
 ) {
     when {
-        uiState.isLoading -> {
-            HomeSkeletonLoader(modifier = modifier)
-        }
-
         uiState.error != null -> {
             ErrorState(
                 message = uiState.error,

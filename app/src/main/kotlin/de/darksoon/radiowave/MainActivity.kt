@@ -25,6 +25,8 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Brush
@@ -97,6 +99,7 @@ import de.darksoon.radiowave.core.cast.CastManager
 import de.darksoon.radiowave.core.model.AppSettings
 import de.darksoon.radiowave.core.model.PlayerState
 import de.darksoon.radiowave.core.ui.components.AmbientBackground
+import de.darksoon.radiowave.core.ui.theme.DarkBackground
 import de.darksoon.radiowave.core.ui.theme.DarkSurface
 import de.darksoon.radiowave.core.ui.theme.RadioWaveTheme
 import de.darksoon.radiowave.core.ui.theme.RadioAccent
@@ -298,12 +301,15 @@ private fun OnboardingDialog(
             dismissOnBackPress = false,
             dismissOnClickOutside = false,
             usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false,
         ),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFF0E1018)),
+                .background(DarkBackground)
+                .statusBarsPadding()
+                .navigationBarsPadding(),
         ) {
             // Ambient gradient background
             Box(
@@ -445,7 +451,7 @@ private fun OnboardingDialog(
                     shape = RoundedCornerShape(16.dp),
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                         containerColor = content.accentColor,
-                        contentColor = Color(0xFF0E1018),
+                        contentColor = DarkBackground,
                     ),
                 ) {
                     Text(
@@ -570,10 +576,10 @@ fun RadioWaveMainScreen(
     }
 
     DisposableEffect(showFullscreenPlayer, keepScreenOnFullscreen, view) {
-        val previousValue = view.keepScreenOn
-        view.keepScreenOn = previousValue || (showFullscreenPlayer && keepScreenOnFullscreen)
+        val shouldKeepOn = showFullscreenPlayer && keepScreenOnFullscreen
+        if (shouldKeepOn) view.keepScreenOn = true
         onDispose {
-            view.keepScreenOn = previousValue
+            if (shouldKeepOn) view.keepScreenOn = false
         }
     }
 

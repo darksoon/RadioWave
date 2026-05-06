@@ -22,10 +22,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -33,10 +33,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 private val skeletonBase = Color.White.copy(alpha = 0.06f)
-private val skeletonHighlight = Color.White.copy(alpha = 0.14f)
 
+/**
+ * Single shared shimmer brush — one InfiniteTransition per skeleton root,
+ * passed down to avoid per-box allocations.
+ */
 @Composable
-private fun shimmerBrush(): Brush {
+private fun rememberShimmerBrush(): Brush {
     val transition = rememberInfiniteTransition(label = "shimmer")
     val alpha by transition.animateFloat(
         initialValue = 0f,
@@ -47,24 +50,27 @@ private fun shimmerBrush(): Brush {
         ),
         label = "shimmerAlpha",
     )
-    return Brush.linearGradient(
-        colors = listOf(
-            skeletonBase,
-            Color.White.copy(alpha = 0.06f + 0.08f * alpha),
-            skeletonBase,
-        ),
-    )
+    return remember(alpha) {
+        Brush.linearGradient(
+            colors = listOf(
+                skeletonBase,
+                Color.White.copy(alpha = 0.06f + 0.08f * alpha),
+                skeletonBase,
+            ),
+        )
+    }
 }
 
 @Composable
 fun SkeletonBox(
     modifier: Modifier = Modifier,
+    brush: Brush,
     shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(8.dp),
 ) {
     Box(
         modifier = modifier
             .clip(shape)
-            .background(shimmerBrush()),
+            .background(brush),
     )
 }
 
@@ -76,6 +82,7 @@ fun SkeletonStationRow(
     cardHeight: Int = 140,
     count: Int = 5,
 ) {
+    val brush = rememberShimmerBrush()
     LazyRow(
         modifier = modifier,
         contentPadding = PaddingValues(horizontal = 16.dp),
@@ -91,11 +98,14 @@ fun SkeletonStationRow(
                     .background(skeletonBase)
                     .padding(10.dp),
             ) {
-                SkeletonBox(modifier = Modifier.fillMaxWidth().height((cardHeight * 0.5).dp).clip(RoundedCornerShape(10.dp)))
+                SkeletonBox(
+                    modifier = Modifier.fillMaxWidth().height((cardHeight * 0.5).dp).clip(RoundedCornerShape(10.dp)),
+                    brush = brush,
+                )
                 Spacer(modifier = Modifier.height(8.dp))
-                SkeletonBox(modifier = Modifier.fillMaxWidth(0.8f).height(12.dp))
+                SkeletonBox(modifier = Modifier.fillMaxWidth(0.8f).height(12.dp), brush = brush)
                 Spacer(modifier = Modifier.height(5.dp))
-                SkeletonBox(modifier = Modifier.fillMaxWidth(0.55f).height(10.dp))
+                SkeletonBox(modifier = Modifier.fillMaxWidth(0.55f).height(10.dp), brush = brush)
             }
         }
     }
@@ -109,6 +119,7 @@ fun SkeletonGrid(
     rows: Int = 3,
     cardHeight: Int = 120,
 ) {
+    val brush = rememberShimmerBrush()
     Column(
         modifier = modifier.padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -124,7 +135,7 @@ fun SkeletonGrid(
                             .weight(1f)
                             .height(cardHeight.dp)
                             .clip(RoundedCornerShape(16.dp))
-                            .background(shimmerBrush()),
+                            .background(brush),
                     )
                 }
             }
@@ -135,17 +146,17 @@ fun SkeletonGrid(
 /** Skeleton für eine komplette Home-Seite */
 @Composable
 fun HomeSkeletonLoader(modifier: Modifier = Modifier) {
+    val brush = rememberShimmerBrush()
     Column(modifier = modifier.fillMaxSize().padding(top = 8.dp)) {
-        // Section title
-        SkeletonBox(modifier = Modifier.padding(horizontal = 20.dp).width(120.dp).height(16.dp))
+        SkeletonBox(modifier = Modifier.padding(horizontal = 20.dp).width(120.dp).height(16.dp), brush = brush)
         Spacer(modifier = Modifier.height(10.dp))
         SkeletonStationRow(cardWidth = 130, cardHeight = 150, count = 5)
         Spacer(modifier = Modifier.height(20.dp))
-        SkeletonBox(modifier = Modifier.padding(horizontal = 20.dp).width(100.dp).height(16.dp))
+        SkeletonBox(modifier = Modifier.padding(horizontal = 20.dp).width(100.dp).height(16.dp), brush = brush)
         Spacer(modifier = Modifier.height(10.dp))
         SkeletonStationRow(cardWidth = 130, cardHeight = 150, count = 5)
         Spacer(modifier = Modifier.height(20.dp))
-        SkeletonBox(modifier = Modifier.padding(horizontal = 20.dp).width(140.dp).height(16.dp))
+        SkeletonBox(modifier = Modifier.padding(horizontal = 20.dp).width(140.dp).height(16.dp), brush = brush)
         Spacer(modifier = Modifier.height(10.dp))
         SkeletonStationRow(cardWidth = 130, cardHeight = 150, count = 5)
     }

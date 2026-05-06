@@ -30,7 +30,7 @@ object AppSettings {
     const val KEY_LIMIT_ANDROID_AUTO_QUALITY = "limit_android_auto_quality"
     const val KEY_CONFIRM_REMOVE_FAVORITE = "confirm_remove_favorite"
     const val KEY_FIRST_RUN_ONBOARDING_DONE = "first_run_onboarding_done"
-const val KEY_LAST_STATION_UUID = "last_station_uuid"
+    const val KEY_LAST_STATION_UUID = "last_station_uuid"
     const val KEY_LAST_STATION_NAME = "last_station_name"
     const val KEY_LAST_STATION_STREAM_URL = "last_station_stream_url"
     const val KEY_LAST_STATION_FAVICON_URL = "last_station_favicon_url"
