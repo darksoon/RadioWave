@@ -70,6 +70,9 @@ class PlayerControllerImpl @Inject constructor(
     private var playbackLostRecoveryAttempts = 0
     private var userPausedPlayback = false
     private var isStopping = false
+    // Guards against WakeLock re-acquisition after release() — prevents a permanent
+    // wakelock if a Player.Listener callback fires after controllerScope.cancel().
+    @Volatile private var isReleased = false
     private val maxReconnectAttempts = 10
     private val maxPlaybackLostRecoveryAttempts = 4
     private val initialReconnectDelayMs = 1_000L
@@ -167,6 +170,9 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private fun updatePlaybackLocks(player: ExoPlayer?) {
+        // Skip entirely after release() to avoid re-acquiring a lock whose reference
+        // will be nulled out and lost → permanent wakelock until reboot.
+        if (isReleased) return
         val currentPlayer = player ?: return
         val keepAwake = currentPlayer.playWhenReady &&
             (currentPlayer.isPlaying || currentPlayer.playbackState == Player.STATE_BUFFERING)
@@ -1125,6 +1131,7 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     override fun release() {
+        isReleased = true
         isStopping = true
         controllerScope.cancel()
         reconnectJob?.cancel()

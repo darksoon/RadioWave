@@ -6,8 +6,10 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Process
 import androidx.core.content.FileProvider
 import java.io.File
+import kotlin.system.exitProcess
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.net.URLEncoder
@@ -43,8 +45,15 @@ object LocalIssueReporter {
                     threadName = thread.name,
                 )
             }
-            previousHandler?.uncaughtException(thread, throwable)
-                ?: throw throwable
+            if (previousHandler != null) {
+                previousHandler.uncaughtException(thread, throwable)
+            } else {
+                // No system handler available — terminate the process cleanly.
+                // Never re-throw from inside an UncaughtExceptionHandler as it can
+                // cause an ANR loop or suppress the system crash dialog.
+                Process.killProcess(Process.myPid())
+                exitProcess(10)
+            }
         }
     }
 

@@ -35,7 +35,20 @@ class PlaybackForegroundService : Service() {
         createNotificationChannel()
         ensureMediaSession()
 
-        when (intent?.action) {
+        // Always promote to foreground BEFORE handling any action.
+        // On Android 12+ the OS throws ForegroundServiceDidNotStartInTimeException
+        // if we process a button action without first calling startForeground(), e.g.
+        // when the system restarts the service after a process kill and immediately
+        // delivers a pending notification-button intent.
+        val action = intent?.action
+        if (action != ACTION_STOP_SERVICE && action != ACTION_STOP_PLAYBACK) {
+            val state = playerController.playerState.value
+            val stationName = state.currentStation?.name.orEmpty()
+            val subtitle = refreshSubtitleFromState(state)
+            startForeground(NOTIFICATION_ID, buildNotification(stationName, subtitle, state.isPlaying))
+        }
+
+        when (action) {
             ACTION_STOP_SERVICE -> {
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
@@ -59,6 +72,7 @@ class PlaybackForegroundService : Service() {
             }
 
             else -> {
+                // Initial start: use extras from the intent (more accurate than player state).
                 val stationName = intent?.getStringExtra(EXTRA_STATION_NAME).orEmpty()
                 val subtitle = intent?.getStringExtra(EXTRA_SUBTITLE).orEmpty()
                 val isPlaying = intent?.getBooleanExtra(EXTRA_IS_PLAYING, false) == true
@@ -70,6 +84,16 @@ class PlaybackForegroundService : Service() {
         }
 
         return START_STICKY
+    }
+
+    private fun refreshSubtitleFromState(state: de.darksoon.radiowave.core.model.PlayerState): String {
+        val metadata = state.metadata
+        val metadataText = listOfNotNull(
+            metadata?.artist?.trim().takeUnless { it.isNullOrBlank() },
+            metadata?.title?.trim().takeUnless { it.isNullOrBlank() },
+        ).joinToString(" • ")
+        if (metadataText.isNotBlank()) return metadataText
+        return defaultPlaybackStatusText(state.isPlaying)
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {

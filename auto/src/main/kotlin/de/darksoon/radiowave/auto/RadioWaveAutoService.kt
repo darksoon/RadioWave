@@ -106,6 +106,13 @@ class RadioWaveAutoService : MediaLibraryService() {
             session: MediaSession,
             controller: MediaSession.ControllerInfo,
         ): ConnectionResult {
+            // Only accept connections from trusted system/media packages.
+            // This prevents rogue apps from binding to the exported MediaLibraryService
+            // and injecting arbitrary playback commands.
+            val pkg = controller.packageName
+            if (pkg != packageName && !isTrustedController(pkg)) {
+                return ConnectionResult.reject()
+            }
             val base = super.onConnect(session, controller)
             val sessionCommands = base.availableSessionCommands
                 .buildUpon()
@@ -602,6 +609,15 @@ class RadioWaveAutoService : MediaLibraryService() {
         if (resolved != null) return resolved
 
         if (mediaUri.isNullOrBlank()) return null
+
+        // Security: only allow http/https URIs to prevent playing local file:// or
+        // content:// URIs that a rogue controller could inject via MediaItem.
+        val scheme = Uri.parse(mediaUri).scheme?.lowercase()
+        if (scheme != "http" && scheme != "https") {
+            Log.w(LOG_TAG, "resolveOrCreateStation: rejected non-http URI scheme '$scheme'")
+            return null
+        }
+
         val fallbackUuid = item.mediaId
             ?.removePrefix(STATION_PREFIX)
             ?.trim()
@@ -800,8 +816,30 @@ class RadioWaveAutoService : MediaLibraryService() {
         return uuid == other.uuid || streamUrl == other.streamUrl
     }
 
+    /**
+     * Trusted controller packages that are allowed to bind to this MediaLibraryService.
+     * Includes Android Auto, Google Assistant, Google Play, and media notification systems.
+     * Any app not in this list or matching our own package will be rejected in [onConnect].
+     */
+    private fun isTrustedController(packageName: String): Boolean {
+        return packageName in TRUSTED_CONTROLLER_PACKAGES
+    }
+
     private companion object {
         const val LOG_TAG = "RadioWaveAuto"
+
+        /** Packages allowed to bind to our exported MediaLibraryService. */
+        val TRUSTED_CONTROLLER_PACKAGES = setOf(
+            "com.google.android.projection.gearhead",   // Android Auto
+            "com.google.android.googlequicksearchbox",  // Google Assistant
+            "com.google.android.apps.automotive.media", // Automotive OS
+            "com.google.android.mediahome.castmanager", // Cast
+            "com.google.android.music",                 // Google Play Music (legacy)
+            "com.google.android.youtube.music",         // YTM (shares session protocol)
+            "android",                                  // System media session manager
+            "com.android.bluetooth",                    // Bluetooth media controls
+            "com.android.systemui",                     // Media notification controls
+        )
         const val AUTO_RESUME_VERIFY_DELAY_MS = 1800L
         const val AUTO_RESUME_CONNECT_COOLDOWN_MS = 3500L
         const val AUTO_RESUME_MAX_ATTEMPTS = 3
