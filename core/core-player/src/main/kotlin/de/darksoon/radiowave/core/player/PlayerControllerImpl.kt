@@ -596,34 +596,35 @@ class PlayerControllerImpl @Inject constructor(
             val entry = metadata[index]
 
             if (entry is IcyInfo) {
+                // Prefer the typed IcyInfo.title field — stable across Media3 versions.
                 val title = entry.title?.trim()
                 if (!title.isNullOrBlank()) {
                     return title
                 }
-                val fromRaw = extractStreamTitleFromMetadataText(entry.toString())
+                // Fallback: some stations send raw ICY data not parsed into .title.
+                // Use toString() only as a last resort and only for IcyInfo entries.
+                val fromRaw = extractStreamTitleFromIcyText(entry.toString())
                 if (!fromRaw.isNullOrBlank()) {
                     return fromRaw
                 }
-            }
-
-            val fallback = extractStreamTitleFromMetadataText(entry.toString())
-            if (!fallback.isNullOrBlank()) {
-                return fallback
+                // Don't fall through to the generic regex path for IcyInfo entries;
+                // we've already exhausted its typed API.
+                continue
             }
         }
         return null
     }
 
-    private fun extractStreamTitleFromMetadataText(text: String): String? {
+    /**
+     * Parses `StreamTitle='...'` from raw ICY metadata text.
+     * Only called as a last resort when [IcyInfo.title] returns null/blank.
+     * The toString() format of [IcyInfo] is not a guaranteed API surface — if a
+     * future Media3 version changes it this falls back to null gracefully.
+     */
+    private fun extractStreamTitleFromIcyText(text: String): String? {
         val streamTitleRegex = Regex("(?i)StreamTitle='([^']*)'")
-        val streamTitleMatch = streamTitleRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
-        if (!streamTitleMatch.isNullOrBlank()) {
-            return streamTitleMatch
-        }
-
-        val titleRegex = Regex("(?i)title=([^,}]+)")
-        val titleMatch = titleRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
-        return titleMatch?.trim('"', '\'')
+        return streamTitleRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
+            ?.takeUnless { it.isBlank() }
     }
 
     private fun applyStreamTitle(rawTitle: String) {
@@ -743,6 +744,12 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private fun createMediaItem(station: Station): MediaItem {
+        // Validate URI scheme before handing to ExoPlayer — defence-in-depth against
+        // any path that might reach here with a non-network URI (file://, content://, etc.).
+        val scheme = Uri.parse(station.streamUrl).scheme?.lowercase()
+        require(scheme == "http" || scheme == "https") {
+            "Rejected stream URI with scheme '$scheme' — only http/https allowed"
+        }
         return MediaItem.Builder()
             .setUri(station.streamUrl)
             .setMediaMetadata(

@@ -3,6 +3,7 @@
 package de.darksoon.radiowave.feature.home
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -51,6 +52,9 @@ class HomeViewModel @Inject constructor(
     private var browseResultsJob: Job? = null
     private var lastRefreshAtElapsedMs = 0L
     private val minRefreshIntervalMs = 5_000L
+    private val isDebuggable: Boolean by lazy {
+        (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+    }
     private val localeCountryCode = Locale.getDefault().country.lowercase()
     private val localeLanguageCode = Locale.getDefault().language.lowercase()
 
@@ -72,7 +76,7 @@ class HomeViewModel @Inject constructor(
     val selectedCountry: StateFlow<String?> = _selectedCountry.asStateFlow()
 
     init {
-        Log.d("RadioWave", "HomeViewModel initialized - starting to load stations...")
+        if (isDebuggable) Log.d("RadioWave", "HomeViewModel initialized - starting to load stations...")
         loadData()
         setupSearch()
     }
@@ -116,7 +120,7 @@ class HomeViewModel @Inject constructor(
                     query = query,
                     selectedCountryCode = countryCode,
                 )
-                Log.d("RadioWave", "Country filter: ${sorted.size} stations for '$countryCode'")
+                if (isDebuggable) Log.d("RadioWave", "Country filter: ${sorted.size} stations for '$countryCode'")
                 _uiState.update {
                     it.copy(
                         topStations = sorted.take(50),
@@ -127,7 +131,7 @@ class HomeViewModel @Inject constructor(
                 }
             }
             .catch { error ->
-                Log.e("RadioWave", "Country filter error: ${error.message}", error)
+                if (isDebuggable) Log.e("RadioWave", "Country filter error: ${error.message}", error)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -163,7 +167,7 @@ class HomeViewModel @Inject constructor(
                     query = query,
                     selectedCountryCode = null,
                 )
-                Log.d("RadioWave", "Search results: ${sorted.size} stations for '$query'")
+                if (isDebuggable) Log.d("RadioWave", "Search results: ${sorted.size} stations for '$query'")
                 _uiState.update {
                     it.copy(
                         topStations = sorted.take(50),
@@ -174,7 +178,7 @@ class HomeViewModel @Inject constructor(
                 }
             }
             .catch { error ->
-                Log.e("RadioWave", "Search error: ${error.message}", error)
+                if (isDebuggable) Log.e("RadioWave", "Search error: ${error.message}", error)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -352,11 +356,11 @@ class HomeViewModel @Inject constructor(
             Triple(recent, favorites.take(6), top.take(30))
         }
             .onStart {
-                Log.d("RadioWave", "Starting to load data...")
+                if (isDebuggable) Log.d("RadioWave", "Starting to load data...")
                 _uiState.update { it.copy(isLoading = true) }
             }
             .onEach { (recent, favorites, top) ->
-                Log.d("RadioWave", "Data loaded successfully: ${recent.size} recent, ${favorites.size} favorites, ${top.size} top stations")
+                if (isDebuggable) Log.d("RadioWave", "Data loaded successfully: ${recent.size} recent, ${favorites.size} favorites, ${top.size} top stations")
                 val hasActiveFilter = _searchQuery.value.isNotBlank() || _selectedCountry.value != null
                 _uiState.update {
                     if (hasActiveFilter) {
@@ -379,7 +383,7 @@ class HomeViewModel @Inject constructor(
                 }
             }
             .catch { error ->
-                Log.e("RadioWave", "API error: ${error.message}", error)
+                if (isDebuggable) Log.e("RadioWave", "API error: ${error.message}", error)
                 val errorMessage = when {
                     error.message?.contains("UnknownHostException") == true ||
                         error.message?.contains("Unable to resolve host") == true ->

@@ -60,6 +60,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import android.content.res.Configuration
@@ -450,7 +451,9 @@ fun PlayerScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(4.dp)
-                                .clip(RoundedCornerShape(2.dp)),
+                                .clip(RoundedCornerShape(2.dp))
+                                // Decorative: screen readers announce "LIVE" from the text below.
+                                .clearAndSetSemantics {},
                             color = Color.White.copy(alpha = liveBarAlpha),
                             trackColor = Color.White.copy(alpha = 0.22f),
                         )

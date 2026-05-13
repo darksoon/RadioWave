@@ -70,6 +70,9 @@ class RadioWaveAutoService : MediaLibraryService() {
     @Inject
     lateinit var streamQualityResolver: StreamQualityResolver
 
+    private val isDebuggable: Boolean by lazy {
+        (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+    }
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     // Prevents concurrent startStationPlayback calls from racing against each other
     // when rapid Next/Prev taps arrive before the previous playback-start completes.
@@ -879,7 +882,7 @@ class RadioWaveAutoService : MediaLibraryService() {
     }
 
     private fun logInfo(message: String) {
-        Log.i(LOG_TAG, message)
+        if (isDebuggable) Log.i(LOG_TAG, message)
     }
 
     private fun buildAutoSessionExtras(): Bundle {
