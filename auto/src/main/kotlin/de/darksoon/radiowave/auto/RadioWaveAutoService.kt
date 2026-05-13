@@ -42,6 +42,8 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.text.Normalizer
@@ -69,6 +71,9 @@ class RadioWaveAutoService : MediaLibraryService() {
     lateinit var streamQualityResolver: StreamQualityResolver
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    // Prevents concurrent startStationPlayback calls from racing against each other
+    // when rapid Next/Prev taps arrive before the previous playback-start completes.
+    private val playbackStartMutex = Mutex()
     private val stationCache = ConcurrentHashMap<String, Station>()
     private val searchCache = ConcurrentHashMap<String, List<Station>>()
     private var lastAutoResumeAttemptAtMs = 0L
@@ -358,16 +363,28 @@ class RadioWaveAutoService : MediaLibraryService() {
     private fun startStationPlayback(station: Station) {
         logInfo("Auto start playback '${station.name}' (${station.streamUrl})")
         serviceScope.launch {
-            repeat(AUTO_RESUME_MAX_ATTEMPTS) { attemptIndex ->
-                val started = performPlaybackStart(station)
-                delay(AUTO_RESUME_VERIFY_DELAY_MS)
-                val shouldRetry = !started || shouldRetryPlayback(station)
-                if (!shouldRetry) return@launch
-                if (attemptIndex < AUTO_RESUME_MAX_ATTEMPTS - 1) {
-                    logInfo(
-                        "Auto playback verify failed, retrying '${station.name}' " +
-                            "(${attemptIndex + 2}/$AUTO_RESUME_MAX_ATTEMPTS)",
-                    )
+            // Mutex prevents concurrent start attempts from racing (e.g. rapid Next/Prev taps).
+            // If a previous attempt is still running it completes first; the next one then
+            // re-checks the current station and short-circuits if already playing the right station.
+            playbackStartMutex.withLock {
+                repeat(AUTO_RESUME_MAX_ATTEMPTS) { attemptIndex ->
+                    // Another attempt may have started a different station while we were waiting.
+                    val currentUuid = playerController.playerState.value.currentStation?.uuid
+                    if (currentUuid != null && currentUuid != station.uuid &&
+                        playerController.playerState.value.isPlaying
+                    ) {
+                        return@withLock
+                    }
+                    val started = performPlaybackStart(station)
+                    delay(AUTO_RESUME_VERIFY_DELAY_MS)
+                    val shouldRetry = !started || shouldRetryPlayback(station)
+                    if (!shouldRetry) return@withLock
+                    if (attemptIndex < AUTO_RESUME_MAX_ATTEMPTS - 1) {
+                        logInfo(
+                            "Auto playback verify failed, retrying '${station.name}' " +
+                                "(${attemptIndex + 2}/$AUTO_RESUME_MAX_ATTEMPTS)",
+                        )
+                    }
                 }
             }
         }

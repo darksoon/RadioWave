@@ -73,6 +73,8 @@ class PlayerControllerImpl @Inject constructor(
     // Guards against WakeLock re-acquisition after release() — prevents a permanent
     // wakelock if a Player.Listener callback fires after controllerScope.cancel().
     @Volatile private var isReleased = false
+    // Tracks whether registerClick was already called for the current station session.
+    private var clickRegisteredForCurrentSession = false
     private val maxReconnectAttempts = 10
     private val maxPlaybackLostRecoveryAttempts = 4
     private val initialReconnectDelayMs = 1_000L
@@ -397,6 +399,15 @@ class PlayerControllerImpl @Inject constructor(
                         reconnectJob?.cancel()
                         bufferingWatchdogJob?.cancel()
                         playbackLostRecoveryJob?.cancel()
+                        // Report click to Radio Browser once per station session so the
+                        // community "topclick" rankings reflect actual usage.
+                        val stationUuid = _playerState.value.currentStation?.uuid
+                        if (stationUuid != null && !clickRegisteredForCurrentSession) {
+                            clickRegisteredForCurrentSession = true
+                            controllerScope.launch {
+                                runCatching { stationRepository.registerClick(stationUuid) }
+                            }
+                        }
                     }
 
                     Player.STATE_ENDED -> {
@@ -433,9 +444,18 @@ class PlayerControllerImpl @Inject constructor(
                     return
                 }
 
+                // Reconnect attempts exhausted — report broken stream to Radio Browser
+                // so the community can flag/remove dead stations from the index.
+                val mappedFinalError = mapPlayerError(error)
+                if (station != null && mappedFinalError is PlayerError.StreamBroken) {
+                    controllerScope.launch {
+                        runCatching { stationRepository.reportBrokenStream(station.uuid) }
+                    }
+                }
+
                 _playerState.update {
                     it.copy(
-                        error = mapPlayerError(error),
+                        error = mappedFinalError,
                         isPlaying = false,
                         isBuffering = false,
                         isLoading = false,
@@ -953,6 +973,7 @@ class PlayerControllerImpl @Inject constructor(
         networkLossObserved = false
         userPausedPlayback = false
         isStopping = false
+        clickRegisteredForCurrentSession = false
 
         if (isPlaybackBlockedByMobileDataPolicy()) {
             _playerState.update {
@@ -1137,6 +1158,7 @@ class PlayerControllerImpl @Inject constructor(
         reconnectJob?.cancel()
         bufferingWatchdogJob?.cancel()
         playbackLostRecoveryJob?.cancel()
+        restartGuardJob?.cancel()
         reconnectAttempts = 0
         playbackLostRecoveryAttempts = 0
         networkLossObserved = false

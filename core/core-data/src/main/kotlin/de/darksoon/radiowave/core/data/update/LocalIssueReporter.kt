@@ -105,7 +105,17 @@ object LocalIssueReporter {
         threadName: String,
     ) {
         val reportFile = File(getReportDirectory(context), REPORT_FILE)
-        reportFile.writeText(buildCrashBody(context, throwable, threadName))
+        reportFile.writeText(scrubPii(buildCrashBody(context, throwable, threadName)))
+    }
+
+    /**
+     * Removes stream URLs and other potentially sensitive data from crash reports
+     * before they are written to disk. Users may share reports publicly via GitHub.
+     */
+    private fun scrubPii(text: String): String {
+        // Replace http(s):// URLs with a placeholder so stream URLs, artwork URLs, etc.
+        // are not accidentally shared via the public GitHub issue workflow.
+        return text.replace(Regex("https?://\\S+"), "<redacted-url>")
     }
 
     private fun buildCrashBody(

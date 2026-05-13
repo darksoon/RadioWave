@@ -58,6 +58,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -97,8 +98,15 @@ fun SettingsScreen(
     val uriHandler = LocalUriHandler.current
     val prefs = context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
     var issueReportRefreshKey by remember { mutableLongStateOf(0L) }
-    val latestIssueReport = remember(context, issueReportRefreshKey) {
-        LocalIssueReporter.getLatestReport(context)
+    // Read the crash report file on IO to avoid blocking the composition thread.
+    val latestIssueReport by produceState<de.darksoon.radiowave.core.data.update.LocalIssueReport?>(
+        initialValue = null,
+        key1 = context,
+        key2 = issueReportRefreshKey,
+    ) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            LocalIssueReporter.getLatestReport(context)
+        }
     }
 
     var themeMode by rememberSaveable {

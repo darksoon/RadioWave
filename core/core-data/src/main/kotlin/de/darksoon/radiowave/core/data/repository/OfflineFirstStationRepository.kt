@@ -12,7 +12,6 @@ import de.darksoon.radiowave.core.network.RadioBrowserApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
-import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -220,6 +219,16 @@ class OfflineFirstStationRepository @Inject constructor(
             .take(mergeResultLimit)
     }
 
+    // Instance-level LRU cache (max 64 entries) so:
+    // 1. "Clear station cache" in Settings actually clears in-memory search results.
+    // 2. Memory use is bounded even after long sessions with many searches.
+    private val searchCache = object : java.util.LinkedHashMap<String, SearchCacheEntry>(64, 0.75f, true) {
+        override fun removeEldestEntry(eldest: Map.Entry<String, SearchCacheEntry>?) = size > 64
+    }
+
+    /** Clears the in-memory search cache. Called from SettingsViewModel on user request. */
+    fun clearSearchCache() = searchCache.clear()
+
     private companion object {
         const val searchCacheTtlMs: Long = 15 * 60 * 1000L
         const val searchResultLimit = 120
@@ -227,7 +236,6 @@ class OfflineFirstStationRepository @Inject constructor(
         const val countryStationsLimit = 160
         const val tagStationsLimit = 160
         const val mergeResultLimit = 180
-        val searchCache: ConcurrentHashMap<String, SearchCacheEntry> = ConcurrentHashMap()
     }
 }
 

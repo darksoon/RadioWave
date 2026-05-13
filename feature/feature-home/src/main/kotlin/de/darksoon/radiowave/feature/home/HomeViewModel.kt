@@ -35,6 +35,7 @@ import javax.inject.Inject
 import kotlin.math.max
 import kotlin.math.min
 import java.util.Locale
+import android.os.SystemClock
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -48,6 +49,8 @@ class HomeViewModel @Inject constructor(
     private val maxPlaybackHistorySize = 40
     private var dataLoadJob: Job? = null
     private var browseResultsJob: Job? = null
+    private var lastRefreshAtElapsedMs = 0L
+    private val minRefreshIntervalMs = 5_000L
     private val localeCountryCode = Locale.getDefault().country.lowercase()
     private val localeLanguageCode = Locale.getDefault().language.lowercase()
 
@@ -396,6 +399,9 @@ class HomeViewModel @Inject constructor(
     }
 
     fun refresh() {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastRefreshAtElapsedMs < minRefreshIntervalMs) return
+        lastRefreshAtElapsedMs = now
         loadData()
     }
 
