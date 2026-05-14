@@ -107,7 +107,7 @@ fun FavoritesScreen(
         uiState.isLoading -> FavoritesSkeletonLoader(modifier = modifier)
         uiState.error != null -> ErrorState(
             message = uiState.error ?: stringResource(R.string.favorites_unknown_error),
-            onRetry = {},
+            onRetry = { viewModel.retry() },
             modifier = modifier,
         )
         uiState.stations.isEmpty() && uiState.customStations.isEmpty() -> EmptyFavorites(

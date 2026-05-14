@@ -25,4 +25,10 @@
     <string name="player_error_network">Connection lost — check your network</string>
     <string name="player_error_stream_broken">Stream unavailable — try another station</string>
     <string name="player_error_retry">Retry</string>
+    <string name="player_cd_favorite_add">Add to favorites</string>
+    <string name="player_cd_favorite_remove">Remove from favorites</string>
+    <string name="player_cd_skip_previous">Previous station</string>
+    <string name="player_cd_volume_mute">Mute</string>
+    <string name="player_cd_volume_unmute">Unmute</string>
+    <string name="player_cd_shuffle">Random station</string>
 </resources>

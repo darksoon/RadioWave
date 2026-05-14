@@ -113,19 +113,23 @@ class HomeViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = true) }
             }
             .onEach { stations ->
-                val filtered = if (query.isNotBlank()) {
-                    stations.filter { station ->
-                        station.name.contains(query, ignoreCase = true) ||
-                            fuzzyMatchScore(query, station.name) > 0
+                // Move heavy filter + Levenshtein ranking off Main onto Default — the
+                // worst case is ~180 stations × ~3 fuzzy operations per emission.
+                val sorted = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                    val filtered = if (query.isNotBlank()) {
+                        stations.filter { station ->
+                            station.name.contains(query, ignoreCase = true) ||
+                                fuzzyMatchScore(query, station.name) > 0
+                        }
+                    } else {
+                        stations
                     }
-                } else {
-                    stations
+                    rankAndSortStations(
+                        stations = filtered,
+                        query = query,
+                        selectedCountryCode = countryCode,
+                    )
                 }
-                val sorted = rankAndSortStations(
-                    stations = filtered,
-                    query = query,
-                    selectedCountryCode = countryCode,
-                )
                 if (isDebuggable) Log.d("RadioWave", "Country filter: ${sorted.size} stations for '$countryCode'")
                 _uiState.update {
                     it.copy(
@@ -155,24 +159,27 @@ class HomeViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = true) }
             }
             .onEach { stations ->
-                val baseResults = if (stations.isEmpty() && query.isNotBlank()) {
-                    val localPool = (
-                        _uiState.value.topStations +
-                            _uiState.value.recentStations +
-                            _uiState.value.favoriteStations
-                        ).distinctBy { station -> station.uuid }
-                    localPool.filter { station ->
-                        fuzzyMatchScore(query, station.name) > 0 ||
-                            station.tags.any { tag -> fuzzyMatchScore(query, tag) > 0 }
+                val currentTopStations = _uiState.value.topStations
+                val currentRecentStations = _uiState.value.recentStations
+                val currentFavoriteStations = _uiState.value.favoriteStations
+                // Heavy filter + rank on Default — keeps Main free for keystroke responsiveness.
+                val sorted = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                    val baseResults = if (stations.isEmpty() && query.isNotBlank()) {
+                        val localPool = (currentTopStations + currentRecentStations + currentFavoriteStations)
+                            .distinctBy { station -> station.uuid }
+                        localPool.filter { station ->
+                            fuzzyMatchScore(query, station.name) > 0 ||
+                                station.tags.any { tag -> fuzzyMatchScore(query, tag) > 0 }
+                        }
+                    } else {
+                        stations
                     }
-                } else {
-                    stations
+                    rankAndSortStations(
+                        stations = baseResults,
+                        query = query,
+                        selectedCountryCode = null,
+                    )
                 }
-                val sorted = rankAndSortStations(
-                    stations = baseResults,
-                    query = query,
-                    selectedCountryCode = null,
-                )
                 if (isDebuggable) Log.d("RadioWave", "Search results: ${sorted.size} stations for '$query'")
                 _uiState.update {
                     it.copy(

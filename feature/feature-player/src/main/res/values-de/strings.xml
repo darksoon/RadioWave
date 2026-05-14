@@ -25,4 +25,10 @@
     <string name="player_error_network">Keine Verbindung — Netzwerk prüfen</string>
     <string name="player_error_stream_broken">Sender nicht verfügbar — anderen wählen</string>
     <string name="player_error_retry">Erneut versuchen</string>
+    <string name="player_cd_favorite_add">Zu Favoriten hinzufügen</string>
+    <string name="player_cd_favorite_remove">Aus Favoriten entfernen</string>
+    <string name="player_cd_skip_previous">Vorheriger Sender</string>
+    <string name="player_cd_volume_mute">Stummschalten</string>
+    <string name="player_cd_volume_unmute">Ton an</string>
+    <string name="player_cd_shuffle">Zufälliger Sender</string>
 </resources>

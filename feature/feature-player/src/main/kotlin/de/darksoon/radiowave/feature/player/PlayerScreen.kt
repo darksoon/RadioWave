@@ -509,22 +509,32 @@ fun PlayerScreen(
                                 icon = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                                 tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.9f),
                                 onClick = onFavoriteClick,
+                                contentDescription = stringResource(
+                                    if (isFavorite) R.string.player_cd_favorite_remove
+                                    else R.string.player_cd_favorite_add,
+                                ),
                             )
                             PlayerIconButton(
                                 icon = Icons.Filled.SkipPrevious,
                                 tint = Color.White.copy(alpha = 0.78f),
                                 onClick = onPreviousStationClick,
+                                contentDescription = stringResource(R.string.player_cd_skip_previous),
                             )
                             MainPlaybackButton(isPlaying = isPlaying, onClick = onPlayPauseClick)
                             PlayerIconButton(
                                 icon = if (playerState.isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
                                 tint = if (playerState.isMuted) Color.White.copy(alpha = 0.58f) else Color.White.copy(alpha = 0.78f),
                                 onClick = onVolumeToggle,
+                                contentDescription = stringResource(
+                                    if (playerState.isMuted) R.string.player_cd_volume_unmute
+                                    else R.string.player_cd_volume_mute,
+                                ),
                             )
                             PlayerIconButton(
                                 icon = Icons.Outlined.Shuffle,
                                 tint = Color.White.copy(alpha = 0.72f),
                                 onClick = onRandomStationClick,
+                                contentDescription = stringResource(R.string.player_cd_shuffle),
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -699,11 +709,16 @@ fun PlayerScreen(
                         icon = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                         tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.9f),
                         onClick = onFavoriteClick,
+                        contentDescription = stringResource(
+                            if (isFavorite) R.string.player_cd_favorite_remove
+                            else R.string.player_cd_favorite_add,
+                        ),
                     )
                     PlayerIconButton(
                         icon = Icons.Filled.SkipPrevious,
                         tint = Color.White.copy(alpha = 0.78f),
                         onClick = onPreviousStationClick,
+                        contentDescription = stringResource(R.string.player_cd_skip_previous),
                     )
                     MainPlaybackButton(
                         isPlaying = isPlaying,
@@ -713,11 +728,16 @@ fun PlayerScreen(
                         icon = if (playerState.isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
                         tint = if (playerState.isMuted) Color.White.copy(alpha = 0.58f) else Color.White.copy(alpha = 0.78f),
                         onClick = onVolumeToggle,
+                        contentDescription = stringResource(
+                            if (playerState.isMuted) R.string.player_cd_volume_unmute
+                            else R.string.player_cd_volume_mute,
+                        ),
                     )
                     PlayerIconButton(
                         icon = Icons.Outlined.Shuffle,
                         tint = Color.White.copy(alpha = 0.72f),
                         onClick = onRandomStationClick,
+                        contentDescription = stringResource(R.string.player_cd_shuffle),
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
@@ -955,6 +975,7 @@ private fun PlayerIconButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     tint: Color,
     onClick: () -> Unit,
+    contentDescription: String? = null,
 ) {
     Surface(
         onClick = onClick,
@@ -963,7 +984,7 @@ private fun PlayerIconButton(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = null,
+            contentDescription = contentDescription,
             tint = tint,
             modifier = Modifier
                 .size(42.dp)

@@ -43,6 +43,13 @@ class FavoritesViewModel @Inject constructor(
         observeCustomStations()
     }
 
+    /** Re-subscribe to favorites + custom stations. Used as retry callback in the UI. */
+    fun retry() {
+        _uiState.update { it.copy(error = null, isLoading = true) }
+        observeFavorites()
+        observeCustomStations()
+    }
+
     private fun observeFavorites() {
         viewModelScope.launch {
             favoriteRepository.getFavorites()

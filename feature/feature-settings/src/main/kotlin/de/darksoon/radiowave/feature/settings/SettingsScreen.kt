@@ -323,7 +323,10 @@ fun SettingsScreen(
                                 appLanguage = value
                                 prefs.edit().putString(AppSettings.KEY_APP_LANGUAGE, value).apply()
                                 applyAppLanguage(value)
-                                (context as? Activity)?.recreate()
+                                // No more Activity.recreate() — AppCompatDelegate.setApplicationLocales
+                                // (inside applyAppLanguage) triggers a configuration change which
+                                // the system applies on next resume. Preserves UI state (scroll
+                                // position, fullscreen player, etc.) for the user.
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
