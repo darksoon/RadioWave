@@ -50,316 +50,33 @@ class HomeViewModel @Inject constructor(
     private val playbackHistory = ArrayDeque<Station>()
     private val maxPlaybackHistorySize = 40
     private var dataLoadJob: Job? = null
-    private var browseResultsJob: Job? = null
     private var lastRefreshAtElapsedMs = 0L
     private val minRefreshIntervalMs = 5_000L
     private val isDebuggable: Boolean by lazy {
         (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
     }
-    private val localeCountryCode = Locale.getDefault().country.lowercase()
-    private val localeLanguageCode = Locale.getDefault().language.lowercase()
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     val playerState: StateFlow<de.darksoon.radiowave.core.model.PlayerState> = playerManager.playerState
 
-    // Derive favorite IDs directly from the favorites repository instead of re-deriving
-    // from uiState on every emission. This means unrelated uiState changes
-    // (topStations, isLoading, error, sort option) don't trigger HashSet rebuilds.
+    // Derive favorite IDs directly from the favorites repository.
     val favoriteStationIds: StateFlow<Set<String>> = favoriteRepository.getFavorites()
         .map { favs -> favs.mapTo(HashSet<String>(favs.size)) { it.uuid } as Set<String> }
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-
     private val _similarStations = MutableStateFlow<List<Station>>(emptyList())
     val similarStations: StateFlow<List<Station>> = _similarStations.asStateFlow()
-
-    private val _selectedCountry = MutableStateFlow<String?>(null)
-    val selectedCountry: StateFlow<String?> = _selectedCountry.asStateFlow()
 
     init {
         if (isDebuggable) Log.d("RadioWave", "HomeViewModel initialized - starting to load stations...")
         loadData()
-        setupSearch()
     }
 
-    @OptIn(FlowPreview::class)
-    private fun setupSearch() {
-        combine(
-            _searchQuery.debounce(250),
-            _selectedCountry,
-        ) { query, country -> query to country }
-            .drop(1)
-            .onEach { (query, country) ->
-                if (query.isBlank() && country == null) {
-                    loadData()
-                } else if (country != null) {
-                    loadStationsByCountry(country, query)
-                } else {
-                    searchStations(query)
-                }
-            }
-            .launchIn(viewModelScope)
-    }
-
-    private fun loadStationsByCountry(countryCode: String, query: String) {
-        browseResultsJob?.cancel()
-        browseResultsJob = stationRepository.getStationsByCountry(countryCode)
-            .onStart {
-                _uiState.update { it.copy(isLoading = true) }
-            }
-            .onEach { stations ->
-                // Move heavy filter + Levenshtein ranking off Main onto Default — the
-                // worst case is ~180 stations × ~3 fuzzy operations per emission.
-                val sorted = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-                    val filtered = if (query.isNotBlank()) {
-                        stations.filter { station ->
-                            station.name.contains(query, ignoreCase = true) ||
-                                fuzzyMatchScore(query, station.name) > 0
-                        }
-                    } else {
-                        stations
-                    }
-                    rankAndSortStations(
-                        stations = filtered,
-                        query = query,
-                        selectedCountryCode = countryCode,
-                    )
-                }
-                if (isDebuggable) Log.d("RadioWave", "Country filter: ${sorted.size} stations for '$countryCode'")
-                _uiState.update {
-                    it.copy(
-                        topStations = sorted.take(50),
-                        searchResultCount = sorted.size,
-                        isLoading = false,
-                        error = null,
-                    )
-                }
-            }
-            .catch { error ->
-                if (isDebuggable) Log.e("RadioWave", "Country filter error: ${error.message}", error)
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = context.getString(R.string.home_error_load, error.message ?: context.getString(R.string.home_error_unknown)),
-                    )
-                }
-            }
-            .launchIn(viewModelScope)
-    }
-
-    private fun searchStations(query: String) {
-        browseResultsJob?.cancel()
-        browseResultsJob = stationRepository.searchStations(query)
-            .onStart {
-                _uiState.update { it.copy(isLoading = true) }
-            }
-            .onEach { stations ->
-                val currentTopStations = _uiState.value.topStations
-                val currentRecentStations = _uiState.value.recentStations
-                val currentFavoriteStations = _uiState.value.favoriteStations
-                // Heavy filter + rank on Default — keeps Main free for keystroke responsiveness.
-                val sorted = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-                    val baseResults = if (stations.isEmpty() && query.isNotBlank()) {
-                        val localPool = (currentTopStations + currentRecentStations + currentFavoriteStations)
-                            .distinctBy { station -> station.uuid }
-                        localPool.filter { station ->
-                            fuzzyMatchScore(query, station.name) > 0 ||
-                                station.tags.any { tag -> fuzzyMatchScore(query, tag) > 0 }
-                        }
-                    } else {
-                        stations
-                    }
-                    rankAndSortStations(
-                        stations = baseResults,
-                        query = query,
-                        selectedCountryCode = null,
-                    )
-                }
-                if (isDebuggable) Log.d("RadioWave", "Search results: ${sorted.size} stations for '$query'")
-                _uiState.update {
-                    it.copy(
-                        topStations = sorted.take(50),
-                        searchResultCount = sorted.size,
-                        isLoading = false,
-                        error = null,
-                    )
-                }
-            }
-            .catch { error ->
-                if (isDebuggable) Log.e("RadioWave", "Search error: ${error.message}", error)
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = context.getString(R.string.home_error_search, error.message ?: context.getString(R.string.home_error_unknown)),
-                    )
-                }
-            }
-            .launchIn(viewModelScope)
-    }
-
-    private fun rankAndSortStations(
-        stations: List<Station>,
-        query: String,
-        selectedCountryCode: String?,
-    ): List<Station> {
-        if (stations.isEmpty()) return stations
-        val recentBoostIds = _uiState.value.recentStations.map { it.uuid }.toSet()
-        val normalizedQuery = query.trim().lowercase()
-        val currentSort = _uiState.value.sortOption
-        return stations
-            .map { station ->
-                val score = rankingScore(
-                    station = station,
-                    query = normalizedQuery,
-                    selectedCountryCode = selectedCountryCode,
-                    recentBoostIds = recentBoostIds,
-                )
-                station to score
-            }
-            .sortedWith(
-                compareByDescending<Pair<Station, Int>> { it.second }
-                    .thenComparator { a, b ->
-                        when (currentSort) {
-                            SortOption.POPULARITY -> b.first.clickCount.compareTo(a.first.clickCount)
-                            SortOption.NAME -> a.first.name.lowercase().compareTo(b.first.name.lowercase())
-                            SortOption.COUNTRY -> (a.first.country ?: "zzz").lowercase()
-                                .compareTo((b.first.country ?: "zzz").lowercase())
-                        }
-                    },
-            )
-            .map { it.first }
-    }
-
-    private fun rankingScore(
-        station: Station,
-        query: String,
-        selectedCountryCode: String?,
-        recentBoostIds: Set<String>,
-    ): Int {
-        var score = 0
-        val stationName = station.name.lowercase()
-        val stationCountryCode = station.countryCode?.lowercase().orEmpty()
-        val stationLanguage = station.language?.lowercase().orEmpty()
-
-        if (query.isNotBlank()) {
-            score += fuzzyMatchScore(query, station.name)
-            if (station.tags.any { tag -> fuzzyMatchScore(query, tag) > 0 }) {
-                score += 8
-            }
-        }
-
-        if (selectedCountryCode != null && stationCountryCode == selectedCountryCode.lowercase()) {
-            score += 24
-        } else if (localeCountryCode.isNotBlank() && stationCountryCode == localeCountryCode) {
-            score += 14
-        }
-
-        if (localeLanguageCode.isNotBlank() && stationLanguage.contains(localeLanguageCode)) {
-            score += 10
-        }
-
-        if (recentBoostIds.contains(station.uuid)) {
-            score += 9
-        }
-
-        score += min(8, station.clickCount / 500)
-        return score
-    }
-
-    private fun fuzzyMatchScore(query: String, candidate: String): Int {
-        val q = query.trim().lowercase()
-        val c = candidate.trim().lowercase()
-        if (q.isBlank() || c.isBlank()) return 0
-        if (c == q) return 80
-        if (c.startsWith(q)) return 56
-        if (c.contains(q)) return 42
-
-        val queryTokens = q.split(" ").filter { it.isNotBlank() }
-        var tokenScore = 0
-        queryTokens.forEach { token ->
-            if (c.startsWith(token)) tokenScore += 10
-            else if (c.contains(token)) tokenScore += 6
-        }
-
-        val subsequenceScore = if (isSubsequence(q, c)) 12 else 0
-
-        val maxLen = max(q.length, c.length)
-        val editPenaltyLimit = 4
-        val distance = limitedLevenshtein(q, c, editPenaltyLimit + 1)
-        val distanceScore = if (distance <= editPenaltyLimit) {
-            max(0, 20 - distance * 4)
-        } else {
-            0
-        }
-
-        val normalizedLengthBonus = max(0, 8 - (maxLen - q.length))
-        return tokenScore + subsequenceScore + distanceScore + normalizedLengthBonus
-    }
-
-    private fun isSubsequence(query: String, candidate: String): Boolean {
-        var qIndex = 0
-        var cIndex = 0
-        while (qIndex < query.length && cIndex < candidate.length) {
-            if (query[qIndex] == candidate[cIndex]) {
-                qIndex++
-            }
-            cIndex++
-        }
-        return qIndex == query.length
-    }
-
-    private fun limitedLevenshtein(a: String, b: String, limit: Int): Int {
-        if (kotlin.math.abs(a.length - b.length) > limit) return limit
-        val prev = IntArray(b.length + 1) { it }
-        val curr = IntArray(b.length + 1)
-        for (i in 1..a.length) {
-            curr[0] = i
-            var minInRow = curr[0]
-            for (j in 1..b.length) {
-                val cost = if (a[i - 1] == b[j - 1]) 0 else 1
-                curr[j] = min(
-                    min(curr[j - 1] + 1, prev[j] + 1),
-                    prev[j - 1] + cost,
-                )
-                minInRow = min(minInRow, curr[j])
-            }
-            if (minInRow > limit) return limit
-            for (j in prev.indices) {
-                prev[j] = curr[j]
-            }
-        }
-        return prev[b.length]
-    }
-
-    fun onSearchQueryChange(query: String) {
-        _searchQuery.value = query
-    }
-
-    fun onCountrySelected(countryCode: String?) {
-        _selectedCountry.value = countryCode
-        _uiState.update { it.copy(selectedCountry = countryCode) }
-    }
-
-    fun onSortOptionChanged(sortOption: SortOption) {
-        _uiState.update { it.copy(sortOption = sortOption) }
-        val currentStations = _uiState.value.topStations
-        if (currentStations.isNotEmpty()) {
-            val sorted = rankAndSortStations(
-                stations = currentStations,
-                query = _searchQuery.value,
-                selectedCountryCode = _selectedCountry.value,
-            )
-            _uiState.update { it.copy(topStations = sorted) }
-        }
-    }
 
     private fun loadData() {
-        browseResultsJob?.cancel()
         dataLoadJob?.cancel()
         dataLoadJob = combine(
             recentRepository.getRecentStations(limit = 10),
@@ -373,26 +90,15 @@ class HomeViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = true) }
             }
             .onEach { (recent, favorites, top) ->
-                if (isDebuggable) Log.d("RadioWave", "Data loaded successfully: ${recent.size} recent, ${favorites.size} favorites, ${top.size} top stations")
-                val hasActiveFilter = _searchQuery.value.isNotBlank() || _selectedCountry.value != null
+                if (isDebuggable) Log.d("RadioWave", "Data loaded: ${recent.size} recent, ${favorites.size} fav, ${top.size} top")
                 _uiState.update {
-                    if (hasActiveFilter) {
-                        // Keep current browse/search result list stable while favorites/recents update.
-                        it.copy(
-                            recentStations = recent,
-                            favoriteStations = favorites,
-                            isLoading = false,
-                            error = null,
-                        )
-                    } else {
-                        it.copy(
-                            recentStations = recent,
-                            favoriteStations = favorites,
-                            topStations = top,
-                            isLoading = false,
-                            error = null,
-                        )
-                    }
+                    it.copy(
+                        recentStations = recent,
+                        favoriteStations = favorites,
+                        topStations = top,
+                        isLoading = false,
+                        error = null,
+                    )
                 }
             }
             .catch { error ->

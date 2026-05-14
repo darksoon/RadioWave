@@ -721,14 +721,32 @@ fun RadioWaveMainScreen(
                                 navigateToTopLevel(BottomNavItem.Favorites.route)
                             },
                             onNavigateToBrowse = { category ->
-                                homeViewModel.onSearchQueryChange(category)
-                                navigateToTopLevel(BottomNavItem.Browse.route)
+                                // Pass initial query via navigation argument so BrowseViewModel
+                                // can read it from SavedStateHandle on creation.
+                                val encoded = java.net.URLEncoder.encode(category, "UTF-8")
+                                navController.navigate("browse?q=$encoded") {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
                             },
                             viewModel = homeViewModel,
                         )
                     }
-                    composable(BottomNavItem.Browse.route) {
-                        BrowseScreen(viewModel = homeViewModel)
+                    // Browse route accepts an optional `q` argument so taps on genres
+                    // in Home can pre-fill the search via SavedStateHandle in BrowseViewModel.
+                    // The BottomNav "browse" route falls through to q="" via the default.
+                    composable(
+                        route = "${BottomNavItem.Browse.route}?q={q}",
+                        arguments = listOf(
+                            androidx.navigation.navArgument("q") {
+                                type = androidx.navigation.NavType.StringType
+                                defaultValue = ""
+                            },
+                        ),
+                    ) { backStackEntry ->
+                        val q = backStackEntry.arguments?.getString("q").orEmpty()
+                        BrowseScreen(initialGenre = q)
                     }
                     composable(BottomNavItem.Favorites.route) {
                         FavoritesScreen()

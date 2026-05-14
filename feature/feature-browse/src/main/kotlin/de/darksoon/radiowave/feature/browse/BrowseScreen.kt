@@ -89,9 +89,6 @@ import de.darksoon.radiowave.core.ui.theme.CardBodyStyle
 import de.darksoon.radiowave.core.ui.theme.SectionTitleStyle
 import de.darksoon.radiowave.core.ui.theme.RadioAccent
 import de.darksoon.radiowave.feature.browse.R
-import de.darksoon.radiowave.feature.home.HomeUiState
-import de.darksoon.radiowave.feature.home.HomeViewModel
-import de.darksoon.radiowave.feature.home.SortOption
 import kotlinx.coroutines.launch
 
 private data class CountryItem(
@@ -173,7 +170,7 @@ private val quickGenres = listOf(
 fun BrowseScreen(
     initialGenre: String = "",
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = hiltViewModel(),
+    viewModel: BrowseViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
@@ -206,7 +203,7 @@ fun BrowseScreen(
         }
     }
 
-    val hasData = uiState.topStations.isNotEmpty()
+    val hasData = uiState.results.isNotEmpty()
     val isInitialLoad = uiState.isLoading && !hasData
 
     if (isInitialLoad) {
@@ -219,8 +216,10 @@ fun BrowseScreen(
         onRefresh = { viewModel.refresh() },
         modifier = modifier,
     ) {
+        val favoriteIds by viewModel.favoriteStationIds.collectAsStateWithLifecycle()
         BrowseContent(
             uiState = uiState,
+            favoriteIds = favoriteIds,
             searchQuery = searchQuery,
             selectedCountry = selectedCountry,
             selectedGenre = selectedGenre,
@@ -253,7 +252,8 @@ fun BrowseScreen(
 
 @Composable
 private fun BrowseContent(
-    uiState: HomeUiState,
+    uiState: BrowseUiState,
+    favoriteIds: Set<String>,
     searchQuery: String,
     selectedCountry: String?,
     selectedGenre: String?,
@@ -273,14 +273,11 @@ private fun BrowseContent(
         SortOption.COUNTRY to stringResource(R.string.browse_sort_country),
     )
 
-    val favoriteIds = remember(uiState.favoriteStations) {
-        uiState.favoriteStations.map { station -> station.uuid }.toSet()
-    }
-    val visibleStations = remember(uiState.topStations, showInsecureStreams) {
+    val visibleStations = remember(uiState.results, showInsecureStreams) {
         if (showInsecureStreams) {
-            uiState.topStations
+            uiState.results
         } else {
-            uiState.topStations.filterNot { station -> station.streamUrl.isInsecureHttpStream() }
+            uiState.results.filterNot { station -> station.streamUrl.isInsecureHttpStream() }
         }
     }
     val stationGridState = rememberLazyGridState()

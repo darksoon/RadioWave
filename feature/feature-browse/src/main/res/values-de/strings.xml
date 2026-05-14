@@ -52,4 +52,6 @@
     <string name="browse_cd_filter_collapse">Filter ausblenden</string>
     <string name="browse_empty_title">Keine Sender gefunden</string>
     <string name="browse_empty_subtitle">Andere Suchbegriffe oder Filter ausprobieren</string>
+    <string name="browse_error_load">Laden fehlgeschlagen: %1$s</string>
+    <string name="browse_error_search">Suche fehlgeschlagen: %1$s</string>
 </resources>
