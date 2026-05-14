@@ -95,4 +95,9 @@ implementation(project(":feature:feature-settings"))
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.hilt.navigation.compose)
+    // Compose Material icons — the compose convention plugin includes this in
+    // its bundle as `implementation`, which doesn't propagate to dependents.
+    // App itself uses Icons.* directly, so we add it explicitly here.
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.material.icons.extended)
 }

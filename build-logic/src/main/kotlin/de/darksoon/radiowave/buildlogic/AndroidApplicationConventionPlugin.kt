@@ -14,8 +14,9 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             with(pluginManager) {
+                // AGP 9+ has built-in Kotlin support; org.jetbrains.kotlin.android
+                // no longer needs to be applied separately.
                 apply("com.android.application")
-                apply("org.jetbrains.kotlin.android")
                 apply("org.jetbrains.kotlin.plugin.compose")
             }
 

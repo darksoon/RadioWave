@@ -18,31 +18,18 @@ internal val Project.libs: VersionCatalog
 internal fun Project.configureKotlinAndroid(
     commonExtension: CommonExtension<*, *, *, *, *, *,>,
 ) {
-    commonExtension.apply {
-        compileSdk = 35
-
-        defaultConfig {
-            minSdk = 26
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        }
-
-        compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
-        }
-
-        testOptions {
-            unitTests {
-                isIncludeAndroidResources = true
-            }
-        }
-
-        packaging {
-            resources {
-                excludes += "/META-INF/{AL2.0,LGPL2.1}"
-            }
-        }
-    }
+    // Direct property assignments here (instead of nested DSL blocks like
+    // `defaultConfig { ... }`) — AGP 9 changed those block signatures from
+    // Function1 to Action, and the Kotlin SAM conversion at the build-logic
+    // call site emits bytecode that NoSuchMethodErrors against the new API.
+    commonExtension.compileSdk = 36
+    commonExtension.defaultConfig.minSdk = 26
+    commonExtension.defaultConfig.testInstrumentationRunner =
+        "androidx.test.runner.AndroidJUnitRunner"
+    commonExtension.compileOptions.sourceCompatibility = JavaVersion.VERSION_17
+    commonExtension.compileOptions.targetCompatibility = JavaVersion.VERSION_17
+    commonExtension.testOptions.unitTests.isIncludeAndroidResources = true
+    commonExtension.packaging.resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
 
     configureKotlin()
 }

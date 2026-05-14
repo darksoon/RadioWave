@@ -14,15 +14,21 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             with(pluginManager) {
+                // AGP 9+ has built-in Kotlin support; org.jetbrains.kotlin.android
+                // no longer needs to be applied separately.
                 apply("com.android.library")
-                apply("org.jetbrains.kotlin.android")
             }
 
             extensions.configure<LibraryExtension> {
                 configureKotlinAndroid(this)
-                defaultConfig.targetSdk = 35
+                // defaultConfig.targetSdk is deprecated in library DSL in AGP 9;
+                // libraries don't need a runtime targetSdk. Move to testOptions/lint
+                // if specific test/lint behavior is needed.
+                @Suppress("UnstableApiUsage")
+                testOptions.targetSdk = 35
                 @Suppress("UnstableApiUsage")
                 testOptions.animationsDisabled = true
+                lint.targetSdk = 35
             }
 
             dependencies {
