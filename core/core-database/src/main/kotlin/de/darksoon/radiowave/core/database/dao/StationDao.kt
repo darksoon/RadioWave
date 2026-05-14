@@ -33,7 +33,7 @@ interface StationDao {
     suspend fun deleteAllStations()
 
     @Query("SELECT * FROM stations WHERE name LIKE '%' || :query || '%' ORDER BY cachedAt DESC LIMIT :limit")
-    fun searchStations(query: String, limit: Int = 50): Flow<List<StationEntity>>
+    suspend fun searchStations(query: String, limit: Int = 50): List<StationEntity>
 
     @Query("SELECT * FROM stations ORDER BY cachedAt DESC LIMIT :limit")
     suspend fun getLatestStations(limit: Int = 200): List<StationEntity>

@@ -743,13 +743,17 @@ class PlayerControllerImpl @Inject constructor(
         return min(exponential, maxReconnectDelayMs)
     }
 
-    private fun createMediaItem(station: Station): MediaItem {
-        // Validate URI scheme before handing to ExoPlayer — defence-in-depth against
-        // any path that might reach here with a non-network URI (file://, content://, etc.).
+    /** Returns null if the URI scheme is not allowed — callers handle by setting StreamBroken error. */
+    private fun createMediaItemOrNull(station: Station): MediaItem? {
         val scheme = Uri.parse(station.streamUrl).scheme?.lowercase()
-        require(scheme == "http" || scheme == "https") {
-            "Rejected stream URI with scheme '$scheme' — only http/https allowed"
+        if (scheme != "http" && scheme != "https") {
+            logWarning("Rejected stream URI with scheme '$scheme' for '${station.name}'")
+            return null
         }
+        return createMediaItem(station)
+    }
+
+    private fun createMediaItem(station: Station): MediaItem {
         return MediaItem.Builder()
             .setUri(station.streamUrl)
             .setMediaMetadata(
@@ -762,6 +766,19 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private fun restartStream(player: ExoPlayer, station: Station) {
+        // Validate URI first — if invalid, surface a player error instead of crashing.
+        val mediaItem = createMediaItemOrNull(station)
+        if (mediaItem == null) {
+            _playerState.update {
+                it.copy(
+                    error = PlayerError.StreamBroken,
+                    isPlaying = false,
+                    isBuffering = false,
+                    isLoading = false,
+                )
+            }
+            return
+        }
         isInternalRestartInProgress = true
         restartGuardJob?.cancel()
         restartGuardJob = controllerScope.launch {
@@ -769,7 +786,7 @@ class PlayerControllerImpl @Inject constructor(
             isInternalRestartInProgress = false
         }
         player.stop()
-        player.setMediaItem(createMediaItem(station))
+        player.setMediaItem(mediaItem)
         player.prepare()
         player.playWhenReady = true
     }

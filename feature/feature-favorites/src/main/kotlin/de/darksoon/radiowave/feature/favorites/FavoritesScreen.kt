@@ -309,7 +309,14 @@ private fun AddCustomStationDialog(
 ) {
     var name by remember { mutableStateOf("") }
     var url by remember { mutableStateOf("") }
-    val canConfirm = name.isNotBlank() && url.isNotBlank()
+    val urlValid = remember(url) {
+        if (url.isBlank()) true // don't show error until user types something
+        else {
+            val scheme = runCatching { android.net.Uri.parse(url.trim()).scheme?.lowercase() }.getOrNull()
+            scheme == "http" || scheme == "https"
+        }
+    }
+    val canConfirm = name.isNotBlank() && url.isNotBlank() && urlValid
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -329,6 +336,10 @@ private fun AddCustomStationDialog(
                     label = { Text(stringResource(R.string.favorites_add_custom_url_hint)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                    isError = !urlValid,
+                    supportingText = if (!urlValid) {
+                        { Text(stringResource(R.string.favorites_add_custom_url_invalid)) }
+                    } else null,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

@@ -92,7 +92,16 @@ class FavoritesViewModel @Inject constructor(
         viewModelScope.launch { favoriteRepository.reorderFavorites(reordered.map { it.uuid }) }
     }
 
+    /** Returns true if [streamUrl] is a valid http/https URL — usable for UI validation. */
+    fun isValidStreamUrl(streamUrl: String): Boolean {
+        val trimmed = streamUrl.trim()
+        if (trimmed.isBlank()) return false
+        val scheme = runCatching { android.net.Uri.parse(trimmed).scheme?.lowercase() }.getOrNull()
+        return scheme == "http" || scheme == "https"
+    }
+
     fun addCustomStation(name: String, streamUrl: String) {
+        if (!isValidStreamUrl(streamUrl)) return
         viewModelScope.launch {
             val station = Station(
                 uuid = "custom-${UUID.randomUUID()}",

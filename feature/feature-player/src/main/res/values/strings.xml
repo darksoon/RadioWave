@@ -22,4 +22,7 @@
     <string name="player_sleep_timer_off">Turn off sleep timer</string>
     <string name="player_similar_stations">Similar Stations</string>
     <string name="player_casting_to_tv">Playing on TV</string>
+    <string name="player_error_network">Connection lost — check your network</string>
+    <string name="player_error_stream_broken">Stream unavailable — try another station</string>
+    <string name="player_error_retry">Retry</string>
 </resources>

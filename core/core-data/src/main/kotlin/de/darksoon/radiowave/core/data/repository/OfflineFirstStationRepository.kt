@@ -10,7 +10,6 @@ import de.darksoon.radiowave.core.model.Genre
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.network.RadioBrowserApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -32,8 +31,8 @@ class OfflineFirstStationRepository @Inject constructor(
         var hasEmitted = false
 
         val local = runCatching {
+            // suspend variant — no Flow subscription churn on every keystroke
             stationDao.searchStations(normalizedQuery, limit = searchResultLimit)
-                .first()
                 .map { it.toDomain() }
         }.getOrDefault(emptyList())
         if (local.isNotEmpty()) {

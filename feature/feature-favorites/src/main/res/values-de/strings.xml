@@ -24,4 +24,5 @@
     <string name="favorites_cd_play">Sender abspielen</string>
     <string name="favorites_cd_pause">Pause</string>
     <string name="favorites_cd_add">Sender hinzufügen</string>
+    <string name="favorites_add_custom_url_invalid">Muss mit http:// oder https:// beginnen</string>
 </resources>

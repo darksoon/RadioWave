@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.SystemClock
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -82,6 +83,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.mediarouter.app.MediaRouteButton
 import coil.compose.SubcomposeAsyncImage
 import com.google.android.gms.cast.framework.CastButtonFactory
+import de.darksoon.radiowave.core.model.PlayerError
 import de.darksoon.radiowave.core.model.PlayerState
 import de.darksoon.radiowave.core.ui.components.MarqueeText
 import de.darksoon.radiowave.core.ui.components.StreamQualityBadge
@@ -373,6 +375,10 @@ fun PlayerScreen(
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.Center,
                     ) {
+                        PlayerErrorBanner(
+                            error = playerState.error,
+                            onRetry = onPlayPauseClick,
+                        )
                         MarqueeText(
                             text = titleArtistLine,
                             textStyle = MaterialTheme.typography.titleLarge.copy(
@@ -474,7 +480,7 @@ fun PlayerScreen(
                                     style = MaterialTheme.typography.labelSmall,
                                     color = Color.White.copy(alpha = 0.68f),
                                 )
-                            } else {
+                            } else if (playerState.error == null) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(5.dp),
@@ -545,6 +551,11 @@ fun PlayerScreen(
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
+
+                PlayerErrorBanner(
+                    error = playerState.error,
+                    onRetry = onPlayPauseClick,
+                )
 
                 MarqueeText(
                     text = titleArtistLine,
@@ -752,6 +763,46 @@ fun PlayerScreen(
             )
         }
     }
+}
+
+@Composable
+private fun PlayerErrorBanner(error: PlayerError?, onRetry: () -> Unit) {
+    if (error == null) return
+    val message = when (error) {
+        is PlayerError.NetworkError -> stringResource(R.string.player_error_network)
+        is PlayerError.StreamBroken -> stringResource(R.string.player_error_stream_broken)
+        is PlayerError.Unknown -> error.message
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color(0xFFFF3B3B).copy(alpha = 0.14f))
+            .border(1.dp, Color(0xFFFF3B3B).copy(alpha = 0.35f), RoundedCornerShape(14.dp))
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.White.copy(alpha = 0.92f),
+            modifier = Modifier.weight(1f),
+        )
+        Surface(
+            onClick = onRetry,
+            shape = RoundedCornerShape(10.dp),
+            color = Color(0xFFFF3B3B).copy(alpha = 0.18f),
+        ) {
+            Text(
+                text = stringResource(R.string.player_error_retry),
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = Color(0xFFFF8A8A),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            )
+        }
+    }
+    Spacer(modifier = Modifier.height(10.dp))
 }
 
 @Composable
