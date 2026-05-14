@@ -185,7 +185,8 @@ class MainActivity : AppCompatActivity() {
                 darkTheme = useDarkTheme,
                 dynamicColor = dynamicColors,
             ) {
-                EnsureNotificationPermission()
+                // Notification permission moved inside RadioWaveMainScreen so it can
+                // be deferred until after onboarding completes (less confusing UX).
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
@@ -852,8 +853,13 @@ fun RadioWaveMainScreen(
                     },
                 )
             }
-
         }
+    }
+
+    // Request notification permission only after onboarding is done — otherwise the
+    // system dialog overlaps the welcome flow, which is jarring.
+    if (!showOnboarding) {
+        EnsureNotificationPermission()
     }
 }
 

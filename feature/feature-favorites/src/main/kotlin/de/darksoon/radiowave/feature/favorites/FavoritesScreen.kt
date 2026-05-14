@@ -42,12 +42,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -83,8 +85,19 @@ fun FavoritesScreen(
     val prefs = remember(context) {
         context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
     }
-    val confirmRemove = remember(prefs) {
-        prefs.getBoolean(AppSettings.KEY_CONFIRM_REMOVE_FAVORITE, false)
+    // Observe the setting live so toggling it in Settings is reflected immediately,
+    // not only after a process restart.
+    var confirmRemove by remember {
+        mutableStateOf(prefs.getBoolean(AppSettings.KEY_CONFIRM_REMOVE_FAVORITE, false))
+    }
+    DisposableEffect(prefs) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == AppSettings.KEY_CONFIRM_REMOVE_FAVORITE) {
+                confirmRemove = prefs.getBoolean(key, false)
+            }
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
     }
     var pendingUnfavoriteUuid by remember { mutableStateOf<String?>(null) }
     var pendingDeleteCustomUuid by remember { mutableStateOf<String?>(null) }
@@ -443,7 +456,7 @@ private fun FavoriteStationCard(
                             shape = CircleShape,
                             color = Color.White.copy(alpha = 0.06f),
                             border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
-                            modifier = Modifier.size(26.dp),
+                            modifier = Modifier.size(26.dp).minimumInteractiveComponentSize(),
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.VerticalAlignTop,
@@ -457,7 +470,7 @@ private fun FavoriteStationCard(
                             shape = CircleShape,
                             color = Color.White.copy(alpha = 0.06f),
                             border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
-                            modifier = Modifier.size(26.dp),
+                            modifier = Modifier.size(26.dp).minimumInteractiveComponentSize(),
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.KeyboardArrowUp,
@@ -477,7 +490,7 @@ private fun FavoriteStationCard(
                             color = if (isActive) RadioAccent.copy(alpha = 0.65f)
                             else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                         ),
-                        modifier = Modifier.size(34.dp),
+                        modifier = Modifier.size(34.dp).minimumInteractiveComponentSize(),
                     ) {
                         Icon(
                             imageVector = if (isActive && isAudioPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
@@ -495,7 +508,7 @@ private fun FavoriteStationCard(
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.surface,
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
-                        modifier = Modifier.size(30.dp),
+                        modifier = Modifier.size(30.dp).minimumInteractiveComponentSize(),
                     ) {
                         Icon(
                             imageVector = if (isCustom) Icons.Filled.Delete else Icons.Filled.Favorite,

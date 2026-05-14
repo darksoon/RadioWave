@@ -666,7 +666,9 @@ private fun EmptyStartCard(
                 color = RadioAccent.copy(alpha = 0.25f),
                 shape = RoundedCornerShape(20.dp),
             )
-            .clickable { onNavigateToBrowse("popular") }
+            // Pass empty string so Browse opens to top stations instead of an
+            // unhelpful filter on the literal word "popular".
+            .clickable { onNavigateToBrowse("") }
             .padding(horizontal = 20.dp, vertical = 20.dp),
     ) {
         Row(
