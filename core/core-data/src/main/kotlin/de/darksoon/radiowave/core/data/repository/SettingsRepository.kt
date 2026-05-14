@@ -13,7 +13,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import de.darksoon.radiowave.core.model.AppSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -102,6 +104,32 @@ open class SettingsRepository @Inject constructor(
     open val data: Flow<AppSettingsState> = context.settingsDataStore.data
         .map { p -> p.toState() }
         .distinctUntilChanged()
+
+    // Process-wide cache for [initialSnapshotBlocking] — multiple ViewModels and
+    // services are constructed simultaneously at app start and all need an initial
+    // value; without this they'd each runBlocking-read DataStore independently and
+    // serialize on DataStore's internal read lock.
+    @Volatile private var cachedInitialSnapshot: AppSettingsState? = null
+
+    /**
+     * Synchronous snapshot of the current settings — used as initial value for
+     * `StateFlow`s so the UI doesn't flash with [AppSettingsState.DEFAULTS]
+     * before DataStore has emitted the real value. Blocks the calling thread
+     * on the first DataStore read only; subsequent calls return a cached value.
+     *
+     * DataStore's first read can take tens of milliseconds (longer if a
+     * SharedPreferences migration is in flight); call this from `init`/`onCreate`
+     * paths where a brief block is acceptable rather than mid-frame.
+     */
+    open fun initialSnapshotBlocking(): AppSettingsState {
+        cachedInitialSnapshot?.let { return it }
+        // Double-checked under synchronized so concurrent constructors don't all
+        // hit DataStore.
+        return synchronized(this) {
+            cachedInitialSnapshot ?: runBlocking { data.first() }
+                .also { cachedInitialSnapshot = it }
+        }
+    }
 
     // Granular Flow projections — these distinctUntilChanged so consumers only
     // react to the slice they care about.

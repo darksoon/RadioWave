@@ -26,7 +26,7 @@ class SettingsViewModel @Inject constructor(
 
     /** Snapshot of all settings — observed reactively by the UI. */
     val settings: StateFlow<AppSettingsState> = settingsRepository.data
-        .stateIn(viewModelScope, SharingStarted.Eagerly, AppSettingsState.DEFAULTS)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, settingsRepository.initialSnapshotBlocking())
 
     // Setters — thin wrappers around SettingsRepository. UI dispatches onChange events here.
     fun setThemeMode(v: String) = viewModelScope.launch { settingsRepository.setThemeMode(v) }

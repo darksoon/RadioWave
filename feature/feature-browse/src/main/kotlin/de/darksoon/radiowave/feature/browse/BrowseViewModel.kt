@@ -84,7 +84,7 @@ class BrowseViewModel @Inject constructor(
 
     /** Live flag for showing HTTP-only streams — drives the visible-stations filter. */
     val showInsecureStreams: StateFlow<Boolean> = settingsRepository.showInsecureStreams
-        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, settingsRepository.initialSnapshotBlocking().showInsecureStreams)
 
     // Read directly from the favorites repository — no cross-VM state sharing required.
     val favoriteStationIds: StateFlow<Set<String>> = favoriteRepository.getFavorites()

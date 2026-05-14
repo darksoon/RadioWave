@@ -490,9 +490,12 @@ fun RadioWaveMainScreen(
     val showQuickToasts = appSettings.showQuickToasts
     var showFullscreenPlayer by rememberSaveable { mutableStateOf(false) }
     var sleepTimerEndsAtElapsedMs by rememberSaveable { mutableStateOf<Long?>(null) }
-    // Persist the onboarding flag locally too — when the user finishes onboarding we
-    // immediately hide the dialog without waiting for DataStore to round-trip.
-    var showOnboarding by rememberSaveable(appSettings.firstRunOnboardingDone) {
+    // Local UI state — initialised from DataStore once, then driven by user
+    // actions (Skip/Finish/RestartOnboarding). Re-keying on the flow value
+    // would clobber the "Restart Onboarding" button: as soon as DataStore
+    // emits another snapshot (still firstRunOnboardingDone=true) the
+    // remember block would reset showOnboarding back to false.
+    var showOnboarding by rememberSaveable {
         mutableStateOf(!appSettings.firstRunOnboardingDone)
     }
     var onboardingStep by rememberSaveable { mutableIntStateOf(0) }

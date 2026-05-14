@@ -36,6 +36,8 @@ import de.darksoon.radiowave.core.model.Genre
 import de.darksoon.radiowave.core.player.PlayerController
 import de.darksoon.radiowave.core.player.StreamQualityResolver
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -78,7 +80,9 @@ class RadioWaveAutoService : MediaLibraryService() {
         settingsRepository.data.stateIn(
             scope = serviceScope,
             started = kotlinx.coroutines.flow.SharingStarted.Eagerly,
-            initialValue = de.darksoon.radiowave.core.data.repository.AppSettingsState.DEFAULTS,
+            // Synchronous read so notification buttons + auto-resume use the
+            // user's saved values from the very first frame.
+            initialValue = settingsRepository.initialSnapshotBlocking(),
         )
     }
 
@@ -118,14 +122,27 @@ class RadioWaveAutoService : MediaLibraryService() {
                 .setNotificationId(NOTIFICATION_ID)
                 .build()
         )
-        // Push live setting changes into the phone notification buttons.
+        // Push live setting changes into the phone notification buttons —
+        // only re-emit when the four notificationShow* flags actually change,
+        // to avoid IPC churn on unrelated toggles like buffer profile.
         serviceScope.launch {
-            settingsRepository.data.collect { state ->
-                val session = mediaLibrarySession ?: return@collect
-                session.connectedControllers.forEach { ctrl ->
-                    session.setMediaButtonPreferences(ctrl, mediaButtonsFor(ctrl, state))
+            settingsRepository.data
+                .map { s ->
+                    NotificationButtonFlags(
+                        s.notificationShowPlayPause,
+                        s.notificationShowStop,
+                        s.notificationShowPrevious,
+                        s.notificationShowNext,
+                    )
                 }
-            }
+                .distinctUntilChanged()
+                .collect { _ ->
+                    val state = settingsState.value
+                    val session = mediaLibrarySession ?: return@collect
+                    session.connectedControllers.forEach { ctrl ->
+                        session.setMediaButtonPreferences(ctrl, mediaButtonsFor(ctrl, state))
+                    }
+                }
         }
     }
 
@@ -994,6 +1011,14 @@ class RadioWaveAutoService : MediaLibraryService() {
             putBoolean(MediaConstants.EXTRAS_KEY_SLOT_RESERVATION_SEEK_TO_NEXT, true)
         }
     }
+
+    /** Small projection of the notification-button flags so we can distinctUntilChanged them. */
+    private data class NotificationButtonFlags(
+        val playPause: Boolean,
+        val stop: Boolean,
+        val previous: Boolean,
+        val next: Boolean,
+    )
 
     /** True if [controller] belongs to an Android Auto / Automotive package. */
     private fun isAutomotiveController(controller: MediaSession.ControllerInfo): Boolean {

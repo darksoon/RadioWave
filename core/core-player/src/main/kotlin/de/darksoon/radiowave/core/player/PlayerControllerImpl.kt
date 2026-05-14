@@ -98,7 +98,11 @@ class PlayerControllerImpl @Inject constructor(
         settingsRepository.data.stateIn(
             scope = controllerScope,
             started = kotlinx.coroutines.flow.SharingStarted.Eagerly,
-            initialValue = de.darksoon.radiowave.core.data.repository.AppSettingsState.DEFAULTS,
+            // Synchronous snapshot — avoids a window after construction where
+            // settings reads (mobile data policy, buffer profile, thermal mode,
+            // last station for auto-resume, ...) return DEFAULTS instead of the
+            // user's saved values.
+            initialValue = settingsRepository.initialSnapshotBlocking(),
         )
     private var isNetworkCallbackRegistered = false
     private var networkLossObserved = false
@@ -1221,10 +1225,22 @@ class PlayerControllerImpl @Inject constructor(
 
     /**
      * Boot the unified Media3 playback service (the same service that serves Android Auto).
-     * Replaces the previous [PlaybackForegroundService] start/stop dance — the Media3
-     * [DefaultMediaNotificationProvider] inside the service now owns the foreground
-     * notification end-to-end.
+     *
+     * Just calling [ContextCompat.startForegroundService] is NOT enough for Media3:
+     * `MediaSessionService` only promotes itself to foreground (and posts the
+     * [DefaultMediaNotificationProvider] notification) once a [MediaController]
+     * actually binds to the session. Without a bound controller the service is
+     * started but stays in the background — no notification — and on Android 12+
+     * we'd hit `ForegroundServiceDidNotStartInTimeException` after ~5s.
+     *
+     * Solution: bind an in-process [MediaController] to the service's session as
+     * soon as phone playback starts. The bind triggers Media3's full foreground
+     * lifecycle; the controller itself is otherwise unused.
      */
+    private var phoneNotificationController: androidx.media3.session.MediaController? = null
+    private var phoneNotificationControllerFuture:
+        com.google.common.util.concurrent.ListenableFuture<androidx.media3.session.MediaController>? = null
+
     private fun ensureForegroundPlaybackServiceRunning(
         @Suppress("UNUSED_PARAMETER") stationName: String = _playerState.value.currentStation?.name.orEmpty(),
         @Suppress("UNUSED_PARAMETER") subtitle: String = "",
@@ -1233,12 +1249,44 @@ class PlayerControllerImpl @Inject constructor(
         if (!isPlaybackNotificationEnabled) return
         if (isForegroundServiceRunning) return
         try {
-            val intent = android.content.Intent().setClassName(
-                context,
+            val componentName = android.content.ComponentName(
+                context.packageName,
                 UNIFIED_PLAYBACK_SERVICE_CLASS,
             )
+            // 1) Promote the service to "started" so it survives the app being
+            //    backgrounded (display off). A bind-only controller would let
+            //    the system reclaim the service after a few seconds idle.
+            //    Media3 has 5s after startForegroundService to call startForeground;
+            //    the controller bind below triggers that flow.
+            val intent = android.content.Intent().setComponent(componentName)
             androidx.core.content.ContextCompat.startForegroundService(context, intent)
+
+            // 2) Bind a MediaController so Media3 sees a live controller and
+            //    publishes the foreground notification via the
+            //    DefaultMediaNotificationProvider installed in the service.
+            val sessionToken = androidx.media3.session.SessionToken(context, componentName)
+            val future = androidx.media3.session.MediaController.Builder(context, sessionToken)
+                .buildAsync()
+            phoneNotificationControllerFuture = future
             isForegroundServiceRunning = true
+            future.addListener({
+                try {
+                    val controller = future.get()
+                    // Guard: if the user stopped or released playback while the
+                    // bind was in flight, stopForegroundPlaybackServiceIfRunning
+                    // already set isForegroundServiceRunning=false and released
+                    // the future. Release the freshly-built controller too —
+                    // otherwise it leaks and keeps the service in foreground.
+                    if (!isForegroundServiceRunning || isReleased) {
+                        controller.release()
+                    } else {
+                        phoneNotificationController = controller
+                    }
+                } catch (error: Exception) {
+                    logWarning("Unable to bind phone media controller: ${error.message}")
+                    isForegroundServiceRunning = false
+                }
+            }, androidx.core.content.ContextCompat.getMainExecutor(context))
         } catch (error: Exception) {
             logWarning("Unable to start playback service: ${error.message}")
         }
@@ -1259,13 +1307,23 @@ class PlayerControllerImpl @Inject constructor(
     private fun stopForegroundPlaybackServiceIfRunning() {
         if (!isForegroundServiceRunning) return
         try {
-            val intent = android.content.Intent().setClassName(
-                context,
+            // Release the controller first — Media3 sees "no controllers remain"
+            // and demotes the service out of foreground, tearing the notification
+            // down. Then explicitly stop the service we started via
+            // startForegroundService so the "started" state is also cleared.
+            phoneNotificationControllerFuture?.let { future ->
+                androidx.media3.session.MediaController.releaseFuture(future)
+            }
+            phoneNotificationController?.release()
+            phoneNotificationController = null
+            phoneNotificationControllerFuture = null
+            val componentName = android.content.ComponentName(
+                context.packageName,
                 UNIFIED_PLAYBACK_SERVICE_CLASS,
             )
-            context.stopService(intent)
+            context.stopService(android.content.Intent().setComponent(componentName))
         } catch (error: Exception) {
-            logWarning("Unable to stop playback service: ${error.message}")
+            logWarning("Unable to release phone media controller: ${error.message}")
         } finally {
             isForegroundServiceRunning = false
             isInternalRestartInProgress = false

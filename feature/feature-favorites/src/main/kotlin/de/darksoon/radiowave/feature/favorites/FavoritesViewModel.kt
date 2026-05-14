@@ -44,7 +44,7 @@ class FavoritesViewModel @Inject constructor(
 
     /** Live flag for "ask before removing favorite" — drives the confirm dialog. */
     val confirmRemove: StateFlow<Boolean> = settingsRepository.confirmRemoveFavorite
-        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, settingsRepository.initialSnapshotBlocking().confirmRemoveFavorite)
 
     init {
         observeFavorites()

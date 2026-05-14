@@ -79,7 +79,7 @@ class HomeViewModel @Inject constructor(
      * the previous raw-SharedPreferences listeners.
      */
     val appSettings: StateFlow<AppSettingsState> = settingsRepository.data
-        .stateIn(viewModelScope, SharingStarted.Eagerly, AppSettingsState.DEFAULTS)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, settingsRepository.initialSnapshotBlocking())
 
     /** Suspend setter used by the onboarding-dialog completion handler in MainActivity. */
     fun setFirstRunOnboardingDone() {
