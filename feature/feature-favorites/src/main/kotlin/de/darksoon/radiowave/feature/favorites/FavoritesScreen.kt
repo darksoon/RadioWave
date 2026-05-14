@@ -383,7 +383,10 @@ private fun FavoriteStationCard(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth().heightIn(min = 170.dp),
+        // Fixed height so all cards in the grid line up cleanly. Content inside
+        // (logo + name + subtitle + actions) is sized to fit comfortably at 196dp;
+        // longer names get ellipsised, tags are limited to one row.
+        modifier = modifier.fillMaxWidth().height(196.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         border = if (isActive)
