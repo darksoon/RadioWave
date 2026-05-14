@@ -7,8 +7,6 @@ appcompat = "1.7.1"
 googleMaterial = "1.14.0"
 androidxMedia = "1.8.0"
 junit = "4.13.2"
-junitVersion = "1.2.1"
-espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.13.0"
 composeBom = "2026.05.00"
@@ -22,7 +20,6 @@ kotlinxSerialization = "1.11.0"
 navigationCompose = "2.9.8"
 datastore = "1.2.1"
 coil = "2.7.0"
-turbine = "1.2.1"
 coroutines = "1.11.0"
 ksp = "2.3.8"
 robolectric = "4.16.1"
@@ -90,11 +87,8 @@ kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 
 # Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }
-androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
-androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-test-core = { group = "androidx.test", name = "core", version = "1.7.0" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
-turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 
 [plugins]

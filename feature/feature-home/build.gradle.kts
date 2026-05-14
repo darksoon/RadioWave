@@ -6,9 +6,8 @@ android {
     namespace = "de.darksoon.radiowave.feature.home"
 }
 
+// core-data, core-player and core-ui come transitively from the feature
+// convention plugin — only declare additional/non-convention deps here.
 dependencies {
     implementation(project(":core:core-model"))
-    implementation(project(":core:core-data"))
-    implementation(project(":core:core-player"))
-    implementation(project(":core:core-ui"))
 }

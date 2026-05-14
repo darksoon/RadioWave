@@ -74,7 +74,14 @@ class BrowseViewModel @Inject constructor(
     val uiState: StateFlow<BrowseUiState> = _uiState.asStateFlow()
 
     // Initial query from navigation argument (e.g. tap a genre on Home → "techno").
-    private val _searchQuery = MutableStateFlow(savedState.get<String>("q").orEmpty())
+    // Decode the URL-encoded value MainActivity wrote — otherwise multi-word genres
+    // like "hip hop" or "drum & bass" arrive as "hip+hop" / "drum+%26+bass" and the
+    // station search returns 0 results.
+    private val _searchQuery = MutableStateFlow(
+        runCatching {
+            java.net.URLDecoder.decode(savedState.get<String>("q").orEmpty(), "UTF-8")
+        }.getOrDefault(savedState.get<String>("q").orEmpty())
+    )
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
     private val _selectedCountry = MutableStateFlow<String?>(null)

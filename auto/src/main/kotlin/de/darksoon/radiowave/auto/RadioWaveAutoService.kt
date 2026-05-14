@@ -542,11 +542,6 @@ class RadioWaveAutoService : MediaLibraryService() {
         return true
     }
 
-    private suspend fun applyAutoQueue(player: Player, selectedStation: Station) {
-        val queue = buildAutoQueue(selectedStation)
-        applyAutoQueueMetadata(player, selectedStation, queue)
-    }
-
     /**
      * Updates the player's media-item list for Android Auto queue navigation WITHOUT
      * calling [Player.prepare]. The player was already prepared by [playerController.playStation];

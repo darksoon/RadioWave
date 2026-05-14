@@ -1253,10 +1253,15 @@ class PlayerControllerImpl @Inject constructor(
                     val controller = future.get()
                     // Guard: if the user stopped or released playback while the
                     // bind was in flight, stopForegroundPlaybackServiceIfRunning
-                    // already set isForegroundServiceRunning=false and released
-                    // the future. Release the freshly-built controller too —
-                    // otherwise it leaks and keeps the service in foreground.
-                    if (!isForegroundServiceRunning || isReleased) {
+                    // already set isForegroundServiceRunning=false, nulled the
+                    // future field and released the future. Also catch rapid
+                    // stop→play sequences where a NEW future has replaced this
+                    // one — we'd otherwise overwrite the live controller with
+                    // this stale one.
+                    val isStaleBind = phoneNotificationControllerFuture !== future ||
+                        !isForegroundServiceRunning ||
+                        isReleased
+                    if (isStaleBind) {
                         controller.release()
                     } else {
                         phoneNotificationController = controller

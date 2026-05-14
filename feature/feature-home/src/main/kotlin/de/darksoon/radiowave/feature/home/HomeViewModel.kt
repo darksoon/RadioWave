@@ -81,9 +81,13 @@ class HomeViewModel @Inject constructor(
     val appSettings: StateFlow<AppSettingsState> = settingsRepository.data
         .stateIn(viewModelScope, SharingStarted.Eagerly, settingsRepository.initialSnapshotBlocking())
 
-    /** Suspend setter used by the onboarding-dialog completion handler in MainActivity. */
-    fun setFirstRunOnboardingDone() {
-        viewModelScope.launch { settingsRepository.setFirstRunOnboardingDone(true) }
+    /**
+     * Persist the onboarding-completion flag — `true` from Skip/Finish, `false`
+     * from "Restart Onboarding" in Settings so the dialog comes back even if the
+     * user kills the app mid-restart before reaching the finish handler.
+     */
+    fun setFirstRunOnboardingDone(done: Boolean = true) {
+        viewModelScope.launch { settingsRepository.setFirstRunOnboardingDone(done) }
     }
 
     init {

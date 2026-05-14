@@ -698,6 +698,10 @@ fun RadioWaveMainScreen(
                     composable(BottomNavItem.Settings.route) {
                         SettingsScreen(
                             onRestartOnboarding = {
+                                // Also flip the DataStore flag back to false so the
+                                // dialog comes back if the user kills the app before
+                                // finishing the restarted onboarding.
+                                homeViewModel.setFirstRunOnboardingDone(done = false)
                                 onboardingStep = 0
                                 showOnboarding = true
                             },
