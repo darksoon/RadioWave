@@ -2,16 +2,11 @@
 
 package de.darksoon.radiowave.auto
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.Intent
 import android.media.AudioManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
-import androidx.core.app.NotificationCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MediaItem.RequestMetadata
@@ -149,53 +144,6 @@ class RadioWaveAutoService : MediaLibraryService() {
                     }
                 }
         }
-    }
-
-    /**
-     * Defensive foreground promotion — beats the 5-second
-     * `ForegroundServiceDidNotStartInTimeException` deadline that Android 16
-     * enforces strictly. We hit this in the wild on 1.0.5 / Android 16: Media3's
-     * own notification flow waits until the player reports playing/buffering,
-     * which can take longer than 5s on slow networks. By posting a minimal
-     * stub notification synchronously in onStartCommand, we satisfy the
-     * platform deadline; DefaultMediaNotificationProvider overlays the real
-     * media-style notification as soon as the session has metadata.
-     */
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        try {
-            ensureNotificationChannel()
-            val stub = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_media_play)
-                .setContentTitle(getString(de.darksoon.radiowave.core.player.R.string.notification_channel_name))
-                .setOngoing(true)
-                .setSilent(true)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .build()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(
-                    NOTIFICATION_ID,
-                    stub,
-                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK,
-                )
-            } else {
-                startForeground(NOTIFICATION_ID, stub)
-            }
-        } catch (error: Exception) {
-            logInfo("Stub foreground promotion failed: ${error.message}")
-        }
-        return super.onStartCommand(intent, flags, startId)
-    }
-
-    private fun ensureNotificationChannel() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val manager = getSystemService(NotificationManager::class.java) ?: return
-        if (manager.getNotificationChannel(NOTIFICATION_CHANNEL_ID) != null) return
-        val channel = NotificationChannel(
-            NOTIFICATION_CHANNEL_ID,
-            getString(de.darksoon.radiowave.core.player.R.string.notification_channel_name),
-            NotificationManager.IMPORTANCE_LOW,
-        )
-        manager.createNotificationChannel(channel)
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
