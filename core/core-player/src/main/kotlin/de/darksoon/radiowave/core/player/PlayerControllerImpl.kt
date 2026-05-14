@@ -108,7 +108,6 @@ class PlayerControllerImpl @Inject constructor(
     private var networkLossObserved = false
     private var lastNetworkRecoveryAt = 0L
     private var isForegroundServiceRunning = false
-    private var isPlaybackNotificationEnabled = true
     private var isAutomotivePerformanceModeEnabled = false
     private var isInternalRestartInProgress = false
     private var shouldResumeAfterAudioFocusGain = false
@@ -1051,10 +1050,7 @@ class PlayerControllerImpl @Inject constructor(
         persistLastStation(station)
 
         val player = getOrCreatePlayer()
-        ensureForegroundPlaybackServiceRunning(
-            stationName = station.name,
-            subtitle = context.getString(R.string.notification_buffering),
-        )
+        ensureForegroundPlaybackServiceRunning()
         restartStream(player, station)
     }
 
@@ -1134,19 +1130,6 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     override fun ensureSessionPlayer(): Player = getOrCreatePlayer()
-
-    override fun setPlaybackNotificationEnabled(enabled: Boolean) {
-        if (isPlaybackNotificationEnabled == enabled) return
-        isPlaybackNotificationEnabled = enabled
-        if (!enabled) {
-            stopForegroundPlaybackServiceIfRunning()
-            return
-        }
-
-        if (_playerState.value.currentStation != null) {
-            ensureForegroundPlaybackServiceRunning()
-        }
-    }
 
     override fun setAutomotivePerformanceModeEnabled(enabled: Boolean) {
         if (isAutomotivePerformanceModeEnabled == enabled) return
@@ -1241,12 +1224,8 @@ class PlayerControllerImpl @Inject constructor(
     private var phoneNotificationControllerFuture:
         com.google.common.util.concurrent.ListenableFuture<androidx.media3.session.MediaController>? = null
 
-    private fun ensureForegroundPlaybackServiceRunning(
-        @Suppress("UNUSED_PARAMETER") stationName: String = _playerState.value.currentStation?.name.orEmpty(),
-        @Suppress("UNUSED_PARAMETER") subtitle: String = "",
-    ) {
+    private fun ensureForegroundPlaybackServiceRunning() {
         if (isReleased) return
-        if (!isPlaybackNotificationEnabled) return
         if (isForegroundServiceRunning) return
         try {
             val componentName = android.content.ComponentName(
@@ -1290,18 +1269,6 @@ class PlayerControllerImpl @Inject constructor(
         } catch (error: Exception) {
             logWarning("Unable to start playback service: ${error.message}")
         }
-    }
-
-    /**
-     * No-op shim — kept so existing call sites that wanted to push a fresh notification
-     * compile. Media3's notification provider redraws automatically when the session's
-     * metadata/state changes (driven by ExoPlayer listeners on the shared player).
-     */
-    private fun updateForegroundPlaybackNotification(
-        @Suppress("UNUSED_PARAMETER") stationName: String,
-        @Suppress("UNUSED_PARAMETER") subtitle: String,
-    ) {
-        // Intentionally empty — see KDoc above.
     }
 
     private fun stopForegroundPlaybackServiceIfRunning() {

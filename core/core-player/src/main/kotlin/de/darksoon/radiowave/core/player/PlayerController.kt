@@ -21,7 +21,6 @@ interface PlayerController {
     fun pauseForExternalPlayback()
     fun toggleMute()
     fun ensureSessionPlayer(): Player
-    fun setPlaybackNotificationEnabled(enabled: Boolean)
     fun setAutomotivePerformanceModeEnabled(enabled: Boolean)
     fun sessionPlayer(): Player?
     fun stop()
