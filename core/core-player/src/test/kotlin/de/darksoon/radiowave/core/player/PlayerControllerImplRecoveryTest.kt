@@ -89,6 +89,10 @@ class PlayerControllerImplRecoveryTest {
     fun `startBufferingWatchdog triggers lost playback recovery after threshold`() = runTest {
         setTimeshiftGuardEnabled(false)
         val controller = createController()
+        // Let the controller's stateIn collector pull the timeshiftGuard=false value
+        // from the fake settings repository BEFORE the watchdog is armed; otherwise
+        // the threshold is locked in from the initial AppSettingsState.DEFAULTS.
+        runCurrent()
         val station = station(uuid = "s4")
         controller.testSetPlayerState(PlayerState(currentStation = station))
         val player = createBufferingPlayerProxy()

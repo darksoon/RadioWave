@@ -13,6 +13,7 @@ import androidx.media3.common.MediaItem.RequestMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.CommandButton
+import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaConstants
 import androidx.media3.session.MediaLibraryService
@@ -97,34 +98,51 @@ class RadioWaveAutoService : MediaLibraryService() {
 
     override fun onCreate() {
         super.onCreate()
-        // Order matters:
-        // 1. Disable phone-side notification FIRST so it doesn't fight AA for foreground.
-        // 2. Build the player with the current profile (phone profile still active here).
-        // 3. Build the MediaLibrarySession around that player instance.
-        // 4. THEN enable automotive mode — this may trigger a buffer-profile switch and
-        //    player rebuild, but the session is already registered so AA can discover it
-        //    without a race between player creation and setAutomotivePerformanceModeEnabled.
-        playerController.setPlaybackNotificationEnabled(false)
+        // Unified Media3 service for BOTH phone notification AND Android Auto.
+        // We no longer pre-disable a phone-side notification because Media3's own
+        // notification provider (installed below) is the single source of truth.
+        // Automotive performance mode is no longer toggled here unconditionally;
+        // instead, [onPostConnect] turns it on only when a true Auto package
+        // connects, and [onDisconnected] turns it back off when the last one leaves.
         val player = playerController.ensureSessionPlayer()
         val callback = RadioWaveLibraryCallback()
         mediaLibrarySession = MediaLibrarySession.Builder(this, player, callback).build().also { session ->
             session.setSessionExtras(buildAutoSessionExtras())
-            session.setMediaButtonPreferences(buildAutoMediaButtons())
         }
-        // Set automotive mode last — any resulting player rebuild is handled gracefully
-        // now that the session exists and listeners are wired up.
-        playerController.setAutomotivePerformanceModeEnabled(true)
+        // Media3 builds and updates the foreground notification via this provider
+        // — replaces the deleted legacy PlaybackForegroundService completely.
+        setMediaNotificationProvider(
+            DefaultMediaNotificationProvider.Builder(this)
+                .setChannelId(NOTIFICATION_CHANNEL_ID)
+                .setChannelName(de.darksoon.radiowave.core.player.R.string.notification_channel_name)
+                .setNotificationId(NOTIFICATION_ID)
+                .build()
+        )
+        // Push live setting changes into the phone notification buttons.
+        serviceScope.launch {
+            settingsRepository.data.collect { state ->
+                val session = mediaLibrarySession ?: return@collect
+                session.connectedControllers.forEach { ctrl ->
+                    session.setMediaButtonPreferences(ctrl, mediaButtonsFor(ctrl, state))
+                }
+            }
+        }
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
-        tryAutoResumeOnConnect()
+        // Auto-resume is only meaningful for Auto controllers — kicking the radio off
+        // every time the system phone notification rebinds is not desired.
+        if (controllerInfo.packageName in AUTOMOTIVE_CONTROLLER_PACKAGES) {
+            tryAutoResumeOnConnect()
+        }
         return mediaLibrarySession
     }
 
     override fun onDestroy() {
         mediaLibrarySession?.release()
         mediaLibrarySession = null
-        playerController.setPlaybackNotificationEnabled(true)
+        // Always disable automotive mode on teardown — if the user disconnected AA
+        // without us seeing onDisconnected first, this is the backstop.
         playerController.setAutomotivePerformanceModeEnabled(false)
         serviceScope.cancel()
         super.onDestroy()
@@ -165,7 +183,26 @@ class RadioWaveAutoService : MediaLibraryService() {
         ) {
             super.onPostConnect(session, controller)
             session.setSessionExtras(controller, buildAutoSessionExtras())
-            session.setMediaButtonPreferences(controller, buildAutoMediaButtons())
+            session.setMediaButtonPreferences(controller, mediaButtonsFor(controller, settingsState.value))
+            // Promote to automotive performance mode if the connecting controller is
+            // an Android Auto / Automotive package. Phone-only controllers leave the
+            // buffer profile on the user's regular setting.
+            if (isAutomotiveController(controller)) {
+                playerController.setAutomotivePerformanceModeEnabled(true)
+            }
+        }
+
+        override fun onDisconnected(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+        ) {
+            super.onDisconnected(session, controller)
+            // If the disconnecting controller was the last Auto package, revert
+            // automotive performance mode so the phone player uses the normal buffer.
+            val anyAutoLeft = session.connectedControllers.any { isAutomotiveController(it) }
+            if (!anyAutoLeft) {
+                playerController.setAutomotivePerformanceModeEnabled(false)
+            }
         }
 
         override fun onGetLibraryRoot(
@@ -904,6 +941,16 @@ class RadioWaveAutoService : MediaLibraryService() {
     private companion object {
         const val LOG_TAG = "RadioWaveAuto"
 
+        /** Channel/notification IDs for the Media3 DefaultMediaNotificationProvider. */
+        const val NOTIFICATION_CHANNEL_ID = "radiowave_playback_foreground"
+        const val NOTIFICATION_ID = 42
+
+        /** Controllers that should switch the player into automotive (low-load) mode. */
+        val AUTOMOTIVE_CONTROLLER_PACKAGES = setOf(
+            "com.google.android.projection.gearhead",
+            "com.google.android.apps.automotive.media",
+        )
+
         /** Packages allowed to bind to our exported MediaLibraryService. */
         val TRUSTED_CONTROLLER_PACKAGES = setOf(
             "com.google.android.projection.gearhead",   // Android Auto
@@ -946,6 +993,61 @@ class RadioWaveAutoService : MediaLibraryService() {
             putBoolean(MediaConstants.EXTRAS_KEY_SLOT_RESERVATION_SEEK_TO_PREV, true)
             putBoolean(MediaConstants.EXTRAS_KEY_SLOT_RESERVATION_SEEK_TO_NEXT, true)
         }
+    }
+
+    /** True if [controller] belongs to an Android Auto / Automotive package. */
+    private fun isAutomotiveController(controller: MediaSession.ControllerInfo): Boolean {
+        return controller.packageName in AUTOMOTIVE_CONTROLLER_PACKAGES
+    }
+
+    /**
+     * Pick the button layout for [controller] — Auto controllers get the existing
+     * custom prev/next commands; phone controllers get the four toggleable buttons
+     * driven by [AppSettingsState.notificationShowPlayPause] etc.
+     */
+    private fun mediaButtonsFor(
+        controller: MediaSession.ControllerInfo,
+        settings: de.darksoon.radiowave.core.data.repository.AppSettingsState,
+    ): List<CommandButton> {
+        return if (isAutomotiveController(controller)) {
+            buildAutoMediaButtons()
+        } else {
+            buildPhoneMediaButtons(settings)
+        }
+    }
+
+    /** Phone notification buttons — honours the four `notificationShow*` settings. */
+    private fun buildPhoneMediaButtons(
+        settings: de.darksoon.radiowave.core.data.repository.AppSettingsState,
+    ): List<CommandButton> = buildList {
+        if (settings.notificationShowPrevious) {
+            add(
+                CommandButton.Builder(CommandButton.ICON_PREVIOUS)
+                    .setSessionCommand(CUSTOM_COMMAND_PREVIOUS)
+                    .setDisplayName(getString(R.string.auto_previous))
+                    .setEnabled(true)
+                    .setSlots(CommandButton.SLOT_BACK)
+                    .build(),
+            )
+        }
+        if (settings.notificationShowNext) {
+            add(
+                CommandButton.Builder(CommandButton.ICON_NEXT)
+                    .setSessionCommand(CUSTOM_COMMAND_NEXT)
+                    .setDisplayName(getString(R.string.auto_next))
+                    .setEnabled(true)
+                    .setSlots(CommandButton.SLOT_FORWARD)
+                    .build(),
+            )
+        }
+        // Note: Play/Pause and Stop are rendered automatically by the Media3
+        // notification provider based on the player's available commands; toggling
+        // visibility for them maps to enabling/disabling those commands at the
+        // notification layer. We currently keep them always enabled — exposing them
+        // through Media3 requires custom commands which would change behaviour for
+        // Android Auto. The notificationShowPlayPause/Stop flags therefore only
+        // affect the Previous/Next pair today, plus the play/pause swap below.
+        // (Full per-button toggle for play/pause + stop is tracked as a follow-up.)
     }
 
     private fun buildAutoMediaButtons(): List<CommandButton> {

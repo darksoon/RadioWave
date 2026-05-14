@@ -380,13 +380,10 @@ class PlayerControllerImpl @Inject constructor(
                     )
                 } else if (isStopping) {
                     stopForegroundPlaybackServiceIfRunning()
-                } else {
-                    val stationName = _playerState.value.currentStation?.name.orEmpty()
-                    updateForegroundPlaybackNotification(
-                        stationName = stationName,
-                        subtitle = resolveNotificationSubtitle(isPlaying = false),
-                    )
                 }
+                // Notification updates on transient state changes are no longer needed —
+                // Media3's DefaultMediaNotificationProvider redraws automatically from
+                // the player's state listeners.
                 updatePlaybackLocks(player)
             }
 
@@ -513,14 +510,8 @@ class PlayerControllerImpl @Inject constructor(
                     )
                 }
                 if (!changed) return
-
-                val currentStationName = _playerState.value.currentStation?.name.orEmpty()
-                updateForegroundPlaybackNotification(
-                    stationName = currentStationName,
-                    subtitle = listOfNotNull(artist, title).joinToString(" - ").ifBlank {
-                        resolveNotificationSubtitle(isPlaying = _playerState.value.isPlaying)
-                    },
-                )
+                // Media3 picks up MediaMetadata changes via the player listener and
+                // redraws the notification itself — no explicit update needed here.
             }
 
             override fun onMetadata(metadata: Metadata) {
@@ -1228,56 +1219,53 @@ class PlayerControllerImpl @Inject constructor(
         isStopping = false
     }
 
+    /**
+     * Boot the unified Media3 playback service (the same service that serves Android Auto).
+     * Replaces the previous [PlaybackForegroundService] start/stop dance — the Media3
+     * [DefaultMediaNotificationProvider] inside the service now owns the foreground
+     * notification end-to-end.
+     */
     private fun ensureForegroundPlaybackServiceRunning(
-        stationName: String = _playerState.value.currentStation?.name.orEmpty(),
-        subtitle: String = resolveNotificationSubtitle(isPlaying = _playerState.value.isPlaying),
+        @Suppress("UNUSED_PARAMETER") stationName: String = _playerState.value.currentStation?.name.orEmpty(),
+        @Suppress("UNUSED_PARAMETER") subtitle: String = "",
     ) {
         if (isReleased) return
         if (!isPlaybackNotificationEnabled) return
+        if (isForegroundServiceRunning) return
         try {
-            PlaybackForegroundService.start(
-                context = context,
-                stationName = stationName,
-                subtitle = subtitle,
-                isPlaying = _playerState.value.isPlaying,
+            val intent = android.content.Intent().setClassName(
+                context,
+                UNIFIED_PLAYBACK_SERVICE_CLASS,
             )
+            androidx.core.content.ContextCompat.startForegroundService(context, intent)
             isForegroundServiceRunning = true
         } catch (error: Exception) {
-            logWarning("Unable to start playback foreground service: ${error.message}")
+            logWarning("Unable to start playback service: ${error.message}")
         }
     }
 
+    /**
+     * No-op shim — kept so existing call sites that wanted to push a fresh notification
+     * compile. Media3's notification provider redraws automatically when the session's
+     * metadata/state changes (driven by ExoPlayer listeners on the shared player).
+     */
     private fun updateForegroundPlaybackNotification(
-        stationName: String,
-        subtitle: String,
+        @Suppress("UNUSED_PARAMETER") stationName: String,
+        @Suppress("UNUSED_PARAMETER") subtitle: String,
     ) {
-        if (!isForegroundServiceRunning) return
-        ensureForegroundPlaybackServiceRunning(
-            stationName = stationName,
-            subtitle = subtitle,
-        )
-    }
-
-    private fun resolveNotificationSubtitle(isPlaying: Boolean): String {
-        val metadata = _playerState.value.metadata
-        val metadataText = listOfNotNull(
-            metadata?.artist?.trim().takeUnless { it.isNullOrBlank() },
-            metadata?.title?.trim().takeUnless { it.isNullOrBlank() },
-        ).joinToString(" • ")
-        if (metadataText.isNotBlank()) return metadataText
-        return if (isPlaying) {
-            context.getString(R.string.notification_playing_fallback)
-        } else {
-            context.getString(R.string.notification_paused_fallback)
-        }
+        // Intentionally empty — see KDoc above.
     }
 
     private fun stopForegroundPlaybackServiceIfRunning() {
         if (!isForegroundServiceRunning) return
         try {
-            PlaybackForegroundService.stop(context)
+            val intent = android.content.Intent().setClassName(
+                context,
+                UNIFIED_PLAYBACK_SERVICE_CLASS,
+            )
+            context.stopService(intent)
         } catch (error: Exception) {
-            logWarning("Unable to stop playback foreground service: ${error.message}")
+            logWarning("Unable to stop playback service: ${error.message}")
         } finally {
             isForegroundServiceRunning = false
             isInternalRestartInProgress = false
@@ -1357,6 +1345,11 @@ class PlayerControllerImpl @Inject constructor(
         // Hoisted regexes — compiled once, reused across all ICY metadata frames.
         val STREAM_TITLE_REGEX = Regex("(?i)StreamTitle='([^']*)'")
         val TITLE_SPLIT_REGEX = Regex("\\s[-–|]\\s")
+
+        // Resolved by class name so core-player doesn't depend on the auto module.
+        // The unified Media3 MediaLibraryService lives in the auto module today;
+        // a rename/move to a core-player-resident class is a follow-up.
+        const val UNIFIED_PLAYBACK_SERVICE_CLASS = "de.darksoon.radiowave.auto.RadioWaveAutoService"
     }
 }
 
