@@ -516,6 +516,14 @@ fun RadioWaveMainScreen(
         }
     }
 
+    // Pre-resolve toast strings at composable scope so the new
+    // LocalContextGetResourceValueCall lint check (Compose 1.10+) is
+    // satisfied — calling context.getString from inside a click callback
+    // wouldn't re-resolve on Configuration changes, and lint now flags it.
+    val shortcutPlayerUnavailableText = stringResource(R.string.shortcut_player_unavailable)
+    val favoriteAddedText = stringResource(R.string.toast_favorite_added)
+    val favoriteRemovedText = stringResource(R.string.toast_favorite_removed)
+
     BackHandler(enabled = showFullscreenPlayer) {
         showFullscreenPlayer = false
     }
@@ -588,7 +596,7 @@ fun RadioWaveMainScreen(
                     navigateToTopLevel(BottomNavItem.Home.route)
                     Toast.makeText(
                         context,
-                        context.getString(R.string.shortcut_player_unavailable),
+                        shortcutPlayerUnavailableText,
                         Toast.LENGTH_SHORT,
                     ).show()
                 }
@@ -721,11 +729,7 @@ fun RadioWaveMainScreen(
                             val willBeFavorite = !isCurrentFavorite
                             homeViewModel.toggleFavorite(station)
                             if (showQuickToasts) {
-                                val message = if (willBeFavorite) {
-                                    context.getString(R.string.toast_favorite_added)
-                                } else {
-                                    context.getString(R.string.toast_favorite_removed)
-                                }
+                                val message = if (willBeFavorite) favoriteAddedText else favoriteRemovedText
                                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -772,11 +776,7 @@ fun RadioWaveMainScreen(
                                 val willBeFavorite = !isCurrentFavorite
                                 homeViewModel.toggleFavorite(station)
                                 if (showQuickToasts) {
-                                    val message = if (willBeFavorite) {
-                                        context.getString(R.string.toast_favorite_added)
-                                    } else {
-                                        context.getString(R.string.toast_favorite_removed)
-                                    }
+                                    val message = if (willBeFavorite) favoriteAddedText else favoriteRemovedText
                                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                                 }
                             }

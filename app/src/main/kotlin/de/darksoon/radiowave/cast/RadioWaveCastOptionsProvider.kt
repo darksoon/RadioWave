@@ -4,12 +4,14 @@ package de.darksoon.radiowave.cast
 
 import android.content.Context
 import androidx.media3.cast.DefaultCastOptionsProvider
+import androidx.media3.common.util.UnstableApi
 import com.google.android.gms.cast.framework.CastOptions
 import com.google.android.gms.cast.framework.OptionsProvider
 import com.google.android.gms.cast.framework.SessionProvider
 import com.google.android.gms.cast.framework.media.CastMediaOptions
 import com.google.android.gms.cast.framework.media.NotificationOptions
 
+@UnstableApi
 class RadioWaveCastOptionsProvider : OptionsProvider {
     override fun getCastOptions(context: Context): CastOptions {
         val expandedControllerClassName = RadioWaveCastExpandedControllerActivity::class.java.name
