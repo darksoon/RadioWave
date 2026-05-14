@@ -7,13 +7,16 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.darksoon.radiowave.core.data.repository.CustomStationRepository
 import de.darksoon.radiowave.core.data.repository.FavoriteRepository
+import de.darksoon.radiowave.core.data.repository.SettingsRepository
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.player.RadioPlayerManager
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -31,12 +34,17 @@ class FavoritesViewModel @Inject constructor(
     private val favoriteRepository: FavoriteRepository,
     private val customStationRepository: CustomStationRepository,
     private val playerManager: RadioPlayerManager,
+    settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FavoritesUiState())
     val uiState: StateFlow<FavoritesUiState> = _uiState.asStateFlow()
 
     val playerState = playerManager.playerState
+
+    /** Live flag for "ask before removing favorite" — drives the confirm dialog. */
+    val confirmRemove: StateFlow<Boolean> = settingsRepository.confirmRemoveFavorite
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     init {
         observeFavorites()

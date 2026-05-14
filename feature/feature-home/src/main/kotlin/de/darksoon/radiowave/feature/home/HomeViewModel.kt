@@ -9,9 +9,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import de.darksoon.radiowave.core.data.repository.AppSettingsState
 import de.darksoon.radiowave.core.data.repository.FavoriteRepository
 import de.darksoon.radiowave.feature.home.R
 import de.darksoon.radiowave.core.data.repository.RecentRepository
+import de.darksoon.radiowave.core.data.repository.SettingsRepository
 import de.darksoon.radiowave.core.data.repository.StationRepository
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.player.RadioPlayerManager
@@ -46,6 +48,7 @@ class HomeViewModel @Inject constructor(
     private val favoriteRepository: FavoriteRepository,
     private val recentRepository: RecentRepository,
     private val playerManager: RadioPlayerManager,
+    private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
     private val playbackHistory = ArrayDeque<Station>()
     private val maxPlaybackHistorySize = 40
@@ -69,6 +72,19 @@ class HomeViewModel @Inject constructor(
 
     private val _similarStations = MutableStateFlow<List<Station>>(emptyList())
     val similarStations: StateFlow<List<Station>> = _similarStations.asStateFlow()
+
+    /**
+     * Live snapshot of all app settings. Consumed by the shell composable in MainActivity
+     * for theme/dynamicColors/miniplayer/keep-screen-on/onboarding decisions, replacing
+     * the previous raw-SharedPreferences listeners.
+     */
+    val appSettings: StateFlow<AppSettingsState> = settingsRepository.data
+        .stateIn(viewModelScope, SharingStarted.Eagerly, AppSettingsState.DEFAULTS)
+
+    /** Suspend setter used by the onboarding-dialog completion handler in MainActivity. */
+    fun setFirstRunOnboardingDone() {
+        viewModelScope.launch { settingsRepository.setFirstRunOnboardingDone(true) }
+    }
 
     init {
         if (isDebuggable) Log.d("RadioWave", "HomeViewModel initialized - starting to load stations...")

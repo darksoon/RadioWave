@@ -16,9 +16,17 @@ import androidx.media.app.NotificationCompat.MediaStyle
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
-import de.darksoon.radiowave.core.model.AppSettings
+import de.darksoon.radiowave.core.data.repository.AppSettingsState
+import de.darksoon.radiowave.core.data.repository.SettingsRepository
 import de.darksoon.radiowave.core.player.R
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 /**
@@ -29,7 +37,23 @@ class PlaybackForegroundService : Service() {
     @Inject
     lateinit var playerController: PlayerController
 
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
+
     private var mediaSession: MediaSessionCompat? = null
+
+    // Scope tied to the service lifetime; cancelled in onDestroy.
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
+    // Lazily-initialised so settingsRepository is available; Eagerly started so
+    // notification builds can read .value synchronously.
+    private val settingsState: StateFlow<AppSettingsState> by lazy {
+        settingsRepository.data.stateIn(
+            scope = serviceScope,
+            started = SharingStarted.Eagerly,
+            initialValue = AppSettingsState.DEFAULTS,
+        )
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         createNotificationChannel()
@@ -107,6 +131,7 @@ class PlaybackForegroundService : Service() {
             release()
         }
         mediaSession = null
+        serviceScope.cancel()
         super.onDestroy()
     }
 
@@ -117,11 +142,11 @@ class PlaybackForegroundService : Service() {
         subtitle: String,
         isPlaying: Boolean,
     ): Notification {
-        val prefs = getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
-        val showPrevious = prefs.getBoolean(AppSettings.KEY_NOTIFICATION_SHOW_PREVIOUS, true)
-        val showPlayPause = prefs.getBoolean(AppSettings.KEY_NOTIFICATION_SHOW_PLAY_PAUSE, true)
-        val showNext = prefs.getBoolean(AppSettings.KEY_NOTIFICATION_SHOW_NEXT, true)
-        val showStop = prefs.getBoolean(AppSettings.KEY_NOTIFICATION_SHOW_STOP, true)
+        val settings = settingsState.value
+        val showPrevious = settings.notificationShowPrevious
+        val showPlayPause = settings.notificationShowPlayPause
+        val showNext = settings.notificationShowNext
+        val showStop = settings.notificationShowStop
 
         val titleText = stationName.ifBlank { getString(R.string.notification_app_name) }
         val contentText = subtitle.ifBlank {

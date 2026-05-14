@@ -132,19 +132,11 @@ class MainActivity : AppCompatActivity() {
             window.isNavigationBarContrastEnforced = false
         }
         setContent {
-            val context = LocalContext.current
-            val prefs = remember(context) {
-                context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
-            }
-            var dynamicColors by remember {
-                mutableStateOf(prefs.getBoolean(AppSettings.KEY_DYNAMIC_COLORS, false))
-            }
-            var themeMode by remember {
-                mutableStateOf(
-                    prefs.getString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_DARK)
-                        ?: AppSettings.THEME_DARK,
-                )
-            }
+            val rootHomeViewModel: HomeViewModel = hiltViewModel()
+            val appSettings by rootHomeViewModel.appSettings.collectAsStateWithLifecycle()
+            val themeMode = appSettings.themeMode
+            val dynamicColors = appSettings.dynamicColors
+            val appLanguage = appSettings.appLanguage
             val systemInDark = isSystemInDarkTheme()
             val useDarkTheme = when (themeMode) {
                 AppSettings.THEME_LIGHT -> false
@@ -152,33 +144,10 @@ class MainActivity : AppCompatActivity() {
                 else -> systemInDark
             }
 
-            DisposableEffect(prefs) {
-                val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-                    when (key) {
-                        AppSettings.KEY_APP_LANGUAGE -> {
-                            val language = prefs.getString(
-                                AppSettings.KEY_APP_LANGUAGE,
-                                AppSettings.LANGUAGE_SYSTEM,
-                            ) ?: AppSettings.LANGUAGE_SYSTEM
-                            AppLanguageManager.applyLanguage(language)
-                        }
-
-                        AppSettings.KEY_DYNAMIC_COLORS -> {
-                            dynamicColors = prefs.getBoolean(AppSettings.KEY_DYNAMIC_COLORS, false)
-                        }
-
-                        AppSettings.KEY_THEME_MODE -> {
-                            themeMode = prefs.getString(
-                                AppSettings.KEY_THEME_MODE,
-                                AppSettings.THEME_DARK,
-                            ) ?: AppSettings.THEME_DARK
-                        }
-                    }
-                }
-                prefs.registerOnSharedPreferenceChangeListener(listener)
-                onDispose {
-                    prefs.unregisterOnSharedPreferenceChangeListener(listener)
-                }
+            // Apply the language whenever it changes — replaces the OnSharedPreferenceChangeListener
+            // that previously called AppLanguageManager.applyLanguage from MainActivity.
+            LaunchedEffect(appLanguage) {
+                AppLanguageManager.applyLanguage(appLanguage)
             }
 
             RadioWaveTheme(
@@ -515,24 +484,16 @@ fun RadioWaveMainScreen(
     val favoriteStationIds by homeViewModel.favoriteStationIds.collectAsStateWithLifecycle()
     val isCasting by castManager.isCasting.collectAsStateWithLifecycle()
     val isRemotePlaying by castManager.isRemotePlaying.collectAsStateWithLifecycle()
-    val prefs = remember(context) {
-        context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
-    }
-    var showMiniPlayerMetadata by remember {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_MINIPLAYER_METADATA, true))
-    }
-    var keepScreenOnFullscreen by remember {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_KEEP_SCREEN_ON_FULLSCREEN, false))
-    }
-    var showQuickToasts by remember {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_QUICK_TOASTS, true))
-    }
+    val appSettings by homeViewModel.appSettings.collectAsStateWithLifecycle()
+    val showMiniPlayerMetadata = appSettings.showMiniplayerMetadata
+    val keepScreenOnFullscreen = appSettings.keepScreenOnFullscreen
+    val showQuickToasts = appSettings.showQuickToasts
     var showFullscreenPlayer by rememberSaveable { mutableStateOf(false) }
     var sleepTimerEndsAtElapsedMs by rememberSaveable { mutableStateOf<Long?>(null) }
-    var showOnboarding by rememberSaveable {
-        mutableStateOf(
-            !prefs.getBoolean(AppSettings.KEY_FIRST_RUN_ONBOARDING_DONE, false),
-        )
+    // Persist the onboarding flag locally too — when the user finishes onboarding we
+    // immediately hide the dialog without waiting for DataStore to round-trip.
+    var showOnboarding by rememberSaveable(appSettings.firstRunOnboardingDone) {
+        mutableStateOf(!appSettings.firstRunOnboardingDone)
     }
     var onboardingStep by rememberSaveable { mutableIntStateOf(0) }
     val effectivePlayerState = if (isCasting) {
@@ -554,26 +515,6 @@ fun RadioWaveMainScreen(
 
     BackHandler(enabled = showFullscreenPlayer) {
         showFullscreenPlayer = false
-    }
-
-    DisposableEffect(prefs) {
-        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            when (key) {
-                AppSettings.KEY_SHOW_MINIPLAYER_METADATA -> {
-                    showMiniPlayerMetadata = prefs.getBoolean(AppSettings.KEY_SHOW_MINIPLAYER_METADATA, true)
-                }
-                AppSettings.KEY_KEEP_SCREEN_ON_FULLSCREEN -> {
-                    keepScreenOnFullscreen = prefs.getBoolean(AppSettings.KEY_KEEP_SCREEN_ON_FULLSCREEN, false)
-                }
-                AppSettings.KEY_SHOW_QUICK_TOASTS -> {
-                    showQuickToasts = prefs.getBoolean(AppSettings.KEY_SHOW_QUICK_TOASTS, true)
-                }
-            }
-        }
-        prefs.registerOnSharedPreferenceChangeListener(listener)
-        onDispose {
-            prefs.unregisterOnSharedPreferenceChangeListener(listener)
-        }
     }
 
     DisposableEffect(showFullscreenPlayer, keepScreenOnFullscreen, view) {
@@ -856,16 +797,12 @@ fun RadioWaveMainScreen(
                     step = onboardingStep,
                     onStepChange = { onboardingStep = it },
                     onSkip = {
-                        prefs.edit()
-                            .putBoolean(AppSettings.KEY_FIRST_RUN_ONBOARDING_DONE, true)
-                            .apply()
+                        homeViewModel.setFirstRunOnboardingDone()
                         showOnboarding = false
                         onboardingStep = 0
                     },
                     onFinish = {
-                        prefs.edit()
-                            .putBoolean(AppSettings.KEY_FIRST_RUN_ONBOARDING_DONE, true)
-                            .apply()
+                        homeViewModel.setFirstRunOnboardingDone()
                         showOnboarding = false
                         onboardingStep = 0
                     },

@@ -66,7 +66,7 @@ private val Context.settingsDataStore by preferencesDataStore(
 )
 
 @Singleton
-class SettingsRepository @Inject constructor(
+open class SettingsRepository @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
 
@@ -99,7 +99,7 @@ class SettingsRepository @Inject constructor(
     }
 
     /** Single source of truth — all values bundled in one Flow. */
-    val data: Flow<AppSettingsState> = context.settingsDataStore.data
+    open val data: Flow<AppSettingsState> = context.settingsDataStore.data
         .map { p -> p.toState() }
         .distinctUntilChanged()
 
@@ -138,7 +138,7 @@ class SettingsRepository @Inject constructor(
     suspend fun setFirstRunOnboardingDone(v: Boolean) = edit { it[Keys.FIRST_RUN_ONBOARDING_DONE] = v }
 
     /** Atomically persist the last played station's identification fields. */
-    suspend fun setLastStation(
+    open suspend fun setLastStation(
         uuid: String?,
         name: String?,
         streamUrl: String?,

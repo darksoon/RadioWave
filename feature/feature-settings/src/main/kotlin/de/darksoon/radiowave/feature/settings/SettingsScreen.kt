@@ -78,6 +78,7 @@ import androidx.compose.ui.unit.dp
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -96,7 +97,7 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
-    val prefs = context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
     var issueReportRefreshKey by remember { mutableLongStateOf(0L) }
     // Read the crash report file on IO to avoid blocking the composition thread.
     val latestIssueReport by produceState<de.darksoon.radiowave.core.data.update.LocalIssueReport?>(
@@ -109,72 +110,27 @@ fun SettingsScreen(
         }
     }
 
-    var themeMode by rememberSaveable {
-        mutableStateOf(prefs.getString(AppSettings.KEY_THEME_MODE, AppSettings.THEME_DARK) ?: AppSettings.THEME_DARK)
-    }
-    var appLanguage by rememberSaveable {
-        mutableStateOf(
-            prefs.getString(AppSettings.KEY_APP_LANGUAGE, AppSettings.LANGUAGE_SYSTEM)
-                ?: AppSettings.LANGUAGE_SYSTEM,
-        )
-    }
-    var dynamicColors by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_DYNAMIC_COLORS, false))
-    }
-    var showMiniPlayerMetadata by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_MINIPLAYER_METADATA, true))
-    }
-    var keepScreenOnFullscreen by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_KEEP_SCREEN_ON_FULLSCREEN, false))
-    }
-    var showQuickToasts by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_QUICK_TOASTS, true))
-    }
-    var showInsecureStreams by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_INSECURE_STREAMS, true))
-    }
-    var showNotificationPlayPause by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_NOTIFICATION_SHOW_PLAY_PAUSE, true))
-    }
-    var showNotificationPrevious by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_NOTIFICATION_SHOW_PREVIOUS, true))
-    }
-    var showNotificationNext by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_NOTIFICATION_SHOW_NEXT, true))
-    }
-    var showNotificationStop by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_NOTIFICATION_SHOW_STOP, true))
-    }
-    var defaultAudioQuality by rememberSaveable {
-        mutableStateOf(
-            prefs.getString(AppSettings.KEY_DEFAULT_AUDIO_QUALITY, AppSettings.QUALITY_AUTO)
-                ?: AppSettings.QUALITY_AUTO,
-        )
-    }
-    var allowMobileData by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_ALLOW_MOBILE_DATA, true))
-    }
-    var bufferProfile by rememberSaveable {
-        mutableStateOf(
-            prefs.getString(AppSettings.KEY_BUFFER_PROFILE, AppSettings.BUFFER_MEDIUM)
-                ?: AppSettings.BUFFER_MEDIUM,
-        )
-    }
-    var timeshiftGuard by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_TIMESHIFT_GUARD, true))
-    }
-    var thermalMode by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_THERMAL_MODE, false))
-    }
-    var autoPlayOnAndroidAutoConnect by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_AUTO_PLAY_ON_ANDROID_AUTO_CONNECT, true))
-    }
-    var limitAndroidAutoQuality by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_LIMIT_ANDROID_AUTO_QUALITY, true))
-    }
-    var confirmRemoveFavorite by rememberSaveable {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_CONFIRM_REMOVE_FAVORITE, false))
-    }
+    // All setting values now come from the SettingsRepository-backed StateFlow.
+    // Local rememberSaveable() copies are gone — DataStore is the single source of truth.
+    val themeMode = settings.themeMode
+    val appLanguage = settings.appLanguage
+    val dynamicColors = settings.dynamicColors
+    val showMiniPlayerMetadata = settings.showMiniplayerMetadata
+    val keepScreenOnFullscreen = settings.keepScreenOnFullscreen
+    val showQuickToasts = settings.showQuickToasts
+    val showInsecureStreams = settings.showInsecureStreams
+    val showNotificationPlayPause = settings.notificationShowPlayPause
+    val showNotificationPrevious = settings.notificationShowPrevious
+    val showNotificationNext = settings.notificationShowNext
+    val showNotificationStop = settings.notificationShowStop
+    val defaultAudioQuality = settings.defaultAudioQuality
+    val allowMobileData = settings.allowMobileData
+    val bufferProfile = settings.bufferProfile
+    val timeshiftGuard = settings.timeshiftGuard
+    val thermalMode = settings.thermalMode
+    val autoPlayOnAndroidAutoConnect = settings.autoPlayOnAndroidAutoConnect
+    val limitAndroidAutoQuality = settings.limitAndroidAutoQuality
+    val confirmRemoveFavorite = settings.confirmRemoveFavorite
     val appVersion = rememberAppVersion(context)
     val dynamicColorsSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     var batteryOptimizationExcluded by remember {
@@ -304,8 +260,7 @@ fun SettingsScreen(
                             ),
                             selectedValue = themeMode,
                             onSelected = { value ->
-                                themeMode = value
-                                prefs.edit().putString(AppSettings.KEY_THEME_MODE, value).apply()
+                                viewModel.setThemeMode(value)
                             },
                             enabled = false,
                             disabledHint = stringResource(R.string.settings_theme_dark_only),
@@ -320,8 +275,7 @@ fun SettingsScreen(
                             ),
                             selectedValue = appLanguage,
                             onSelected = { value ->
-                                appLanguage = value
-                                prefs.edit().putString(AppSettings.KEY_APP_LANGUAGE, value).apply()
+                                viewModel.setAppLanguage(value)
                                 applyAppLanguage(value)
                                 // No more Activity.recreate() — AppCompatDelegate.setApplicationLocales
                                 // (inside applyAppLanguage) triggers a configuration change which
@@ -335,8 +289,7 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_dynamic_colors_subtitle),
                             checked = dynamicColors,
                             onCheckedChange = { checked ->
-                                dynamicColors = checked
-                                prefs.edit().putBoolean(AppSettings.KEY_DYNAMIC_COLORS, checked).apply()
+                                viewModel.setDynamicColors(checked)
                             },
                             enabled = dynamicColorsSupported,
                             disabledHint = stringResource(R.string.settings_dynamic_colors_disabled),
@@ -347,8 +300,7 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_quick_hints_subtitle),
                             checked = showQuickToasts,
                             onCheckedChange = { checked ->
-                                showQuickToasts = checked
-                                prefs.edit().putBoolean(AppSettings.KEY_SHOW_QUICK_TOASTS, checked).apply()
+                                viewModel.setShowQuickToasts(checked)
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
@@ -357,8 +309,7 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_confirm_remove_favorite_subtitle),
                             checked = confirmRemoveFavorite,
                             onCheckedChange = { checked ->
-                                confirmRemoveFavorite = checked
-                                prefs.edit().putBoolean(AppSettings.KEY_CONFIRM_REMOVE_FAVORITE, checked).apply()
+                                viewModel.setConfirmRemoveFavorite(checked)
                             },
                         )
                     }
@@ -369,8 +320,7 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_mini_player_metadata_subtitle),
                             checked = showMiniPlayerMetadata,
                             onCheckedChange = { checked ->
-                                showMiniPlayerMetadata = checked
-                                prefs.edit().putBoolean(AppSettings.KEY_SHOW_MINIPLAYER_METADATA, checked).apply()
+                                viewModel.setShowMiniplayerMetadata(checked)
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
@@ -379,8 +329,7 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_keep_screen_on_subtitle),
                             checked = keepScreenOnFullscreen,
                             onCheckedChange = { checked ->
-                                keepScreenOnFullscreen = checked
-                                prefs.edit().putBoolean(AppSettings.KEY_KEEP_SCREEN_ON_FULLSCREEN, checked).apply()
+                                viewModel.setKeepScreenOnFullscreen(checked)
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
@@ -394,8 +343,7 @@ fun SettingsScreen(
                             ),
                             selectedValue = defaultAudioQuality,
                             onSelected = { value ->
-                                defaultAudioQuality = value
-                                prefs.edit().putString(AppSettings.KEY_DEFAULT_AUDIO_QUALITY, value).apply()
+                                viewModel.setDefaultAudioQuality(value)
                             },
                             enabled = true,
                             disabledHint = null,
@@ -412,10 +360,7 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_android_auto_quality_limit_subtitle),
                             checked = limitAndroidAutoQuality,
                             onCheckedChange = { checked ->
-                                limitAndroidAutoQuality = checked
-                                prefs.edit()
-                                    .putBoolean(AppSettings.KEY_LIMIT_ANDROID_AUTO_QUALITY, checked)
-                                    .apply()
+                                viewModel.setLimitAndroidAutoQuality(checked)
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
@@ -424,10 +369,7 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_auto_play_subtitle),
                             checked = autoPlayOnAndroidAutoConnect,
                             onCheckedChange = { checked ->
-                                autoPlayOnAndroidAutoConnect = checked
-                                prefs.edit()
-                                    .putBoolean(AppSettings.KEY_AUTO_PLAY_ON_ANDROID_AUTO_CONNECT, checked)
-                                    .apply()
+                                viewModel.setAutoPlayOnAndroidAutoConnect(checked)
                             },
                         )
                     }
@@ -438,8 +380,7 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_notification_play_pause_subtitle),
                             checked = showNotificationPlayPause,
                             onCheckedChange = { checked ->
-                                showNotificationPlayPause = checked
-                                prefs.edit().putBoolean(AppSettings.KEY_NOTIFICATION_SHOW_PLAY_PAUSE, checked).apply()
+                                viewModel.setNotificationShowPlayPause(checked)
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
@@ -448,8 +389,7 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_notification_previous_subtitle),
                             checked = showNotificationPrevious,
                             onCheckedChange = { checked ->
-                                showNotificationPrevious = checked
-                                prefs.edit().putBoolean(AppSettings.KEY_NOTIFICATION_SHOW_PREVIOUS, checked).apply()
+                                viewModel.setNotificationShowPrevious(checked)
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
@@ -458,8 +398,7 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_notification_next_subtitle),
                             checked = showNotificationNext,
                             onCheckedChange = { checked ->
-                                showNotificationNext = checked
-                                prefs.edit().putBoolean(AppSettings.KEY_NOTIFICATION_SHOW_NEXT, checked).apply()
+                                viewModel.setNotificationShowNext(checked)
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
@@ -468,8 +407,7 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_notification_stop_subtitle),
                             checked = showNotificationStop,
                             onCheckedChange = { checked ->
-                                showNotificationStop = checked
-                                prefs.edit().putBoolean(AppSettings.KEY_NOTIFICATION_SHOW_STOP, checked).apply()
+                                viewModel.setNotificationShowStop(checked)
                             },
                         )
                     }
@@ -480,8 +418,7 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_mobile_data_subtitle),
                             checked = allowMobileData,
                             onCheckedChange = { checked ->
-                                allowMobileData = checked
-                                prefs.edit().putBoolean(AppSettings.KEY_ALLOW_MOBILE_DATA, checked).apply()
+                                viewModel.setAllowMobileData(checked)
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
@@ -494,8 +431,7 @@ fun SettingsScreen(
                             ),
                             selectedValue = bufferProfile,
                             onSelected = { value ->
-                                bufferProfile = value
-                                prefs.edit().putString(AppSettings.KEY_BUFFER_PROFILE, value).apply()
+                                viewModel.setBufferProfile(value)
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
@@ -504,8 +440,7 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_outage_buffer_subtitle),
                             checked = timeshiftGuard,
                             onCheckedChange = { checked ->
-                                timeshiftGuard = checked
-                                prefs.edit().putBoolean(AppSettings.KEY_TIMESHIFT_GUARD, checked).apply()
+                                viewModel.setTimeshiftGuard(checked)
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
@@ -514,8 +449,7 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_thermal_mode_subtitle),
                             checked = thermalMode,
                             onCheckedChange = { checked ->
-                                thermalMode = checked
-                                prefs.edit().putBoolean(AppSettings.KEY_THERMAL_MODE, checked).apply()
+                                viewModel.setThermalMode(checked)
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
@@ -524,8 +458,7 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_insecure_streams_subtitle),
                             checked = showInsecureStreams,
                             onCheckedChange = { checked ->
-                                showInsecureStreams = checked
-                                prefs.edit().putBoolean(AppSettings.KEY_SHOW_INSECURE_STREAMS, checked).apply()
+                                viewModel.setShowInsecureStreams(checked)
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))

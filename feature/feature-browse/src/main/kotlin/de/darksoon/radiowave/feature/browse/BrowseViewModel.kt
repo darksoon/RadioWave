@@ -13,6 +13,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.darksoon.radiowave.core.data.repository.FavoriteRepository
 import de.darksoon.radiowave.core.data.repository.RecentRepository
+import de.darksoon.radiowave.core.data.repository.SettingsRepository
 import de.darksoon.radiowave.core.data.repository.StationRepository
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.player.RadioPlayerManager
@@ -57,6 +58,7 @@ class BrowseViewModel @Inject constructor(
     private val favoriteRepository: FavoriteRepository,
     private val recentRepository: RecentRepository,
     private val playerManager: RadioPlayerManager,
+    private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
     private var resultsJob: Job? = null
@@ -79,6 +81,10 @@ class BrowseViewModel @Inject constructor(
     val selectedCountry: StateFlow<String?> = _selectedCountry.asStateFlow()
 
     val playerState: StateFlow<de.darksoon.radiowave.core.model.PlayerState> = playerManager.playerState
+
+    /** Live flag for showing HTTP-only streams — drives the visible-stations filter. */
+    val showInsecureStreams: StateFlow<Boolean> = settingsRepository.showInsecureStreams
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     // Read directly from the favorites repository — no cross-VM state sharing required.
     val favoriteStationIds: StateFlow<Set<String>> = favoriteRepository.getFavorites()

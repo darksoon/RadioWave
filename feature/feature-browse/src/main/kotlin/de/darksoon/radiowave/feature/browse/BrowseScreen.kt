@@ -2,7 +2,6 @@
 
 package de.darksoon.radiowave.feature.browse
 
-import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -57,7 +56,6 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -72,7 +70,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -83,7 +80,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.darksoon.radiowave.core.ui.components.BrowseSkeletonLoader
 import de.darksoon.radiowave.core.ui.components.StationLogoImage
 import de.darksoon.radiowave.core.ui.components.StreamQualityBadge
-import de.darksoon.radiowave.core.model.AppSettings
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.ui.theme.CardBodyStyle
 import de.darksoon.radiowave.core.ui.theme.SectionTitleStyle
@@ -175,26 +171,8 @@ fun BrowseScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedCountry by viewModel.selectedCountry.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-    val prefs = remember(context) {
-        context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
-    }
+    val showInsecureStreams by viewModel.showInsecureStreams.collectAsStateWithLifecycle()
     var selectedGenre by remember { mutableStateOf<String?>(null) }
-    var showInsecureStreams by remember {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_SHOW_INSECURE_STREAMS, true))
-    }
-
-    DisposableEffect(prefs) {
-        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == AppSettings.KEY_SHOW_INSECURE_STREAMS) {
-                showInsecureStreams = prefs.getBoolean(AppSettings.KEY_SHOW_INSECURE_STREAMS, true)
-            }
-        }
-        prefs.registerOnSharedPreferenceChangeListener(listener)
-        onDispose {
-            prefs.unregisterOnSharedPreferenceChangeListener(listener)
-        }
-    }
 
     LaunchedEffect(initialGenre) {
         if (initialGenre.isNotEmpty()) {

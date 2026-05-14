@@ -5,13 +5,14 @@ package de.darksoon.radiowave.core.player
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.test.core.app.ApplicationProvider
+import de.darksoon.radiowave.core.data.repository.AppSettingsState
+import de.darksoon.radiowave.core.data.repository.SettingsRepository
 import de.darksoon.radiowave.core.data.repository.StationRepository
 import de.darksoon.radiowave.core.model.Country
 import de.darksoon.radiowave.core.model.Genre
 import de.darksoon.radiowave.core.model.PlayerError
 import de.darksoon.radiowave.core.model.PlayerState
 import de.darksoon.radiowave.core.model.Station
-import de.darksoon.radiowave.core.model.AppSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -104,18 +105,17 @@ class PlayerControllerImplRecoveryTest {
         assertTrue(controller.playerState.value.isBuffering)
     }
 
+    // The test now drives the timeshift-guard flag via the shared mutable fake settings
+    // repository (instead of writing into the legacy SharedPreferences file).
+    private val fakeSettingsRepository = FakeSettingsRepository()
+
     private fun setTimeshiftGuardEnabled(enabled: Boolean) {
-        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        context
-            .getSharedPreferences(AppSettings.PREFS_NAME, android.content.Context.MODE_PRIVATE)
-            .edit()
-            .putBoolean(AppSettings.KEY_TIMESHIFT_GUARD, enabled)
-            .commit()
+        fakeSettingsRepository.update { it.copy(timeshiftGuard = enabled) }
     }
 
     private fun createController(): PlayerControllerImpl {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        return PlayerControllerImpl(context, FakeStationRepository())
+        return PlayerControllerImpl(context, FakeStationRepository(), fakeSettingsRepository)
     }
 
     private fun createBufferingPlayerProxy(): ExoPlayer {
@@ -158,6 +158,33 @@ class PlayerControllerImplRecoveryTest {
         )
     }
 
+}
+
+/**
+ * Test double for [SettingsRepository] backed by an in-memory [MutableStateFlow]
+ * — avoids DataStore I/O and the legacy SharedPreferences migration in unit tests.
+ */
+private class FakeSettingsRepository : SettingsRepository(
+    androidx.test.core.app.ApplicationProvider.getApplicationContext(),
+) {
+    private val state = MutableStateFlow(AppSettingsState.DEFAULTS)
+    override val data = state
+
+    fun update(transform: (AppSettingsState) -> AppSettingsState) {
+        state.value = transform(state.value)
+    }
+
+    override suspend fun setLastStation(
+        uuid: String?, name: String?, streamUrl: String?, faviconUrl: String?, country: String?,
+    ) {
+        state.value = state.value.copy(
+            lastStationUuid = uuid,
+            lastStationName = name,
+            lastStationStreamUrl = streamUrl,
+            lastStationFaviconUrl = faviconUrl,
+            lastStationCountry = country,
+        )
+    }
 }
 
 private class FakeStationRepository : StationRepository {

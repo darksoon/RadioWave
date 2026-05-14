@@ -2,47 +2,35 @@
 
 package de.darksoon.radiowave.core.player
 
-import android.content.Context
-import dagger.hilt.android.qualifiers.ApplicationContext
+import de.darksoon.radiowave.core.data.repository.SettingsRepository
 import de.darksoon.radiowave.core.data.repository.StationRepository
 import de.darksoon.radiowave.core.model.AppSettings
 import de.darksoon.radiowave.core.model.Station
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.abs
 
 @Singleton
 class StreamQualityResolver @Inject constructor(
-    @ApplicationContext private val context: Context,
     private val stationRepository: StationRepository,
+    private val settingsRepository: SettingsRepository,
 ) {
     suspend fun resolve(
         station: Station,
         automotiveMode: Boolean,
     ): Station {
-        val qualitySetting = loadQualitySetting()
-        val limitAndroidAutoQuality = loadLimitAndroidAutoQualitySetting()
+        val state = settingsRepository.data.first()
         val variants = stationRepository.getStationVariants(station)
             .filter { it.streamUrl.isNotBlank() }
             .ifEmpty { listOf(station) }
         return selectVariant(
             originalStation = station,
             candidates = variants,
-            quality = qualitySetting,
+            quality = state.defaultAudioQuality,
             automotiveMode = automotiveMode,
-            limitAndroidAutoQuality = limitAndroidAutoQuality,
+            limitAndroidAutoQuality = state.limitAndroidAutoQuality,
         )
-    }
-
-    private fun loadQualitySetting(): String {
-        val prefs = context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(AppSettings.KEY_DEFAULT_AUDIO_QUALITY, AppSettings.QUALITY_AUTO)
-            ?: AppSettings.QUALITY_AUTO
-    }
-
-    private fun loadLimitAndroidAutoQualitySetting(): Boolean {
-        val prefs = context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getBoolean(AppSettings.KEY_LIMIT_ANDROID_AUTO_QUALITY, true)
     }
 
     private fun selectVariant(

@@ -43,9 +43,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.cancel
@@ -58,6 +60,7 @@ import kotlin.math.min
 class PlayerControllerImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val stationRepository: StationRepository,
+    private val settingsRepository: de.darksoon.radiowave.core.data.repository.SettingsRepository,
 ) : PlayerController {
 
     private var exoPlayer: ExoPlayer? = null
@@ -88,9 +91,15 @@ class PlayerControllerImpl @Inject constructor(
     private val controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val connectivityManager: ConnectivityManager? =
         context.getSystemService(ConnectivityManager::class.java)
-    private val settingsPrefs by lazy {
-        context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
-    }
+    // Cached snapshot of all settings from DataStore via SettingsRepository.
+    // Stream-started Eagerly so synchronous reads (.value) always have a value
+    // before the first stream is started.
+    private val settingsState: kotlinx.coroutines.flow.StateFlow<de.darksoon.radiowave.core.data.repository.AppSettingsState> =
+        settingsRepository.data.stateIn(
+            scope = controllerScope,
+            started = kotlinx.coroutines.flow.SharingStarted.Eagerly,
+            initialValue = de.darksoon.radiowave.core.data.repository.AppSettingsState.DEFAULTS,
+        )
     private var isNetworkCallbackRegistered = false
     private var networkLossObserved = false
     private var lastNetworkRecoveryAt = 0L
@@ -251,10 +260,7 @@ class PlayerControllerImpl @Inject constructor(
         if (isTimeshiftGuardEnabled()) {
             return AppSettings.BUFFER_LARGE
         }
-        val value = settingsPrefs.getString(
-            AppSettings.KEY_BUFFER_PROFILE,
-            AppSettings.BUFFER_MEDIUM,
-        )
+        val value = settingsState.value.bufferProfile
         return when (value) {
             AppSettings.BUFFER_SMALL,
             AppSettings.BUFFER_MEDIUM,
@@ -265,27 +271,16 @@ class PlayerControllerImpl @Inject constructor(
         }
     }
 
-    // Cached settings — avoid SharedPreferences I/O on every metadata frame.
-    // Refreshed via OnSharedPreferenceChangeListener registered in init.
-    @Volatile private var cachedThermalMode: Boolean = settingsPrefs.getBoolean(AppSettings.KEY_THERMAL_MODE, false)
-    @Volatile private var cachedTimeshiftGuard: Boolean = settingsPrefs.getBoolean(AppSettings.KEY_TIMESHIFT_GUARD, true)
-    private val settingsListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
-        when (key) {
-            AppSettings.KEY_THERMAL_MODE -> cachedThermalMode = prefs.getBoolean(key, false)
-            AppSettings.KEY_TIMESHIFT_GUARD -> cachedTimeshiftGuard = prefs.getBoolean(key, true)
-        }
-    }.also { settingsPrefs.registerOnSharedPreferenceChangeListener(it) }
-
-    private fun isThermalModeEnabled(): Boolean = cachedThermalMode
+    private fun isThermalModeEnabled(): Boolean = settingsState.value.thermalMode
 
     private fun isLowLoadModeEnabled(): Boolean {
-        return cachedThermalMode || isAutomotivePerformanceModeEnabled
+        return isThermalModeEnabled() || isAutomotivePerformanceModeEnabled
     }
 
-    private fun isTimeshiftGuardEnabled(): Boolean = cachedTimeshiftGuard
+    private fun isTimeshiftGuardEnabled(): Boolean = settingsState.value.timeshiftGuard
 
     private fun isPlaybackBlockedByMobileDataPolicy(): Boolean {
-        val allowMobileData = settingsPrefs.getBoolean(AppSettings.KEY_ALLOW_MOBILE_DATA, true)
+        val allowMobileData = settingsState.value.allowMobileData
         if (allowMobileData) return false
 
         val manager = connectivityManager ?: return false
@@ -1069,13 +1064,15 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private fun persistLastStation(station: Station) {
-        settingsPrefs.edit()
-            .putString(AppSettings.KEY_LAST_STATION_UUID, station.uuid)
-            .putString(AppSettings.KEY_LAST_STATION_NAME, station.name)
-            .putString(AppSettings.KEY_LAST_STATION_STREAM_URL, station.streamUrl)
-            .putString(AppSettings.KEY_LAST_STATION_FAVICON_URL, station.faviconUrl)
-            .putString(AppSettings.KEY_LAST_STATION_COUNTRY, station.country)
-            .apply()
+        controllerScope.launch {
+            settingsRepository.setLastStation(
+                uuid = station.uuid,
+                name = station.name,
+                streamUrl = station.streamUrl,
+                faviconUrl = station.faviconUrl,
+                country = station.country,
+            )
+        }
     }
 
     override fun togglePlayPause() {
@@ -1200,7 +1197,6 @@ class PlayerControllerImpl @Inject constructor(
     override fun release() {
         isReleased = true
         isStopping = true
-        runCatching { settingsPrefs.unregisterOnSharedPreferenceChangeListener(settingsListener) }
         controllerScope.cancel()
         reconnectJob?.cancel()
         bufferingWatchdogJob?.cancel()

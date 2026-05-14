@@ -13,10 +13,13 @@ class RadioWaveApp : Application() {
     @Inject
     lateinit var castManager: CastManager
 
+    @Inject
+    lateinit var appLanguageManager: AppLanguageManager
+
     override fun onCreate() {
         super.onCreate()
         LocalIssueReporter.install(this)
-        AppLanguageManager.applyFromPrefs(this)
+        appLanguageManager.applyPersistedLanguage()
         AppShortcuts.sync(this)
         castManager.initialize()
     }

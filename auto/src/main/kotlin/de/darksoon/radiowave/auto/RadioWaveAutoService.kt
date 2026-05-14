@@ -31,11 +31,11 @@ import de.darksoon.radiowave.core.data.repository.FavoriteRepository
 import de.darksoon.radiowave.core.data.repository.RecentRepository
 import de.darksoon.radiowave.core.data.repository.StationRepository
 import de.darksoon.radiowave.core.model.Station
-import de.darksoon.radiowave.core.model.AppSettings
 import de.darksoon.radiowave.core.model.Genre
 import de.darksoon.radiowave.core.player.PlayerController
 import de.darksoon.radiowave.core.player.StreamQualityResolver
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -69,6 +69,17 @@ class RadioWaveAutoService : MediaLibraryService() {
 
     @Inject
     lateinit var streamQualityResolver: StreamQualityResolver
+
+    @Inject
+    lateinit var settingsRepository: de.darksoon.radiowave.core.data.repository.SettingsRepository
+
+    private val settingsState by lazy {
+        settingsRepository.data.stateIn(
+            scope = serviceScope,
+            started = kotlinx.coroutines.flow.SharingStarted.Eagerly,
+            initialValue = de.darksoon.radiowave.core.data.repository.AppSettingsState.DEFAULTS,
+        )
+    }
 
     private val isDebuggable: Boolean by lazy {
         (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
@@ -969,12 +980,8 @@ class RadioWaveAutoService : MediaLibraryService() {
         if (now - lastAutoResumeAttemptAtMs < AUTO_RESUME_CONNECT_COOLDOWN_MS) return
         lastAutoResumeAttemptAtMs = now
 
-        val prefs = getSharedPreferences(AppSettings.PREFS_NAME, MODE_PRIVATE)
-        val autoPlayEnabled = prefs.getBoolean(
-            AppSettings.KEY_AUTO_PLAY_ON_ANDROID_AUTO_CONNECT,
-            true,
-        )
-        if (!autoPlayEnabled) return
+        val settings = settingsState.value
+        if (!settings.autoPlayOnAndroidAutoConnect) return
         if (playerController.playerState.value.isPlaying) return
 
         // Don't auto-resume during an active or incoming call — the audio focus handoff
@@ -987,23 +994,23 @@ class RadioWaveAutoService : MediaLibraryService() {
             )
         ) return
 
-        val streamUrl = prefs.getString(AppSettings.KEY_LAST_STATION_STREAM_URL, null)
+        val streamUrl = settings.lastStationStreamUrl
             ?.trim()
             .takeUnless { it.isNullOrBlank() }
             ?: return
-        val name = prefs.getString(AppSettings.KEY_LAST_STATION_NAME, null)
+        val name = settings.lastStationName
             ?.trim()
             .takeUnless { it.isNullOrBlank() }
             ?: getString(R.string.auto_last_station)
         val station = Station(
-            uuid = prefs.getString(AppSettings.KEY_LAST_STATION_UUID, null)
+            uuid = settings.lastStationUuid
                 ?.trim()
                 .takeUnless { it.isNullOrBlank() }
                 ?: streamUrl,
             name = name,
             streamUrl = streamUrl,
-            faviconUrl = prefs.getString(AppSettings.KEY_LAST_STATION_FAVICON_URL, null),
-            country = prefs.getString(AppSettings.KEY_LAST_STATION_COUNTRY, null),
+            faviconUrl = settings.lastStationFaviconUrl,
+            country = settings.lastStationCountry,
             isCustom = true,
         )
         startStationPlayback(station)

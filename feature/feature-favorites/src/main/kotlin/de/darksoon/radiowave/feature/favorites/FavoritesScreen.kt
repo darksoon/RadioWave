@@ -2,7 +2,6 @@
 
 package de.darksoon.radiowave.feature.favorites
 
-import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -49,14 +48,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -64,7 +61,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import de.darksoon.radiowave.core.model.AppSettings
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.ui.components.ErrorState
 import de.darksoon.radiowave.core.ui.components.FavoritesSkeletonLoader
@@ -81,24 +77,7 @@ fun FavoritesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val playerState by viewModel.playerState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-    val prefs = remember(context) {
-        context.getSharedPreferences(AppSettings.PREFS_NAME, Context.MODE_PRIVATE)
-    }
-    // Observe the setting live so toggling it in Settings is reflected immediately,
-    // not only after a process restart.
-    var confirmRemove by remember {
-        mutableStateOf(prefs.getBoolean(AppSettings.KEY_CONFIRM_REMOVE_FAVORITE, false))
-    }
-    DisposableEffect(prefs) {
-        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == AppSettings.KEY_CONFIRM_REMOVE_FAVORITE) {
-                confirmRemove = prefs.getBoolean(key, false)
-            }
-        }
-        prefs.registerOnSharedPreferenceChangeListener(listener)
-        onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
-    }
+    val confirmRemove by viewModel.confirmRemove.collectAsStateWithLifecycle()
     var pendingUnfavoriteUuid by remember { mutableStateOf<String?>(null) }
     var pendingDeleteCustomUuid by remember { mutableStateOf<String?>(null) }
     var showAddCustomDialog by remember { mutableStateOf(false) }
