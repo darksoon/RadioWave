@@ -61,6 +61,7 @@ class PlayerControllerImpl @Inject constructor(
 ) : PlayerController {
 
     private var exoPlayer: ExoPlayer? = null
+    private var exoPlayerListener: Player.Listener? = null
     private var reconnectJob: Job? = null
     private var bufferingWatchdogJob: Job? = null
     private var playbackLostRecoveryJob: Job? = null
@@ -264,17 +265,24 @@ class PlayerControllerImpl @Inject constructor(
         }
     }
 
-    private fun isThermalModeEnabled(): Boolean {
-        return settingsPrefs.getBoolean(AppSettings.KEY_THERMAL_MODE, false)
-    }
+    // Cached settings — avoid SharedPreferences I/O on every metadata frame.
+    // Refreshed via OnSharedPreferenceChangeListener registered in init.
+    @Volatile private var cachedThermalMode: Boolean = settingsPrefs.getBoolean(AppSettings.KEY_THERMAL_MODE, false)
+    @Volatile private var cachedTimeshiftGuard: Boolean = settingsPrefs.getBoolean(AppSettings.KEY_TIMESHIFT_GUARD, true)
+    private val settingsListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
+        when (key) {
+            AppSettings.KEY_THERMAL_MODE -> cachedThermalMode = prefs.getBoolean(key, false)
+            AppSettings.KEY_TIMESHIFT_GUARD -> cachedTimeshiftGuard = prefs.getBoolean(key, true)
+        }
+    }.also { settingsPrefs.registerOnSharedPreferenceChangeListener(it) }
+
+    private fun isThermalModeEnabled(): Boolean = cachedThermalMode
 
     private fun isLowLoadModeEnabled(): Boolean {
-        return isThermalModeEnabled() || isAutomotivePerformanceModeEnabled
+        return cachedThermalMode || isAutomotivePerformanceModeEnabled
     }
 
-    private fun isTimeshiftGuardEnabled(): Boolean {
-        return settingsPrefs.getBoolean(AppSettings.KEY_TIMESHIFT_GUARD, true)
-    }
+    private fun isTimeshiftGuardEnabled(): Boolean = cachedTimeshiftGuard
 
     private fun isPlaybackBlockedByMobileDataPolicy(): Boolean {
         val allowMobileData = settingsPrefs.getBoolean(AppSettings.KEY_ALLOW_MOBILE_DATA, true)
@@ -321,12 +329,18 @@ class PlayerControllerImpl @Inject constructor(
         val selectedProfile = getSelectedBufferProfile()
         if (activeBufferProfile == null || activeBufferProfile == selectedProfile) return
 
+        // Detach listener BEFORE release so it doesn't get callbacks during teardown.
+        exoPlayer?.let { p -> exoPlayerListener?.let { p.removeListener(it) } }
+        exoPlayerListener = null
         exoPlayer?.release()
         exoPlayer = null
     }
 
     private fun setupPlayerListeners(player: ExoPlayer) {
-        player.addListener(object : Player.Listener {
+        // Remove any previous listener instance so we can deterministically clean up
+        // on player release. Listeners are stored as a field for symmetry.
+        exoPlayerListener?.let { player.removeListener(it) }
+        val listener = object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 val now = SystemClock.elapsedRealtime()
                 _playerState.update {
@@ -484,6 +498,9 @@ class PlayerControllerImpl @Inject constructor(
                     return
                 }
 
+                // Track whether anything actually changed so we can skip the
+                // foreground-service notification update for duplicate ICY frames.
+                var changed = false
                 _playerState.update {
                     val previous = it.metadata ?: StreamMetadata()
                     val noChange =
@@ -491,6 +508,7 @@ class PlayerControllerImpl @Inject constructor(
                             previous.artist == (artist ?: previous.artist) &&
                             previous.albumArtUrl == (albumArtUrl ?: previous.albumArtUrl)
                     if (noChange) return@update it
+                    changed = true
                     it.copy(
                         metadata = previous.copy(
                             title = title ?: previous.title,
@@ -499,6 +517,7 @@ class PlayerControllerImpl @Inject constructor(
                         ),
                     )
                 }
+                if (!changed) return
 
                 val currentStationName = _playerState.value.currentStation?.name.orEmpty()
                 updateForegroundPlaybackNotification(
@@ -513,7 +532,9 @@ class PlayerControllerImpl @Inject constructor(
                 val streamTitle = extractStreamTitle(metadata) ?: return
                 applyStreamTitle(streamTitle)
             }
-        })
+        }
+        exoPlayerListener = listener
+        player.addListener(listener)
     }
 
     private fun maybeRecoverFromLostState(player: ExoPlayer, reason: String) {
@@ -622,8 +643,7 @@ class PlayerControllerImpl @Inject constructor(
      * future Media3 version changes it this falls back to null gracefully.
      */
     private fun extractStreamTitleFromIcyText(text: String): String? {
-        val streamTitleRegex = Regex("(?i)StreamTitle='([^']*)'")
-        return streamTitleRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
+        return STREAM_TITLE_REGEX.find(text)?.groupValues?.getOrNull(1)?.trim()
             ?.takeUnless { it.isBlank() }
     }
 
@@ -635,8 +655,7 @@ class PlayerControllerImpl @Inject constructor(
             return
         }
 
-        val splitPattern = Regex("\\s[-–|]\\s")
-        val parts = splitPattern.split(titleText, limit = 2)
+        val parts = TITLE_SPLIT_REGEX.split(titleText, limit = 2)
         val parsedArtist = parts.getOrNull(0)?.trim().takeUnless { it.isNullOrBlank() }
         val parsedTitle = when {
             parts.size >= 2 -> parts[1].trim()
@@ -659,6 +678,7 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private fun registerNetworkCallbackIfNeeded() {
+        if (isReleased) return
         if (isNetworkCallbackRegistered) return
         val manager = connectivityManager ?: return
 
@@ -1178,6 +1198,7 @@ class PlayerControllerImpl @Inject constructor(
     override fun release() {
         isReleased = true
         isStopping = true
+        runCatching { settingsPrefs.unregisterOnSharedPreferenceChangeListener(settingsListener) }
         controllerScope.cancel()
         reconnectJob?.cancel()
         bufferingWatchdogJob?.cancel()
@@ -1198,6 +1219,9 @@ class PlayerControllerImpl @Inject constructor(
         stopForegroundPlaybackServiceIfRunning()
         releasePlaybackLocks()
         abandonAudioFocus()
+        // Detach listener before release to avoid callbacks during/after teardown.
+        exoPlayer?.let { p -> exoPlayerListener?.let { p.removeListener(it) } }
+        exoPlayerListener = null
         exoPlayer?.release()
         exoPlayer = null
         activeBufferProfile = null
@@ -1210,6 +1234,7 @@ class PlayerControllerImpl @Inject constructor(
         stationName: String = _playerState.value.currentStation?.name.orEmpty(),
         subtitle: String = resolveNotificationSubtitle(isPlaying = _playerState.value.isPlaying),
     ) {
+        if (isReleased) return
         if (!isPlaybackNotificationEnabled) return
         try {
             PlaybackForegroundService.start(
@@ -1331,6 +1356,9 @@ class PlayerControllerImpl @Inject constructor(
     private companion object {
         const val APP_LOG_TAG = "RadioWave"
         const val thermalMetadataUpdateMinIntervalMs = 2_500L
+        // Hoisted regexes — compiled once, reused across all ICY metadata frames.
+        val STREAM_TITLE_REGEX = Regex("(?i)StreamTitle='([^']*)'")
+        val TITLE_SPLIT_REGEX = Regex("\\s[-–|]\\s")
     }
 }
 
