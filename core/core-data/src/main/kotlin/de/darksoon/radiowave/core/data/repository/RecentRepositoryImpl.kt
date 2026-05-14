@@ -9,7 +9,7 @@ import de.darksoon.radiowave.core.database.dao.RecentDao
 import de.darksoon.radiowave.core.database.entity.RecentEntity
 import de.darksoon.radiowave.core.model.Station
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,15 +20,20 @@ class RecentRepositoryImpl @Inject constructor(
 ) : RecentRepository {
 
     override fun getRecentStations(limit: Int): Flow<List<Station>> {
-        return recentDao.getRecent(limit)
-            .map { recentList ->
-                recentList.map { recent ->
-                    customStationDao.getByUuid(recent.stationUuid)
-                        ?.toDomain()
-                        ?.copy(lastPlayedAt = recent.lastPlayedAt)
-                        ?: recent.toStation()
-                }
+        // Combine recents with all custom stations in a single Flow merge instead of
+        // running N suspend queries (one per recent entry) on every emission.
+        // This eliminates the N+1 DAO call pattern and reduces DB pressure.
+        return recentDao.getRecent(limit).combine(
+            customStationDao.getAllCustomStations(),
+        ) { recentList, customs ->
+            val byUuid = customs.associateBy { it.uuid }
+            recentList.map { recent ->
+                byUuid[recent.stationUuid]
+                    ?.toDomain()
+                    ?.copy(lastPlayedAt = recent.lastPlayedAt)
+                    ?: recent.toStation()
             }
+        }
     }
 
     override suspend fun addRecentStation(station: Station) {

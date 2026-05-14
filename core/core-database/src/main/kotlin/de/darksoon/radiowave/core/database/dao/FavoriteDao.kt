@@ -29,5 +29,9 @@ interface FavoriteDao {
 
     @Query("DELETE FROM favorites WHERE stationUuid = :uuid")
     suspend fun deleteByUuid(uuid: String)
+
+    /** Returns the current maximum sortOrder, or null if no favorites exist. */
+    @Query("SELECT MAX(sortOrder) FROM favorites")
+    suspend fun getMaxSortOrder(): Int?
 }
 

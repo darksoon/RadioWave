@@ -64,10 +64,9 @@ class FavoriteRepositoryImpl @Inject constructor(
         if (isFav) {
             favoriteDao.deleteByUuid(station.uuid)
         } else {
-            val nextSortOrder = favoriteDao.getAllFavorites().firstOrNull().orEmpty()
-                .maxOfOrNull { favorite -> favorite.sortOrder }
-                ?.plus(1)
-                ?: 0
+            // Use a dedicated MAX query instead of loading the full favorites list —
+            // avoids opening/closing a Flow subscription and scanning all rows.
+            val nextSortOrder = (favoriteDao.getMaxSortOrder() ?: -1) + 1
             favoriteDao.addFavorite(
                 station.toFavoriteEntity().copy(sortOrder = nextSortOrder),
             )

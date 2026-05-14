@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -62,8 +63,13 @@ class HomeViewModel @Inject constructor(
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     val playerState: StateFlow<de.darksoon.radiowave.core.model.PlayerState> = playerManager.playerState
-    val favoriteStationIds: StateFlow<Set<String>> = uiState
-        .map { state -> state.favoriteStations.map { station -> station.uuid }.toSet() }
+
+    // Derive favorite IDs directly from the favorites repository instead of re-deriving
+    // from uiState on every emission. This means unrelated uiState changes
+    // (topStations, isLoading, error, sort option) don't trigger HashSet rebuilds.
+    val favoriteStationIds: StateFlow<Set<String>> = favoriteRepository.getFavorites()
+        .map { favs -> favs.mapTo(HashSet<String>(favs.size)) { it.uuid } as Set<String> }
+        .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     private val _searchQuery = MutableStateFlow("")

@@ -396,16 +396,30 @@ private fun FavoriteStationCarousel(
             horizontalArrangement = Arrangement.spacedBy(itemSpacing),
         ) {
             items(stations, key = { station -> station.uuid }, contentType = { "station" }) { station ->
-                val transform = rememberCarouselTransform(listState, station.uuid)
+                // Compute transform INSIDE graphicsLayer so scroll updates only re-run the
+                // draw/layout phases — NOT the composition phase. This avoids recomposing
+                // FavoriteHeroCard (with all its Brush allocations) on every scroll frame.
                 FavoriteHeroCard(
                     station = station,
                     onClick = { onStationClick(station) },
                     cardWidth = itemWidth,
                     modifier = Modifier.graphicsLayer {
-                        scaleX = transform.scale
-                        scaleY = transform.scale
-                        alpha = transform.alpha
-                        rotationY = transform.rotationY
+                        val info = listState.layoutInfo.visibleItemsInfo
+                            .firstOrNull { (it.key as? String) == station.uuid }
+                        if (info == null) {
+                            scaleX = 0.86f; scaleY = 0.86f
+                            alpha = 0.72f
+                        } else {
+                            val viewportCenter =
+                                (listState.layoutInfo.viewportStartOffset + listState.layoutInfo.viewportEndOffset) / 2f
+                            val itemCenter = info.offset + info.size / 2f
+                            val distance = itemCenter - viewportCenter
+                            val normalized = (kotlin.math.abs(distance) / (info.size * 1.4f)).coerceIn(0f, 1f)
+                            val s = androidx.compose.ui.util.lerp(1.02f, 0.84f, normalized)
+                            scaleX = s; scaleY = s
+                            alpha = androidx.compose.ui.util.lerp(1f, 0.62f, normalized)
+                            rotationY = ((distance / info.size) * 10f).coerceIn(-10f, 10f)
+                        }
                     },
                 )
             }
@@ -413,41 +427,8 @@ private fun FavoriteStationCarousel(
     }
 }
 
-private data class CarouselTransform(
-    val scale: Float,
-    val alpha: Float,
-    val rotationY: Float,
-)
-
-@Composable
-private fun rememberCarouselTransform(
-    listState: LazyListState,
-    itemKey: String,
-): CarouselTransform {
-    val viewportCenter = (listState.layoutInfo.viewportStartOffset + listState.layoutInfo.viewportEndOffset) / 2f
-    val itemInfo = listState.layoutInfo.visibleItemsInfo.firstOrNull { info ->
-        (info.key as? String) == itemKey
-    }
-    if (itemInfo == null) {
-        return CarouselTransform(
-            scale = 0.86f,
-            alpha = 0.72f,
-            rotationY = 0f,
-        )
-    }
-    val itemCenter = itemInfo.offset + itemInfo.size / 2f
-    val distance = (itemCenter - viewportCenter)
-    val normalized = (abs(distance) / (itemInfo.size * 1.4f)).coerceIn(0f, 1f)
-
-    val scale = lerp(start = 1.02f, stop = 0.84f, fraction = normalized)
-    val alpha = lerp(start = 1f, stop = 0.62f, fraction = normalized)
-    val rotation = ((distance / itemInfo.size) * 10f).coerceIn(-10f, 10f)
-    return CarouselTransform(
-        scale = scale,
-        alpha = alpha,
-        rotationY = -rotation,
-    )
-}
+// rememberCarouselTransform removed — transform is now computed inside graphicsLayer
+// at the call site to avoid per-frame recompositions during carousel scroll.
 
 @Composable
 private fun SectionTitle(
