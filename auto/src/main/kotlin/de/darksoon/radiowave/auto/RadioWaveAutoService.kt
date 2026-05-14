@@ -37,13 +37,13 @@ import de.darksoon.radiowave.core.player.PlayerController
 import de.darksoon.radiowave.core.player.StreamQualityResolver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.text.Normalizer
@@ -74,9 +74,10 @@ class RadioWaveAutoService : MediaLibraryService() {
         (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
     }
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    // Prevents concurrent startStationPlayback calls from racing against each other
-    // when rapid Next/Prev taps arrive before the previous playback-start completes.
-    private val playbackStartMutex = Mutex()
+    // Cancellation-token pattern: newest startStationPlayback call wins.
+    // When a new call arrives, the previous job is cancelled so it can never
+    // overwrite the user's intent after a delay.
+    private var activePlaybackStartJob: Job? = null
     private val stationCache = ConcurrentHashMap<String, Station>()
     private val searchCache = ConcurrentHashMap<String, List<Station>>()
     private var lastAutoResumeAttemptAtMs = 0L
@@ -85,14 +86,23 @@ class RadioWaveAutoService : MediaLibraryService() {
 
     override fun onCreate() {
         super.onCreate()
-        playerController.setAutomotivePerformanceModeEnabled(true)
-        val callback = RadioWaveLibraryCallback()
+        // Order matters:
+        // 1. Disable phone-side notification FIRST so it doesn't fight AA for foreground.
+        // 2. Build the player with the current profile (phone profile still active here).
+        // 3. Build the MediaLibrarySession around that player instance.
+        // 4. THEN enable automotive mode — this may trigger a buffer-profile switch and
+        //    player rebuild, but the session is already registered so AA can discover it
+        //    without a race between player creation and setAutomotivePerformanceModeEnabled.
         playerController.setPlaybackNotificationEnabled(false)
         val player = playerController.ensureSessionPlayer()
+        val callback = RadioWaveLibraryCallback()
         mediaLibrarySession = MediaLibrarySession.Builder(this, player, callback).build().also { session ->
             session.setSessionExtras(buildAutoSessionExtras())
             session.setMediaButtonPreferences(buildAutoMediaButtons())
         }
+        // Set automotive mode last — any resulting player rebuild is handled gracefully
+        // now that the session exists and listeners are wired up.
+        playerController.setAutomotivePerformanceModeEnabled(true)
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
@@ -365,29 +375,28 @@ class RadioWaveAutoService : MediaLibraryService() {
 
     private fun startStationPlayback(station: Station) {
         logInfo("Auto start playback '${station.name}' (${station.streamUrl})")
-        serviceScope.launch {
-            // Mutex prevents concurrent start attempts from racing (e.g. rapid Next/Prev taps).
-            // If a previous attempt is still running it completes first; the next one then
-            // re-checks the current station and short-circuits if already playing the right station.
-            playbackStartMutex.withLock {
-                repeat(AUTO_RESUME_MAX_ATTEMPTS) { attemptIndex ->
-                    // Another attempt may have started a different station while we were waiting.
-                    val currentUuid = playerController.playerState.value.currentStation?.uuid
-                    if (currentUuid != null && currentUuid != station.uuid &&
-                        playerController.playerState.value.isPlaying
-                    ) {
-                        return@withLock
-                    }
-                    val started = performPlaybackStart(station)
-                    delay(AUTO_RESUME_VERIFY_DELAY_MS)
-                    val shouldRetry = !started || shouldRetryPlayback(station)
-                    if (!shouldRetry) return@withLock
-                    if (attemptIndex < AUTO_RESUME_MAX_ATTEMPTS - 1) {
-                        logInfo(
-                            "Auto playback verify failed, retrying '${station.name}' " +
-                                "(${attemptIndex + 2}/$AUTO_RESUME_MAX_ATTEMPTS)",
-                        )
-                    }
+        // Cancel any previous start attempt so the newest user/system intent always wins.
+        // This prevents an old retry-loop from overwriting a station the user just selected.
+        activePlaybackStartJob?.cancel()
+        activePlaybackStartJob = serviceScope.launch {
+            // Resolve quality once, outside the retry loop, to avoid repeated I/O calls
+            // and to ensure all retry attempts use the same resolved stream URL.
+            val selectedStation = runCatching {
+                streamQualityResolver.resolve(station = station, automotiveMode = true)
+            }.getOrDefault(station)
+
+            repeat(AUTO_RESUME_MAX_ATTEMPTS) { attemptIndex ->
+                ensureActive() // bail immediately if a newer call cancelled us
+                val started = performPlaybackStart(selectedStation)
+                delay(AUTO_RESUME_VERIFY_DELAY_MS)
+                ensureActive() // bail after delay too — user may have switched stations
+                val shouldRetry = !started || shouldRetryPlayback(selectedStation)
+                if (!shouldRetry) return@launch
+                if (attemptIndex < AUTO_RESUME_MAX_ATTEMPTS - 1) {
+                    logInfo(
+                        "Auto playback verify failed, retrying '${selectedStation.name}' " +
+                            "(${attemptIndex + 2}/$AUTO_RESUME_MAX_ATTEMPTS)",
+                    )
                 }
             }
         }
@@ -406,25 +415,46 @@ class RadioWaveAutoService : MediaLibraryService() {
     private fun shouldRetryPlayback(station: Station): Boolean {
         val state = playerController.playerState.value
         val activePlayer = playerController.ensureSessionPlayer()
+
+        // If the station changed, someone else took over — don't retry.
         val sameStation = state.currentStation?.streamUrl == station.streamUrl
         if (!sameStation) return false
 
-        val playerReadyOrBuffering =
-            activePlayer.playbackState == Player.STATE_READY ||
-                activePlayer.playbackState == Player.STATE_BUFFERING
-        val audiblePlaybackLikely = state.isPlaying && activePlayer.isPlaying && playerReadyOrBuffering
-        return !audiblePlaybackLikely
+        // A hard error means we should retry with a fresh connection.
+        if (state.error != null) return true
+
+        val playbackState = activePlayer.playbackState
+
+        // STATE_IDLE or STATE_ENDED after a play attempt means the stream died — retry.
+        if (playbackState == Player.STATE_IDLE || playbackState == Player.STATE_ENDED) return true
+
+        // STATE_BUFFERING or STATE_READY means the player is working normally —
+        // do NOT restart. Buffering on car/cellular can legitimately take several seconds.
+        // Restarting here kills the buffer that was filling and causes the "hangs forever" loop.
+        if (playbackState == Player.STATE_BUFFERING || playbackState == Player.STATE_READY) return false
+
+        // Fallback: if nothing is playing and no clear progress indicator, retry.
+        return !state.isPlaying && !state.isLoading && !state.isBuffering
     }
 
+    /**
+     * Performs a single playback-start attempt for [station] (already quality-resolved).
+     *
+     * Order is important to avoid a double-prepare race:
+     * 1. Build the queue media-items list FIRST (I/O, no player interaction).
+     * 2. Call [playerController.playStation] which issues the only player.stop/setMediaItem/prepare.
+     * 3. Update queue metadata on the player AFTER prepare — using [applyAutoQueueMetadata]
+     *    which sets the full item list WITHOUT calling prepare() again.
+     */
     private suspend fun performPlaybackStart(station: Station): Boolean {
-        val selectedStation = streamQualityResolver.resolve(
-            station = station,
-            automotiveMode = true,
-        )
-        playerController.playStation(selectedStation)
+        // Pre-build the queue before touching the player to minimise the gap between
+        // playStation() and the metadata update — and to avoid any I/O mid-prepare.
+        val queue = buildAutoQueue(station)
+
+        playerController.playStation(station)
 
         val stateAfterStart = playerController.playerState.value
-        val sameStation = stateAfterStart.currentStation?.streamUrl == selectedStation.streamUrl
+        val sameStation = stateAfterStart.currentStation?.streamUrl == station.streamUrl
         val blockedBeforePlayerStart =
             sameStation &&
                 stateAfterStart.error != null &&
@@ -432,13 +462,14 @@ class RadioWaveAutoService : MediaLibraryService() {
                 !stateAfterStart.isBuffering &&
                 !stateAfterStart.isPlaying
         if (blockedBeforePlayerStart) {
-            logInfo("Auto playback start blocked for '${selectedStation.name}', will retry")
+            logInfo("Auto playback start blocked for '${station.name}', will retry")
             return false
         }
 
-        recentRepository.addRecentStation(selectedStation)
+        recentRepository.addRecentStation(station)
         val activePlayer = playerController.ensureSessionPlayer()
-        applyAutoQueue(activePlayer, selectedStation)
+        // Apply queue metadata without re-preparing the player (fix for double-prepare bug).
+        applyAutoQueueMetadata(activePlayer, station, queue)
         mediaLibrarySession?.setPlayer(activePlayer)
         refreshConnectedAutoControllers()
         activePlayer.playWhenReady = true
@@ -448,6 +479,18 @@ class RadioWaveAutoService : MediaLibraryService() {
 
     private suspend fun applyAutoQueue(player: Player, selectedStation: Station) {
         val queue = buildAutoQueue(selectedStation)
+        applyAutoQueueMetadata(player, selectedStation, queue)
+    }
+
+    /**
+     * Updates the player's media-item list for Android Auto queue navigation WITHOUT
+     * calling [Player.prepare]. The player was already prepared by [playerController.playStation];
+     * calling prepare() again would kill the buffer that is currently filling.
+     *
+     * For single-item queues we skip the setMediaItems call entirely — the single item
+     * was already set by playStation.
+     */
+    private fun applyAutoQueueMetadata(player: Player, selectedStation: Station, queue: List<Station>) {
         currentAutoQueue = queue
         if (queue.size <= 1) return
 
@@ -457,8 +500,10 @@ class RadioWaveAutoService : MediaLibraryService() {
         if (startIndex == -1) return
 
         val mediaItems = queue.map(::stationItem)
-        player.setMediaItems(mediaItems, startIndex, 0L)
-        player.prepare()
+        // setMediaItems without startPositionMs = C.TIME_UNSET keeps the current playback
+        // position and does NOT trigger a new prepare cycle.
+        player.setMediaItems(mediaItems, startIndex, androidx.media3.common.C.TIME_UNSET)
+        // No player.prepare() here — the player is already preparing/buffering from playStation().
     }
 
     private suspend fun buildAutoQueue(selectedStation: Station): List<Station> {
