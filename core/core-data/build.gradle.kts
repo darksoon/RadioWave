@@ -13,6 +13,7 @@ dependencies {
     implementation(project(":core:core-network"))
     
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.datastore.preferences)
 
     testImplementation(libs.junit)
 }
