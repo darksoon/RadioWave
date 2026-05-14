@@ -2,7 +2,7 @@
 
 [Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Stand: 2026-05-01
+Stand: 2026-05-10
 
 Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus kompakt. RadioWave ist live auf Google Play; die Roadmap priorisiert deshalb Stabilitaet, Supportfaehigkeit und gezieltes UX-Polishing.
 
@@ -73,6 +73,17 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Automotive-Modus hat jetzt Vorrang vor Timeshift-Guard, reduziert Akku-Verbrauch im Auto
 - WiFi-Lock-Typ von High-Perf auf Standard reduziert (genuegt fuer Audio-Streaming)
 - GitHub-Updater und What's-New-Dialog entfernt — nur noch Play Store
+- Sichtbarer Player-Error-Banner mit Retry (Netzwerk, kaputter Stream, etc.)
+- Custom-Station-URL-Validierung mit Live-Inline-Feedback
+- Android Auto Auto-Resume bei aktivem Telefonat oder Klingeln unterdrueckt
+- Android Auto Sender-Revert-Bug behoben (Cancellation-Token-Pattern)
+- Android Auto Slow-Start / Endless-Buffer behoben (toleranter Retry, kein Double-Prepare)
+- Umfassendes Security-Hardening (AutoService Controller-Whitelist, URI-Scheme-Validierung, Crash-Report-PII-Scrubbing)
+- Performance-Pass: Carousel-Smoothness, N+1 DB-Queries entfernt, Heavy-Ranking auf Default-Dispatcher, In-Memory-Tag/Country-Cache, Regex-Hoisting, Settings-Cache
+- Player-Listener-Lifecycle und WakeLock-Release-Pfade leak-sicher
+- CastManager.release() fuer sauberen Shutdown
+- 48dp Touch-Targets in Favoriten-Cards
+- Live-Sprachwechsel ohne Activity.recreate
 
 ## In Arbeit
 
@@ -86,6 +97,7 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Bitrate-basierte Datenverbrauchs-Schaetzung
 - Android Auto Smoke-Test auf echtem Head-Unit
 - Radio-Timeshift ueber MVP hinaus (laengerer Buffer, optionaler Seek/LIVE)
+- SharedPreferences zu zentralem SettingsRepository migrieren (DataStore) — groesserer Refactor
 
 ## Spaeter
 

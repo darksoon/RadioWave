@@ -2,7 +2,7 @@
 
 [Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Status: 2026-05-01
+Status: 2026-05-10
 
 This roadmap is intended for GitHub and keeps the public product status compact. RadioWave is live on Google Play, so the roadmap prioritizes stability, supportability, and targeted UX polish.
 
@@ -74,6 +74,17 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - Automotive mode now correctly takes priority over timeshift guard, reducing battery drain
 - Wi-Fi lock type downgraded from high-perf to standard mode for audio streaming
 - GitHub updater and What's New dialog removed — Play Store only going forward
+- Visible player error banner with retry (network errors, broken streams, etc.)
+- Custom station URL validation with live inline error feedback
+- Android Auto auto-resume guarded against active phone calls and ringtones
+- Android Auto station-switching reverting bug fixed (cancellation-token pattern)
+- Android Auto slow-start / endless-buffer bug fixed (buffer-tolerant retry verification, no more double prepare)
+- Comprehensive security hardening (AutoService controller whitelist, URI scheme validation, crash-report PII scrubbing)
+- Major performance pass: carousel scroll smoothness, N+1 DB queries removed, heavy ranking moved off main thread, in-memory tag/country cache, metadata regex hoisted, settings cached
+- Player listener lifecycle and WakeLock release hardened against leaks
+- CastManager.release() for clean shutdown
+- 48 dp touch targets across Favorites cards
+- Live language change without Activity recreate
 
 ## In Progress
 
@@ -87,6 +98,7 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - Bitrate-based data usage estimate
 - Android Auto smoke test on real head unit
 - Radio timeshift beyond MVP (longer buffer, optional seek/live)
+- Migrate `SharedPreferences` to a single `SettingsRepository` (DataStore) — bigger refactor
 
 ## Later
 

@@ -4,6 +4,49 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-05-10
+
+### Added
+- Player error banner with retry button — playback errors (network, broken stream, etc.) are now visible in the fullscreen player instead of showing an endless spinner.
+- Custom station URL validation — `Add station` dialog now validates `http(s)://` schemes live with inline error feedback.
+- `Retry` button in Favorites is now functional (was a dead handler before).
+- Accessibility labels on all fullscreen player controls (favorite, skip-previous, mute, shuffle).
+
+### Fixed
+- **Security:** Android Auto service now rejects connections from non-trusted controller packages. URI schemes other than `http`/`https` are blocked end-to-end to prevent injection of local files via `MediaItem`.
+- **Crash:** Stations with invalid stream URIs no longer crash the app — surface a `StreamBroken` error in the player instead.
+- **Android Auto:** Auto-resume on car connect no longer triggers if a phone call is active (or ringing).
+- **Android Auto:** Station switching no longer reverts after a few seconds — replaced serialising mutex with cancellation-token pattern so the newest user intent always wins.
+- **Android Auto:** Slow stream start / endless buffering on car cellular fixed — verification heuristic now tolerates `STATE_BUFFERING`/`STATE_READY` instead of restarting playback after 1.8 s. Removed double `prepare()` race between `playStation` and `applyAutoQueue`.
+- **Memory:** WakeLock could leak after `release()` if a Player.Listener callback fired post-cancel — `isReleased` flag now guards re-acquisition.
+- **Memory:** `PlaybackForegroundService` now calls `startForeground()` before action handling — prevents `ForegroundServiceDidNotStartInTimeException` on Android 12+ after process kill.
+- **Memory:** `CastManager.release()` added for clean teardown of session listeners on app shutdown.
+- **Memory:** `Player.Listener` is now stored as a field and removed before `ExoPlayer.release()`.
+- **UX:** LIVE indicator no longer shown during a player error.
+- **UX:** Touch targets in Favorites cards extended to 48 dp via `minimumInteractiveComponentSize()` (visual size unchanged).
+- **UX:** Notification permission is now requested only after onboarding completes — no more overlap with the welcome flow.
+- **UX:** Language change no longer recreates the activity — `setApplicationLocales` is sufficient. Preserves scroll position, fullscreen player state, etc.
+- **UX:** Favorites cards have consistent height again (was inconsistent due to a landscape fix that allowed cards to grow with content).
+- **UX:** Empty start card now navigates to top stations instead of a literal "popular" search.
+- Removed unused `CHANGE_WIFI_MULTICAST_STATE` permission.
+- `LocalIssueReporter` crash handler no longer re-throws — uses `Process.killProcess` fallback to avoid ANR loops.
+- Stream URLs are now scrubbed from crash reports before sharing.
+
+### Improved
+- **Performance:** Levenshtein-heavy ranking in `HomeViewModel` now runs on `Dispatchers.Default` — keeps the main thread responsive during search/country filtering.
+- **Performance:** Carousel scroll transformation moved into `graphicsLayer` block — eliminates per-frame recompositions of the home favorites carousel.
+- **Performance:** N+1 DAO query pattern in recent stations replaced with a single `combine()` against the custom stations flow.
+- **Performance:** `FavoriteDao.getMaxSortOrder()` added — `toggleFavorite` no longer loads the full favorites list to compute the next sort index.
+- **Performance:** `searchStations` DAO converted from `Flow` to `suspend` (only used via `.first()`) — eliminates Room subscription churn on every keystroke.
+- **Performance:** `favoriteStationIds` derived directly from the favorites repository instead of from `uiState` — unrelated UI state changes no longer trigger `HashSet` rebuilds.
+- **Performance:** ICY metadata regex compiled once (hoisted to companion object) instead of per metadata frame.
+- **Performance:** Player settings (`thermalMode`, `timeshiftGuard`) cached with `OnSharedPreferenceChangeListener` instead of reading SharedPreferences on every metadata frame.
+- **Performance:** Tags and countries cached in memory with 6-hour TTL.
+- **Performance:** Pull-to-refresh debounced to 5-second minimum interval.
+- API failures are now logged via `Log.w` instead of silently swallowed.
+- `registerClick` / `reportBrokenStream` are now actually called — radio-browser community rankings reflect actual usage.
+- Custom stream titles use the typed `IcyInfo.title` field as primary source; fragile `toString()` fallback only as last resort.
+
 ## [1.0.4] - 2026-05-01
 
 ### Added
