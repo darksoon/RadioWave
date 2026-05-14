@@ -22,6 +22,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -100,6 +101,25 @@ class CastManager @Inject constructor(
             observePlayerState()
             didStartObservingPlayerState = true
         }
+    }
+
+    /**
+     * Tear down the Cast integration: cancels the observer coroutine scope,
+     * removes the session listener from Google Play Services, and detaches
+     * the remote media client. Idempotent — safe to call multiple times.
+     *
+     * Intended for app shutdown / Process lifecycle ON_DESTROY.
+     */
+    fun release() {
+        scope.cancel()
+        castContext?.sessionManager?.let { sm ->
+            if (didRegisterListener) {
+                runCatching { sm.removeSessionManagerListener(sessionListener, CastSession::class.java) }
+                didRegisterListener = false
+            }
+        }
+        detachRemoteMediaClient()
+        didStartObservingPlayerState = false
     }
 
     private fun observePlayerState() {

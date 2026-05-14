@@ -1159,9 +1159,11 @@ class PlayerControllerImpl @Inject constructor(
     override fun setAutomotivePerformanceModeEnabled(enabled: Boolean) {
         if (isAutomotivePerformanceModeEnabled == enabled) return
         isAutomotivePerformanceModeEnabled = enabled
-        if (!enabled) return
-
-        // If AA connects during active playback, apply low-load settings immediately.
+        // Apply the new buffer profile in BOTH directions:
+        //   - enabling AA: switch from MEDIUM/LARGE to SMALL (low load)
+        //   - disabling AA (phone re-connects after AA disconnect): switch back
+        // Without this branch the LARGE/MEDIUM-profile player would keep running
+        // with the small buffer until the next manual play.
         val currentStation = _playerState.value.currentStation ?: return
         if (!_playerState.value.isPlaying) return
         controllerScope.launch {

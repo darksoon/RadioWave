@@ -50,6 +50,7 @@ class OfflineFirstStationRepository @Inject constructor(
         }
 
         val fresh = runCatching { api.searchByName(query).map { it.toDomain() } }
+            .onFailure { android.util.Log.w("RadioWave", "searchByName failed: ${it.message}") }
             .onSuccess { stations ->
                 cacheStations(stations)
             }
@@ -73,6 +74,7 @@ class OfflineFirstStationRepository @Inject constructor(
         }
 
         val fresh = runCatching { api.getTopStations(100).map { it.toDomain() } }
+            .onFailure { android.util.Log.w("RadioWave", "getTopStations failed: ${it.message}") }
             .onSuccess { stations ->
                 cacheStations(stations)
             }
@@ -173,12 +175,46 @@ class OfflineFirstStationRepository @Inject constructor(
             .take(15)
     }
 
+    // Tags and countries are quasi-static for hours — cache them in memory
+    // with a 6h TTL to avoid re-fetching on every Browse navigation.
+    @Volatile private var cachedTags: List<Genre>? = null
+    @Volatile private var cachedTagsAtMs: Long = 0L
+    @Volatile private var cachedCountries: List<Country>? = null
+    @Volatile private var cachedCountriesAtMs: Long = 0L
+    private val metadataTtlMs = 6 * 60 * 60 * 1000L
+
     override fun getTags(): Flow<List<Genre>> = flow {
-        emit(runCatching { api.getTags().map { it.toDomain() } }.getOrDefault(emptyList()))
+        val now = System.currentTimeMillis()
+        val cached = cachedTags
+        if (cached != null && now - cachedTagsAtMs < metadataTtlMs) {
+            emit(cached)
+            return@flow
+        }
+        val fresh = runCatching { api.getTags().map { it.toDomain() } }
+            .onFailure { android.util.Log.w("RadioWave", "getTags failed: ${it.message}") }
+            .getOrDefault(emptyList())
+        if (fresh.isNotEmpty()) {
+            cachedTags = fresh
+            cachedTagsAtMs = now
+        }
+        emit(fresh.ifEmpty { cached.orEmpty() })
     }
 
     override fun getCountries(): Flow<List<Country>> = flow {
-        emit(runCatching { api.getCountries().map { it.toDomain() } }.getOrDefault(emptyList()))
+        val now = System.currentTimeMillis()
+        val cached = cachedCountries
+        if (cached != null && now - cachedCountriesAtMs < metadataTtlMs) {
+            emit(cached)
+            return@flow
+        }
+        val fresh = runCatching { api.getCountries().map { it.toDomain() } }
+            .onFailure { android.util.Log.w("RadioWave", "getCountries failed: ${it.message}") }
+            .getOrDefault(emptyList())
+        if (fresh.isNotEmpty()) {
+            cachedCountries = fresh
+            cachedCountriesAtMs = now
+        }
+        emit(fresh.ifEmpty { cached.orEmpty() })
     }
 
     override suspend fun registerClick(stationUuid: String) {
