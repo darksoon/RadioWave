@@ -10,6 +10,7 @@ import de.darksoon.radiowave.core.data.repository.FavoriteRepository
 import de.darksoon.radiowave.core.data.repository.SettingsRepository
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.player.RadioPlayerManager
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -46,6 +47,12 @@ class FavoritesViewModel @Inject constructor(
     val confirmRemove: StateFlow<Boolean> = settingsRepository.confirmRemoveFavorite
         .stateIn(viewModelScope, SharingStarted.Eagerly, settingsRepository.initialSnapshotBlocking().confirmRemoveFavorite)
 
+    // Tracked so retry() can cancel the in-flight collector before starting a
+    // new one — otherwise repeated retries stack live flow collectors and
+    // produce duplicate UI updates + redundant DB work.
+    private var favoritesJob: Job? = null
+    private var customStationsJob: Job? = null
+
     init {
         observeFavorites()
         observeCustomStations()
@@ -59,7 +66,8 @@ class FavoritesViewModel @Inject constructor(
     }
 
     private fun observeFavorites() {
-        viewModelScope.launch {
+        favoritesJob?.cancel()
+        favoritesJob = viewModelScope.launch {
             favoriteRepository.getFavorites()
                 .onStart {
                     _uiState.update { it.copy(isLoading = true, error = null) }
@@ -74,7 +82,8 @@ class FavoritesViewModel @Inject constructor(
     }
 
     private fun observeCustomStations() {
-        viewModelScope.launch {
+        customStationsJob?.cancel()
+        customStationsJob = viewModelScope.launch {
             customStationRepository.getCustomStations()
                 .catch { }
                 .collect { custom ->
@@ -107,20 +116,31 @@ class FavoritesViewModel @Inject constructor(
         viewModelScope.launch { favoriteRepository.reorderFavorites(reordered.map { it.uuid }) }
     }
 
-    /** Returns true if [streamUrl] is a valid http/https URL — usable for UI validation. */
+    /**
+     * Returns true if [streamUrl] is a valid http/https URL — usable for UI validation.
+     *
+     * Uri.parse is lax: "https:" or "http://" alone parse successfully and yield
+     * the right scheme, so the previous scheme-only check let through obviously
+     * broken inputs that then crashed ExoPlayer at play time. We now also
+     * require a non-blank host.
+     */
     fun isValidStreamUrl(streamUrl: String): Boolean {
         val trimmed = streamUrl.trim()
         if (trimmed.isBlank()) return false
-        val scheme = runCatching { android.net.Uri.parse(trimmed).scheme?.lowercase() }.getOrNull()
-        return scheme == "http" || scheme == "https"
+        val uri = runCatching { android.net.Uri.parse(trimmed) }.getOrNull() ?: return false
+        val scheme = uri.scheme?.lowercase()
+        val host = uri.host
+        return (scheme == "http" || scheme == "https") && !host.isNullOrBlank()
     }
 
     fun addCustomStation(name: String, streamUrl: String) {
         if (!isValidStreamUrl(streamUrl)) return
+        val trimmedName = name.trim()
+        if (trimmedName.isBlank()) return
         viewModelScope.launch {
             val station = Station(
                 uuid = "custom-${UUID.randomUUID()}",
-                name = name.trim(),
+                name = trimmedName,
                 streamUrl = streamUrl.trim(),
             )
             customStationRepository.addCustomStation(station)
