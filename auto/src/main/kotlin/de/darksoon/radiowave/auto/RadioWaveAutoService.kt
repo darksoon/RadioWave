@@ -147,11 +147,9 @@ class RadioWaveAutoService : MediaLibraryService() {
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
-        // Auto-resume is only meaningful for Auto controllers — kicking the radio off
-        // every time the system phone notification rebinds is not desired.
-        if (controllerInfo.packageName in AUTOMOTIVE_CONTROLLER_PACKAGES) {
-            tryAutoResumeOnConnect()
-        }
+        // Auto-resume is triggered from onPostConnect (not here) so that automotive
+        // performance mode is applied first and the connection is fully established
+        // before we request audio focus — see RadioWaveLibraryCallback.onPostConnect.
         return mediaLibrarySession
     }
 
@@ -204,8 +202,16 @@ class RadioWaveAutoService : MediaLibraryService() {
             // Promote to automotive performance mode if the connecting controller is
             // an Android Auto / Automotive package. Phone-only controllers leave the
             // buffer profile on the user's regular setting.
+            //
+            // Order matters: enable automotive mode FIRST so the auto-resume below
+            // builds the player with the low-load SMALL buffer (fast start) instead
+            // of the LARGE timeshift-guard buffer. Auto-resume also moved here from
+            // onGetSession because onPostConnect fires once the connection is fully
+            // established — the car audio route is far more likely to be ready, so
+            // the audio-focus request actually succeeds.
             if (isAutomotiveController(controller)) {
                 playerController.setAutomotivePerformanceModeEnabled(true)
+                tryAutoResumeOnConnect()
             }
         }
 

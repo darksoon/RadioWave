@@ -137,7 +137,12 @@ class PlayerControllerImpl @Inject constructor(
                     .setUsage(PlatformAudioAttributes.USAGE_MEDIA)
                     .build(),
             )
-            .setAcceptsDelayedFocusGain(false)
+            // Accept delayed focus: when getting into the car the head-unit audio
+            // route (BT/USB) often isn't established yet, so the initial focus
+            // request can't be granted immediately. With delayed gain the system
+            // grants focus a moment later via onAudioFocusChange(GAIN); we start
+            // the pending station then instead of failing outright.
+            .setAcceptsDelayedFocusGain(true)
             .setWillPauseWhenDucked(true)
             .setOnAudioFocusChangeListener(audioFocusChangeListener)
             .build()
@@ -537,7 +542,11 @@ class PlayerControllerImpl @Inject constructor(
     private fun startBufferingWatchdog(player: ExoPlayer) {
         bufferingWatchdogJob?.cancel()
         val stationUuid = _playerState.value.currentStation?.uuid ?: return
-        val stallThresholdMs = if (isTimeshiftGuardEnabled()) {
+        // The 60s timeshift-guard threshold only makes sense when the LARGE buffer
+        // is actually in use. In low-load mode (automotive / thermal) the buffer is
+        // forced to SMALL, so a 60s stall window would leave the car silent far too
+        // long before recovery kicks in — use the responsive default there.
+        val stallThresholdMs = if (isTimeshiftGuardEnabled() && !isLowLoadModeEnabled()) {
             timeshiftGuardBufferingStallThresholdMs
         } else {
             defaultBufferingStallThresholdMs
@@ -881,10 +890,15 @@ class PlayerControllerImpl @Inject constructor(
         }
     }
 
-    private fun requestAudioFocus(): Boolean {
-        val manager = audioManager ?: return true
-        val result = manager.requestAudioFocus(audioFocusRequest)
-        return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    private enum class AudioFocusResult { GRANTED, DELAYED, FAILED }
+
+    private fun requestAudioFocus(): AudioFocusResult {
+        val manager = audioManager ?: return AudioFocusResult.GRANTED
+        return when (manager.requestAudioFocus(audioFocusRequest)) {
+            AudioManager.AUDIOFOCUS_REQUEST_GRANTED -> AudioFocusResult.GRANTED
+            AudioManager.AUDIOFOCUS_REQUEST_DELAYED -> AudioFocusResult.DELAYED
+            else -> AudioFocusResult.FAILED
+        }
     }
 
     private fun abandonAudioFocus() {
@@ -1021,7 +1035,8 @@ class PlayerControllerImpl @Inject constructor(
             return
         }
 
-        if (!requestAudioFocus()) {
+        val focus = requestAudioFocus()
+        if (focus == AudioFocusResult.FAILED) {
             _playerState.update {
                 it.copy(
                     currentStation = station,
@@ -1051,6 +1066,16 @@ class PlayerControllerImpl @Inject constructor(
 
         val player = getOrCreatePlayer()
         ensureForegroundPlaybackServiceRunning()
+
+        if (focus == AudioFocusResult.DELAYED) {
+            // Focus will be granted shortly via onAudioFocusChange(GAIN). The player
+            // is created (STATE_IDLE) and showing the loading state; the resume path
+            // starts the stream once the grant arrives. Keeps the UI in "loading"
+            // rather than flipping to an error the user has to recover from manually.
+            shouldResumeAfterAudioFocusGain = true
+            return
+        }
+
         restartStream(player, station)
     }
 
@@ -1071,7 +1096,8 @@ class PlayerControllerImpl @Inject constructor(
             if (player.isPlaying) {
                 pauseForExternalPlayback(markAsUserPaused = true)
             } else {
-                if (!requestAudioFocus()) {
+                val focus = requestAudioFocus()
+                if (focus == AudioFocusResult.FAILED) {
                     _playerState.update {
                         it.copy(
                             error = PlayerError.Unknown(context.getString(R.string.player_error_audio_focus_unavailable)),
@@ -1084,6 +1110,12 @@ class PlayerControllerImpl @Inject constructor(
                 }
                 userPausedPlayback = false
                 registerNetworkCallbackIfNeeded()
+                if (focus == AudioFocusResult.DELAYED) {
+                    // Wait for the system to grant focus, then resume — see startPlayback.
+                    shouldResumeAfterAudioFocusGain = true
+                    _playerState.update { it.copy(error = null, isLoading = true, isBuffering = true) }
+                    return
+                }
                 val currentStation = _playerState.value.currentStation
                 if (currentStation != null && (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED)) {
                     restartStream(player, currentStation)
