@@ -99,6 +99,10 @@ class RadioWaveAutoService : MediaLibraryService() {
     private var lastAutoResumeAttemptAtMs = 0L
     private var mediaLibrarySession: MediaLibrarySession? = null
     private var currentAutoQueue: List<Station> = emptyList()
+    // True while at least one Android Auto / Automotive controller is connected.
+    // Used to distinguish "user left the car" (pause playback) from an ordinary
+    // phone-side controller disconnect during normal phone playback (do nothing).
+    private var automotiveSessionActive = false
 
     override fun onCreate() {
         super.onCreate()
@@ -210,6 +214,7 @@ class RadioWaveAutoService : MediaLibraryService() {
             // established — the car audio route is far more likely to be ready, so
             // the audio-focus request actually succeeds.
             if (isAutomotiveController(controller)) {
+                automotiveSessionActive = true
                 playerController.setAutomotivePerformanceModeEnabled(true)
                 tryAutoResumeOnConnect()
             }
@@ -220,11 +225,20 @@ class RadioWaveAutoService : MediaLibraryService() {
             controller: MediaSession.ControllerInfo,
         ) {
             super.onDisconnected(session, controller)
-            // If the disconnecting controller was the last Auto package, revert
-            // automotive performance mode so the phone player uses the normal buffer.
+            // Only act when the LAST automotive controller leaves AND we actually
+            // had an automotive session — a plain phone-side controller disconnect
+            // during normal phone playback must not pause anything.
             val anyAutoLeft = session.connectedControllers.any { isAutomotiveController(it) }
-            if (!anyAutoLeft) {
+            if (!anyAutoLeft && automotiveSessionActive) {
+                automotiveSessionActive = false
+                // User left the car: pause so playback doesn't suddenly continue on
+                // the phone speaker. Pause FIRST so the automotive-mode-disable below
+                // sees !isPlaying and skips its buffer-profile rebuild/restart.
+                playerController.pauseForExternalPlayback()
                 playerController.setAutomotivePerformanceModeEnabled(false)
+                // Clear the resume cooldown so a transient AA drop + quick reconnect
+                // auto-resumes immediately instead of being blocked for ~3.5s.
+                lastAutoResumeAttemptAtMs = 0L
             }
         }
 
