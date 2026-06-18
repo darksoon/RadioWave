@@ -51,6 +51,58 @@ class PlayerControllerImplBehaviorTest {
     }
 
     @Test
+    fun `pause on output removal when playing and last external route gone`() = runTest {
+        val controller = createController(stations = emptyList())
+
+        val shouldPause = controller.shouldPauseOnAudioOutputRemoval(
+            wasPlaying = true,
+            externalOutputRemoved = true,
+            externalOutputStillConnected = false,
+        )
+
+        assertEquals(true, shouldPause)
+    }
+
+    @Test
+    fun `keep playing when another external output is still connected`() = runTest {
+        val controller = createController(stations = emptyList())
+
+        val shouldPause = controller.shouldPauseOnAudioOutputRemoval(
+            wasPlaying = true,
+            externalOutputRemoved = true,
+            externalOutputStillConnected = true,
+        )
+
+        assertEquals(false, shouldPause)
+    }
+
+    @Test
+    fun `do not pause when nothing was playing`() = runTest {
+        val controller = createController(stations = emptyList())
+
+        val shouldPause = controller.shouldPauseOnAudioOutputRemoval(
+            wasPlaying = false,
+            externalOutputRemoved = true,
+            externalOutputStillConnected = false,
+        )
+
+        assertEquals(false, shouldPause)
+    }
+
+    @Test
+    fun `do not pause when removed device was not an external output`() = runTest {
+        val controller = createController(stations = emptyList())
+
+        val shouldPause = controller.shouldPauseOnAudioOutputRemoval(
+            wasPlaying = true,
+            externalOutputRemoved = false,
+            externalOutputStillConnected = false,
+        )
+
+        assertEquals(false, shouldPause)
+    }
+
+    @Test
     fun `playNextStation with available pool selects station`() = runTest {
         val stations = listOf(
             Station(uuid = "a", name = "A", streamUrl = "https://example.com/a"),
