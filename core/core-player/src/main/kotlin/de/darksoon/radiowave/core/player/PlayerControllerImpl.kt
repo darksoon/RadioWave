@@ -3,6 +3,8 @@
 package de.darksoon.radiowave.core.player
 
 import android.media.AudioAttributes as PlatformAudioAttributes
+import android.media.AudioDeviceCallback
+import android.media.AudioDeviceInfo
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.content.Context
@@ -121,6 +123,7 @@ class PlayerControllerImpl @Inject constructor(
     private var stationPoolJob: Job? = null
     private val maxPlaybackHistorySize = 40
     private val audioManager: AudioManager? = context.getSystemService(AudioManager::class.java)
+    private var audioDeviceCallback: AudioDeviceCallback? = null
     private val isDebuggableApp: Boolean by lazy {
         (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
     }
@@ -169,6 +172,7 @@ class PlayerControllerImpl @Inject constructor(
         return exoPlayer ?: createPlayer(getSelectedBufferProfile()).also { player ->
             setupPlayerListeners(player)
             registerNetworkCallbackIfNeeded()
+            registerAudioDeviceCallbackIfNeeded()
             initializePlaybackLocks()
             player.volume = if (_playerState.value.isMuted) 0f else 1f
             exoPlayer = player
@@ -1154,6 +1158,65 @@ class PlayerControllerImpl @Inject constructor(
         }
     }
 
+    private fun registerAudioDeviceCallbackIfNeeded() {
+        if (audioDeviceCallback != null) return
+        val manager = audioManager ?: return
+        val callback = object : AudioDeviceCallback() {
+            override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>) {
+                handleAudioOutputDevicesRemoved(removedDevices)
+            }
+        }
+        // null handler => callbacks are delivered on the main thread, matching the
+        // thread the player + controllerScope live on.
+        manager.registerAudioDeviceCallback(callback, null)
+        audioDeviceCallback = callback
+    }
+
+    private fun unregisterAudioDeviceCallbackIfNeeded() {
+        val manager = audioManager ?: return
+        audioDeviceCallback?.let(manager::unregisterAudioDeviceCallback)
+        audioDeviceCallback = null
+    }
+
+    /**
+     * Pause when the audio route we were playing through physically disappears — the
+     * user left the car (Android Auto over USB/wireless, or plain Bluetooth A2DP),
+     * unplugged a dock, or pulled a USB/AUX cable. Without this, Android silently
+     * re-routes the live stream to the phone's built-in speaker, so the radio keeps
+     * blaring a few seconds after you've already walked away.
+     *
+     * This is the connection-agnostic backstop for the Android-Auto-controller pause in
+     * [de.darksoon.radiowave.auto] onDisconnected: that path only fires for Auto
+     * *projection* sessions, whereas most "radio in the car" listening is plain
+     * Bluetooth where no MediaSession controller is ever involved. ExoPlayer's
+     * becoming-noisy handling covers wired/BT in theory but is unreliable for some
+     * car/USB routes — so we watch the hardware directly.
+     *
+     * We only pause once the LAST external output route is gone (no other headset/BT/
+     * car device remains) so hopping between two external outputs keeps playing.
+     */
+    private fun handleAudioOutputDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>) {
+        val player = exoPlayer ?: return
+        val wasPlaying = player.playWhenReady || player.isPlaying
+        val externalOutputRemoved = removedDevices.any { it.isSink && isExternalOutputType(it.type) }
+        if (!shouldPauseOnAudioOutputRemoval(
+                wasPlaying = wasPlaying,
+                externalOutputRemoved = externalOutputRemoved,
+                externalOutputStillConnected = hasConnectedExternalOutput(),
+            )
+        ) return
+        logDebug("External audio output removed with no external route left — pausing")
+        pauseForExternalPlayback()
+    }
+
+    private fun hasConnectedExternalOutput(): Boolean {
+        val manager = audioManager ?: return false
+        return manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+            .any { isExternalOutputType(it.type) }
+    }
+
+    private fun isExternalOutputType(type: Int): Boolean = type in EXTERNAL_OUTPUT_DEVICE_TYPES
+
     override fun toggleMute() {
         val player = exoPlayer ?: return
         val shouldMute = !_playerState.value.isMuted
@@ -1224,6 +1287,7 @@ class PlayerControllerImpl @Inject constructor(
         playbackForwardStack.clear()
         stationPool = emptyList()
         unregisterNetworkCallbackIfNeeded()
+        unregisterAudioDeviceCallbackIfNeeded()
         stopForegroundPlaybackServiceIfRunning()
         releasePlaybackLocks()
         abandonAudioFocus()
@@ -1341,6 +1405,17 @@ class PlayerControllerImpl @Inject constructor(
         return true
     }
 
+    /**
+     * Pure decision for [handleAudioOutputDevicesRemoved], split out so the pause-on-
+     * disconnect policy can be unit-tested without fabricating [AudioDeviceInfo]s.
+     */
+    @VisibleForTesting
+    internal fun shouldPauseOnAudioOutputRemoval(
+        wasPlaying: Boolean,
+        externalOutputRemoved: Boolean,
+        externalOutputStillConnected: Boolean,
+    ): Boolean = wasPlaying && externalOutputRemoved && !externalOutputStillConnected
+
     @VisibleForTesting
     internal fun testSetPlayerState(state: PlayerState) {
         _playerState.value = state
@@ -1403,6 +1478,34 @@ class PlayerControllerImpl @Inject constructor(
 
     private companion object {
         const val APP_LOG_TAG = "RadioWave"
+
+        /**
+         * Output [AudioDeviceInfo] types that represent an *external* audio route the
+         * user is likely listening through away from the phone speaker — car, BT,
+         * dock, wired, USB. When the last of these disappears we pause instead of
+         * letting Android fall back to the built-in speaker. Newer constants (BLE/BUS)
+         * are inlined at compile time and simply never match on older devices.
+         */
+        val EXTERNAL_OUTPUT_DEVICE_TYPES = setOf(
+            AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
+            AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+            AudioDeviceInfo.TYPE_WIRED_HEADSET,
+            AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
+            AudioDeviceInfo.TYPE_USB_DEVICE,
+            AudioDeviceInfo.TYPE_USB_ACCESSORY,
+            AudioDeviceInfo.TYPE_USB_HEADSET,
+            AudioDeviceInfo.TYPE_DOCK,
+            AudioDeviceInfo.TYPE_AUX_LINE,
+            AudioDeviceInfo.TYPE_LINE_ANALOG,
+            AudioDeviceInfo.TYPE_LINE_DIGITAL,
+            AudioDeviceInfo.TYPE_HDMI,
+            AudioDeviceInfo.TYPE_HDMI_ARC,
+            AudioDeviceInfo.TYPE_HEARING_AID,
+            AudioDeviceInfo.TYPE_BLE_HEADSET,
+            AudioDeviceInfo.TYPE_BLE_SPEAKER,
+            AudioDeviceInfo.TYPE_BLE_BROADCAST,
+            AudioDeviceInfo.TYPE_BUS,
+        )
         const val thermalMetadataUpdateMinIntervalMs = 2_500L
         // Hoisted regexes — compiled once, reused across all ICY metadata frames.
         val STREAM_TITLE_REGEX = Regex("(?i)StreamTitle='([^']*)'")
