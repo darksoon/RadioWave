@@ -42,7 +42,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -120,14 +122,19 @@ fun FloatingPlayerBar(
         )
 
         val playerShape = RoundedCornerShape(32.dp)
-        val dismissState = rememberSwipeToDismissBoxState(
-            confirmValueChange = { value ->
-                if (value != SwipeToDismissBoxValue.Settled) {
-                    onDismissed()
+        val dismissState = rememberSwipeToDismissBoxState()
+        // React to the settled dismiss direction instead of (ab)using
+        // confirmValueChange for the side-effect, which is deprecated. rememberUpdatedState
+        // keeps the latest callback without restarting the collector.
+        val latestOnDismissed by rememberUpdatedState(onDismissed)
+        LaunchedEffect(dismissState) {
+            snapshotFlow { dismissState.targetValue }
+                .collect { value ->
+                    if (value != SwipeToDismissBoxValue.Settled) {
+                        latestOnDismissed()
+                    }
                 }
-                true
-            },
-        )
+        }
         SwipeToDismissBox(
             state = dismissState,
             modifier = modifier,
