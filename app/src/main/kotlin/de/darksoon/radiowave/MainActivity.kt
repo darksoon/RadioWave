@@ -84,7 +84,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.annotation.StringRes
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -725,7 +725,7 @@ fun RadioWaveMainScreen(
                     showMetadata = showMiniPlayerMetadata,
                     isCasting = isCasting,
                     onFavoriteClick = {
-                        currentStation?.let { station ->
+                        currentStation.let { station ->
                             val willBeFavorite = !isCurrentFavorite
                             homeViewModel.toggleFavorite(station)
                             if (showQuickToasts) {
@@ -772,7 +772,7 @@ fun RadioWaveMainScreen(
                         isFavorite = isCurrentFavorite,
                         isCasting = isCasting,
                         onFavoriteClick = {
-                            currentStation?.let { station ->
+                            currentStation.let { station ->
                                 val willBeFavorite = !isCurrentFavorite
                                 homeViewModel.toggleFavorite(station)
                                 if (showQuickToasts) {

@@ -357,6 +357,7 @@ class RadioWaveAutoService : MediaLibraryService() {
             }
         }
 
+        @Suppress("OVERRIDE_DEPRECATION")
         override fun onPlayerCommandRequest(
             session: MediaSession,
             controller: MediaSession.ControllerInfo,
@@ -764,8 +765,8 @@ class RadioWaveAutoService : MediaLibraryService() {
         }
 
         val fallbackUuid = item.mediaId
-            ?.removePrefix(STATION_PREFIX)
-            ?.trim()
+            .removePrefix(STATION_PREFIX)
+            .trim()
             .takeUnless { it.isNullOrBlank() }
             ?: mediaUri
         val fallbackTitle = item.mediaMetadata.title?.toString()?.trim()
