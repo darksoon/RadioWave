@@ -29,7 +29,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.foundation.text.ClickableText
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -37,7 +38,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -61,6 +62,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -194,7 +196,7 @@ fun SettingsScreen(
                 SettingsCategoryCard(
                     title = stringResource(R.string.settings_category_sound_title),
                     subtitle = stringResource(R.string.settings_category_sound_subtitle),
-                    icon = Icons.Filled.VolumeUp,
+                    icon = Icons.AutoMirrored.Filled.VolumeUp,
                     onClick = { selectedCategory = SettingsCategory.SOUND },
                 )
             }
@@ -754,46 +756,53 @@ private fun SupportRichText(
     groupLinkLabel: String,
     onGroupLinkClick: () -> Unit,
 ) {
+    // rememberUpdatedState so the link listeners captured inside the remembered
+    // AnnotatedString always invoke the latest callbacks, even though the string
+    // itself is only rebuilt when the text/labels change.
+    val latestKevinClick by rememberUpdatedState(onKevinLinkClick)
+    val latestGroupClick by rememberUpdatedState(onGroupLinkClick)
     val annotatedText = remember(text, kevinLinkLabel, groupLinkLabel) {
-        buildAnnotatedString {
-            append(text)
-
-            val linkStyle = SpanStyle(
+        val linkStyles = TextLinkStyles(
+            style = SpanStyle(
                 color = RadioAccent,
                 textDecoration = TextDecoration.Underline,
                 fontWeight = FontWeight.Medium,
-            )
+            ),
+        )
+        buildAnnotatedString {
+            append(text)
 
             val kevinStart = text.indexOf(kevinLinkLabel)
             if (kevinStart >= 0) {
-                val kevinEnd = kevinStart + kevinLinkLabel.length
-                addStyle(linkStyle, kevinStart, kevinEnd)
-                addStringAnnotation("URL", "kevin", kevinStart, kevinEnd)
+                addLink(
+                    LinkAnnotation.Clickable(
+                        tag = "kevin",
+                        styles = linkStyles,
+                        linkInteractionListener = { latestKevinClick() },
+                    ),
+                    kevinStart,
+                    kevinStart + kevinLinkLabel.length,
+                )
             }
 
             val groupStart = text.indexOf(groupLinkLabel)
             if (groupStart >= 0) {
-                val groupEnd = groupStart + groupLinkLabel.length
-                addStyle(linkStyle, groupStart, groupEnd)
-                addStringAnnotation("URL", "group", groupStart, groupEnd)
+                addLink(
+                    LinkAnnotation.Clickable(
+                        tag = "group",
+                        styles = linkStyles,
+                        linkInteractionListener = { latestGroupClick() },
+                    ),
+                    groupStart,
+                    groupStart + groupLinkLabel.length,
+                )
             }
         }
     }
 
-    ClickableText(
+    Text(
         text = annotatedText,
         style = MaterialTheme.typography.bodySmall.copy(color = DarkOnSurfaceVariant),
-        onClick = { offset ->
-            annotatedText
-                .getStringAnnotations(tag = "URL", start = offset, end = offset)
-                .firstOrNull()
-                ?.let { annotation ->
-                    when (annotation.item) {
-                        "kevin" -> onKevinLinkClick()
-                        "group" -> onGroupLinkClick()
-                    }
-                }
-        },
     )
 }
 
