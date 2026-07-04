@@ -25,10 +25,10 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
                 // libraries don't need a runtime targetSdk. Move to testOptions/lint
                 // if specific test/lint behavior is needed.
                 @Suppress("UnstableApiUsage")
-                testOptions.targetSdk = 35
+                testOptions.targetSdk = 36
                 @Suppress("UnstableApiUsage")
                 testOptions.animationsDisabled = true
-                lint.targetSdk = 35
+                lint.targetSdk = 36
             }
 
             dependencies {
