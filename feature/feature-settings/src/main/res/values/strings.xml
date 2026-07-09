@@ -102,6 +102,11 @@
     <string name="settings_import_favorites_parse_error">This file isn\'t a valid RadioWave favorites backup</string>
     <string name="settings_import_favorites_unsupported_version">This backup was created with a newer version of RadioWave and can\'t be imported yet</string>
     <string name="settings_import_favorites_result">Imported %1$d favorites (%2$d already existed, %3$d skipped)</string>
+    <string name="settings_import_playlist_title">Import stations from playlist</string>
+    <string name="settings_import_playlist_subtitle">Bulk-add custom stations from an M3U/M3U8 or PLS playlist file.</string>
+    <string name="settings_import_playlist_action">Import playlist</string>
+    <string name="settings_import_playlist_empty">No importable stations found in this file</string>
+    <string name="settings_import_playlist_result">Imported %1$d station(s), skipped %2$d</string>
     <string name="settings_version_label">Version</string>
     <string name="settings_github_repository_title">GitHub repository</string>
     <string name="settings_github_repository_value">darksoon/RadioWave</string>

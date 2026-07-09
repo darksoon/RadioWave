@@ -219,6 +219,21 @@ fun SettingsScreen(
             }
         }
     }
+    val importPlaylistLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        // uri is null when the user cancels the picker — nothing to do.
+        if (uri == null) return@rememberLauncherForActivityResult
+        coroutineScope.launch {
+            val result = viewModel.importPlaylist(uri)
+            val message = if (result.totalFound == 0) {
+                context.getString(R.string.settings_import_playlist_empty)
+            } else {
+                context.getString(R.string.settings_import_playlist_result, result.imported, result.skipped)
+            }
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        }
+    }
 
     DisposableEffect(lifecycleOwner, context) {
         val observer = LifecycleEventObserver { _, event ->
@@ -627,6 +642,17 @@ fun SettingsScreen(
                                 // Broadest possible filter — some apps export JSON tagged as
                                 // text/plain or octet-stream; content is validated by parsing.
                                 importFavoritesLauncher.launch(arrayOf("*/*"))
+                            },
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingActionRow(
+                            title = stringResource(R.string.settings_import_playlist_title),
+                            subtitle = stringResource(R.string.settings_import_playlist_subtitle),
+                            actionLabel = stringResource(R.string.settings_import_playlist_action),
+                            onActionClick = {
+                                // Broad filter, same reasoning as favorites import above —
+                                // M3U/PLS files aren't reliably tagged with a specific MIME type.
+                                importPlaylistLauncher.launch(arrayOf("*/*"))
                             },
                         )
                     }

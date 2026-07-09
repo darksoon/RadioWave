@@ -2,21 +2,14 @@
 
 package de.darksoon.radiowave.feature.favorites
 
-import android.content.Context
-import android.net.Uri
-import android.provider.OpenableColumns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import de.darksoon.radiowave.core.data.playlist.PlaylistParser
 import de.darksoon.radiowave.core.data.repository.CustomStationRepository
 import de.darksoon.radiowave.core.data.repository.FavoriteRepository
 import de.darksoon.radiowave.core.data.repository.SettingsRepository
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.player.RadioPlayerManager
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.Job
@@ -25,7 +18,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -38,20 +30,12 @@ data class FavoritesUiState(
     val error: String? = null,
 )
 
-/** Outcome of a playlist import, used to summarize the result to the user. */
-data class PlaylistImportResult(
-    val imported: Int,
-    val skipped: Int,
-    val totalFound: Int,
-)
-
 @HiltViewModel
 class FavoritesViewModel @Inject constructor(
     private val favoriteRepository: FavoriteRepository,
     private val customStationRepository: CustomStationRepository,
     private val playerManager: RadioPlayerManager,
     settingsRepository: SettingsRepository,
-    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FavoritesUiState())
@@ -169,63 +153,5 @@ class FavoritesViewModel @Inject constructor(
             customStationRepository.deleteCustomStation(station.uuid)
             favoriteRepository.toggleFavorite(station.copy(isFavorite = true))
         }
-    }
-
-    /**
-     * Imports custom stations from an M3U/M3U8/PLS playlist file picked via
-     * SAF. Reuses [isValidStreamUrl] so imported streams go through the same
-     * validation as the manual "add custom station" flow, skips entries that
-     * are invalid individually rather than failing the whole import, and
-     * dedupes both within the playlist itself and against custom stations
-     * that already exist.
-     *
-     * Never throws — file I/O and parsing errors are treated as "no entries
-     * found" so a bad file can't crash the caller.
-     */
-    suspend fun importPlaylist(uri: Uri): PlaylistImportResult {
-        val entries = runCatching {
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                BufferedReader(InputStreamReader(input)).use { reader ->
-                    PlaylistParser.parse(queryFileName(uri), reader)
-                }
-            }
-        }.getOrNull().orEmpty()
-
-        if (entries.isEmpty()) {
-            return PlaylistImportResult(imported = 0, skipped = 0, totalFound = 0)
-        }
-
-        val existingUrls = customStationRepository.getCustomStations().first().map { it.streamUrl }.toSet()
-        val seenUrlsInBatch = mutableSetOf<String>()
-        var imported = 0
-        var skipped = 0
-        for (entry in entries) {
-            val streamUrl = entry.streamUrl.trim()
-            val isNewInBatch = seenUrlsInBatch.add(streamUrl)
-            if (!isValidStreamUrl(streamUrl) || !isNewInBatch || streamUrl in existingUrls) {
-                skipped++
-                continue
-            }
-            val station = Station(
-                uuid = "custom-${UUID.randomUUID()}",
-                name = entry.name.trim().ifBlank { streamUrl },
-                streamUrl = streamUrl,
-            )
-            customStationRepository.addCustomStation(station)
-            favoriteRepository.toggleFavorite(station.copy(isFavorite = false))
-            imported++
-        }
-        return PlaylistImportResult(imported = imported, skipped = skipped, totalFound = entries.size)
-    }
-
-    /** Best-effort display name lookup for a SAF `Uri`, used for format detection by extension. */
-    private fun queryFileName(uri: Uri): String? {
-        if (uri.scheme != "content") return uri.lastPathSegment
-        return runCatching {
-            context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (nameIndex >= 0 && cursor.moveToFirst()) cursor.getString(nameIndex) else null
-            }
-        }.getOrNull() ?: uri.lastPathSegment
     }
 }
