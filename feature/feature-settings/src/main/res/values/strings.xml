@@ -52,6 +52,7 @@
     <string name="settings_quality_low">Low</string>
     <string name="settings_quality_medium">Medium</string>
     <string name="settings_quality_high">High</string>
+    <string name="settings_data_usage_estimate">≈ %1$d MB per hour of playback at this quality</string>
     <string name="settings_eq_preset_title">Equalizer preset</string>
     <string name="settings_eq_preset_flat">Normal</string>
     <string name="settings_eq_preset_bass_boost">Bass boost</string>

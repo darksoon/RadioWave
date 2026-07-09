@@ -85,6 +85,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import de.darksoon.radiowave.core.model.AppSettings
+import de.darksoon.radiowave.core.model.DataUsageEstimate
+import kotlin.math.roundToInt
 import de.darksoon.radiowave.core.data.update.LocalIssueReporter
 import de.darksoon.radiowave.core.ui.theme.DarkCardBackground
 import de.darksoon.radiowave.core.ui.theme.DarkOnSurfaceVariant
@@ -351,6 +353,16 @@ fun SettingsScreen(
                             enabled = true,
                             disabledHint = null,
                         )
+                        Text(
+                            text = stringResource(
+                                R.string.settings_data_usage_estimate,
+                                DataUsageEstimate.megabytesPerHour(defaultAudioQuality).roundToInt(),
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = DarkOnSurfaceVariant.copy(alpha = 0.6f),
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 0.dp),
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingChoiceRow(
                             title = stringResource(R.string.settings_eq_preset_title),

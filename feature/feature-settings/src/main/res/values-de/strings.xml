@@ -52,6 +52,7 @@
     <string name="settings_quality_low">Niedrig</string>
     <string name="settings_quality_medium">Mittel</string>
     <string name="settings_quality_high">Hoch</string>
+    <string name="settings_data_usage_estimate">≈ %1$d MB pro Stunde Wiedergabe bei dieser Qualität</string>
     <string name="settings_eq_preset_title">Equalizer-Preset</string>
     <string name="settings_eq_preset_flat">Normal</string>
     <string name="settings_eq_preset_bass_boost">Bass-Boost</string>
