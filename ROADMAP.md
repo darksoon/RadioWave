@@ -83,8 +83,16 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - Major performance pass: carousel scroll smoothness, N+1 DB queries removed, heavy ranking moved off main thread, in-memory tag/country cache, metadata regex hoisted, settings cached
 - Player listener lifecycle and WakeLock release hardened against leaks
 - CastManager.release() for clean shutdown
-- 48 dp touch targets across Favorites cards
+- 48 dp touch targets across Favorites cards (extended 2026-07-09 to the fullscreen player, mini player, and Browse grid)
 - Live language change without Activity recreate
+- Data-loss migration bug fixed (favorites/recents from before the v1->v3 upgrade had lost their name/URL; repair migration added)
+- Free EQ presets (Flat, Bass Boost, Treble Boost, Vocal) — Settings > Sound
+- Android Auto: "Continue where you left off" and "Surprise me" tiles on the browse root
+- Android Auto: browse tree distinguishes "network error" from "genuinely empty" (Top Stations, Genres, genre browsing)
+- Android Auto: fixed a recurring bug where playback kept going on the phone speaker after leaving the car (disconnect-triggered pause could be undone by a reconnect blip during the car's teardown sequence)
+- Station artwork URLs validated to http/https before rendering/casting (closes a file://\|content:// injection path)
+- Favorite toggling made atomic (rapid double-taps / Android Auto + phone racing could invert the second tap)
+- GitHub Actions pinned to commit SHAs; a shell-injection path in the manual build workflow closed
 
 ## In Progress
 
@@ -97,21 +105,21 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - Custom stations M3U/PLS import
 - Bitrate-based data usage estimate
 - Android Auto smoke test on real head unit
+- Harden the "pause on car disconnect" fix with `androidx.car.app`'s `CarConnection` (debounced OS-level car-connection-type signal) instead of inferring disconnect/reconnect purely from MediaSession controller churn + a tuned timeout (`DISCONNECT_RESUME_GUARD_MS`, currently 2.5s) — this bug has now had four separate fix attempts (commits `3df6347`, `b717153`/`131fad5`, and the 2026-07-09 guard rewrite); the current fix is a real improvement but is still a timing heuristic. Needs a new dependency + real head-unit testing to verify before shipping, hence not done inline during the 2026-07-09 pass. Bundle with the smoke-test item above.
 - Radio timeshift beyond MVP (longer buffer, optional seek/live)
 - Migrate `SharedPreferences` to a single `SettingsRepository` (DataStore) — bigger refactor
 
 ## Later
 
-- Further Android Auto expansion — concrete candidates from a 2026-07 competitive review:
-  - "Continue where you left off" as the first item on the browse root, not buried in Recents
-  - "Surprise me" / random-station browsable item — the phone-side random logic already exists (`playRandomStation`), just needs an Auto entry point
-  - Distinct "couldn't load — check connection" vs. "no stations available" messaging in the browse tree (currently both collapse to the same generic empty state, which is misleading on flaky cellular)
+- Further Android Auto expansion — remaining candidates from a 2026-07 competitive review (see Done for what already shipped):
   - Grid template for genre/tag/country browsing instead of only lists (better scannability while driving)
   - Voice-search suggestion chips seeded from local search history (no telemetry)
+  - Verify MediaSession state (position, metadata, artwork) survives Android Auto Coolwalk's 2026 swipeable multi-media-card gesture — new car interaction pattern, not yet verified against it
+- Silent-retry reconnect state distinct from the existing manual error+retry banner — auto-retry N times after a longer stream drop (tunnel, WiFi<->cellular handoff) before falling back to asking the user to tap retry; recurring complaint on competing radio apps, framed as "dangerous while driving" since it currently needs the user to reopen the app
 - Podcasts MVP as a dedicated area
 - Android TV / Google TV base (Leanback launcher, D-pad/focus navigation, TV layout MVP)
 - Chromecast expansion
-- Quick-access playback widget
+- Quick-access playback widget — scope as favorites-selectable (a glanceable list/grid to pick any favorite), not just a resume-last button; that narrower version is a recurring complaint about other radio-app widgets
 - More transitions, motion, and shimmer
 - More unit and UI tests
 - Baseline Profiles for cold-start performance
@@ -132,10 +140,10 @@ This roadmap is intended for GitHub and keeps the public product status compact.
   - clean links between cache, favorites, and recents
 - Optional volume slider in addition to mute
 - Local-only listening stats (on-device only, no server) — fits the privacy-first positioning better than the account-gated insights competitors offer
-- EQ / audio presets via Media3's audio processor APIs — several competitors paywall this, offering it free reinforces the ad-free identity
 - "Similar stations" / discover row using Radio Browser tag/country/language metadata — no tracking or account needed, unlike most competitors' recommendation features
 - Alarm-clock / wake-to-radio — table stakes on some competing apps, currently absent
 - Surface Radio Browser's public click/vote counts in the UI (already reported to, just not displayed from) as a lightweight community-popularity signal
+- One-time settings tip linking to the device's battery-optimization exemption screen (OEM-specific deep link, no telemetry) — aggressive OEM battery managers (Xiaomi/Huawei/Samsung) killing background audio is a recurring complaint across multiple radio apps, not something RadioWave's own playback hardening alone can fully prevent
 - Note: offline stream recording was considered and explicitly rejected as a feature — stream recording rights vary by station license, treating it as a legal risk rather than a privacy one
 
 ## Note

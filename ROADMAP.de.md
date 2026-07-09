@@ -82,8 +82,16 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Performance-Pass: Carousel-Smoothness, N+1 DB-Queries entfernt, Heavy-Ranking auf Default-Dispatcher, In-Memory-Tag/Country-Cache, Regex-Hoisting, Settings-Cache
 - Player-Listener-Lifecycle und WakeLock-Release-Pfade leak-sicher
 - CastManager.release() fuer sauberen Shutdown
-- 48dp Touch-Targets in Favoriten-Cards
+- 48dp Touch-Targets in Favoriten-Cards (2026-07-09 erweitert auf Fullscreen-Player, Mini-Player und Browse-Grid)
 - Live-Sprachwechsel ohne Activity.recreate
+- Datenverlust-Migrationsbug gefixt (Favoriten/Recents von vor dem v1->v3-Upgrade hatten Name/URL verloren; Reparatur-Migration ergaenzt)
+- Kostenlose EQ-Presets (Normal, Bass-Boost, Hoehen-Boost, Stimme) — Einstellungen > Ton
+- Android Auto: "Weiter hoeren" und "Ueberrasch mich" Kacheln im Browse-Root
+- Android Auto: Browse-Baum unterscheidet "Netzwerkfehler" von "wirklich leer" (Top Sender, Genres, Genre-Browsing)
+- Android Auto: wiederkehrenden Bug gefixt, bei dem die Wiedergabe nach dem Aussteigen aus dem Auto auf dem Handy-Lautsprecher weiterlief (der Pause-bei-Trennung-Fix konnte durch einen Reconnect-Ausschlag waehrend der Trennsequenz des Autos rueckgaengig gemacht werden)
+- Sender-Artwork-URLs werden vor Rendering/Casting auf http/https geprueft (schliesst einen file://\|content://-Injektionspfad)
+- Favoriten-Toggle atomar gemacht (schnelles Doppel-Tippen / Android Auto + Handy gleichzeitig konnte den zweiten Tap invertieren)
+- GitHub Actions auf Commit-SHAs gepinnt; eine Shell-Injection-Luecke im manuellen Build-Workflow geschlossen
 
 ## In Arbeit
 
@@ -96,21 +104,21 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Custom Stations M3U/PLS-Import
 - Bitrate-basierte Datenverbrauchs-Schaetzung
 - Android Auto Smoke-Test auf echtem Head-Unit
+- Den "Pause bei Auto-Trennung"-Fix mit `androidx.car.app`s `CarConnection` haerten (entprelltes OS-Signal fuer den Auto-Verbindungstyp) statt Trennung/Reconnect rein aus MediaSession-Controller-Churn + einem getunten Timeout (`DISCONNECT_RESUME_GUARD_MS`, aktuell 2,5s) abzuleiten — dieser Bug hatte jetzt vier separate Fix-Versuche (Commits `3df6347`, `b717153`/`131fad5` und der Guard-Rewrite vom 2026-07-09); der aktuelle Fix ist eine echte Verbesserung, bleibt aber eine Timing-Heuristik. Braucht eine neue Abhaengigkeit + echten Head-Unit-Test zur Verifikation, deshalb nicht direkt im 2026-07-09-Durchgang umgesetzt. Zusammen mit dem Smoke-Test-Punkt oben angehen.
 - Radio-Timeshift ueber MVP hinaus (laengerer Buffer, optionaler Seek/LIVE)
 - SharedPreferences zu zentralem SettingsRepository migrieren (DataStore) — groesserer Refactor
 
 ## Spaeter
 
-- Weiterer Android-Auto-Ausbau — konkrete Kandidaten aus einer Wettbewerbs-Recherche (2026-07):
-  - "Weiter, wo ich aufgehoert habe" als erstes Element im Browse-Root statt versteckt unter Recents
-  - "Ueberrasch mich" / Zufalls-Sender als eigener Browse-Eintrag — die Zufallslogik existiert phone-seitig bereits (`playRandomStation`), braucht nur einen Auto-Einstiegspunkt
-  - Klare Unterscheidung "konnte nicht laden — Verbindung pruefen" vs. "keine Sender verfuegbar" im Browse-Baum (aktuell beides derselbe generische Leerzustand — irrefuehrend bei schlechtem Empfang)
+- Weiterer Android-Auto-Ausbau — verbleibende Kandidaten aus einer Wettbewerbs-Recherche (2026-07, siehe Fertig fuer bereits Erledigtes):
   - Grid-Template fuer Genre-/Tag-/Laender-Browsing statt nur Listen (besser ueberblickbar waehrend der Fahrt)
   - Sprachsuche-Vorschlaege aus lokaler Suchhistorie (kein Tracking)
+  - Pruefen, ob der MediaSession-Zustand (Position, Metadaten, Artwork) die neue Swipe-Geste zwischen Medienkarten von Android Autos Coolwalk-Update 2026 uebersteht — neues Bedienmuster im Auto, noch nicht dagegen verifiziert
+- Stiller Reconnect-Zustand getrennt vom bestehenden manuellen Fehler-mit-Retry-Banner — nach einem laengeren Verbindungsabbruch (Tunnel, WLAN<->Mobilfunk-Wechsel) N-mal automatisch neu versuchen, bevor der Nutzer manuell auf Retry tippen muss; wiederkehrende Beschwerde bei Konkurrenz-Apps, dort als "gefaehrlich waehrend der Fahrt" eingestuft, weil man aktuell die App neu oeffnen muss
 - Podcasts-MVP als eigener Bereich
 - Android TV / Google TV Basis (Leanback-Launcher, D-Pad-/Focus-Navigation, TV-Layout-MVP)
 - Chromecast-Ausbau
-- Schneller Playback-Widget-Zugriff
+- Schneller Playback-Widget-Zugriff — als favoriten-waehlbar konzipieren (uebersichtliche Liste/Grid zur Auswahl eines beliebigen Favoriten), nicht nur ein "letzten Sender fortsetzen"-Knopf; diese engere Variante ist eine wiederkehrende Beschwerde bei anderen Radio-App-Widgets
 - Mehr Transitions, Motion und Shimmer
 - Mehr Unit- und UI-Tests
 - Baseline Profiles fuer schnelleren Kaltstart
@@ -131,10 +139,10 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
   - saubere Verknuepfung zwischen Cache, Favoriten und Recents
 - Optionaler Lautstaerke-Slider zusaetzlich zu Mute
 - Rein lokale Hoerstatistiken (nur auf dem Geraet, kein Server) — passt besser zur Privacy-first-Ausrichtung als die account-gebundenen Insights der Konkurrenz
-- EQ / Audio-Presets ueber Media3s Audio-Processor-APIs — mehrere Wettbewerber legen das hinter eine Paywall, kostenlos anzubieten unterstreicht die werbefreie Identitaet
 - "Aehnliche Sender" / Discover-Zeile ueber Radio-Browser-Tag-/Land-/Sprach-Metadaten — kein Tracking oder Account noetig, anders als bei den meisten Empfehlungsfunktionen der Konkurrenz
 - Wecker-Funktion / Aufwachen mit Radio — bei manchen Wettbewerbern Standard, aktuell nicht vorhanden
 - Radio Browsers oeffentliche Klick-/Vote-Zahlen in der UI anzeigen (werden bereits gemeldet, aber nicht angezeigt) als leichtgewichtiges Community-Popularitaetssignal
+- Einmaliger Einstellungs-Hinweis mit Link zum Akku-Optimierungs-Ausnahme-Bildschirm des Geraets (OEM-spezifischer Deep-Link, kein Tracking) — aggressive OEM-Akkumanager (Xiaomi/Huawei/Samsung), die Hintergrund-Audio killen, sind eine wiederkehrende Beschwerde bei mehreren Radio-Apps, dagegen kann RadioWaves eigene Playback-Haertung allein nicht vollstaendig schuetzen
 - Hinweis: Offline-Stream-Aufnahme wurde geprueft und bewusst verworfen — Aufnahmerechte variieren je nach Sender-Lizenz, das ist ein rechtliches Risiko, kein Privacy-Thema
 
 ## Hinweis

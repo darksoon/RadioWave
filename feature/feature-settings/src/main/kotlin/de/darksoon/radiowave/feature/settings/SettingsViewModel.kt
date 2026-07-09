@@ -41,6 +41,7 @@ class SettingsViewModel @Inject constructor(
     fun setNotificationShowPrevious(v: Boolean) = viewModelScope.launch { settingsRepository.setNotificationShowPrevious(v) }
     fun setNotificationShowNext(v: Boolean) = viewModelScope.launch { settingsRepository.setNotificationShowNext(v) }
     fun setDefaultAudioQuality(v: String) = viewModelScope.launch { settingsRepository.setDefaultAudioQuality(v) }
+    fun setEqPreset(v: String) = viewModelScope.launch { settingsRepository.setEqPreset(v) }
     fun setAllowMobileData(v: Boolean) = viewModelScope.launch { settingsRepository.setAllowMobileData(v) }
     fun setBufferProfile(v: String) = viewModelScope.launch { settingsRepository.setBufferProfile(v) }
     fun setTimeshiftGuard(v: Boolean) = viewModelScope.launch { settingsRepository.setTimeshiftGuard(v) }

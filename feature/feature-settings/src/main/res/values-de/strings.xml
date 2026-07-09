@@ -52,6 +52,11 @@
     <string name="settings_quality_low">Niedrig</string>
     <string name="settings_quality_medium">Mittel</string>
     <string name="settings_quality_high">Hoch</string>
+    <string name="settings_eq_preset_title">Equalizer-Preset</string>
+    <string name="settings_eq_preset_flat">Normal</string>
+    <string name="settings_eq_preset_bass_boost">Bass-Boost</string>
+    <string name="settings_eq_preset_treble_boost">Höhen-Boost</string>
+    <string name="settings_eq_preset_vocal">Stimme</string>
     <string name="settings_android_auto_quality_limit_title">Android Auto auf sparsame Qualität begrenzen</string>
     <string name="settings_android_auto_quality_limit_subtitle">Bevorzugt im Auto leichtere Streams bis etwa 128 kbps. Wenn deaktiviert, gilt auch im Auto deine normale Qualitätswahl.</string>
     <string name="settings_auto_play_title">Autoplay bei Android Auto Verbindung</string>

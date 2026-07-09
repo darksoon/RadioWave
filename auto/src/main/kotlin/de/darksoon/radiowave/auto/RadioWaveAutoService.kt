@@ -103,6 +103,9 @@ class RadioWaveAutoService : MediaLibraryService() {
     // Used to distinguish "user left the car" (pause playback) from an ordinary
     // phone-side controller disconnect during normal phone playback (do nothing).
     private var automotiveSessionActive = false
+    // elapsedRealtime of the last disconnect-triggered pause — see onDisconnected and
+    // tryAutoResumeOnConnect's DISCONNECT_RESUME_GUARD_MS check.
+    private var lastDisconnectPauseAtMs = 0L
 
     override fun onCreate() {
         super.onCreate()
@@ -236,9 +239,24 @@ class RadioWaveAutoService : MediaLibraryService() {
                 // sees !isPlaying and skips its buffer-profile rebuild/restart.
                 playerController.pauseForExternalPlayback()
                 playerController.setAutomotivePerformanceModeEnabled(false)
-                // Clear the resume cooldown so a transient AA drop + quick reconnect
-                // auto-resumes immediately instead of being blocked for ~3.5s.
-                lastAutoResumeAttemptAtMs = 0L
+                // Record when this pause happened — see tryAutoResumeOnConnect's
+                // DISCONNECT_RESUME_GUARD_MS check. Previously this cleared
+                // lastAutoResumeAttemptAtMs to 0 so "a brief AA drop + quick
+                // reconnect" could resume instantly — but AUTO_RESUME_CONNECT_COOLDOWN_MS
+                // is only ever compared against the timestamp of the LAST successful
+                // onPostConnect, which after any real, sustained drive is already many
+                // seconds/minutes old — so that cooldown was already naturally expired
+                // by the time of a genuine disconnect regardless of this reset, meaning
+                // the reset provided no real protection in the common case: a SPURIOUS
+                // reconnect blip during the car's actual teardown/ignition-off sequence
+                // (head units commonly bounce the connection once before fully dropping
+                // it) could freely call tryAutoResumeOnConnect() again and resume
+                // playback on the phone speaker moments after the user genuinely left —
+                // this was the "keeps playing after getting out of the car" bug reported
+                // multiple times despite the pause above working correctly. A direct,
+                // dedicated guard below closes this regardless of the other cooldown's
+                // staleness.
+                lastDisconnectPauseAtMs = SystemClock.elapsedRealtime()
             }
         }
 
@@ -273,26 +291,19 @@ class RadioWaveAutoService : MediaLibraryService() {
         ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
             return serviceFuture {
                 val children = when (parentId) {
-                    ROOT_ID -> listOf(
-                        browsableItem(FAVORITES_ID, getString(R.string.auto_favorites)),
-                        // Some Android Auto surfaces prioritize this slot.
-                        // Offer a compact mix of favorites and recents on those surfaces.
-                        browsableItem(RECENTS_ID, getString(R.string.auto_quick_access)),
-                        browsableItem(TOP_STATIONS_ID, getString(R.string.auto_top_stations)),
-                        browsableItem(GENRES_ID, getString(R.string.auto_genres)),
-                    )
+                    ROOT_ID -> buildRootChildren()
 
                     FAVORITES_ID -> asStationChildren(loadFavorites())
                     RECENTS_ID -> asStationChildren(loadQuickAccess())
-                    TOP_STATIONS_ID -> asStationChildren(loadTopStations())
-                    GENRES_ID -> asGenreChildren(loadGenres())
+                    TOP_STATIONS_ID -> asStationChildren(loadTopStationsResult())
+                    GENRES_ID -> asGenreChildren(loadGenresResult())
                     else -> {
                         val genreTag = parentId
                             .removePrefix(GENRE_PREFIX)
                             .trim()
                             .takeUnless { it.isBlank() }
                         if (genreTag != null) {
-                            asStationChildren(loadStationsByGenre(genreTag))
+                            asStationChildren(loadStationsByGenreResult(genreTag))
                         } else {
                             emptyList()
                         }
@@ -606,35 +617,117 @@ class RadioWaveAutoService : MediaLibraryService() {
             .distinctBy { it.uuid }
     }
 
-    private suspend fun loadTopStations(): List<Station> = withContext(Dispatchers.IO) {
+    // Result, not a plain list-with-default: onGetChildren needs to tell a genuinely
+    // empty catalog apart from a transient failure (bad cellular in a moving car is
+    // the common case) so the car UI can show "check connection" instead of the
+    // misleading "no stations available" for both cases alike.
+    private suspend fun loadTopStationsResult(): Result<List<Station>> = withContext(Dispatchers.IO) {
         runCatching { stationRepository.getTopStations().first().take(MAX_CHILDREN) }
-            .getOrDefault(emptyList())
     }
 
-    private suspend fun loadGenres(): List<Genre> = withContext(Dispatchers.IO) {
+    private suspend fun loadTopStations(): List<Station> = loadTopStationsResult().getOrDefault(emptyList())
+
+    private suspend fun loadGenresResult(): Result<List<Genre>> = withContext(Dispatchers.IO) {
         runCatching { stationRepository.getTags().first().take(MAX_GENRES) }
-            .getOrDefault(emptyList())
     }
 
-    private suspend fun loadStationsByGenre(tag: String): List<Station> = withContext(Dispatchers.IO) {
+    private suspend fun loadGenres(): List<Genre> = loadGenresResult().getOrDefault(emptyList())
+
+    private suspend fun loadStationsByGenreResult(tag: String): Result<List<Station>> = withContext(Dispatchers.IO) {
         runCatching { stationRepository.getStationsByTag(tag).first().take(MAX_CHILDREN) }
-            .getOrDefault(emptyList())
     }
 
-    private suspend fun loadFavorites(): List<Station> = withContext(Dispatchers.IO) {
+    private suspend fun loadFavoritesResult(): Result<List<Station>> = withContext(Dispatchers.IO) {
         runCatching { favoriteRepository.getFavorites().first().take(MAX_CHILDREN) }
-            .getOrDefault(emptyList())
     }
 
-    private suspend fun loadRecents(): List<Station> = withContext(Dispatchers.IO) {
+    private suspend fun loadFavorites(): List<Station> = loadFavoritesResult().getOrDefault(emptyList())
+
+    private suspend fun loadRecentsResult(): Result<List<Station>> = withContext(Dispatchers.IO) {
         runCatching { recentRepository.getRecentStations(limit = MAX_CHILDREN).first() }
-            .getOrDefault(emptyList())
     }
+
+    private suspend fun loadRecents(): List<Station> = loadRecentsResult().getOrDefault(emptyList())
 
     private suspend fun loadQuickAccess(): List<Station> {
         return (loadFavorites() + loadRecents())
             .distinctBy { it.uuid }
             .take(MAX_CHILDREN)
+    }
+
+    /**
+     * Builds the Android Auto browse root: a "continue where you left off" tile first
+     * (if there's a last-played station and nothing is currently playing — resuming what's
+     * already playing would be redundant), the four category folders, then a "surprise me"
+     * tile last. Both extra tiles use the same [stationItem] path every other station tile
+     * uses, so tapping them plays exactly like tapping any station — no special-cased
+     * resolution logic needed elsewhere in this file.
+     */
+    private suspend fun buildRootChildren(): List<MediaItem> {
+        val items = mutableListOf<MediaItem>()
+
+        if (!playerController.playerState.value.isPlaying) {
+            resumeStationFromSettings()?.let { station ->
+                items += withDisplayTitle(
+                    stationItem(station),
+                    getString(R.string.auto_continue_listening, sanitizeAutoDisplayText(station.name)),
+                )
+            }
+        }
+
+        items += browsableItem(FAVORITES_ID, getString(R.string.auto_favorites))
+        items += browsableItem(RECENTS_ID, getString(R.string.auto_quick_access))
+        items += browsableItem(TOP_STATIONS_ID, getString(R.string.auto_top_stations))
+        items += browsableItem(GENRES_ID, getString(R.string.auto_genres))
+
+        pickSurpriseStation()?.let { station ->
+            items += withDisplayTitle(
+                stationItem(station),
+                getString(R.string.auto_surprise_me, sanitizeAutoDisplayText(station.name)),
+            )
+        }
+
+        return items
+    }
+
+    private fun withDisplayTitle(item: MediaItem, title: String): MediaItem {
+        return item.buildUpon()
+            .setMediaMetadata(item.mediaMetadata.buildUpon().setTitle(title).build())
+            .build()
+    }
+
+    /** Mirrors tryAutoResumeOnConnect's station reconstruction from settings — kept as a
+     *  separate helper since this one is display-only (browse root tile) and must NOT
+     *  advance lastAutoResumeAttemptAtMs or trigger playback itself. */
+    private fun resumeStationFromSettings(): Station? {
+        val settings = settingsState.value
+        val streamUrl = settings.lastStationStreamUrl?.trim().takeUnless { it.isNullOrBlank() } ?: return null
+        val name = settings.lastStationName?.trim().takeUnless { it.isNullOrBlank() }
+            ?: getString(R.string.auto_last_station)
+        return Station(
+            uuid = settings.lastStationUuid?.trim().takeUnless { it.isNullOrBlank() } ?: streamUrl,
+            name = name,
+            streamUrl = streamUrl,
+            faviconUrl = settings.lastStationFaviconUrl,
+            country = settings.lastStationCountry,
+            isCustom = true,
+        )
+    }
+
+    /** Random pick from Quick Access (favorites + recents) — deliberately NOT top stations
+     *  or a fresh network call, since the browse root must render fast (Android Auto's own
+     *  quality guidelines call out slow root loads); Quick Access is already a cheap local
+     *  DB read. Excludes the currently playing station so it doesn't suggest what's already
+     *  on, mirroring HomeViewModel.playRandomStation's phone-side pool logic. */
+    private suspend fun pickSurpriseStation(): Station? {
+        val currentUuid = playerController.playerState.value.currentStation?.uuid
+        val pool = loadQuickAccess().filter { it.streamUrl.isNotBlank() }
+        val candidates = pool.filterNot { it.uuid == currentUuid }
+        // No ifEmpty-to-pool fallback: if the only candidate IS the currently playing
+        // station, there's nothing left to genuinely "surprise" with — showing the tile
+        // anyway would suggest the station already on, which isn't a surprise at all.
+        if (candidates.isEmpty()) return null
+        return candidates.random()
     }
 
     private suspend fun searchStations(query: String): List<Station> {
@@ -886,6 +979,26 @@ class RadioWaveAutoService : MediaLibraryService() {
         return stations.map(::stationItem)
     }
 
+    /**
+     * Distinguishes "genuinely empty" from "failed to load" — a `runCatching` failure
+     * (typically the network call inside a repository) gets its own "check connection"
+     * message instead of collapsing into the same "no stations available" a truly empty
+     * catalog would show. Matters most in a car on flaky cellular, where the two look
+     * identical to the driver otherwise but mean very different things.
+     */
+    private fun asStationChildren(result: Result<List<Station>>): List<MediaItem> {
+        val stations = result.getOrNull()
+        if (stations == null) {
+            return listOf(
+                infoItem(
+                    id = "info:network-error:${SystemClock.elapsedRealtime()}",
+                    title = getString(R.string.auto_network_error),
+                ),
+            )
+        }
+        return asStationChildren(stations)
+    }
+
     private fun asGenreChildren(genres: List<Genre>): List<MediaItem> {
         if (genres.isEmpty()) {
             return listOf(
@@ -900,6 +1013,19 @@ class RadioWaveAutoService : MediaLibraryService() {
             val id = "$GENRE_PREFIX$tag"
             browsableItem(id = id, title = "${genre.name} (${genre.stationCount})")
         }
+    }
+
+    private fun asGenreChildren(result: Result<List<Genre>>): List<MediaItem> {
+        val genres = result.getOrNull()
+        if (genres == null) {
+            return listOf(
+                infoItem(
+                    id = "info:network-error:${SystemClock.elapsedRealtime()}",
+                    title = getString(R.string.auto_network_error),
+                ),
+            )
+        }
+        return asGenreChildren(genres)
     }
 
     private fun infoItem(id: String, title: String): MediaItem {
@@ -1004,6 +1130,10 @@ class RadioWaveAutoService : MediaLibraryService() {
         )
         const val AUTO_RESUME_VERIFY_DELAY_MS = 1800L
         const val AUTO_RESUME_CONNECT_COOLDOWN_MS = 3500L
+        /** See onDisconnected/tryAutoResumeOnConnect: minimum time after a disconnect-
+         *  triggered pause before a reconnect is allowed to auto-resume playback, so a
+         *  same-teardown reconnect blip can't immediately resume on the phone speaker. */
+        const val DISCONNECT_RESUME_GUARD_MS = 2500L
         const val AUTO_RESUME_MAX_ATTEMPTS = 3
         const val SEARCH_REMOTE_TIMEOUT_MS = 3500L
         const val MAX_SEARCH_RESULTS = 20
@@ -1126,6 +1256,27 @@ class RadioWaveAutoService : MediaLibraryService() {
 
     private fun tryAutoResumeOnConnect() {
         val now = SystemClock.elapsedRealtime()
+        // Don't auto-resume if we JUST paused because the user disconnected — see
+        // onDisconnected. Checked separately from the cooldown below because that
+        // cooldown is keyed off the last successful connect, which after any real
+        // drive is already stale/expired by the time of a genuine disconnect, so it
+        // provides no protection against a same-teardown reconnect blip on its own.
+        //
+        // Known tradeoff: this also delays the legitimate "brief AA/BT drop while
+        // still driving, reconnects a second later" case by up to
+        // DISCONNECT_RESUME_GUARD_MS — that path goes through the exact same
+        // onDisconnected -> onPostConnect sequence as a real teardown, and nothing
+        // here can currently tell the two apart. This is a real, disclosed regression
+        // versus the previous (broken) fix's promise of an instant reconnect-resume,
+        // accepted because a ~2.5s delayed resume is a far smaller annoyance than
+        // playback continuing on the phone speaker after the user has actually left
+        // the car — which is this bug's fourth reported occurrence. A more precise
+        // fix would use a debounced OS-level signal for "genuinely connected to a
+        // car" (e.g. androidx.car.app's CarConnection) instead of inferring it from
+        // raw MediaSession controller churn, but that needs a new dependency and
+        // real head-unit testing to verify before shipping — tracked in ROADMAP.md
+        // rather than guessed at here without hardware to validate it against.
+        if (now - lastDisconnectPauseAtMs < DISCONNECT_RESUME_GUARD_MS) return
         if (now - lastAutoResumeAttemptAtMs < AUTO_RESUME_CONNECT_COOLDOWN_MS) return
         lastAutoResumeAttemptAtMs = now
 
