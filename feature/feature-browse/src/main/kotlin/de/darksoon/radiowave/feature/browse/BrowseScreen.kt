@@ -49,6 +49,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -944,7 +945,8 @@ private fun StationGridCard(
                     tint = if (isFavorite) Color(0xFFFF5A7A) else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .size(24.dp)
-                        .padding(4.dp),
+                        .padding(4.dp)
+                        .minimumInteractiveComponentSize(),
                 )
             }
         }

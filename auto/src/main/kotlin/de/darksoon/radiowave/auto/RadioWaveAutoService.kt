@@ -790,10 +790,16 @@ class RadioWaveAutoService : MediaLibraryService() {
         stationCache["$STATION_PREFIX${station.uuid}"] = station
         stationCache[station.streamUrl] = station
 
+        // Security: faviconUrl comes from the same community-editable Radio Browser API
+        // field (or, for fallback stations, from a controller-supplied MediaItem — see
+        // resolveOrCreateStation) as streamUrl, so it needs the same http/https-only guard
+        // to prevent a file:// or content:// URI from being handed to the car's media
+        // notification / image loader.
         val artworkUri = station.faviconUrl
             ?.trim()
             .takeUnless { it.isNullOrBlank() }
             ?.let(Uri::parse)
+            ?.takeIf { it.scheme?.lowercase() in setOf("http", "https") }
 
         return MediaItem.Builder()
             .setMediaId("$STATION_PREFIX${station.uuid}")

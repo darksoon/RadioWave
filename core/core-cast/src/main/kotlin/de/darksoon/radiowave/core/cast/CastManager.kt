@@ -161,9 +161,12 @@ class CastManager @Inject constructor(
             station.country?.takeIf { it.isNotBlank() }?.let {
                 putString(MediaMetadata.KEY_SUBTITLE, it)
             }
+            // Security: faviconUrl is community-editable API data (see PlayerControllerImpl's
+            // matching guard on the same field) — only hand http/https URIs to the Cast SDK.
             station.faviconUrl
                 ?.takeIf { it.isNotBlank() }
                 ?.let(Uri::parse)
+                ?.takeIf { it.scheme?.lowercase() in setOf("http", "https") }
                 ?.let(::WebImage)
                 ?.let(::addImage)
         }

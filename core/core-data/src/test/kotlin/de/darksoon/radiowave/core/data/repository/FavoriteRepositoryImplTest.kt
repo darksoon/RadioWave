@@ -127,8 +127,16 @@ private class FakeFavoriteDao(
         return MutableStateFlow(favoritesFlow.value.any { it.stationUuid == uuid })
     }
 
+    override suspend fun isFavoriteOnce(uuid: String): Boolean {
+        return favoritesFlow.value.any { it.stationUuid == uuid }
+    }
+
     override suspend fun deleteByUuid(uuid: String) {
         favoritesFlow.value = favoritesFlow.value.filterNot { it.stationUuid == uuid }
+    }
+
+    override suspend fun getMaxSortOrder(): Int? {
+        return favoritesFlow.value.maxOfOrNull { it.sortOrder }
     }
 
     fun currentFavorites(): List<FavoriteEntity> = favoritesFlow.value

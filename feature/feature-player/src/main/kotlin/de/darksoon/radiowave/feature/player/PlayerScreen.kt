@@ -39,6 +39,7 @@ import androidx.compose.material.icons.outlined.Shuffle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -246,7 +247,8 @@ fun PlayerScreen(
                         tint = Color.White.copy(alpha = 0.9f),
                         modifier = Modifier
                             .size(30.dp)
-                            .padding(3.dp),
+                            .padding(3.dp)
+                            .minimumInteractiveComponentSize(),
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
@@ -277,7 +279,8 @@ fun PlayerScreen(
                             tint = Color.White.copy(alpha = 0.9f),
                             modifier = Modifier
                                 .size(30.dp)
-                                .padding(6.dp),
+                                .padding(6.dp)
+                                .minimumInteractiveComponentSize(),
                         )
                     }
                     Surface(
@@ -287,7 +290,8 @@ fun PlayerScreen(
                         Box(
                             modifier = Modifier
                                 .size(30.dp)
-                                .padding(6.dp),
+                                .padding(6.dp)
+                                .minimumInteractiveComponentSize(),
                             contentAlignment = Alignment.Center,
                         ) {
                             AndroidView(
@@ -336,7 +340,8 @@ fun PlayerScreen(
                             tint = Color.White.copy(alpha = 0.9f),
                             modifier = Modifier
                                 .size(30.dp)
-                                .padding(6.dp),
+                                .padding(6.dp)
+                                .minimumInteractiveComponentSize(),
                         )
                     }
                 }
@@ -672,7 +677,7 @@ fun PlayerScreen(
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White.copy(alpha = 0.68f),
                         )
-                    } else {
+                    } else if (playerState.error == null) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(5.dp),
@@ -793,6 +798,18 @@ private fun PlayerErrorBanner(error: PlayerError?, onRetry: () -> Unit) {
         is PlayerError.StreamBroken -> stringResource(R.string.player_error_stream_broken)
         is PlayerError.Unknown -> error.message
     }
+    // Retry re-triggers requestAudioFocus()+startPlayback() with no guard of its own — unlike
+    // the mini/fullscreen play-pause buttons, which disable while isBuffering. Without this,
+    // spam-tapping Retry fires overlapping playback attempts and redundant audio-focus churn.
+    // A short cooldown after each tap is enough; the player's own state (buffering/new error)
+    // takes over from there.
+    var retryCooldownActive by remember { mutableStateOf(false) }
+    LaunchedEffect(retryCooldownActive) {
+        if (retryCooldownActive) {
+            kotlinx.coroutines.delay(1_500L)
+            retryCooldownActive = false
+        }
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -810,14 +827,20 @@ private fun PlayerErrorBanner(error: PlayerError?, onRetry: () -> Unit) {
             modifier = Modifier.weight(1f),
         )
         Surface(
-            onClick = onRetry,
+            onClick = {
+                if (!retryCooldownActive) {
+                    retryCooldownActive = true
+                    onRetry()
+                }
+            },
+            enabled = !retryCooldownActive,
             shape = RoundedCornerShape(10.dp),
             color = Color(0xFFFF3B3B).copy(alpha = 0.18f),
         ) {
             Text(
                 text = stringResource(R.string.player_error_retry),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFFFF8A8A),
+                color = Color(0xFFFF8A8A).copy(alpha = if (retryCooldownActive) 0.5f else 1f),
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }
@@ -988,7 +1011,8 @@ private fun PlayerIconButton(
             tint = tint,
             modifier = Modifier
                 .size(42.dp)
-                .padding(8.dp),
+                .padding(8.dp)
+                .minimumInteractiveComponentSize(),
         )
     }
 }

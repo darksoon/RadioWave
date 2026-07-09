@@ -102,13 +102,20 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 
 ## Later
 
-- Further Android Auto expansion (recommendations, more car-specific UX)
+- Further Android Auto expansion — concrete candidates from a 2026-07 competitive review:
+  - "Continue where you left off" as the first item on the browse root, not buried in Recents
+  - "Surprise me" / random-station browsable item — the phone-side random logic already exists (`playRandomStation`), just needs an Auto entry point
+  - Distinct "couldn't load — check connection" vs. "no stations available" messaging in the browse tree (currently both collapse to the same generic empty state, which is misleading on flaky cellular)
+  - Grid template for genre/tag/country browsing instead of only lists (better scannability while driving)
+  - Voice-search suggestion chips seeded from local search history (no telemetry)
 - Podcasts MVP as a dedicated area
 - Android TV / Google TV base (Leanback launcher, D-pad/focus navigation, TV layout MVP)
 - Chromecast expansion
 - Quick-access playback widget
 - More transitions, motion, and shimmer
 - More unit and UI tests
+- Baseline Profiles for cold-start performance
+- True adaptive bitrate reselection on network-type change (WiFi<->cellular), not just at initial station switch
 
 ## Maybe
 
@@ -124,6 +131,12 @@ This roadmap is intended for GitHub and keeps the public product status compact.
   - TTL metadata via `search_cache_meta`
   - clean links between cache, favorites, and recents
 - Optional volume slider in addition to mute
+- Local-only listening stats (on-device only, no server) — fits the privacy-first positioning better than the account-gated insights competitors offer
+- EQ / audio presets via Media3's audio processor APIs — several competitors paywall this, offering it free reinforces the ad-free identity
+- "Similar stations" / discover row using Radio Browser tag/country/language metadata — no tracking or account needed, unlike most competitors' recommendation features
+- Alarm-clock / wake-to-radio — table stakes on some competing apps, currently absent
+- Surface Radio Browser's public click/vote counts in the UI (already reported to, just not displayed from) as a lightweight community-popularity signal
+- Note: offline stream recording was considered and explicitly rejected as a feature — stream recording rights vary by station license, treating it as a legal risk rather than a privacy one
 
 ## Note
 

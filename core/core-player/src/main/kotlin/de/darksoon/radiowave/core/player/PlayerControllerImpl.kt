@@ -781,10 +781,25 @@ class PlayerControllerImpl @Inject constructor(
             .setMediaMetadata(
                 MediaMetadata.Builder()
                     .setTitle(station.name)
-                    .setArtworkUri(station.faviconUrl?.let(Uri::parse))
+                    .setArtworkUri(safeHttpUriOrNull(station.faviconUrl))
                     .build(),
             )
             .build()
+    }
+
+    /**
+     * `faviconUrl` comes from the same community-editable Radio Browser API field as
+     * `streamUrl` (see [createMediaItemOrNull]'s scheme check), so it needs the same
+     * http/https-only guard — otherwise a station with `favicon = "file:///..."` or
+     * `"content://..."` would have that URI handed straight to the media session /
+     * notification / Coil image loader, which can resolve local files and other apps'
+     * exported content providers.
+     */
+    private fun safeHttpUriOrNull(url: String?): Uri? {
+        if (url.isNullOrBlank()) return null
+        val uri = Uri.parse(url)
+        val scheme = uri.scheme?.lowercase()
+        return if (scheme == "http" || scheme == "https") uri else null
     }
 
     private fun restartStream(player: ExoPlayer, station: Station) {

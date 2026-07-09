@@ -25,8 +25,12 @@ class CoverArtRepositoryImpl @Inject constructor(
 
         val cacheKey = "${artist.trim().lowercase()}|${title.trim().lowercase()}"
 
+        // containsKey, not `cache[cacheKey]?.let { ... }` — a prior "no artwork found" lookup
+        // is cached as `null`, which Map.get() can't distinguish from "never looked up". Using
+        // only the null-check let every no-artwork track re-hit the network on every play,
+        // defeating the whole point of caching that (most common) case.
         synchronized(cacheLock) {
-            cache[cacheKey]?.let { return it }
+            if (cache.containsKey(cacheKey)) return cache.getValue(cacheKey)
         }
 
         return try {
