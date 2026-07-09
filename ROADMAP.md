@@ -93,6 +93,8 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - Station artwork URLs validated to http/https before rendering/casting (closes a file://\|content:// injection path)
 - Favorite toggling made atomic (rapid double-taps / Android Auto + phone racing could invert the second tap)
 - GitHub Actions pinned to commit SHAs; a shell-injection path in the manual build workflow closed
+- Settings > Data already has a battery-optimization-exemption tip with a direct system-settings link (found already implemented during the 2026-07-09 quick-wins pass — a research-suggested item turned out to already be shipped, just undocumented here)
+- Community popularity signal: station cards now show a 🔥 badge from Radio Browser's public click-count when notably high — no tracking, aggregate public data only
 
 ## In Progress
 
@@ -142,8 +144,6 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - Local-only listening stats (on-device only, no server) — fits the privacy-first positioning better than the account-gated insights competitors offer
 - "Similar stations" / discover row using Radio Browser tag/country/language metadata — no tracking or account needed, unlike most competitors' recommendation features
 - Alarm-clock / wake-to-radio — table stakes on some competing apps, currently absent
-- Surface Radio Browser's public click/vote counts in the UI (already reported to, just not displayed from) as a lightweight community-popularity signal
-- One-time settings tip linking to the device's battery-optimization exemption screen (OEM-specific deep link, no telemetry) — aggressive OEM battery managers (Xiaomi/Huawei/Samsung) killing background audio is a recurring complaint across multiple radio apps, not something RadioWave's own playback hardening alone can fully prevent
 - Note: offline stream recording was considered and explicitly rejected as a feature — stream recording rights vary by station license, treating it as a legal risk rather than a privacy one
 
 ## Note

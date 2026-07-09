@@ -92,6 +92,8 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Sender-Artwork-URLs werden vor Rendering/Casting auf http/https geprueft (schliesst einen file://\|content://-Injektionspfad)
 - Favoriten-Toggle atomar gemacht (schnelles Doppel-Tippen / Android Auto + Handy gleichzeitig konnte den zweiten Tap invertieren)
 - GitHub Actions auf Commit-SHAs gepinnt; eine Shell-Injection-Luecke im manuellen Build-Workflow geschlossen
+- Einstellungen > Daten hat bereits einen Akku-Optimierungs-Ausnahme-Hinweis mit direktem Link zu den Systemeinstellungen (beim Quick-Wins-Durchgang vom 2026-07-09 als schon vorhanden entdeckt — ein durch Recherche vorgeschlagener Punkt war tatsaechlich schon umgesetzt, nur hier nicht dokumentiert)
+- Community-Popularitaetssignal: Sender-Karten zeigen jetzt ein 🔥-Badge aus Radio Browsers oeffentlicher Klick-Zahl bei auffaellig hohen Werten — kein Tracking, nur aggregierte oeffentliche Daten
 
 ## In Arbeit
 
@@ -141,8 +143,6 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Rein lokale Hoerstatistiken (nur auf dem Geraet, kein Server) — passt besser zur Privacy-first-Ausrichtung als die account-gebundenen Insights der Konkurrenz
 - "Aehnliche Sender" / Discover-Zeile ueber Radio-Browser-Tag-/Land-/Sprach-Metadaten — kein Tracking oder Account noetig, anders als bei den meisten Empfehlungsfunktionen der Konkurrenz
 - Wecker-Funktion / Aufwachen mit Radio — bei manchen Wettbewerbern Standard, aktuell nicht vorhanden
-- Radio Browsers oeffentliche Klick-/Vote-Zahlen in der UI anzeigen (werden bereits gemeldet, aber nicht angezeigt) als leichtgewichtiges Community-Popularitaetssignal
-- Einmaliger Einstellungs-Hinweis mit Link zum Akku-Optimierungs-Ausnahme-Bildschirm des Geraets (OEM-spezifischer Deep-Link, kein Tracking) — aggressive OEM-Akkumanager (Xiaomi/Huawei/Samsung), die Hintergrund-Audio killen, sind eine wiederkehrende Beschwerde bei mehreren Radio-Apps, dagegen kann RadioWaves eigene Playback-Haertung allein nicht vollstaendig schuetzen
 - Hinweis: Offline-Stream-Aufnahme wurde geprueft und bewusst verworfen — Aufnahmerechte variieren je nach Sender-Lizenz, das ist ein rechtliches Risiko, kein Privacy-Thema
 
 ## Hinweis
