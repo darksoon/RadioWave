@@ -31,6 +31,11 @@ fun RadioBrowserStation.toDomain(): Station {
         tags = tags?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList(),
         codec = codec,
         bitrate = bitrate,
+        // Only ever populated from a fresh network response (see Station.clickCount's
+        // default of 0) — the local `stations` cache table has no column for it, since
+        // a stale click count from a cached row isn't a meaningful popularity signal
+        // and adding one would mean another Room migration for a nice-to-have.
+        clickCount = clickCount ?: 0,
     )
 }
 

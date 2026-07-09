@@ -52,6 +52,7 @@
     <string name="settings_quality_low">Niedrig</string>
     <string name="settings_quality_medium">Mittel</string>
     <string name="settings_quality_high">Hoch</string>
+    <string name="settings_data_usage_estimate">≈ %1$d MB pro Stunde Wiedergabe bei dieser Qualität</string>
     <string name="settings_eq_preset_title">Equalizer-Preset</string>
     <string name="settings_eq_preset_flat">Normal</string>
     <string name="settings_eq_preset_bass_boost">Bass-Boost</string>
@@ -91,6 +92,16 @@
     <string name="settings_clear_cache">Cache leeren</string>
     <string name="settings_history_cleared">Verlauf gelöscht</string>
     <string name="settings_clear_history">Verlauf löschen</string>
+    <string name="settings_favorites_backup_title">Favoriten-Backup</string>
+    <string name="settings_favorites_backup_subtitle">Sichere deine Favoriten in einer Datei oder stelle sie aus einem früheren Backup wieder her.</string>
+    <string name="settings_export_favorites">Favoriten exportieren</string>
+    <string name="settings_import_favorites">Favoriten importieren</string>
+    <string name="settings_export_favorites_success">Favoriten exportiert</string>
+    <string name="settings_export_favorites_failed">Favoriten konnten nicht exportiert werden</string>
+    <string name="settings_import_favorites_read_failed">Die ausgewählte Datei konnte nicht gelesen werden</string>
+    <string name="settings_import_favorites_parse_error">Diese Datei ist kein gültiges RadioWave-Favoriten-Backup</string>
+    <string name="settings_import_favorites_unsupported_version">Dieses Backup wurde mit einer neueren RadioWave-Version erstellt und kann noch nicht importiert werden</string>
+    <string name="settings_import_favorites_result">%1$d Favoriten importiert (%2$d bereits vorhanden, %3$d übersprungen)</string>
     <string name="settings_version_label">Version</string>
     <string name="settings_github_repository_title">GitHub-Repository</string>
     <string name="settings_github_repository_value">darksoon/RadioWave</string>

@@ -25,4 +25,7 @@
     <string name="favorites_cd_pause">Pause</string>
     <string name="favorites_cd_add">Sender hinzufügen</string>
     <string name="favorites_add_custom_url_invalid">Muss mit http:// oder https:// beginnen</string>
+    <string name="favorites_import_playlist">Aus M3U/PLS-Datei importieren</string>
+    <string name="favorites_import_empty">Keine importierbaren Sender in dieser Datei gefunden.</string>
+    <string name="favorites_import_result">%1$d Sender importiert, %2$d uebersprungen.</string>
 </resources>

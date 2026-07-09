@@ -2,6 +2,9 @@
 
 package de.darksoon.radiowave.feature.favorites
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,6 +35,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material.icons.filled.VerticalAlignTop
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.AlertDialog
@@ -48,12 +52,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -69,6 +75,7 @@ import de.darksoon.radiowave.core.ui.components.StationLogoImage
 import de.darksoon.radiowave.core.ui.components.StreamQualityBadge
 import de.darksoon.radiowave.core.ui.theme.RadioAccent
 import de.darksoon.radiowave.feature.favorites.R
+import kotlinx.coroutines.launch
 
 @Composable
 fun FavoritesScreen(
@@ -82,6 +89,27 @@ fun FavoritesScreen(
     var pendingDeleteCustomUuid by remember { mutableStateOf<String?>(null) }
     var showAddCustomDialog by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val importEmptyMessage = stringResource(R.string.favorites_import_empty)
+    val importResultTemplate = stringResource(R.string.favorites_import_result)
+    val importPlaylistLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        // uri is null when the user cancels the picker — nothing to do.
+        if (uri == null) return@rememberLauncherForActivityResult
+        coroutineScope.launch {
+            val result = viewModel.importPlaylist(uri)
+            val message = if (result.totalFound == 0) {
+                importEmptyMessage
+            } else {
+                String.format(importResultTemplate, result.imported, result.skipped)
+            }
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        }
+    }
+    val onImportPlaylist = { importPlaylistLauncher.launch(arrayOf("*/*")) }
+
     when {
         uiState.isLoading -> FavoritesSkeletonLoader(modifier = modifier)
         uiState.error != null -> ErrorState(
@@ -91,6 +119,7 @@ fun FavoritesScreen(
         )
         uiState.stations.isEmpty() && uiState.customStations.isEmpty() -> EmptyFavorites(
             onAddCustom = { showAddCustomDialog = true },
+            onImportPlaylist = onImportPlaylist,
             modifier = modifier,
         )
         else -> FavoritesContent(
@@ -110,6 +139,7 @@ fun FavoritesScreen(
             onMoveFavoriteToTop = viewModel::moveFavoriteToTop,
             onDeleteCustomStation = { station -> pendingDeleteCustomUuid = station.uuid },
             onAddCustomStation = { showAddCustomDialog = true },
+            onImportPlaylist = onImportPlaylist,
             modifier = modifier,
         )
     }
@@ -185,6 +215,7 @@ private fun FavoritesContent(
     onMoveFavoriteToTop: (Station) -> Unit,
     onDeleteCustomStation: (Station) -> Unit,
     onAddCustomStation: () -> Unit,
+    onImportPlaylist: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyVerticalGrid(
@@ -251,28 +282,54 @@ private fun FavoritesContent(
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = Color.White.copy(alpha = 0.85f),
                 )
-                Surface(
-                    onClick = onAddCustomStation,
-                    shape = RoundedCornerShape(10.dp),
-                    color = RadioAccent.copy(alpha = 0.14f),
-                    border = BorderStroke(1.dp, RadioAccent.copy(alpha = 0.35f)),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Surface(
+                        onClick = onImportPlaylist,
+                        shape = RoundedCornerShape(10.dp),
+                        color = RadioAccent.copy(alpha = 0.14f),
+                        border = BorderStroke(1.dp, RadioAccent.copy(alpha = 0.35f)),
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = null,
-                            tint = RadioAccent,
-                            modifier = Modifier.size(14.dp),
-                        )
-                        Text(
-                            text = stringResource(R.string.favorites_add_custom_station),
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = RadioAccent,
-                            modifier = Modifier.padding(start = 4.dp),
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.UploadFile,
+                                contentDescription = null,
+                                tint = RadioAccent,
+                                modifier = Modifier.size(14.dp),
+                            )
+                            Text(
+                                text = stringResource(R.string.favorites_import_playlist),
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = RadioAccent,
+                                modifier = Modifier.padding(start = 4.dp),
+                            )
+                        }
+                    }
+                    Surface(
+                        onClick = onAddCustomStation,
+                        shape = RoundedCornerShape(10.dp),
+                        color = RadioAccent.copy(alpha = 0.14f),
+                        border = BorderStroke(1.dp, RadioAccent.copy(alpha = 0.35f)),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Add,
+                                contentDescription = null,
+                                tint = RadioAccent,
+                                modifier = Modifier.size(14.dp),
+                            )
+                            Text(
+                                text = stringResource(R.string.favorites_add_custom_station),
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = RadioAccent,
+                                modifier = Modifier.padding(start = 4.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -567,7 +624,7 @@ private fun LogoFallback(stationName: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun EmptyFavorites(onAddCustom: () -> Unit, modifier: Modifier = Modifier) {
+private fun EmptyFavorites(onAddCustom: () -> Unit, onImportPlaylist: () -> Unit, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier.fillMaxSize().padding(18.dp),
         contentAlignment = Alignment.Center,
@@ -638,6 +695,31 @@ private fun EmptyFavorites(onAddCustom: () -> Unit, modifier: Modifier = Modifie
                     )
                     Text(
                         text = stringResource(R.string.favorites_add_custom_station),
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                        color = RadioAccent,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Surface(
+                onClick = onImportPlaylist,
+                shape = RoundedCornerShape(14.dp),
+                color = RadioAccent.copy(alpha = 0.06f),
+                border = BorderStroke(1.dp, RadioAccent.copy(alpha = 0.24f)),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                ) {
+                    Icon(
+                        Icons.Filled.UploadFile,
+                        contentDescription = stringResource(R.string.favorites_import_playlist),
+                        tint = RadioAccent,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Text(
+                        text = stringResource(R.string.favorites_import_playlist),
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                         color = RadioAccent,
                         modifier = Modifier.padding(start = 8.dp),

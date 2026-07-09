@@ -80,6 +80,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.darksoon.radiowave.core.ui.components.BrowseSkeletonLoader
 import de.darksoon.radiowave.core.ui.components.StationLogoImage
+import de.darksoon.radiowave.core.ui.components.PopularityBadge
 import de.darksoon.radiowave.core.ui.components.StreamQualityBadge
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.ui.theme.CardBodyStyle
@@ -894,13 +895,15 @@ private fun StationGridCard(
                         .padding(top = 2.dp),
                 )
 
-                StreamQualityBadge(
-                    codec = station.codec,
-                    bitrate = station.bitrate,
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier
                         .align(Alignment.Start)
                         .padding(top = 4.dp),
-                )
+                ) {
+                    StreamQualityBadge(codec = station.codec, bitrate = station.bitrate)
+                    PopularityBadge(clickCount = station.clickCount)
+                }
             }
             if (showInsecureBadge && station.streamUrl.isInsecureHttpStream()) {
                 Surface(

@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file.
 - Free EQ presets (Flat, Bass Boost, Treble Boost, Vocal) in Settings > Sound — several competing radio apps paywall EQ, offering it free reinforces RadioWave's ad-free identity.
 - Android Auto browse root now shows a "Continue: <station>" tile (when there's a last-played station and nothing is currently playing) and a "Surprise me: <station>" tile (a random pick from Favorites + Recents).
 - Android Auto's Top Stations/Genres browsing now distinguishes "couldn't load — check connection" from "genuinely empty" instead of showing the same message for both — clearer on flaky cellular in a moving car.
+- Favorites export/import (JSON) in Settings > Storage & Data — a self-service backup independent of any future app-side bug, additive/merge on import rather than destructive.
+- Import custom stations in bulk from an M3U/M3U8 or PLS playlist file, alongside the existing single-URL add flow.
+- Station cards now show a 🔥 popularity badge from Radio Browser's public click-count on notably popular stations — aggregate public data, not user tracking.
+- Live data-usage estimate ("≈ N MB per hour") shown under the default-quality picker in Settings.
 
 ### Fixed
 - **Data:** Favorites/recents that predated the v1->v2 or v2->v3 database migration had silently lost their name and stream URL (defaulted to `''` instead of being backfilled) — a new migration repairs what it can from the stations cache and removes entries it can't.
