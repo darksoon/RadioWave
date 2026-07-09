@@ -23,7 +23,7 @@ import de.darksoon.radiowave.core.database.entity.StationEntity
         RecentEntity::class,
         CustomStationEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 abstract class RadioWaveDatabase : RoomDatabase() {
