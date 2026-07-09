@@ -19,27 +19,40 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.0
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.7.1
         with:
           distribution: temurin
           java-version: "21"
           cache: gradle
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
       - name: Run manual Gradle task
-        run: ./gradlew ${{ github.event.inputs.gradle_task }} --stacktrace
+        env:
+          GRADLE_TASK: ${{ github.event.inputs.gradle_task }}
+        run: |
+          # Interpolating the raw input into the shell command line would let anyone who
+          # can trigger workflow_dispatch (any collaborator with write access) inject
+          # arbitrary shell via a crafted task name (e.g. "assembleDebug; curl ... | sh").
+          # Passing it through an env var instead of `${{ }}` string interpolation avoids
+          # that, and the allowlist below keeps this to plausible Gradle task syntax only.
+          if [[ ! "$GRADLE_TASK" =~ ^[A-Za-z0-9:_./\ -]+$ ]]; then
+            echo "::error::gradle_task contains disallowed characters: $GRADLE_TASK"
+            exit 1
+          fi
+          # shellcheck disable=SC2086
+          ./gradlew $GRADLE_TASK --stacktrace
 
       - name: Upload APK/AAB/native artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: android-build-artifacts
           path: |
