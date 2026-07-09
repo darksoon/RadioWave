@@ -101,13 +101,20 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 
 ## Spaeter
 
-- Weiterer Android-Auto-Ausbau (Recommendations, mehr car-spezifische UX)
+- Weiterer Android-Auto-Ausbau — konkrete Kandidaten aus einer Wettbewerbs-Recherche (2026-07):
+  - "Weiter, wo ich aufgehoert habe" als erstes Element im Browse-Root statt versteckt unter Recents
+  - "Ueberrasch mich" / Zufalls-Sender als eigener Browse-Eintrag — die Zufallslogik existiert phone-seitig bereits (`playRandomStation`), braucht nur einen Auto-Einstiegspunkt
+  - Klare Unterscheidung "konnte nicht laden — Verbindung pruefen" vs. "keine Sender verfuegbar" im Browse-Baum (aktuell beides derselbe generische Leerzustand — irrefuehrend bei schlechtem Empfang)
+  - Grid-Template fuer Genre-/Tag-/Laender-Browsing statt nur Listen (besser ueberblickbar waehrend der Fahrt)
+  - Sprachsuche-Vorschlaege aus lokaler Suchhistorie (kein Tracking)
 - Podcasts-MVP als eigener Bereich
 - Android TV / Google TV Basis (Leanback-Launcher, D-Pad-/Focus-Navigation, TV-Layout-MVP)
 - Chromecast-Ausbau
 - Schneller Playback-Widget-Zugriff
 - Mehr Transitions, Motion und Shimmer
 - Mehr Unit- und UI-Tests
+- Baseline Profiles fuer schnelleren Kaltstart
+- Echte adaptive Bitrate-Neuwahl bei Netzwerkwechsel (WLAN<->Mobilfunk), nicht nur beim initialen Senderwechsel
 
 ## Maybe
 
@@ -123,6 +130,12 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
   - TTL-Metadaten ueber `search_cache_meta`
   - saubere Verknuepfung zwischen Cache, Favoriten und Recents
 - Optionaler Lautstaerke-Slider zusaetzlich zu Mute
+- Rein lokale Hoerstatistiken (nur auf dem Geraet, kein Server) — passt besser zur Privacy-first-Ausrichtung als die account-gebundenen Insights der Konkurrenz
+- EQ / Audio-Presets ueber Media3s Audio-Processor-APIs — mehrere Wettbewerber legen das hinter eine Paywall, kostenlos anzubieten unterstreicht die werbefreie Identitaet
+- "Aehnliche Sender" / Discover-Zeile ueber Radio-Browser-Tag-/Land-/Sprach-Metadaten — kein Tracking oder Account noetig, anders als bei den meisten Empfehlungsfunktionen der Konkurrenz
+- Wecker-Funktion / Aufwachen mit Radio — bei manchen Wettbewerbern Standard, aktuell nicht vorhanden
+- Radio Browsers oeffentliche Klick-/Vote-Zahlen in der UI anzeigen (werden bereits gemeldet, aber nicht angezeigt) als leichtgewichtiges Community-Popularitaetssignal
+- Hinweis: Offline-Stream-Aufnahme wurde geprueft und bewusst verworfen — Aufnahmerechte variieren je nach Sender-Lizenz, das ist ein rechtliches Risiko, kein Privacy-Thema
 
 ## Hinweis
 

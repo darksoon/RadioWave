@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Data:** Favorites/recents that predated the v1->v2 or v2->v3 database migration had silently lost their name and stream URL (defaulted to `''` instead of being backfilled) — a new migration repairs what it can from the stations cache and removes entries it can't.
+- **Security:** Station artwork (`favicon`) is now validated to `http`/`https` before being handed to the media notification, Android Auto, Chromecast, or the image loader — it comes from the same community-editable API field as the stream URL, which already had this guard.
+- **Favorites:** Toggling a favorite is now atomic — rapid double-taps (or Android Auto and the phone UI toggling at nearly the same moment) could previously both read the same pre-toggle state and invert the second tap's intent.
+- Cover art lookups with no result were being re-fetched from the iTunes API on every play instead of staying cached as a negative result.
+- Favorites list items were missing their `addedAt` timestamp in the domain model (silently defaulted to "now" on every load).
+- Fullscreen player (portrait) showed the pulsing LIVE indicator at the same time as an active error banner.
+- Sleep timer no longer loses track of itself if the app is swiped away from Recents while still streaming — timer state now lives alongside playback itself instead of in Activity UI state.
+- Retry button on the player error banner now has a short cooldown instead of firing overlapping playback attempts on repeated taps.
+- Touch targets in the fullscreen player header/controls, mini player, and Browse grid's favorite toggle raised to the 48dp accessibility minimum (Favorites list already had this).
+
+### Security
+- GitHub Actions in all three workflows pinned to commit SHAs instead of floating version tags.
+- Fixed a shell-injection path in the manual build workflow's `gradle_task` input.
+
 ## [1.0.5] - 2026-05-10
 
 ### Added
