@@ -22,7 +22,13 @@ jobs:
       - name: Set up JDK 21
         uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.7.1
         with:
-          distribution: temurin
+          # zulu, not temurin: Temurin's installer downloads the JDK tarball directly from
+          # github.com/adoptium/*-binaries/releases — that host is unreachable from our
+          # self-hosted runner (connect ETIMEDOUT), while GitHub's API/asset subdomains and
+          # every other CDN we've checked (Azul, Amazon, BellSoft) work fine. Zulu is Azul's
+          # OpenJDK build, downloaded from cdn.azul.com — functionally equivalent OpenJDK,
+          # just not routed through the blocked host.
+          distribution: zulu
           java-version: "21"
           cache: gradle
 
