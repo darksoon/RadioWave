@@ -102,6 +102,11 @@
     <string name="settings_import_favorites_parse_error">Diese Datei ist kein gültiges RadioWave-Favoriten-Backup</string>
     <string name="settings_import_favorites_unsupported_version">Dieses Backup wurde mit einer neueren RadioWave-Version erstellt und kann noch nicht importiert werden</string>
     <string name="settings_import_favorites_result">%1$d Favoriten importiert (%2$d bereits vorhanden, %3$d übersprungen)</string>
+    <string name="settings_import_playlist_title">Sender aus Playlist importieren</string>
+    <string name="settings_import_playlist_subtitle">Custom-Sender im Bulk aus einer M3U/M3U8- oder PLS-Playlist-Datei hinzufügen.</string>
+    <string name="settings_import_playlist_action">Playlist importieren</string>
+    <string name="settings_import_playlist_empty">Keine importierbaren Sender in dieser Datei gefunden</string>
+    <string name="settings_import_playlist_result">%1$d Sender importiert, %2$d übersprungen</string>
     <string name="settings_version_label">Version</string>
     <string name="settings_github_repository_title">GitHub-Repository</string>
     <string name="settings_github_repository_value">darksoon/RadioWave</string>
