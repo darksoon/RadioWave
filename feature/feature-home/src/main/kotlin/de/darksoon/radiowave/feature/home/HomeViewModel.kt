@@ -64,6 +64,13 @@ class HomeViewModel @Inject constructor(
 
     val playerState: StateFlow<de.darksoon.radiowave.core.model.PlayerState> = playerManager.playerState
 
+    val sleepTimerEndsAtElapsedMs: StateFlow<Long?> = playerManager.sleepTimerEndsAtElapsedMs
+
+    /** Pass `null` to cancel an active timer. */
+    fun setSleepTimer(minutes: Int?) {
+        playerManager.setSleepTimer(minutes)
+    }
+
     // Derive favorite IDs directly from the favorites repository.
     val favoriteStationIds: StateFlow<Set<String>> = favoriteRepository.getFavorites()
         .map { favs -> favs.mapTo(HashSet<String>(favs.size)) { it.uuid } as Set<String> }

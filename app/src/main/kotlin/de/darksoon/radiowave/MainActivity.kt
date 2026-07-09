@@ -489,7 +489,11 @@ fun RadioWaveMainScreen(
     val keepScreenOnFullscreen = appSettings.keepScreenOnFullscreen
     val showQuickToasts = appSettings.showQuickToasts
     var showFullscreenPlayer by rememberSaveable { mutableStateOf(false) }
-    var sleepTimerEndsAtElapsedMs by rememberSaveable { mutableStateOf<Long?>(null) }
+    // Source of truth lives in RadioPlayerManager (process-lifetime singleton), not here —
+    // Activity-scoped rememberSaveable state is lost when the Activity is finished rather
+    // than recreated (e.g. swiped away from Recents), which silently defeated the sleep
+    // timer while the foreground playback service kept streaming. See setSleepTimer().
+    val sleepTimerEndsAtElapsedMs by homeViewModel.sleepTimerEndsAtElapsedMs.collectAsStateWithLifecycle()
     // Local UI state — initialised from DataStore once, then driven by user
     // actions (Skip/Finish/RestartOnboarding). Re-keying on the flow value
     // would clobber the "Restart Onboarding" button: as soon as DataStore
@@ -554,15 +558,16 @@ fun RadioWaveMainScreen(
         }
     }
 
+    // Stopping playback is owned by RadioPlayerManager.setSleepTimer() now — it fires
+    // reliably even if this Activity isn't alive to observe it. This effect just closes the
+    // fullscreen sheet as a UI nicety when the Activity IS alive when the timer elapses; if
+    // the app was relaunched after the timer already fired elsewhere, sleepTimerEndsAtElapsedMs
+    // is already null by the time it's collected above, so this is a correct no-op.
     LaunchedEffect(sleepTimerEndsAtElapsedMs) {
         val endsAt = sleepTimerEndsAtElapsedMs ?: return@LaunchedEffect
         val delayMs = (endsAt - SystemClock.elapsedRealtime()).coerceAtLeast(0L)
         kotlinx.coroutines.delay(delayMs)
-        if (sleepTimerEndsAtElapsedMs == endsAt) {
-            sleepTimerEndsAtElapsedMs = null
-            showFullscreenPlayer = false
-            homeViewModel.stopPlayback()
-        }
+        showFullscreenPlayer = false
     }
 
     val navigateToTopLevel: (String) -> Unit = { route ->
@@ -786,9 +791,7 @@ fun RadioWaveMainScreen(
                         onVolumeToggle = { homeViewModel.toggleMute() },
                         onRandomStationClick = { homeViewModel.playRandomStation() },
                         onSleepTimerClick = { minutes ->
-                            sleepTimerEndsAtElapsedMs = minutes?.let {
-                                SystemClock.elapsedRealtime() + (it * 60_000L)
-                            }
+                            homeViewModel.setSleepTimer(minutes)
                         },
                         sleepTimerRemainingMs = sleepTimerEndsAtElapsedMs?.let { endsAt ->
                             (endsAt - SystemClock.elapsedRealtime()).coerceAtLeast(0L)
