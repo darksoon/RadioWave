@@ -10,6 +10,8 @@ import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -86,12 +88,19 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import de.darksoon.radiowave.core.model.AppSettings
 import de.darksoon.radiowave.core.model.DataUsageEstimate
+import de.darksoon.radiowave.core.model.FavoritesImportOutcome
 import kotlin.math.roundToInt
 import de.darksoon.radiowave.core.data.update.LocalIssueReporter
 import de.darksoon.radiowave.core.ui.theme.DarkCardBackground
 import de.darksoon.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.darksoon.radiowave.core.ui.theme.RadioAccent
 import de.darksoon.radiowave.feature.settings.R
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun SettingsScreen(
@@ -143,6 +152,73 @@ fun SettingsScreen(
     }
     val lifecycleOwner = LocalLifecycleOwner.current
     var selectedCategory by rememberSaveable { mutableStateOf<SettingsCategory?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+
+    // SAF pickers for favorites export/import. Declared unconditionally (not inside the DATA
+    // branch below) so the launcher's ActivityResultContract registration doesn't depend on
+    // which settings category happens to be selected.
+    val exportFavoritesLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json"),
+    ) { uri ->
+        // uri is null if the user cancelled the picker — nothing to do, no toast.
+        if (uri == null) return@rememberLauncherForActivityResult
+        viewModel.exportFavorites { favoritesJson ->
+            coroutineScope.launch {
+                val success = withContext(Dispatchers.IO) {
+                    runCatching {
+                        context.contentResolver.openOutputStream(uri)?.use { stream ->
+                            stream.write(favoritesJson.toByteArray(Charsets.UTF_8))
+                        } ?: error("openOutputStream returned null")
+                    }.isSuccess
+                }
+                Toast.makeText(
+                    context,
+                    context.getString(
+                        if (success) R.string.settings_export_favorites_success
+                        else R.string.settings_export_favorites_failed,
+                    ),
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
+    }
+    val importFavoritesLauncher = rememberLauncherForActivityResult(
+        // Broad MIME type: some file pickers/other apps don't reliably tag exported JSON as
+        // application/json, and we validate the content ourselves by trying to parse it.
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        coroutineScope.launch {
+            val fileContent = withContext(Dispatchers.IO) {
+                runCatching {
+                    context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                }.getOrNull()
+            }
+            if (fileContent == null) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.settings_import_favorites_read_failed),
+                    Toast.LENGTH_SHORT,
+                ).show()
+                return@launch
+            }
+            viewModel.importFavorites(fileContent) { outcome ->
+                val message = when (outcome) {
+                    is FavoritesImportOutcome.Success -> context.getString(
+                        R.string.settings_import_favorites_result,
+                        outcome.imported,
+                        outcome.skippedExisting,
+                        outcome.skippedInvalid,
+                    )
+                    FavoritesImportOutcome.ParseError ->
+                        context.getString(R.string.settings_import_favorites_parse_error)
+                    is FavoritesImportOutcome.UnsupportedVersion ->
+                        context.getString(R.string.settings_import_favorites_unsupported_version)
+                }
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     DisposableEffect(lifecycleOwner, context) {
         val observer = LifecycleEventObserver { _, event ->
@@ -538,6 +614,21 @@ fun SettingsScreen(
                                 Text(stringResource(R.string.settings_clear_history))
                             }
                         }
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingActionRow(
+                            title = stringResource(R.string.settings_favorites_backup_title),
+                            subtitle = stringResource(R.string.settings_favorites_backup_subtitle),
+                            actionLabel = stringResource(R.string.settings_export_favorites),
+                            onActionClick = {
+                                exportFavoritesLauncher.launch(defaultFavoritesExportFileName())
+                            },
+                            secondaryActionLabel = stringResource(R.string.settings_import_favorites),
+                            onSecondaryActionClick = {
+                                // Broadest possible filter — some apps export JSON tagged as
+                                // text/plain or octet-stream; content is validated by parsing.
+                                importFavoritesLauncher.launch(arrayOf("*/*"))
+                            },
+                        )
                     }
 
                     SettingsCategory.INFO -> SettingsCard(title = stringResource(R.string.settings_category_info_title)) {
@@ -1170,6 +1261,12 @@ private fun rememberAppVersion(context: Context): String {
             context.getString(R.string.settings_unknown)
         }
     }
+}
+
+/** Default filename suggested to the SAF "Create Document" picker when exporting favorites. */
+private fun defaultFavoritesExportFileName(): String {
+    val date = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+    return "radiowave-favorites-$date.json"
 }
 
 private fun isBatteryOptimizationExcluded(context: Context): Boolean {

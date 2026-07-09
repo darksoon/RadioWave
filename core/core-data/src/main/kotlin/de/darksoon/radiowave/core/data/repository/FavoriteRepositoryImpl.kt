@@ -7,10 +7,14 @@ import de.darksoon.radiowave.core.data.mapper.toFavoriteEntity
 import de.darksoon.radiowave.core.database.dao.CustomStationDao
 import de.darksoon.radiowave.core.database.dao.FavoriteDao
 import de.darksoon.radiowave.core.database.entity.FavoriteEntity
+import de.darksoon.radiowave.core.model.FavoritesExport
+import de.darksoon.radiowave.core.model.FavoritesImportOutcome
 import de.darksoon.radiowave.core.model.Station
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,6 +22,7 @@ import javax.inject.Singleton
 class FavoriteRepositoryImpl @Inject constructor(
     private val favoriteDao: FavoriteDao,
     private val customStationDao: CustomStationDao,
+    private val json: Json,
 ) : FavoriteRepository {
 
     override fun getFavorites(): Flow<List<Station>> {
@@ -88,6 +93,50 @@ class FavoriteRepositoryImpl @Inject constructor(
                 ),
             )
         }
+    }
+
+    override suspend fun exportFavoritesJson(): String {
+        val favorites = getFavorites().firstOrNull().orEmpty()
+        val export = FavoritesExport(
+            exportedAt = System.currentTimeMillis(),
+            stations = favorites,
+        )
+        return json.encodeToString(FavoritesExport.serializer(), export)
+    }
+
+    override suspend fun importFavoritesJson(jsonString: String): FavoritesImportOutcome {
+        val export = try {
+            json.decodeFromString(FavoritesExport.serializer(), jsonString)
+        } catch (_: SerializationException) {
+            return FavoritesImportOutcome.ParseError
+        } catch (_: IllegalArgumentException) {
+            return FavoritesImportOutcome.ParseError
+        }
+
+        if (export.version > FavoritesExport.CURRENT_VERSION) {
+            return FavoritesImportOutcome.UnsupportedVersion(export.version)
+        }
+
+        var imported = 0
+        var skippedExisting = 0
+        var skippedInvalid = 0
+        for (station in export.stations) {
+            // Mirror the same "playable station" validation used elsewhere (e.g.
+            // FavoritesViewModel.isValidStreamUrl / AddCustomStationDialog): a blank uuid or
+            // streamUrl means the entry can't be turned into a usable favorite, so skip it
+            // individually rather than failing the whole import.
+            if (station.uuid.isBlank() || station.streamUrl.isBlank()) {
+                skippedInvalid++
+                continue
+            }
+            val added = favoriteDao.addFavoriteIfAbsent(station.toFavoriteEntity())
+            if (added) imported++ else skippedExisting++
+        }
+        return FavoritesImportOutcome.Success(
+            imported = imported,
+            skippedExisting = skippedExisting,
+            skippedInvalid = skippedInvalid,
+        )
     }
 }
 

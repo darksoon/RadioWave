@@ -6,10 +6,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.darksoon.radiowave.core.data.repository.AppSettingsState
+import de.darksoon.radiowave.core.data.repository.FavoriteRepository
 import de.darksoon.radiowave.core.data.repository.OfflineFirstStationRepository
 import de.darksoon.radiowave.core.data.repository.RecentRepository
 import de.darksoon.radiowave.core.data.repository.SettingsRepository
 import de.darksoon.radiowave.core.database.dao.StationDao
+import de.darksoon.radiowave.core.model.FavoritesImportOutcome
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -22,6 +24,7 @@ class SettingsViewModel @Inject constructor(
     private val stationDao: StationDao,
     private val stationRepository: OfflineFirstStationRepository,
     private val settingsRepository: SettingsRepository,
+    private val favoriteRepository: FavoriteRepository,
 ) : ViewModel() {
 
     /** Snapshot of all settings — observed reactively by the UI. */
@@ -61,6 +64,24 @@ class SettingsViewModel @Inject constructor(
             stationDao.deleteAllStations()
             // Also clear the in-memory search cache so results are visibly gone
             stationRepository.clearSearchCache()
+        }
+    }
+
+    /**
+     * Serializes the current favorites to JSON and hands it to [onResult] — the caller (the
+     * Composable) is responsible for writing it to the SAF `Uri` it obtained from the
+     * `CreateDocument` picker, since that's a `ContentResolver`/`Context` concern.
+     */
+    fun exportFavorites(onResult: (String) -> Unit) {
+        viewModelScope.launch {
+            onResult(favoriteRepository.exportFavoritesJson())
+        }
+    }
+
+    /** Parses and merges [json] (read by the caller from the SAF `OpenDocument` result). */
+    fun importFavorites(json: String, onResult: (FavoritesImportOutcome) -> Unit) {
+        viewModelScope.launch {
+            onResult(favoriteRepository.importFavoritesJson(json))
         }
     }
 }

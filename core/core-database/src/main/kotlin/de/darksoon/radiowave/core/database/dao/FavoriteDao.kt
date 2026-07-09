@@ -55,5 +55,21 @@ interface FavoriteDao {
             addFavorite(favorite.copy(sortOrder = nextSortOrder))
         }
     }
+
+    /**
+     * Adds [favorite] only if no favorite with the same `stationUuid` already exists, appending
+     * it to the end of the sort order. Used by favorites import, where re-importing a backup
+     * (or a backup that overlaps with current favorites) must never overwrite or duplicate an
+     * existing favorite. `@Transaction` gives the same check-then-act atomicity as
+     * [toggleFavorite], so imports racing a concurrent toggle of the same station can't both
+     * act on the same pre-write state. Returns true if the favorite was added.
+     */
+    @Transaction
+    suspend fun addFavoriteIfAbsent(favorite: FavoriteEntity): Boolean {
+        if (isFavoriteOnce(favorite.stationUuid)) return false
+        val nextSortOrder = (getMaxSortOrder() ?: -1) + 1
+        addFavorite(favorite.copy(sortOrder = nextSortOrder))
+        return true
+    }
 }
 

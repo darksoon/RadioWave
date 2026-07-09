@@ -92,6 +92,16 @@
     <string name="settings_clear_cache">Clear cache</string>
     <string name="settings_history_cleared">History cleared</string>
     <string name="settings_clear_history">Clear history</string>
+    <string name="settings_favorites_backup_title">Favorites backup</string>
+    <string name="settings_favorites_backup_subtitle">Save your favorites to a file, or restore them from a previous backup.</string>
+    <string name="settings_export_favorites">Export favorites</string>
+    <string name="settings_import_favorites">Import favorites</string>
+    <string name="settings_export_favorites_success">Favorites exported</string>
+    <string name="settings_export_favorites_failed">Could not export favorites</string>
+    <string name="settings_import_favorites_read_failed">Could not read the selected file</string>
+    <string name="settings_import_favorites_parse_error">This file isn\'t a valid RadioWave favorites backup</string>
+    <string name="settings_import_favorites_unsupported_version">This backup was created with a newer version of RadioWave and can\'t be imported yet</string>
+    <string name="settings_import_favorites_result">Imported %1$d favorites (%2$d already existed, %3$d skipped)</string>
     <string name="settings_version_label">Version</string>
     <string name="settings_github_repository_title">GitHub repository</string>
     <string name="settings_github_repository_value">darksoon/RadioWave</string>
