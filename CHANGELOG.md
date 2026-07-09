@@ -4,12 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.16] - 2026-07-09
+
 ### Added
 - Free EQ presets (Flat, Bass Boost, Treble Boost, Vocal) in Settings > Sound — several competing radio apps paywall EQ, offering it free reinforces RadioWave's ad-free identity.
 - Android Auto browse root now shows a "Continue: <station>" tile (when there's a last-played station and nothing is currently playing) and a "Surprise me: <station>" tile (a random pick from Favorites + Recents).
 - Android Auto's Top Stations/Genres browsing now distinguishes "couldn't load — check connection" from "genuinely empty" instead of showing the same message for both — clearer on flaky cellular in a moving car.
 - Favorites export/import (JSON) in Settings > Storage & Data — a self-service backup independent of any future app-side bug, additive/merge on import rather than destructive.
-- Import custom stations in bulk from an M3U/M3U8 or PLS playlist file, alongside the existing single-URL add flow.
+- Import custom stations in bulk from an M3U/M3U8 or PLS playlist file, from Settings > Storage & Data.
 - Station cards now show a 🔥 popularity badge from Radio Browser's public click-count on notably popular stations — aggregate public data, not user tracking.
 - Live data-usage estimate ("≈ N MB per hour") shown under the default-quality picker in Settings.
 
@@ -24,6 +26,7 @@ All notable changes to this project will be documented in this file.
 - Retry button on the player error banner now has a short cooldown instead of firing overlapping playback attempts on repeated taps.
 - Touch targets in the fullscreen player header/controls, mini player, and Browse grid's favorite toggle raised to the 48dp accessibility minimum (Favorites list already had this).
 - **Android Auto:** fixed a recurring bug (reported multiple times) where playback kept going on the phone speaker after leaving the car — a disconnect-triggered pause could be undone by a reconnect blip during the car's teardown/ignition-off sequence, since the resume-cooldown guard that was supposed to prevent this was already naturally stale by the time of any real disconnect and provided no actual protection. See `docs/audit-2026-07-09.md` for the full root-cause trace and a documented remaining tradeoff.
+- Favorites screen's "My Stations" header cramped a title and two pill buttons into one row, breaking on narrower screens/larger font scaling — playlist import moved to Settings instead of living there.
 
 ### Security
 - GitHub Actions in all three workflows pinned to commit SHAs instead of floating version tags.

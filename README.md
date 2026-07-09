@@ -52,6 +52,8 @@ The public roadmap is available in [ROADMAP.md](./ROADMAP.md).
 - Android Auto support with favorites, quick access, search, and previous/next in the car player
 - Chromecast / Google Cast support with direct route selection from the player
 - Sleep timer and direct share action in the fullscreen player
+- Free EQ presets (Bass Boost, Treble Boost, Vocal) — no paywall
+- Favorites backup/restore (JSON) and bulk station import from M3U/PLS playlists
 - Local crash-report export with share action and prefilled GitHub issue handoff
 
 ## Screenshots

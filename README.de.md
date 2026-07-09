@@ -52,6 +52,8 @@ Die oeffentliche Roadmap liegt in [ROADMAP.de.md](./ROADMAP.de.md).
 - Android Auto mit Favoriten, Quick Access, Suche und Vor/Zurueck im Car-Player
 - Chromecast / Google Cast mit direkter Geräteauswahl aus dem Player
 - Sleep Timer und direkte Teilen-Aktion im Fullscreen-Player
+- Kostenlose EQ-Presets (Bass-Boost, Höhen-Boost, Stimme) — keine Paywall
+- Favoriten-Backup/-Wiederherstellung (JSON) und Sender-Bulk-Import aus M3U/PLS-Playlists
 - Lokaler Crash-Report mit Export/Share und vorbereiteter GitHub-Issue-Erstellung
 
 ## Screenshots
