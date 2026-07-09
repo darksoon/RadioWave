@@ -32,6 +32,7 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
@@ -298,7 +299,8 @@ fun FloatingPlayerBar(
                                     tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.92f),
                                     modifier = Modifier
                                         .size(32.dp)
-                                        .padding(7.dp),
+                                        .padding(7.dp)
+                                        .minimumInteractiveComponentSize(),
                                 )
                             }
 
@@ -336,7 +338,8 @@ fun FloatingPlayerBar(
                                         tint = Color.White,
                                         modifier = Modifier
                                             .size(32.dp)
-                                            .padding(6.dp),
+                                            .padding(6.dp)
+                                            .minimumInteractiveComponentSize(),
                                     )
                                 }
                             }
