@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Free EQ presets (Flat, Bass Boost, Treble Boost, Vocal) in Settings > Sound — several competing radio apps paywall EQ, offering it free reinforces RadioWave's ad-free identity.
+- Android Auto browse root now shows a "Continue: <station>" tile (when there's a last-played station and nothing is currently playing) and a "Surprise me: <station>" tile (a random pick from Favorites + Recents).
+- Android Auto's Top Stations/Genres browsing now distinguishes "couldn't load — check connection" from "genuinely empty" instead of showing the same message for both — clearer on flaky cellular in a moving car.
+
 ### Fixed
 - **Data:** Favorites/recents that predated the v1->v2 or v2->v3 database migration had silently lost their name and stream URL (defaulted to `''` instead of being backfilled) — a new migration repairs what it can from the stations cache and removes entries it can't.
 - **Security:** Station artwork (`favicon`) is now validated to `http`/`https` before being handed to the media notification, Android Auto, Chromecast, or the image loader — it comes from the same community-editable API field as the stream URL, which already had this guard.
@@ -14,6 +19,7 @@ All notable changes to this project will be documented in this file.
 - Sleep timer no longer loses track of itself if the app is swiped away from Recents while still streaming — timer state now lives alongside playback itself instead of in Activity UI state.
 - Retry button on the player error banner now has a short cooldown instead of firing overlapping playback attempts on repeated taps.
 - Touch targets in the fullscreen player header/controls, mini player, and Browse grid's favorite toggle raised to the 48dp accessibility minimum (Favorites list already had this).
+- **Android Auto:** fixed a recurring bug (reported multiple times) where playback kept going on the phone speaker after leaving the car — a disconnect-triggered pause could be undone by a reconnect blip during the car's teardown/ignition-off sequence, since the resume-cooldown guard that was supposed to prevent this was already naturally stale by the time of any real disconnect and provided no actual protection. See `docs/audit-2026-07-09.md` for the full root-cause trace and a documented remaining tradeoff.
 
 ### Security
 - GitHub Actions in all three workflows pinned to commit SHAs instead of floating version tags.
