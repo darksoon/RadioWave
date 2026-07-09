@@ -95,6 +95,9 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - GitHub Actions pinned to commit SHAs; a shell-injection path in the manual build workflow closed
 - Settings > Data already has a battery-optimization-exemption tip with a direct system-settings link (found already implemented during the 2026-07-09 quick-wins pass — a research-suggested item turned out to already be shipped, just undocumented here)
 - Community popularity signal: station cards now show a 🔥 badge from Radio Browser's public click-count when notably high — no tracking, aggregate public data only
+- Favorites export/import (JSON) — additive/merge restore, not destructive, backed by a versioned envelope for forward compatibility
+- Custom stations M3U/PLS playlist import, alongside the existing single-URL add flow
+- Bitrate-based data usage estimate shown live under the default-quality picker
 
 ## In Progress
 
@@ -103,9 +106,6 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 
 ## Planned Next
 
-- Favorites export/import (JSON)
-- Custom stations M3U/PLS import
-- Bitrate-based data usage estimate
 - Android Auto smoke test on real head unit
 - Harden the "pause on car disconnect" fix with `androidx.car.app`'s `CarConnection` (debounced OS-level car-connection-type signal) instead of inferring disconnect/reconnect purely from MediaSession controller churn + a tuned timeout (`DISCONNECT_RESUME_GUARD_MS`, currently 2.5s) — this bug has now had four separate fix attempts (commits `3df6347`, `b717153`/`131fad5`, and the 2026-07-09 guard rewrite); the current fix is a real improvement but is still a timing heuristic. Needs a new dependency + real head-unit testing to verify before shipping, hence not done inline during the 2026-07-09 pass. Bundle with the smoke-test item above.
 - Radio timeshift beyond MVP (longer buffer, optional seek/live)

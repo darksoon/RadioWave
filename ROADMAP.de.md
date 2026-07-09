@@ -94,6 +94,9 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - GitHub Actions auf Commit-SHAs gepinnt; eine Shell-Injection-Luecke im manuellen Build-Workflow geschlossen
 - Einstellungen > Daten hat bereits einen Akku-Optimierungs-Ausnahme-Hinweis mit direktem Link zu den Systemeinstellungen (beim Quick-Wins-Durchgang vom 2026-07-09 als schon vorhanden entdeckt — ein durch Recherche vorgeschlagener Punkt war tatsaechlich schon umgesetzt, nur hier nicht dokumentiert)
 - Community-Popularitaetssignal: Sender-Karten zeigen jetzt ein 🔥-Badge aus Radio Browsers oeffentlicher Klick-Zahl bei auffaellig hohen Werten — kein Tracking, nur aggregierte oeffentliche Daten
+- Favoriten Export/Import (JSON) — additiver Merge-Restore statt destruktiv, versioniertes Format fuer Abwaertskompatibilitaet
+- Custom Stations M3U/PLS-Playlist-Import, zusaetzlich zum bestehenden Einzel-URL-Hinzufuegen
+- Bitrate-basierte Datenverbrauchs-Schaetzung, live angezeigt unter der Standard-Qualitaets-Auswahl
 
 ## In Arbeit
 
@@ -101,10 +104,6 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Laufende Live-App-Stabilisierung nach echten Geraete- und Nutzerfaellen
 
 ## Als Naechstes
-
-- Favoriten Export/Import (JSON)
-- Custom Stations M3U/PLS-Import
-- Bitrate-basierte Datenverbrauchs-Schaetzung
 - Android Auto Smoke-Test auf echtem Head-Unit
 - Den "Pause bei Auto-Trennung"-Fix mit `androidx.car.app`s `CarConnection` haerten (entprelltes OS-Signal fuer den Auto-Verbindungstyp) statt Trennung/Reconnect rein aus MediaSession-Controller-Churn + einem getunten Timeout (`DISCONNECT_RESUME_GUARD_MS`, aktuell 2,5s) abzuleiten — dieser Bug hatte jetzt vier separate Fix-Versuche (Commits `3df6347`, `b717153`/`131fad5` und der Guard-Rewrite vom 2026-07-09); der aktuelle Fix ist eine echte Verbesserung, bleibt aber eine Timing-Heuristik. Braucht eine neue Abhaengigkeit + echten Head-Unit-Test zur Verifikation, deshalb nicht direkt im 2026-07-09-Durchgang umgesetzt. Zusammen mit dem Smoke-Test-Punkt oben angehen.
 - Radio-Timeshift ueber MVP hinaus (laengerer Buffer, optionaler Seek/LIVE)
