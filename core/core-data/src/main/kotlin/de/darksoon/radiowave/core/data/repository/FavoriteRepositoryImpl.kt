@@ -10,7 +10,6 @@ import de.darksoon.radiowave.core.database.entity.FavoriteEntity
 import de.darksoon.radiowave.core.model.Station
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -49,6 +48,7 @@ class FavoriteRepositoryImpl @Inject constructor(
                             codec = favorite.codec,
                             bitrate = favorite.bitrate,
                             isFavorite = true,
+                            addedAt = favorite.addedAt,
                         )
                     }
             }
@@ -60,17 +60,9 @@ class FavoriteRepositoryImpl @Inject constructor(
     }
 
     override suspend fun toggleFavorite(station: Station) {
-        val isFav = favoriteDao.isFavorite(station.uuid).first()
-        if (isFav) {
-            favoriteDao.deleteByUuid(station.uuid)
-        } else {
-            // Use a dedicated MAX query instead of loading the full favorites list —
-            // avoids opening/closing a Flow subscription and scanning all rows.
-            val nextSortOrder = (favoriteDao.getMaxSortOrder() ?: -1) + 1
-            favoriteDao.addFavorite(
-                station.toFavoriteEntity().copy(sortOrder = nextSortOrder),
-            )
-        }
+        // Delegated to a single @Transaction-wrapped DAO call so the check-then-act can't
+        // race with a concurrent toggle of the same station (see FavoriteDao.toggleFavorite).
+        favoriteDao.toggleFavorite(station.toFavoriteEntity())
     }
 
     override suspend fun reorderFavorites(stationIds: List<String>) {
