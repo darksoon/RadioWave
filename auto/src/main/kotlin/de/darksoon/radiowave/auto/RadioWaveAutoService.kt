@@ -722,9 +722,12 @@ class RadioWaveAutoService : MediaLibraryService() {
     private suspend fun pickSurpriseStation(): Station? {
         val currentUuid = playerController.playerState.value.currentStation?.uuid
         val pool = loadQuickAccess().filter { it.streamUrl.isNotBlank() }
-        if (pool.isEmpty()) return null
         val candidates = pool.filterNot { it.uuid == currentUuid }
-        return (candidates.ifEmpty { pool }).random()
+        // No ifEmpty-to-pool fallback: if the only candidate IS the currently playing
+        // station, there's nothing left to genuinely "surprise" with — showing the tile
+        // anyway would suggest the station already on, which isn't a surprise at all.
+        if (candidates.isEmpty()) return null
+        return candidates.random()
     }
 
     private suspend fun searchStations(query: String): List<Station> {
@@ -1258,6 +1261,21 @@ class RadioWaveAutoService : MediaLibraryService() {
         // cooldown is keyed off the last successful connect, which after any real
         // drive is already stale/expired by the time of a genuine disconnect, so it
         // provides no protection against a same-teardown reconnect blip on its own.
+        //
+        // Known tradeoff: this also delays the legitimate "brief AA/BT drop while
+        // still driving, reconnects a second later" case by up to
+        // DISCONNECT_RESUME_GUARD_MS — that path goes through the exact same
+        // onDisconnected -> onPostConnect sequence as a real teardown, and nothing
+        // here can currently tell the two apart. This is a real, disclosed regression
+        // versus the previous (broken) fix's promise of an instant reconnect-resume,
+        // accepted because a ~2.5s delayed resume is a far smaller annoyance than
+        // playback continuing on the phone speaker after the user has actually left
+        // the car — which is this bug's fourth reported occurrence. A more precise
+        // fix would use a debounced OS-level signal for "genuinely connected to a
+        // car" (e.g. androidx.car.app's CarConnection) instead of inferring it from
+        // raw MediaSession controller churn, but that needs a new dependency and
+        // real head-unit testing to verify before shipping — tracked in ROADMAP.md
+        // rather than guessed at here without hardware to validate it against.
         if (now - lastDisconnectPauseAtMs < DISCONNECT_RESUME_GUARD_MS) return
         if (now - lastAutoResumeAttemptAtMs < AUTO_RESUME_CONNECT_COOLDOWN_MS) return
         lastAutoResumeAttemptAtMs = now

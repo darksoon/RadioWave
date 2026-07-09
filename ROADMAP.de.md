@@ -104,6 +104,7 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Custom Stations M3U/PLS-Import
 - Bitrate-basierte Datenverbrauchs-Schaetzung
 - Android Auto Smoke-Test auf echtem Head-Unit
+- Den "Pause bei Auto-Trennung"-Fix mit `androidx.car.app`s `CarConnection` haerten (entprelltes OS-Signal fuer den Auto-Verbindungstyp) statt Trennung/Reconnect rein aus MediaSession-Controller-Churn + einem getunten Timeout (`DISCONNECT_RESUME_GUARD_MS`, aktuell 2,5s) abzuleiten — dieser Bug hatte jetzt vier separate Fix-Versuche (Commits `3df6347`, `b717153`/`131fad5` und der Guard-Rewrite vom 2026-07-09); der aktuelle Fix ist eine echte Verbesserung, bleibt aber eine Timing-Heuristik. Braucht eine neue Abhaengigkeit + echten Head-Unit-Test zur Verifikation, deshalb nicht direkt im 2026-07-09-Durchgang umgesetzt. Zusammen mit dem Smoke-Test-Punkt oben angehen.
 - Radio-Timeshift ueber MVP hinaus (laengerer Buffer, optionaler Seek/LIVE)
 - SharedPreferences zu zentralem SettingsRepository migrieren (DataStore) — groesserer Refactor
 

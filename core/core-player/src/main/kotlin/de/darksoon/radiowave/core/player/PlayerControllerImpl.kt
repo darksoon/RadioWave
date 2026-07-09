@@ -357,6 +357,14 @@ class PlayerControllerImpl @Inject constructor(
         exoPlayerListener = null
         exoPlayer?.release()
         exoPlayer = null
+        // The Equalizer is attached to the OLD player's audio session, which just died
+        // with it — release it now rather than waiting for the new player's
+        // onAudioSessionIdChanged to implicitly clean it up via attach()'s own
+        // release()-first call. Without this, a stale Equalizer stays registered
+        // against a dead session in AudioFlinger for however long it takes the new
+        // player to reach a playing state (longer, or indefinite, if audio focus is
+        // delayed or playback stalls before that happens).
+        equalizerController.release()
     }
 
     private fun setupPlayerListeners(player: ExoPlayer) {

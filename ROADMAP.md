@@ -105,6 +105,7 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - Custom stations M3U/PLS import
 - Bitrate-based data usage estimate
 - Android Auto smoke test on real head unit
+- Harden the "pause on car disconnect" fix with `androidx.car.app`'s `CarConnection` (debounced OS-level car-connection-type signal) instead of inferring disconnect/reconnect purely from MediaSession controller churn + a tuned timeout (`DISCONNECT_RESUME_GUARD_MS`, currently 2.5s) — this bug has now had four separate fix attempts (commits `3df6347`, `b717153`/`131fad5`, and the 2026-07-09 guard rewrite); the current fix is a real improvement but is still a timing heuristic. Needs a new dependency + real head-unit testing to verify before shipping, hence not done inline during the 2026-07-09 pass. Bundle with the smoke-test item above.
 - Radio timeshift beyond MVP (longer buffer, optional seek/live)
 - Migrate `SharedPreferences` to a single `SettingsRepository` (DataStore) — bigger refactor
 
