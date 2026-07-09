@@ -40,6 +40,7 @@ data class AppSettingsState(
     val notificationShowPrevious: Boolean = true,
     val notificationShowNext: Boolean = true,
     val defaultAudioQuality: String = AppSettings.QUALITY_AUTO,
+    val eqPreset: String = AppSettings.EQ_PRESET_FLAT,
     val allowMobileData: Boolean = true,
     val bufferProfile: String = AppSettings.BUFFER_MEDIUM,
     val timeshiftGuard: Boolean = true,
@@ -85,6 +86,7 @@ open class SettingsRepository @Inject constructor(
         val NOTIFICATION_SHOW_PREVIOUS = booleanPreferencesKey(AppSettings.KEY_NOTIFICATION_SHOW_PREVIOUS)
         val NOTIFICATION_SHOW_NEXT = booleanPreferencesKey(AppSettings.KEY_NOTIFICATION_SHOW_NEXT)
         val DEFAULT_AUDIO_QUALITY = stringPreferencesKey(AppSettings.KEY_DEFAULT_AUDIO_QUALITY)
+        val EQ_PRESET = stringPreferencesKey(AppSettings.KEY_EQ_PRESET)
         val ALLOW_MOBILE_DATA = booleanPreferencesKey(AppSettings.KEY_ALLOW_MOBILE_DATA)
         val BUFFER_PROFILE = stringPreferencesKey(AppSettings.KEY_BUFFER_PROFILE)
         val TIMESHIFT_GUARD = booleanPreferencesKey(AppSettings.KEY_TIMESHIFT_GUARD)
@@ -142,6 +144,7 @@ open class SettingsRepository @Inject constructor(
     val showInsecureStreams: Flow<Boolean> = data.map { it.showInsecureStreams }.distinctUntilChanged()
     val confirmRemoveFavorite: Flow<Boolean> = data.map { it.confirmRemoveFavorite }.distinctUntilChanged()
     val firstRunOnboardingDone: Flow<Boolean> = data.map { it.firstRunOnboardingDone }.distinctUntilChanged()
+    val eqPreset: Flow<String> = data.map { it.eqPreset }.distinctUntilChanged()
 
     // Setters — all suspend; safe to call from viewModelScope or any coroutine.
     suspend fun setThemeMode(v: String) = edit { it[Keys.THEME_MODE] = v }
@@ -156,6 +159,7 @@ open class SettingsRepository @Inject constructor(
     suspend fun setNotificationShowPrevious(v: Boolean) = edit { it[Keys.NOTIFICATION_SHOW_PREVIOUS] = v }
     suspend fun setNotificationShowNext(v: Boolean) = edit { it[Keys.NOTIFICATION_SHOW_NEXT] = v }
     suspend fun setDefaultAudioQuality(v: String) = edit { it[Keys.DEFAULT_AUDIO_QUALITY] = v }
+    suspend fun setEqPreset(v: String) = edit { it[Keys.EQ_PRESET] = v }
     suspend fun setAllowMobileData(v: Boolean) = edit { it[Keys.ALLOW_MOBILE_DATA] = v }
     suspend fun setBufferProfile(v: String) = edit { it[Keys.BUFFER_PROFILE] = v }
     suspend fun setTimeshiftGuard(v: Boolean) = edit { it[Keys.TIMESHIFT_GUARD] = v }
@@ -197,6 +201,7 @@ open class SettingsRepository @Inject constructor(
         notificationShowPrevious = this[Keys.NOTIFICATION_SHOW_PREVIOUS] ?: true,
         notificationShowNext = this[Keys.NOTIFICATION_SHOW_NEXT] ?: true,
         defaultAudioQuality = this[Keys.DEFAULT_AUDIO_QUALITY] ?: AppSettings.QUALITY_AUTO,
+        eqPreset = this[Keys.EQ_PRESET] ?: AppSettings.EQ_PRESET_FLAT,
         allowMobileData = this[Keys.ALLOW_MOBILE_DATA] ?: true,
         bufferProfile = this[Keys.BUFFER_PROFILE] ?: AppSettings.BUFFER_MEDIUM,
         timeshiftGuard = this[Keys.TIMESHIFT_GUARD] ?: true,

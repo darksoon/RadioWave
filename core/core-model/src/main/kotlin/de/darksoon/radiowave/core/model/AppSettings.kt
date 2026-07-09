@@ -22,6 +22,7 @@ object AppSettings {
     const val KEY_NOTIFICATION_SHOW_NEXT = "notification_show_next"
 
     const val KEY_DEFAULT_AUDIO_QUALITY = "default_audio_quality"
+    const val KEY_EQ_PRESET = "eq_preset"
     const val KEY_ALLOW_MOBILE_DATA = "allow_mobile_data"
     const val KEY_BUFFER_PROFILE = "buffer_profile"
     const val KEY_TIMESHIFT_GUARD = "timeshift_guard"
@@ -47,6 +48,11 @@ object AppSettings {
     const val QUALITY_LOW = "low"
     const val QUALITY_MEDIUM = "medium"
     const val QUALITY_HIGH = "high"
+
+    const val EQ_PRESET_FLAT = "flat"
+    const val EQ_PRESET_BASS_BOOST = "bass_boost"
+    const val EQ_PRESET_TREBLE_BOOST = "treble_boost"
+    const val EQ_PRESET_VOCAL = "vocal"
 
     const val BUFFER_SMALL = "small"
     const val BUFFER_MEDIUM = "medium"

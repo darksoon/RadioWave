@@ -48,7 +48,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -67,6 +69,7 @@ class PlayerControllerImpl @Inject constructor(
 
     private var exoPlayer: ExoPlayer? = null
     private var exoPlayerListener: Player.Listener? = null
+    private val equalizerController = EqualizerController()
     private var reconnectJob: Job? = null
     private var bufferingWatchdogJob: Job? = null
     private var playbackLostRecoveryJob: Job? = null
@@ -166,6 +169,19 @@ class PlayerControllerImpl @Inject constructor(
     override val playerState: StateFlow<PlayerState> = _playerState.asStateFlow()
 
     init {
+        // React to EQ preset changes made from the settings screen — applied
+        // immediately to the live Equalizer (if attached) and remembered for
+        // the next attach() (station/session change). Derived from settingsState
+        // (already stateIn'd against settingsRepository.data above) rather than
+        // SettingsRepository's own granular eqPreset Flow, since that property is
+        // built in SettingsRepository's own constructor and would observe an
+        // unset `data` if a subclass (e.g. a test fake) overrides it.
+        controllerScope.launch {
+            settingsState
+                .map { it.eqPreset }
+                .distinctUntilChanged()
+                .collect { preset -> equalizerController.applyPreset(preset) }
+        }
     }
 
     private fun getOrCreatePlayer(): ExoPlayer {
@@ -529,6 +545,10 @@ class PlayerControllerImpl @Inject constructor(
             override fun onMetadata(metadata: Metadata) {
                 val streamTitle = extractStreamTitle(metadata) ?: return
                 applyStreamTitle(streamTitle)
+            }
+
+            override fun onAudioSessionIdChanged(audioSessionId: Int) {
+                equalizerController.attach(audioSessionId)
             }
         }
         exoPlayerListener = listener
@@ -1309,6 +1329,7 @@ class PlayerControllerImpl @Inject constructor(
         // Detach listener before release to avoid callbacks during/after teardown.
         exoPlayer?.let { p -> exoPlayerListener?.let { p.removeListener(it) } }
         exoPlayerListener = null
+        equalizerController.release()
         exoPlayer?.release()
         exoPlayer = null
         activeBufferProfile = null

@@ -126,6 +126,7 @@ fun SettingsScreen(
     val showNotificationNext = settings.notificationShowNext
     val showNotificationStop = settings.notificationShowStop
     val defaultAudioQuality = settings.defaultAudioQuality
+    val eqPreset = settings.eqPreset
     val allowMobileData = settings.allowMobileData
     val bufferProfile = settings.bufferProfile
     val timeshiftGuard = settings.timeshiftGuard
@@ -346,6 +347,22 @@ fun SettingsScreen(
                             selectedValue = defaultAudioQuality,
                             onSelected = { value ->
                                 viewModel.setDefaultAudioQuality(value)
+                            },
+                            enabled = true,
+                            disabledHint = null,
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingChoiceRow(
+                            title = stringResource(R.string.settings_eq_preset_title),
+                            options = listOf(
+                                ThemeOption(AppSettings.EQ_PRESET_FLAT, stringResource(R.string.settings_eq_preset_flat)),
+                                ThemeOption(AppSettings.EQ_PRESET_BASS_BOOST, stringResource(R.string.settings_eq_preset_bass_boost)),
+                                ThemeOption(AppSettings.EQ_PRESET_TREBLE_BOOST, stringResource(R.string.settings_eq_preset_treble_boost)),
+                                ThemeOption(AppSettings.EQ_PRESET_VOCAL, stringResource(R.string.settings_eq_preset_vocal)),
+                            ),
+                            selectedValue = eqPreset,
+                            onSelected = { value ->
+                                viewModel.setEqPreset(value)
                             },
                             enabled = true,
                             disabledHint = null,
