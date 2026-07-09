@@ -2,6 +2,7 @@
 
 package de.darksoon.radiowave.core.ui.components
 
+import android.net.Uri
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.Image
@@ -17,6 +18,20 @@ import coil.request.ImageRequest
 import coil.size.Precision
 import coil.size.Scale
 
+/**
+ * Station artwork URLs (`favicon`) come from the community-editable Radio Browser API, the
+ * same trust level as `streamUrl` — but unlike `streamUrl`, this field was historically never
+ * scheme-checked before reaching Coil, whose default loader also resolves `file://`/`content://`
+ * URIs. A malicious/misconfigured `favicon` value could otherwise read local app files or
+ * another app's exported content provider into the rendered image. This is the single
+ * composable every screen uses to render station art, so filtering here covers every caller.
+ */
+private fun String?.asSafeHttpImageUrl(): String? {
+    if (isNullOrBlank()) return null
+    val scheme = runCatching { Uri.parse(this).scheme }.getOrNull()?.lowercase()
+    return if (scheme == "http" || scheme == "https") this else null
+}
+
 @Composable
 fun StationLogoImage(
     imageUrl: String?,
@@ -27,9 +42,10 @@ fun StationLogoImage(
     error: @Composable () -> Unit = loading,
 ) {
     val context = LocalContext.current
-    val request = remember(imageUrl, context) {
+    val safeImageUrl = imageUrl.asSafeHttpImageUrl()
+    val request = remember(safeImageUrl, context) {
         ImageRequest.Builder(context)
-            .data(imageUrl)
+            .data(safeImageUrl)
             .crossfade(200)
             .memoryCachePolicy(CachePolicy.ENABLED)
             .diskCachePolicy(CachePolicy.ENABLED)
