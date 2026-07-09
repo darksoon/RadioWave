@@ -8,8 +8,11 @@
     <string name="auto_no_results_for">Keine Treffer fuer "%1$s"</string>
     <string name="auto_no_stations_available">Keine Sender verfuegbar</string>
     <string name="auto_no_genres_available">Keine Genres verfuegbar</string>
+    <string name="auto_network_error">Laden fehlgeschlagen — Verbindung pruefen</string>
     <string name="auto_live_stream">Live-Stream</string>
     <string name="auto_last_station">Letzter Sender</string>
     <string name="auto_previous">Vorheriger Sender</string>
     <string name="auto_next">Naechster Sender</string>
+    <string name="auto_continue_listening">▶ Weiter hoeren: %1$s</string>
+    <string name="auto_surprise_me">🎲 Ueberrasch mich: %1$s</string>
 </resources>

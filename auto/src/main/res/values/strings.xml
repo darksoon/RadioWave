@@ -8,8 +8,11 @@
     <string name="auto_no_results_for">No results for "%1$s"</string>
     <string name="auto_no_stations_available">No stations available</string>
     <string name="auto_no_genres_available">No genres available</string>
+    <string name="auto_network_error">Couldn\'t load — check connection</string>
     <string name="auto_live_stream">Live Stream</string>
     <string name="auto_last_station">Last Station</string>
     <string name="auto_previous">Previous station</string>
     <string name="auto_next">Next station</string>
+    <string name="auto_continue_listening">▶ Continue: %1$s</string>
+    <string name="auto_surprise_me">🎲 Surprise me: %1$s</string>
 </resources>
