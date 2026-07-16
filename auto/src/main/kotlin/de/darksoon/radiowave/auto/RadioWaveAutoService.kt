@@ -50,7 +50,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.text.Normalizer
-import java.util.concurrent.ConcurrentHashMap
 import java.util.Locale
 import javax.inject.Inject
 
@@ -94,8 +93,11 @@ class RadioWaveAutoService : MediaLibraryService() {
     // When a new call arrives, the previous job is cancelled so it can never
     // overwrite the user's intent after a delay.
     private var activePlaybackStartJob: Job? = null
-    private val stationCache = ConcurrentHashMap<String, Station>()
-    private val searchCache = ConcurrentHashMap<String, List<Station>>()
+    // Bounded caches so they can't grow without limit over a long-lived MediaLibraryService.
+    // Only get/put are used (no iteration), so a synchronized LinkedHashMap is thread-safe for
+    // all access here; oldest-inserted entries are evicted once the cap is exceeded.
+    private val stationCache: MutableMap<String, Station> = boundedCache(maxSize = 1500)
+    private val searchCache: MutableMap<String, List<Station>> = boundedCache(maxSize = 64)
     private var lastAutoResumeAttemptAtMs = 0L
     private var mediaLibrarySession: MediaLibrarySession? = null
     private var currentAutoQueue: List<Station> = emptyList()
@@ -119,6 +121,13 @@ class RadioWaveAutoService : MediaLibraryService() {
         val callback = RadioWaveLibraryCallback()
         mediaLibrarySession = MediaLibrarySession.Builder(this, player, callback).build().also { session ->
             session.setSessionExtras(buildAutoSessionExtras())
+        }
+        // Re-bind the session whenever the player is rebuilt (buffer-profile / thermal /
+        // automotive-mode changes release and recreate the ExoPlayer). Only performPlaybackStart
+        // used to call setPlayer, so phone-side re-play after a settings change and the
+        // automotive-toggle-while-playing path left the session bound to a released player.
+        playerController.setOnSessionPlayerChangedListener { newPlayer ->
+            mediaLibrarySession?.setPlayer(newPlayer)
         }
         // Media3 builds and updates the foreground notification via this provider
         // — replaces the deleted legacy PlaybackForegroundService completely.
@@ -161,6 +170,8 @@ class RadioWaveAutoService : MediaLibraryService() {
     }
 
     override fun onDestroy() {
+        // Clear first so a late player-recreation can't touch the released session.
+        playerController.setOnSessionPlayerChangedListener(null)
         mediaLibrarySession?.release()
         mediaLibrarySession = null
         // Always disable automotive mode on teardown — if the user disconnected AA
@@ -807,7 +818,7 @@ class RadioWaveAutoService : MediaLibraryService() {
             ?.removePrefix(STATION_PREFIX)
             ?.trim()
             .takeUnless { it.isNullOrBlank() }
-        stationCache[stationUuid]?.let { return it }
+        stationUuid?.let(stationCache::get)?.let { return it }
         mediaId?.let(stationCache::get)?.let { return it }
         mediaUri?.let(stationCache::get)?.let { return it }
 
@@ -1244,13 +1255,23 @@ class RadioWaveAutoService : MediaLibraryService() {
         )
     }
 
+    private fun <K, V> boundedCache(maxSize: Int): MutableMap<K, V> =
+        java.util.Collections.synchronizedMap(
+            object : LinkedHashMap<K, V>(16, 0.75f, false) {
+                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<K, V>): Boolean = size > maxSize
+            },
+        )
+
     private fun refreshConnectedAutoControllers() {
         val session = mediaLibrarySession ?: return
         val extras = buildAutoSessionExtras()
-        val buttons = buildAutoMediaButtons()
+        val settings = settingsState.value
         session.connectedControllers.forEach { controller ->
             session.setSessionExtras(controller, extras)
-            session.setMediaButtonPreferences(controller, buttons)
+            // Per-controller layout: automotive controllers get the fixed prev/next AA
+            // layout; phone/system controllers must keep the user's notificationShow*
+            // preferences rather than being overwritten with the AA layout.
+            session.setMediaButtonPreferences(controller, mediaButtonsFor(controller, settings))
         }
     }
 

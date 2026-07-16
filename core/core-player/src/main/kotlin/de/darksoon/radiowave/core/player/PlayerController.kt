@@ -22,6 +22,16 @@ interface PlayerController {
     fun toggleMute()
     fun ensureSessionPlayer(): Player
     fun setAutomotivePerformanceModeEnabled(enabled: Boolean)
+
+    /**
+     * Registers a listener invoked (on the player's application thread) whenever the
+     * underlying ExoPlayer is (re)created — e.g. after a buffer-profile/thermal/automotive
+     * change releases and rebuilds it. The MediaLibrarySession must re-bind to the new
+     * player via this callback, otherwise it keeps forwarding transport commands to a
+     * released player. Pass null to clear.
+     */
+    fun setOnSessionPlayerChangedListener(listener: ((Player) -> Unit)?)
+
     fun sessionPlayer(): Player?
     fun stop()
     fun release()

@@ -184,6 +184,8 @@ class PlayerControllerImpl @Inject constructor(
         }
     }
 
+    private var onSessionPlayerChanged: ((Player) -> Unit)? = null
+
     private fun getOrCreatePlayer(): ExoPlayer {
         return exoPlayer ?: createPlayer(getSelectedBufferProfile()).also { player ->
             setupPlayerListeners(player)
@@ -192,6 +194,9 @@ class PlayerControllerImpl @Inject constructor(
             initializePlaybackLocks()
             player.volume = if (_playerState.value.isMuted) 0f else 1f
             exoPlayer = player
+            // Notify the session so it re-binds to the freshly created player. Runs on the
+            // controller (main) thread, the same looper the player and session use.
+            onSessionPlayerChanged?.invoke(player)
         }
     }
 
@@ -1336,6 +1341,10 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     override fun ensureSessionPlayer(): Player = getOrCreatePlayer()
+
+    override fun setOnSessionPlayerChangedListener(listener: ((Player) -> Unit)?) {
+        onSessionPlayerChanged = listener
+    }
 
     override fun setAutomotivePerformanceModeEnabled(enabled: Boolean) {
         if (isAutomotivePerformanceModeEnabled == enabled) return
