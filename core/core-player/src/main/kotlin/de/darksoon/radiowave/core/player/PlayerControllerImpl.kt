@@ -546,8 +546,7 @@ class PlayerControllerImpl @Inject constructor(
                     )
                 }
                 if (!changed) return
-                // Media3 picks up MediaMetadata changes via the player listener and
-                // redraws the notification itself — no explicit update needed here.
+                publishNowPlayingMetadata()
             }
 
             override fun onMetadata(metadata: Metadata) {
@@ -692,12 +691,14 @@ class PlayerControllerImpl @Inject constructor(
             else -> titleText
         }.takeUnless { it.isBlank() }
 
+        var changed = false
         _playerState.update {
             val previous = it.metadata ?: StreamMetadata()
             val noChange =
                 previous.title == (parsedTitle ?: previous.title) &&
                     previous.artist == (parsedArtist ?: previous.artist)
             if (noChange) return@update it
+            changed = true
             it.copy(
                 metadata = previous.copy(
                     title = parsedTitle ?: previous.title,
@@ -705,6 +706,73 @@ class PlayerControllerImpl @Inject constructor(
                 ),
             )
         }
+        if (changed) publishNowPlayingMetadata()
+    }
+
+    /**
+     * Mirrors the live now-playing info (parsed ICY title/artist, plus station artwork)
+     * onto the *current session MediaItem* so every MediaController — the Android Auto
+     * now-playing screen and the Media3 phone notification — reflects the running song,
+     * not just the static station name + logo.
+     *
+     * Why this is necessary: ExoPlayer builds the [MediaMetadata] a controller sees by taking
+     * the dynamic in-stream (ICY) metadata and then overlaying the current MediaItem's explicit
+     * mediaMetadata on top — MediaItem fields win. Because [createMediaItem] sets the MediaItem
+     * title to the station name, the raw ICY title is masked out of that combined metadata. The
+     * phone in-app UI shows the song only because it reads [PlayerState.metadata] directly, a
+     * path Android Auto has no access to. Writing the parsed values back onto the MediaItem
+     * surfaces them to the session.
+     *
+     * [Player.replaceMediaItem] only swaps the item's metadata; because the stream URI is
+     * unchanged it does NOT re-prepare or interrupt playback. The equality guard makes this
+     * idempotent and also breaks the re-entrant onMediaMetadataChanged → publish → replace loop
+     * (replaceMediaItem itself fires onMediaMetadataChanged again).
+     */
+    private fun publishNowPlayingMetadata() {
+        val player = exoPlayer ?: return
+        val index = player.currentMediaItemIndex
+        if (index < 0 || index >= player.mediaItemCount) return
+        val currentItem = player.currentMediaItem ?: return
+
+        val updatedMetadata = buildNowPlayingMetadata(
+            base = currentItem.mediaMetadata,
+            station = _playerState.value.currentStation,
+            meta = _playerState.value.metadata,
+        )
+
+        if (updatedMetadata == currentItem.mediaMetadata) return
+
+        player.replaceMediaItem(
+            index,
+            currentItem.buildUpon().setMediaMetadata(updatedMetadata).build(),
+        )
+    }
+
+    /**
+     * Pure metadata combination used by [publishNowPlayingMetadata], extracted so the
+     * masking-fix behaviour (live song title overriding the station name, artwork fall-back
+     * to the station favicon, and the http/https-only scheme guard on both artwork sources)
+     * can be unit-tested without a live player.
+     *
+     * Live song title/artist win when present; otherwise the title falls back to the station
+     * name and the artist is cleared. Artwork prefers stream-provided album art, then the
+     * station favicon, both filtered through [safeHttpUriOrNull].
+     */
+    @VisibleForTesting
+    internal fun buildNowPlayingMetadata(
+        base: MediaMetadata,
+        station: Station?,
+        meta: StreamMetadata?,
+    ): MediaMetadata {
+        val liveTitle = meta?.title?.trim().takeUnless { it.isNullOrBlank() }
+        val liveArtist = meta?.artist?.trim().takeUnless { it.isNullOrBlank() }
+        val liveArt = meta?.albumArtUrl?.let(::safeHttpUriOrNull)
+
+        return base.buildUpon()
+            .setTitle(liveTitle ?: station?.name)
+            .setArtist(liveArtist)
+            .setArtworkUri(liveArt ?: safeHttpUriOrNull(station?.faviconUrl))
+            .build()
     }
 
     private fun registerNetworkCallbackIfNeeded() {
