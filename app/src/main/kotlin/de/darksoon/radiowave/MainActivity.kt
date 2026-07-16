@@ -793,9 +793,7 @@ fun RadioWaveMainScreen(
                         onSleepTimerClick = { minutes ->
                             homeViewModel.setSleepTimer(minutes)
                         },
-                        sleepTimerRemainingMs = sleepTimerEndsAtElapsedMs?.let { endsAt ->
-                            (endsAt - SystemClock.elapsedRealtime()).coerceAtLeast(0L)
-                        },
+                        sleepTimerEndsAtElapsedMs = sleepTimerEndsAtElapsedMs,
                         onDismiss = { showFullscreenPlayer = false },
                         modifier = Modifier.fillMaxSize(),
                     )

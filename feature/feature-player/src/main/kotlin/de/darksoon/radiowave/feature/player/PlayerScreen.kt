@@ -74,6 +74,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -105,12 +106,15 @@ fun PlayerScreen(
     onVolumeToggle: () -> Unit,
     onRandomStationClick: () -> Unit,
     onSleepTimerClick: (Int?) -> Unit,
-    sleepTimerRemainingMs: Long?,
+    sleepTimerEndsAtElapsedMs: Long?,
     modifier: Modifier = Modifier,
     viewModel: PlayerViewModel = hiltViewModel(),
 ) {
     val station = playerState.currentStation ?: return
     val context = LocalContext.current
+    // Config-change-aware resource lookups for the share callback below (Compose lint
+    // LocalContextGetResourceValueCall flags Context.getString from LocalContext.current).
+    val resources = LocalResources.current
     var showSleepTimerDialog by remember { mutableStateOf(false) }
     val isPlaying = playerState.isPlaying
     val metadataTitle = playerState.metadata?.title?.trim().takeUnless { it.isNullOrBlank() }
@@ -139,11 +143,20 @@ fun PlayerScreen(
         mutableLongStateOf(SystemClock.elapsedRealtime())
     }
 
-    LaunchedEffect(station.uuid, isPlaying) {
-        while (isPlaying) {
+    LaunchedEffect(station.uuid, isPlaying, sleepTimerEndsAtElapsedMs) {
+        // Tick every second while playing (for the runtime label) OR while a sleep timer
+        // is active (so its countdown keeps updating even if playback is paused).
+        while (isPlaying || sleepTimerEndsAtElapsedMs != null) {
             nowElapsedMs = SystemClock.elapsedRealtime()
             delay(1_000L)
         }
+    }
+
+    // Remaining sleep-timer time, recomputed against the per-second `nowElapsedMs` ticker
+    // above so the countdown actually ticks down. Passing a value snapshotted once by the
+    // caller left it frozen — MainActivity does not recompose every second.
+    val sleepTimerRemainingMs = sleepTimerEndsAtElapsedMs?.let {
+        (it - nowElapsedMs).coerceAtLeast(0L)
     }
 
     val livePlayedDurationMs = playedDurationMs + if (isPlaying) {
@@ -308,11 +321,11 @@ fun PlayerScreen(
                         onClick = {
                             val shareText = buildString {
                                 if (metadataTitle != null && metadataArtist != null) {
-                                    append(context.getString(R.string.player_share_with_track, metadataArtist, metadataTitle, station.name))
+                                    append(resources.getString(R.string.player_share_with_track, metadataArtist, metadataTitle, station.name))
                                 } else if (metadataTitle != null) {
-                                    append(context.getString(R.string.player_share_with_title, metadataTitle, station.name))
+                                    append(resources.getString(R.string.player_share_with_title, metadataTitle, station.name))
                                 } else {
-                                    append(context.getString(R.string.player_share_station, station.name))
+                                    append(resources.getString(R.string.player_share_station, station.name))
                                 }
                                 val homepage = station.homepageUrl?.takeIf { it.isNotBlank() }
                                 if (homepage != null) {
@@ -327,7 +340,7 @@ fun PlayerScreen(
                             context.startActivity(
                                 Intent.createChooser(
                                     shareIntent,
-                                    context.getString(R.string.player_share),
+                                    resources.getString(R.string.player_share),
                                 ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                             )
                         },
