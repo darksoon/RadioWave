@@ -55,6 +55,8 @@ class PlayerControllerImplMetadataTest {
 
         assertEquals("Yesterday", result.title)
         assertEquals("The Beatles", result.artist)
+        // Station name moves to the third line (albumTitle) while a song is showing.
+        assertEquals("Radio Example", result.albumTitle)
         // No stream album art → keep the station favicon as artwork.
         assertEquals("https://cdn.example/logo.png", result.artworkUri.toString())
     }
@@ -72,6 +74,8 @@ class PlayerControllerImplMetadataTest {
 
         assertEquals("Radio Example", result.title)
         assertNull(result.artist)
+        // Title already IS the station name — no duplicate third line.
+        assertNull(result.albumTitle)
         assertEquals("https://cdn.example/logo.png", result.artworkUri.toString())
     }
 

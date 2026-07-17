@@ -846,6 +846,12 @@ class PlayerControllerImpl @Inject constructor(
         return base.buildUpon()
             .setTitle(liveTitle ?: station?.name)
             .setArtist(liveArtist)
+            // Station name as third text line (Android Auto full-screen player and the
+            // phone notification render albumTitle under title/artist). Only while a
+            // live song title is showing — otherwise the title IS the station name and
+            // it would appear twice.
+            .setAlbumTitle(liveTitle?.let { station?.name })
+            .setStation(station?.name)
             .setArtworkUri(liveArt ?: safeHttpUriOrNull(station?.faviconUrl))
             .build()
     }
