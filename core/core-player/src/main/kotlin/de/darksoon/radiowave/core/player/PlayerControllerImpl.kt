@@ -65,6 +65,7 @@ class PlayerControllerImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val stationRepository: StationRepository,
     private val settingsRepository: de.darksoon.radiowave.core.data.repository.SettingsRepository,
+    private val coverArtRepository: de.darksoon.radiowave.core.data.repository.CoverArtRepository,
 ) : PlayerController {
 
     private var exoPlayer: ExoPlayer? = null
@@ -72,6 +73,9 @@ class PlayerControllerImpl @Inject constructor(
     private val equalizerController = EqualizerController()
     private var reconnectJob: Job? = null
     private var bufferingWatchdogJob: Job? = null
+    // Debounced iTunes cover lookup for the current ICY song — see scheduleCoverArtFetch.
+    private var coverArtFetchJob: Job? = null
+    private val coverArtFetchDebounceMs = 800L
     private var playbackLostRecoveryJob: Job? = null
     private var restartGuardJob: Job? = null
     private var wakeLock: PowerManager.WakeLock? = null
@@ -515,14 +519,23 @@ class PlayerControllerImpl @Inject constructor(
                 if (isLowLoadModeEnabled() && !canProcessMetadataUpdateNow()) {
                     return
                 }
-                val stationName = _playerState.value.currentStation?.name?.trim()
+                val station = _playerState.value.currentStation
+                val stationName = station?.name?.trim()
                 val title = metadata.title?.toString()?.trim()
                 val artist = metadata.artist?.toString()?.trim()
-                val albumArtUrl = if (isLowLoadModeEnabled()) {
-                    null
-                } else {
-                    metadata.artworkUri?.toString()
-                }
+                // publishNowPlayingMetadata writes `liveArt ?: favicon` back onto the
+                // MediaItem, and replaceMediaItem re-fires this callback with that
+                // combined metadata — so the station favicon comes back around as
+                // artworkUri. Filter it out here: metadata.albumArtUrl must only ever
+                // hold GENUINE song art (stream-provided or iTunes-fetched), otherwise
+                // scheduleCoverArtFetch would see the favicon echo as "cover already
+                // present" and never fetch the real one.
+                //
+                // Low-load note: artwork is deliberately NOT nulled in automotive/thermal
+                // mode anymore — the car is exactly where the user wants covers, and the
+                // per-song iTunes cache keeps the cost to one lookup per track.
+                val albumArtUrl = metadata.artworkUri?.toString()
+                    ?.takeUnless { it == station?.faviconUrl }
                 val hasUsefulMetadata = (!title.isNullOrBlank() && !title.equals(stationName, ignoreCase = true)) ||
                     !artist.isNullOrBlank() ||
                     !albumArtUrl.isNullOrBlank()
@@ -536,22 +549,29 @@ class PlayerControllerImpl @Inject constructor(
                 var changed = false
                 _playerState.update {
                     val previous = it.metadata ?: StreamMetadata()
+                    val newTitle = title ?: previous.title
+                    val newArtist = artist ?: previous.artist
+                    // A different song must not keep the previous song's cover — drop
+                    // the inherited art on track change so the station logo shows as
+                    // fallback until (if) the iTunes lookup finds the new cover.
+                    val songChanged = newTitle != previous.title || newArtist != previous.artist
+                    val inheritedArt = previous.albumArtUrl.takeUnless { songChanged }
                     val noChange =
-                        previous.title == (title ?: previous.title) &&
-                            previous.artist == (artist ?: previous.artist) &&
+                        !songChanged &&
                             previous.albumArtUrl == (albumArtUrl ?: previous.albumArtUrl)
                     if (noChange) return@update it
                     changed = true
                     it.copy(
                         metadata = previous.copy(
-                            title = title ?: previous.title,
-                            artist = artist ?: previous.artist,
-                            albumArtUrl = albumArtUrl ?: previous.albumArtUrl,
+                            title = newTitle,
+                            artist = newArtist,
+                            albumArtUrl = albumArtUrl ?: inheritedArt,
                         ),
                     )
                 }
                 if (!changed) return
                 publishNowPlayingMetadata()
+                scheduleCoverArtFetch()
             }
 
             override fun onMetadata(metadata: Metadata) {
@@ -708,10 +728,16 @@ class PlayerControllerImpl @Inject constructor(
                 metadata = previous.copy(
                     title = parsedTitle ?: previous.title,
                     artist = parsedArtist ?: previous.artist,
+                    // New song → the previous song's cover is stale. Clear it so the
+                    // station logo shows as fallback until the iTunes lookup resolves.
+                    albumArtUrl = null,
                 ),
             )
         }
-        if (changed) publishNowPlayingMetadata()
+        if (changed) {
+            publishNowPlayingMetadata()
+            scheduleCoverArtFetch()
+        }
     }
 
     /**
@@ -751,6 +777,50 @@ class PlayerControllerImpl @Inject constructor(
             index,
             currentItem.buildUpon().setMediaMetadata(updatedMetadata).build(),
         )
+    }
+
+    /**
+     * Debounced lookup of the current song's cover via [coverArtRepository] (iTunes Search,
+     * memory-cached per artist|title — including negative results, so a no-cover song costs
+     * exactly one network call ever).
+     *
+     * Runs in ALL modes including automotive/thermal low-load — the car is precisely where
+     * the user wants covers in the now-playing screen. The debounce collapses the ICY
+     * title/artist double-fire on song change into a single lookup.
+     *
+     * Fallback contract (user requirement): if no cover is found, the lookup fails, or the
+     * station sends no usable artist/title, [StreamMetadata.albumArtUrl] simply stays null
+     * and [buildNowPlayingMetadata] falls back to the station favicon — logo, never blank.
+     */
+    private fun scheduleCoverArtFetch() {
+        coverArtFetchJob?.cancel()
+        val state = _playerState.value
+        val meta = state.metadata ?: return
+        // Genuine stream-provided art already present — nothing to look up.
+        if (!meta.albumArtUrl.isNullOrBlank()) return
+        val artist = meta.artist?.trim().takeUnless { it.isNullOrBlank() } ?: return
+        val title = meta.title?.trim().takeUnless { it.isNullOrBlank() } ?: return
+        val stationUuid = state.currentStation?.uuid ?: return
+
+        coverArtFetchJob = controllerScope.launch {
+            delay(coverArtFetchDebounceMs)
+            val coverUrl = runCatching { coverArtRepository.fetchCoverArt(artist, title) }
+                .getOrNull() ?: return@launch
+            var applied = false
+            _playerState.update {
+                // Station or song may have moved on while the lookup ran — never
+                // attach a cover to a different track than it was fetched for.
+                if (it.currentStation?.uuid != stationUuid) return@update it
+                val current = it.metadata ?: return@update it
+                if (current.title?.trim() != title || current.artist?.trim() != artist) {
+                    return@update it
+                }
+                if (!current.albumArtUrl.isNullOrBlank()) return@update it
+                applied = true
+                it.copy(metadata = current.copy(albumArtUrl = coverUrl))
+            }
+            if (applied) publishNowPlayingMetadata()
+        }
     }
 
     /**
@@ -1171,6 +1241,8 @@ class PlayerControllerImpl @Inject constructor(
         recreatePlayerForBufferProfileIfNeeded()
 
         lastPlaybackResumedAtElapsedMs = null
+        // A cover lookup for the previous station's song must not land on this one.
+        coverArtFetchJob?.cancel()
         _playerState.update {
             it.copy(
                 currentStation = station,
@@ -1369,6 +1441,7 @@ class PlayerControllerImpl @Inject constructor(
         bufferingWatchdogJob?.cancel()
         playbackLostRecoveryJob?.cancel()
         restartGuardJob?.cancel()
+        coverArtFetchJob?.cancel()
         reconnectAttempts = 0
         playbackLostRecoveryAttempts = 0
         networkLossObserved = false
@@ -1395,6 +1468,7 @@ class PlayerControllerImpl @Inject constructor(
         bufferingWatchdogJob?.cancel()
         playbackLostRecoveryJob?.cancel()
         restartGuardJob?.cancel()
+        coverArtFetchJob?.cancel()
         reconnectAttempts = 0
         playbackLostRecoveryAttempts = 0
         networkLossObserved = false

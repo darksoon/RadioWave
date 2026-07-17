@@ -122,7 +122,7 @@ class PlayerControllerImplMetadataTest {
 
     private fun createController(): PlayerControllerImpl {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        return PlayerControllerImpl(context, FakeStationRepository(), FakeSettingsRepository())
+        return PlayerControllerImpl(context, FakeStationRepository(), FakeSettingsRepository(), FakeCoverArtRepository())
     }
 
     private fun station(uuid: String, favicon: String?): Station =
