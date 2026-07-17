@@ -72,6 +72,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -109,6 +110,10 @@ fun SettingsScreen(
     onRestartOnboarding: () -> Unit = {},
 ) {
     val context = LocalContext.current
+    // Config-change-aware resource lookups for use inside non-composable callbacks
+    // (Compose lint flags Context.getString from LocalContext.current — see
+    // LocalContextGetResourceValueCall). stringResource can't be called from these lambdas.
+    val resources = LocalResources.current
     val uriHandler = LocalUriHandler.current
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     var issueReportRefreshKey by remember { mutableLongStateOf(0L) }
@@ -173,7 +178,7 @@ fun SettingsScreen(
                 }
                 Toast.makeText(
                     context,
-                    context.getString(
+                    resources.getString(
                         if (success) R.string.settings_export_favorites_success
                         else R.string.settings_export_favorites_failed,
                     ),
@@ -197,23 +202,23 @@ fun SettingsScreen(
             if (fileContent == null) {
                 Toast.makeText(
                     context,
-                    context.getString(R.string.settings_import_favorites_read_failed),
+                    resources.getString(R.string.settings_import_favorites_read_failed),
                     Toast.LENGTH_SHORT,
                 ).show()
                 return@launch
             }
             viewModel.importFavorites(fileContent) { outcome ->
                 val message = when (outcome) {
-                    is FavoritesImportOutcome.Success -> context.getString(
+                    is FavoritesImportOutcome.Success -> resources.getString(
                         R.string.settings_import_favorites_result,
                         outcome.imported,
                         outcome.skippedExisting,
                         outcome.skippedInvalid,
                     )
                     FavoritesImportOutcome.ParseError ->
-                        context.getString(R.string.settings_import_favorites_parse_error)
+                        resources.getString(R.string.settings_import_favorites_parse_error)
                     is FavoritesImportOutcome.UnsupportedVersion ->
-                        context.getString(R.string.settings_import_favorites_unsupported_version)
+                        resources.getString(R.string.settings_import_favorites_unsupported_version)
                 }
                 Toast.makeText(context, message, Toast.LENGTH_LONG).show()
             }
@@ -227,9 +232,9 @@ fun SettingsScreen(
         coroutineScope.launch {
             val result = viewModel.importPlaylist(uri)
             val message = if (result.totalFound == 0) {
-                context.getString(R.string.settings_import_playlist_empty)
+                resources.getString(R.string.settings_import_playlist_empty)
             } else {
-                context.getString(R.string.settings_import_playlist_result, result.imported, result.skipped)
+                resources.getString(R.string.settings_import_playlist_result, result.imported, result.skipped)
             }
             Toast.makeText(context, message, Toast.LENGTH_LONG).show()
         }
@@ -613,7 +618,7 @@ fun SettingsScreen(
                             OutlinedButton(
                                 onClick = {
                                     viewModel.clearStationCache()
-                                    Toast.makeText(context, context.getString(R.string.settings_station_cache_cleared), Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, resources.getString(R.string.settings_station_cache_cleared), Toast.LENGTH_SHORT).show()
                                 },
                                 modifier = Modifier.weight(1f),
                             ) {
@@ -622,7 +627,7 @@ fun SettingsScreen(
                             OutlinedButton(
                                 onClick = {
                                     viewModel.clearHistory()
-                                    Toast.makeText(context, context.getString(R.string.settings_history_cleared), Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, resources.getString(R.string.settings_history_cleared), Toast.LENGTH_SHORT).show()
                                 },
                                 modifier = Modifier.weight(1f),
                             ) {
@@ -674,13 +679,13 @@ fun SettingsScreen(
                                 if (shareIntent != null) {
                                     val chooser = Intent.createChooser(
                                         shareIntent,
-                                        context.getString(R.string.settings_issue_report_share),
+                                        resources.getString(R.string.settings_issue_report_share),
                                     ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                     startActivitySafely(context, chooser)
                                 } else {
                                     Toast.makeText(
                                         context,
-                                        context.getString(R.string.settings_issue_report_status_none),
+                                        resources.getString(R.string.settings_issue_report_status_none),
                                         Toast.LENGTH_SHORT,
                                     ).show()
                                 }
@@ -693,7 +698,7 @@ fun SettingsScreen(
                                 } else {
                                     Toast.makeText(
                                         context,
-                                        context.getString(R.string.settings_issue_report_status_none),
+                                        resources.getString(R.string.settings_issue_report_status_none),
                                         Toast.LENGTH_SHORT,
                                     ).show()
                                 }

@@ -122,6 +122,7 @@ class PlayerControllerImplBehaviorTest {
             context = context,
             stationRepository = LocalStationRepositoryFake(stations),
             settingsRepository = de.darksoon.radiowave.core.data.repository.SettingsRepository(context),
+            coverArtRepository = FakeCoverArtRepository(),
         )
     }
 }

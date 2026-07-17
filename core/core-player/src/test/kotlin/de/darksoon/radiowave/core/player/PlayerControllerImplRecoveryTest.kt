@@ -117,7 +117,7 @@ class PlayerControllerImplRecoveryTest {
 
     private fun createController(): PlayerControllerImpl {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        return PlayerControllerImpl(context, FakeStationRepository(), fakeSettingsRepository)
+        return PlayerControllerImpl(context, FakeStationRepository(), fakeSettingsRepository, FakeCoverArtRepository())
     }
 
     private fun createBufferingPlayerProxy(): ExoPlayer {

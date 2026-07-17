@@ -13,6 +13,12 @@
         android:name="android.permission.POST_NOTIFICATIONS"
         tools:targetApi="33" />
 
+    <!-- Package visibility (Android 11+) for androidx.car.app CarConnection: it reads
+         the connection state from a ContentProvider hosted by the Android Auto app. -->
+    <queries>
+        <package android:name="com.google.android.projection.gearhead" />
+    </queries>
+
     <application
         android:name=".RadioWaveApp"
         android:allowBackup="false"

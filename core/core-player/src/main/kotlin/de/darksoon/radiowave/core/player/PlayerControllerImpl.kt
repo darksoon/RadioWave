@@ -65,6 +65,7 @@ class PlayerControllerImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val stationRepository: StationRepository,
     private val settingsRepository: de.darksoon.radiowave.core.data.repository.SettingsRepository,
+    private val coverArtRepository: de.darksoon.radiowave.core.data.repository.CoverArtRepository,
 ) : PlayerController {
 
     private var exoPlayer: ExoPlayer? = null
@@ -72,6 +73,9 @@ class PlayerControllerImpl @Inject constructor(
     private val equalizerController = EqualizerController()
     private var reconnectJob: Job? = null
     private var bufferingWatchdogJob: Job? = null
+    // Debounced iTunes cover lookup for the current ICY song — see scheduleCoverArtFetch.
+    private var coverArtFetchJob: Job? = null
+    private val coverArtFetchDebounceMs = 800L
     private var playbackLostRecoveryJob: Job? = null
     private var restartGuardJob: Job? = null
     private var wakeLock: PowerManager.WakeLock? = null
@@ -184,6 +188,8 @@ class PlayerControllerImpl @Inject constructor(
         }
     }
 
+    private var onSessionPlayerChanged: ((Player) -> Unit)? = null
+
     private fun getOrCreatePlayer(): ExoPlayer {
         return exoPlayer ?: createPlayer(getSelectedBufferProfile()).also { player ->
             setupPlayerListeners(player)
@@ -192,6 +198,9 @@ class PlayerControllerImpl @Inject constructor(
             initializePlaybackLocks()
             player.volume = if (_playerState.value.isMuted) 0f else 1f
             exoPlayer = player
+            // Notify the session so it re-binds to the freshly created player. Runs on the
+            // controller (main) thread, the same looper the player and session use.
+            onSessionPlayerChanged?.invoke(player)
         }
     }
 
@@ -510,14 +519,23 @@ class PlayerControllerImpl @Inject constructor(
                 if (isLowLoadModeEnabled() && !canProcessMetadataUpdateNow()) {
                     return
                 }
-                val stationName = _playerState.value.currentStation?.name?.trim()
+                val station = _playerState.value.currentStation
+                val stationName = station?.name?.trim()
                 val title = metadata.title?.toString()?.trim()
                 val artist = metadata.artist?.toString()?.trim()
-                val albumArtUrl = if (isLowLoadModeEnabled()) {
-                    null
-                } else {
-                    metadata.artworkUri?.toString()
-                }
+                // publishNowPlayingMetadata writes `liveArt ?: favicon` back onto the
+                // MediaItem, and replaceMediaItem re-fires this callback with that
+                // combined metadata — so the station favicon comes back around as
+                // artworkUri. Filter it out here: metadata.albumArtUrl must only ever
+                // hold GENUINE song art (stream-provided or iTunes-fetched), otherwise
+                // scheduleCoverArtFetch would see the favicon echo as "cover already
+                // present" and never fetch the real one.
+                //
+                // Low-load note: artwork is deliberately NOT nulled in automotive/thermal
+                // mode anymore — the car is exactly where the user wants covers, and the
+                // per-song iTunes cache keeps the cost to one lookup per track.
+                val albumArtUrl = metadata.artworkUri?.toString()
+                    ?.takeUnless { it == station?.faviconUrl }
                 val hasUsefulMetadata = (!title.isNullOrBlank() && !title.equals(stationName, ignoreCase = true)) ||
                     !artist.isNullOrBlank() ||
                     !albumArtUrl.isNullOrBlank()
@@ -531,23 +549,29 @@ class PlayerControllerImpl @Inject constructor(
                 var changed = false
                 _playerState.update {
                     val previous = it.metadata ?: StreamMetadata()
+                    val newTitle = title ?: previous.title
+                    val newArtist = artist ?: previous.artist
+                    // A different song must not keep the previous song's cover — drop
+                    // the inherited art on track change so the station logo shows as
+                    // fallback until (if) the iTunes lookup finds the new cover.
+                    val songChanged = newTitle != previous.title || newArtist != previous.artist
+                    val inheritedArt = previous.albumArtUrl.takeUnless { songChanged }
                     val noChange =
-                        previous.title == (title ?: previous.title) &&
-                            previous.artist == (artist ?: previous.artist) &&
+                        !songChanged &&
                             previous.albumArtUrl == (albumArtUrl ?: previous.albumArtUrl)
                     if (noChange) return@update it
                     changed = true
                     it.copy(
                         metadata = previous.copy(
-                            title = title ?: previous.title,
-                            artist = artist ?: previous.artist,
-                            albumArtUrl = albumArtUrl ?: previous.albumArtUrl,
+                            title = newTitle,
+                            artist = newArtist,
+                            albumArtUrl = albumArtUrl ?: inheritedArt,
                         ),
                     )
                 }
                 if (!changed) return
-                // Media3 picks up MediaMetadata changes via the player listener and
-                // redraws the notification itself — no explicit update needed here.
+                publishNowPlayingMetadata()
+                scheduleCoverArtFetch()
             }
 
             override fun onMetadata(metadata: Metadata) {
@@ -692,19 +716,138 @@ class PlayerControllerImpl @Inject constructor(
             else -> titleText
         }.takeUnless { it.isBlank() }
 
+        var changed = false
         _playerState.update {
             val previous = it.metadata ?: StreamMetadata()
             val noChange =
                 previous.title == (parsedTitle ?: previous.title) &&
                     previous.artist == (parsedArtist ?: previous.artist)
             if (noChange) return@update it
+            changed = true
             it.copy(
                 metadata = previous.copy(
                     title = parsedTitle ?: previous.title,
                     artist = parsedArtist ?: previous.artist,
+                    // New song → the previous song's cover is stale. Clear it so the
+                    // station logo shows as fallback until the iTunes lookup resolves.
+                    albumArtUrl = null,
                 ),
             )
         }
+        if (changed) {
+            publishNowPlayingMetadata()
+            scheduleCoverArtFetch()
+        }
+    }
+
+    /**
+     * Mirrors the live now-playing info (parsed ICY title/artist, plus station artwork)
+     * onto the *current session MediaItem* so every MediaController — the Android Auto
+     * now-playing screen and the Media3 phone notification — reflects the running song,
+     * not just the static station name + logo.
+     *
+     * Why this is necessary: ExoPlayer builds the [MediaMetadata] a controller sees by taking
+     * the dynamic in-stream (ICY) metadata and then overlaying the current MediaItem's explicit
+     * mediaMetadata on top — MediaItem fields win. Because [createMediaItem] sets the MediaItem
+     * title to the station name, the raw ICY title is masked out of that combined metadata. The
+     * phone in-app UI shows the song only because it reads [PlayerState.metadata] directly, a
+     * path Android Auto has no access to. Writing the parsed values back onto the MediaItem
+     * surfaces them to the session.
+     *
+     * [Player.replaceMediaItem] only swaps the item's metadata; because the stream URI is
+     * unchanged it does NOT re-prepare or interrupt playback. The equality guard makes this
+     * idempotent and also breaks the re-entrant onMediaMetadataChanged → publish → replace loop
+     * (replaceMediaItem itself fires onMediaMetadataChanged again).
+     */
+    private fun publishNowPlayingMetadata() {
+        val player = exoPlayer ?: return
+        val index = player.currentMediaItemIndex
+        if (index < 0 || index >= player.mediaItemCount) return
+        val currentItem = player.currentMediaItem ?: return
+
+        val updatedMetadata = buildNowPlayingMetadata(
+            base = currentItem.mediaMetadata,
+            station = _playerState.value.currentStation,
+            meta = _playerState.value.metadata,
+        )
+
+        if (updatedMetadata == currentItem.mediaMetadata) return
+
+        player.replaceMediaItem(
+            index,
+            currentItem.buildUpon().setMediaMetadata(updatedMetadata).build(),
+        )
+    }
+
+    /**
+     * Debounced lookup of the current song's cover via [coverArtRepository] (iTunes Search,
+     * memory-cached per artist|title — including negative results, so a no-cover song costs
+     * exactly one network call ever).
+     *
+     * Runs in ALL modes including automotive/thermal low-load — the car is precisely where
+     * the user wants covers in the now-playing screen. The debounce collapses the ICY
+     * title/artist double-fire on song change into a single lookup.
+     *
+     * Fallback contract (user requirement): if no cover is found, the lookup fails, or the
+     * station sends no usable artist/title, [StreamMetadata.albumArtUrl] simply stays null
+     * and [buildNowPlayingMetadata] falls back to the station favicon — logo, never blank.
+     */
+    private fun scheduleCoverArtFetch() {
+        coverArtFetchJob?.cancel()
+        val state = _playerState.value
+        val meta = state.metadata ?: return
+        // Genuine stream-provided art already present — nothing to look up.
+        if (!meta.albumArtUrl.isNullOrBlank()) return
+        val artist = meta.artist?.trim().takeUnless { it.isNullOrBlank() } ?: return
+        val title = meta.title?.trim().takeUnless { it.isNullOrBlank() } ?: return
+        val stationUuid = state.currentStation?.uuid ?: return
+
+        coverArtFetchJob = controllerScope.launch {
+            delay(coverArtFetchDebounceMs)
+            val coverUrl = runCatching { coverArtRepository.fetchCoverArt(artist, title) }
+                .getOrNull() ?: return@launch
+            var applied = false
+            _playerState.update {
+                // Station or song may have moved on while the lookup ran — never
+                // attach a cover to a different track than it was fetched for.
+                if (it.currentStation?.uuid != stationUuid) return@update it
+                val current = it.metadata ?: return@update it
+                if (current.title?.trim() != title || current.artist?.trim() != artist) {
+                    return@update it
+                }
+                if (!current.albumArtUrl.isNullOrBlank()) return@update it
+                applied = true
+                it.copy(metadata = current.copy(albumArtUrl = coverUrl))
+            }
+            if (applied) publishNowPlayingMetadata()
+        }
+    }
+
+    /**
+     * Pure metadata combination used by [publishNowPlayingMetadata], extracted so the
+     * masking-fix behaviour (live song title overriding the station name, artwork fall-back
+     * to the station favicon, and the http/https-only scheme guard on both artwork sources)
+     * can be unit-tested without a live player.
+     *
+     * Live song title/artist win when present; otherwise the title falls back to the station
+     * name and the artist is cleared. Artwork prefers stream-provided album art, then the
+     * station favicon, both filtered through [safeHttpUriOrNull].
+     */
+    @VisibleForTesting
+    internal fun buildNowPlayingMetadata(
+        base: MediaMetadata,
+        station: Station?,
+        meta: StreamMetadata?,
+    ): MediaMetadata {
+        val liveTitle = meta?.title?.trim().takeUnless { it.isNullOrBlank() }
+        val liveArtist = meta?.artist?.trim().takeUnless { it.isNullOrBlank() }
+        val liveArt = meta?.albumArtUrl?.let(::safeHttpUriOrNull)
+
+        return base.buildUpon()
+            .setTitle(liveTitle ?: station?.name)
+            .setArtist(liveArtist)
+            .setArtworkUri(liveArt ?: safeHttpUriOrNull(station?.faviconUrl))
+            .build()
     }
 
     private fun registerNetworkCallbackIfNeeded() {
@@ -1098,6 +1241,8 @@ class PlayerControllerImpl @Inject constructor(
         recreatePlayerForBufferProfileIfNeeded()
 
         lastPlaybackResumedAtElapsedMs = null
+        // A cover lookup for the previous station's song must not land on this one.
+        coverArtFetchJob?.cancel()
         _playerState.update {
             it.copy(
                 currentStation = station,
@@ -1269,6 +1414,10 @@ class PlayerControllerImpl @Inject constructor(
 
     override fun ensureSessionPlayer(): Player = getOrCreatePlayer()
 
+    override fun setOnSessionPlayerChangedListener(listener: ((Player) -> Unit)?) {
+        onSessionPlayerChanged = listener
+    }
+
     override fun setAutomotivePerformanceModeEnabled(enabled: Boolean) {
         if (isAutomotivePerformanceModeEnabled == enabled) return
         isAutomotivePerformanceModeEnabled = enabled
@@ -1292,6 +1441,7 @@ class PlayerControllerImpl @Inject constructor(
         bufferingWatchdogJob?.cancel()
         playbackLostRecoveryJob?.cancel()
         restartGuardJob?.cancel()
+        coverArtFetchJob?.cancel()
         reconnectAttempts = 0
         playbackLostRecoveryAttempts = 0
         networkLossObserved = false
@@ -1318,6 +1468,7 @@ class PlayerControllerImpl @Inject constructor(
         bufferingWatchdogJob?.cancel()
         playbackLostRecoveryJob?.cancel()
         restartGuardJob?.cancel()
+        coverArtFetchJob?.cancel()
         reconnectAttempts = 0
         playbackLostRecoveryAttempts = 0
         networkLossObserved = false

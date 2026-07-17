@@ -295,15 +295,22 @@ class BrowseViewModel @Inject constructor(
                 station to score
             }
             .sortedWith(
-                compareByDescending<Pair<Station, Int>> { it.second }
-                    .thenComparator { a, b ->
-                        when (currentSort) {
-                            SortOption.POPULARITY -> b.first.clickCount.compareTo(a.first.clickCount)
-                            SortOption.NAME -> a.first.name.lowercase().compareTo(b.first.name.lowercase())
-                            SortOption.COUNTRY -> (a.first.country ?: "zzz").lowercase()
-                                .compareTo((b.first.country ?: "zzz").lowercase())
-                        }
-                    },
+                // An explicit NAME/COUNTRY choice is the user's PRIMARY intent (alphabetical /
+                // by country); the relevance score is only the tiebreaker. Previously the score
+                // always dominated, so "Sort by Name/Country" merely reordered equal-score ties
+                // and the requested ordering was effectively ignored. POPULARITY keeps the
+                // score-first ordering (relevance already encodes popularity + recent boost).
+                when (currentSort) {
+                    SortOption.NAME ->
+                        compareBy<Pair<Station, Int>> { it.first.name.lowercase() }
+                            .thenByDescending { it.second }
+                    SortOption.COUNTRY ->
+                        compareBy<Pair<Station, Int>> { (it.first.country ?: "zzz").lowercase() }
+                            .thenByDescending { it.second }
+                    SortOption.POPULARITY ->
+                        compareByDescending<Pair<Station, Int>> { it.second }
+                            .thenByDescending { it.first.clickCount }
+                },
             )
             .map { it.first }
     }

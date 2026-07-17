@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
+import androidx.car.app.connection.CarConnection
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MediaItem.RequestMetadata
@@ -50,7 +51,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.text.Normalizer
-import java.util.concurrent.ConcurrentHashMap
 import java.util.Locale
 import javax.inject.Inject
 
@@ -94,8 +94,11 @@ class RadioWaveAutoService : MediaLibraryService() {
     // When a new call arrives, the previous job is cancelled so it can never
     // overwrite the user's intent after a delay.
     private var activePlaybackStartJob: Job? = null
-    private val stationCache = ConcurrentHashMap<String, Station>()
-    private val searchCache = ConcurrentHashMap<String, List<Station>>()
+    // Bounded caches so they can't grow without limit over a long-lived MediaLibraryService.
+    // Only get/put are used (no iteration), so a synchronized LinkedHashMap is thread-safe for
+    // all access here; oldest-inserted entries are evicted once the cap is exceeded.
+    private val stationCache: MutableMap<String, Station> = boundedCache(maxSize = 1500)
+    private val searchCache: MutableMap<String, List<Station>> = boundedCache(maxSize = 64)
     private var lastAutoResumeAttemptAtMs = 0L
     private var mediaLibrarySession: MediaLibrarySession? = null
     private var currentAutoQueue: List<Station> = emptyList()
@@ -106,6 +109,25 @@ class RadioWaveAutoService : MediaLibraryService() {
     // elapsedRealtime of the last disconnect-triggered pause — see onDisconnected and
     // tryAutoResumeOnConnect's DISCONNECT_RESUME_GUARD_MS check.
     private var lastDisconnectPauseAtMs = 0L
+    // Authoritative OS-level "is the phone projecting to a car" signal. The
+    // controller-disconnect heuristic in onDisconnected has a hole with WIRELESS
+    // Android Auto: after the user leaves the car, the phone can keep the BT/AA
+    // link alive for several seconds — neither onDisconnected nor
+    // audio-becoming-noisy fire until the radio link actually drops, so playback
+    // sporadically kept running on the phone (reported 2026-07-17). CarConnection's
+    // projection state ends with the head-unit session itself, independent of the
+    // lingering radio link.
+    private var carConnectionTypeLiveData: androidx.lifecycle.LiveData<Int>? = null
+    private var lastCarConnectionType = CarConnection.CONNECTION_TYPE_NOT_CONNECTED
+    private val carConnectionObserver = androidx.lifecycle.Observer<Int> { type ->
+        val previous = lastCarConnectionType
+        lastCarConnectionType = type
+        if (previous != CarConnection.CONNECTION_TYPE_NOT_CONNECTED &&
+            type == CarConnection.CONNECTION_TYPE_NOT_CONNECTED
+        ) {
+            onCarProjectionEnded()
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -119,6 +141,19 @@ class RadioWaveAutoService : MediaLibraryService() {
         val callback = RadioWaveLibraryCallback()
         mediaLibrarySession = MediaLibrarySession.Builder(this, player, callback).build().also { session ->
             session.setSessionExtras(buildAutoSessionExtras())
+        }
+        // Re-bind the session whenever the player is rebuilt (buffer-profile / thermal /
+        // automotive-mode changes release and recreate the ExoPlayer). Only performPlaybackStart
+        // used to call setPlayer, so phone-side re-play after a settings change and the
+        // automotive-toggle-while-playing path left the session bound to a released player.
+        playerController.setOnSessionPlayerChangedListener { newPlayer ->
+            mediaLibrarySession?.setPlayer(newPlayer)
+        }
+        // Observe the OS-level car-projection state — see carConnectionObserver.
+        // observeForever is correct here (Service has no LifecycleOwner); removed in
+        // onDestroy. onCreate runs on the main thread, as LiveData requires.
+        carConnectionTypeLiveData = CarConnection(this).type.also {
+            it.observeForever(carConnectionObserver)
         }
         // Media3 builds and updates the foreground notification via this provider
         // — replaces the deleted legacy PlaybackForegroundService completely.
@@ -153,6 +188,22 @@ class RadioWaveAutoService : MediaLibraryService() {
         }
     }
 
+    /**
+     * The car projection session ended (ignition off / user left) per the OS — pause
+     * even if the AA controller is still nominally connected over a lingering
+     * wireless link. Mirrors the onDisconnected teardown; the shared
+     * [automotiveSessionActive] flag makes the two paths idempotent against each
+     * other (whichever fires first wins, the second is a no-op).
+     */
+    private fun onCarProjectionEnded() {
+        if (!automotiveSessionActive) return
+        automotiveSessionActive = false
+        playerController.pauseForExternalPlayback()
+        playerController.setAutomotivePerformanceModeEnabled(false)
+        lastDisconnectPauseAtMs = SystemClock.elapsedRealtime()
+        logInfo("Car projection ended — paused playback (CarConnection)")
+    }
+
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
         // Auto-resume is triggered from onPostConnect (not here) so that automotive
         // performance mode is applied first and the connection is fully established
@@ -160,7 +211,29 @@ class RadioWaveAutoService : MediaLibraryService() {
         return mediaLibrarySession
     }
 
+    override fun onTaskRemoved(rootIntent: android.content.Intent?) {
+        // User swiped the app away from recents — they expect that to STOP playback
+        // (reported: "app kept playing, had to hit pause in the notification").
+        // Media3's default keeps the foreground service alive while playWhenReady is
+        // true, which is right for music apps with queues but wrong for live radio.
+        // stop() tears down playback, the wake/wifi locks, audio focus and the
+        // foreground notification; stopSelf() then lets the (now background) service
+        // shut down normally. NOT super.onTaskRemoved() first — the default would
+        // see isPlaying and keep the service in the foreground.
+        //
+        // Exception: an ACTIVE Android Auto session. Swiping the phone task while
+        // driving (e.g. clearing recents at a red light) must not silence the car —
+        // AA playback is controlled from the head unit, not the phone UI task.
+        if (automotiveSessionActive) return
+        playerController.stop()
+        stopSelf()
+    }
+
     override fun onDestroy() {
+        // Clear first so a late player-recreation can't touch the released session.
+        playerController.setOnSessionPlayerChangedListener(null)
+        carConnectionTypeLiveData?.removeObserver(carConnectionObserver)
+        carConnectionTypeLiveData = null
         mediaLibrarySession?.release()
         mediaLibrarySession = null
         // Always disable automotive mode on teardown — if the user disconnected AA
@@ -807,7 +880,7 @@ class RadioWaveAutoService : MediaLibraryService() {
             ?.removePrefix(STATION_PREFIX)
             ?.trim()
             .takeUnless { it.isNullOrBlank() }
-        stationCache[stationUuid]?.let { return it }
+        stationUuid?.let(stationCache::get)?.let { return it }
         mediaId?.let(stationCache::get)?.let { return it }
         mediaUri?.let(stationCache::get)?.let { return it }
 
@@ -1244,13 +1317,23 @@ class RadioWaveAutoService : MediaLibraryService() {
         )
     }
 
+    private fun <K, V> boundedCache(maxSize: Int): MutableMap<K, V> =
+        java.util.Collections.synchronizedMap(
+            object : LinkedHashMap<K, V>(16, 0.75f, false) {
+                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<K, V>): Boolean = size > maxSize
+            },
+        )
+
     private fun refreshConnectedAutoControllers() {
         val session = mediaLibrarySession ?: return
         val extras = buildAutoSessionExtras()
-        val buttons = buildAutoMediaButtons()
+        val settings = settingsState.value
         session.connectedControllers.forEach { controller ->
             session.setSessionExtras(controller, extras)
-            session.setMediaButtonPreferences(controller, buttons)
+            // Per-controller layout: automotive controllers get the fixed prev/next AA
+            // layout; phone/system controllers must keep the user's notificationShow*
+            // preferences rather than being overwritten with the AA layout.
+            session.setMediaButtonPreferences(controller, mediaButtonsFor(controller, settings))
         }
     }
 

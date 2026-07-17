@@ -53,12 +53,13 @@ class OfflineFirstStationRepository @Inject constructor(
             .onFailure { android.util.Log.w("RadioWave", "searchByName failed: ${it.message}") }
             .onSuccess { stations ->
                 cacheStations(stations)
+                // Refresh the in-memory search cache ONLY on success. Writing a failed
+                // (empty or stale) result here with a fresh timestamp would make the entry
+                // look valid for the whole TTL and suppress network retries — a transient
+                // failure must not poison the cache.
+                searchCache[normalizedQuery] = SearchCacheEntry(timestampMs = now, stations = stations)
             }
             .getOrDefault(cached?.stations.orEmpty())
-        searchCache[normalizedQuery] = SearchCacheEntry(
-            timestampMs = now,
-            stations = fresh,
-        )
         val merged = mergeByUuid(primary = fresh, secondary = local)
         if (merged.isNotEmpty() || !hasEmitted) {
             emit(merged)
