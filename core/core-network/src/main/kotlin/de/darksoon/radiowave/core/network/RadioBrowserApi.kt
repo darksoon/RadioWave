@@ -56,6 +56,19 @@ interface RadioBrowserApi {
         @Path("count") count: Int = 100,
     ): List<RadioBrowserStation>
 
+    /**
+     * Paged slice of the FULL station directory — used by the local mirror sync.
+     * Ordered by name so pagination is stable across requests; hidebroken keeps
+     * the dump to stations Radio Browser still considers alive.
+     */
+    @GET("json/stations")
+    suspend fun getStationsPage(
+        @Query("offset") offset: Int,
+        @Query("limit") limit: Int,
+        @Query("order") order: String = "name",
+        @Query("hidebroken") hideBroken: Boolean = true,
+    ): List<RadioBrowserStation>
+
     @GET("json/tags")
     suspend fun getTags(
         @Query("order") order: String = "stationcount",

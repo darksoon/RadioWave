@@ -40,4 +40,7 @@
     <string name="shortcut_settings_short">Einstellungen</string>
     <string name="shortcut_settings_long">Einstellungen oeffnen</string>
     <string name="shortcut_player_unavailable">Aktuell laeuft kein Stream</string>
+    <string name="onboarding_step_mirror_title">Schnellere Suche, auch offline</string>
+    <string name="onboarding_step_mirror_body">RadioWave kann das komplette Senderverzeichnis (~15 MB, wöchentlich über WLAN aktualisiert) auf deinem Gerät speichern. Die Suche wird sofortig und tippfehlertolerant — und funktioniert auch, wenn der Verzeichnis-Server ausfällt. Jederzeit in den Einstellungen änderbar.</string>
+    <string name="onboarding_mirror_opt_in_label">Verzeichnis lokal speichern</string>
 </resources>

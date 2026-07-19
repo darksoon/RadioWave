@@ -40,4 +40,7 @@
     <string name="shortcut_settings_short">Settings</string>
     <string name="shortcut_settings_long">Open settings</string>
     <string name="shortcut_player_unavailable">No active playback right now</string>
+    <string name="onboarding_step_mirror_title">Faster search, even offline</string>
+    <string name="onboarding_step_mirror_body">RadioWave can store the full station directory (~15 MB, updated weekly over Wi-Fi) on your device. Search becomes instant and typo-tolerant — and keeps working when the directory server is down. You can change this anytime in Settings.</string>
+    <string name="onboarding_mirror_opt_in_label">Store directory locally</string>
 </resources>

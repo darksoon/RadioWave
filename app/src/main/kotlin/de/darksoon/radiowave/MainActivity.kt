@@ -27,6 +27,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Brush
@@ -61,6 +62,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -226,6 +228,8 @@ private data class OnboardingStepContent(
     @StringRes val bodyRes: Int,
     val icon: ImageVector,
     val accentColor: Color,
+    /** Renders the station-mirror opt-in switch under the body text. */
+    val showsMirrorOptIn: Boolean = false,
 )
 
 @Composable
@@ -234,6 +238,8 @@ private fun OnboardingDialog(
     onStepChange: (Int) -> Unit,
     onSkip: () -> Unit,
     onFinish: () -> Unit,
+    mirrorOptIn: Boolean,
+    onMirrorOptInChange: (Boolean) -> Unit,
 ) {
     val steps = listOf(
         OnboardingStepContent(
@@ -259,6 +265,13 @@ private fun OnboardingDialog(
             bodyRes = R.string.onboarding_step_auto_body,
             icon = Icons.Filled.Star,
             accentColor = Color(0xFFCA4D95),
+        ),
+        OnboardingStepContent(
+            titleRes = R.string.onboarding_step_mirror_title,
+            bodyRes = R.string.onboarding_step_mirror_body,
+            icon = Icons.Filled.Search,
+            accentColor = Color(0xFF52E3D9),
+            showsMirrorOptIn = true,
         ),
     )
     val safeStep = step.coerceIn(0, steps.lastIndex)
@@ -388,6 +401,26 @@ private fun OnboardingDialog(
                         color = Color.White.copy(alpha = 0.65f),
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     )
+                }
+
+                if (content.showsMirrorOptIn) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.onboarding_mirror_opt_in_label),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.85f),
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Switch(
+                            checked = mirrorOptIn,
+                            onCheckedChange = onMirrorOptInChange,
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -801,6 +834,7 @@ fun RadioWaveMainScreen(
             }
 
             if (showOnboarding) {
+                var onboardingMirrorOptIn by remember { mutableStateOf(false) }
                 OnboardingDialog(
                     step = onboardingStep,
                     onStepChange = { onboardingStep = it },
@@ -810,10 +844,15 @@ fun RadioWaveMainScreen(
                         onboardingStep = 0
                     },
                     onFinish = {
+                        if (onboardingMirrorOptIn) {
+                            homeViewModel.enableStationMirror()
+                        }
                         homeViewModel.setFirstRunOnboardingDone()
                         showOnboarding = false
                         onboardingStep = 0
                     },
+                    mirrorOptIn = onboardingMirrorOptIn,
+                    onMirrorOptInChange = { onboardingMirrorOptIn = it },
                 )
             }
         }

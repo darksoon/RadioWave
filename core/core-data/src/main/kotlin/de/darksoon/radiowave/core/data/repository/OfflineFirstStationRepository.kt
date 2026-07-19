@@ -10,6 +10,9 @@ import de.darksoon.radiowave.core.model.Genre
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.network.RadioBrowserApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -18,7 +21,20 @@ import javax.inject.Singleton
 class OfflineFirstStationRepository @Inject constructor(
     private val api: RadioBrowserApi,
     private val stationDao: StationDao,
+    mirrorRepository: StationMirrorRepository,
 ) : StationRepository {
+
+    // ─── Directory availability (drives the "Senderverzeichnis nicht erreichbar"
+    // banner in Browse). Flips false when a directory API call fails, back to true
+    // on the next success. Starts optimistic.
+    private val _directoryAvailable = MutableStateFlow(true)
+    val directoryAvailable: StateFlow<Boolean> = _directoryAvailable.asStateFlow()
+
+    init {
+        // Rebuild the fuzzy name index right after a mirror sync instead of waiting
+        // for its TTL to lapse.
+        mirrorRepository.onMirrorUpdated = { invalidateNameIndex() }
+    }
 
     override fun searchStations(query: String): Flow<List<Station>> = flow {
         val normalizedQuery = query.trim().lowercase()
@@ -30,11 +46,17 @@ class OfflineFirstStationRepository @Inject constructor(
         val now = System.currentTimeMillis()
         var hasEmitted = false
 
-        val local = runCatching {
+        val exactLocal = runCatching {
             // suspend variant — no Flow subscription churn on every keystroke
             stationDao.searchStations(normalizedQuery, limit = searchResultLimit)
                 .map { it.toDomain() }
         }.getOrDefault(emptyList())
+        // Fuzzy pass over the local name index — catches typos ("texhnobase" →
+        // "TechnoBase") and diacritic variants the SQL LIKE above can't see. With the
+        // full mirror enabled this covers the whole directory; without it, whatever
+        // the station cache has accumulated.
+        val fuzzyLocal = runCatching { fuzzySearchLocal(normalizedQuery) }.getOrDefault(emptyList())
+        val local = mergeByUuid(primary = exactLocal, secondary = fuzzyLocal)
         if (local.isNotEmpty()) {
             emit(local)
             hasEmitted = true
@@ -50,8 +72,12 @@ class OfflineFirstStationRepository @Inject constructor(
         }
 
         val fresh = runCatching { api.searchByName(query).map { it.toDomain() } }
-            .onFailure { android.util.Log.w("RadioWave", "searchByName failed: ${it.message}") }
+            .onFailure {
+                android.util.Log.w("RadioWave", "searchByName failed: ${it.message}")
+                _directoryAvailable.value = false
+            }
             .onSuccess { stations ->
+                _directoryAvailable.value = true
                 cacheStations(stations)
                 // Refresh the in-memory search cache ONLY on success. Writing a failed
                 // (empty or stale) result here with a fresh timestamp would make the entry
@@ -66,60 +92,68 @@ class OfflineFirstStationRepository @Inject constructor(
         }
     }
 
-    override fun getTopStations(): Flow<List<Station>> = flow {
-        val local = runCatching {
-            stationDao.getLatestStations(limit = topStationsLimit).map { it.toDomain() }
-        }.getOrDefault(emptyList())
-        if (local.isNotEmpty()) {
-            emit(local)
-        }
+    override fun getTopStations(): Flow<List<Station>> = listWithTtl(
+        cacheKey = "top",
+        loadLocal = { stationDao.getLatestStations(limit = topStationsLimit).map { it.toDomain() } },
+        fetchRemote = { api.getTopStations(100).map { it.toDomain() } },
+    )
 
-        val fresh = runCatching { api.getTopStations(100).map { it.toDomain() } }
-            .onFailure { android.util.Log.w("RadioWave", "getTopStations failed: ${it.message}") }
-            .onSuccess { stations ->
-                cacheStations(stations)
-            }
-            .getOrDefault(local)
-        emit(mergeByUuid(primary = fresh, secondary = local))
-    }
-
-    override fun getStationsByCountry(countryCode: String): Flow<List<Station>> = flow {
-        val normalizedCountry = countryCode.trim().uppercase()
-        val local = runCatching {
+    override fun getStationsByCountry(countryCode: String): Flow<List<Station>> = listWithTtl(
+        cacheKey = "country:${countryCode.trim().uppercase()}",
+        loadLocal = {
             stationDao.getStationsByCountryCode(
-                countryCode = normalizedCountry,
+                countryCode = countryCode.trim().uppercase(),
                 limit = countryStationsLimit,
             ).map { it.toDomain() }
-        }.getOrDefault(emptyList())
-        if (local.isNotEmpty()) {
-            emit(local)
-        }
+        },
+        fetchRemote = { api.searchByCountry(countryCode).map { it.toDomain() } },
+    )
 
-        val fresh = runCatching { api.searchByCountry(countryCode).map { it.toDomain() } }
-            .onSuccess { stations ->
-                cacheStations(stations)
-            }
-            .getOrDefault(local)
-        emit(mergeByUuid(primary = fresh, secondary = local))
-    }
-
-    override fun getStationsByTag(tag: String): Flow<List<Station>> = flow {
-        val normalizedTag = tag.trim().lowercase()
-        val local = runCatching {
+    override fun getStationsByTag(tag: String): Flow<List<Station>> = listWithTtl(
+        cacheKey = "tag:${tag.trim().lowercase()}",
+        loadLocal = {
             stationDao.getStationsByTag(
-                tag = normalizedTag,
+                tag = tag.trim().lowercase(),
                 limit = tagStationsLimit,
             ).map { it.toDomain() }
-        }.getOrDefault(emptyList())
+        },
+        fetchRemote = { api.searchByTag(tag).map { it.toDomain() } },
+    )
+
+    /**
+     * Shared shape of every browse list: emit the local Room copy immediately, then
+     * either serve the in-memory TTL cache (no network on tab-hopping within
+     * [listCacheTtlMs]) or fetch fresh. A fetch failure keeps whatever we have,
+     * never poisons the cache, and flips [directoryAvailable] for the UI banner.
+     */
+    private fun listWithTtl(
+        cacheKey: String,
+        loadLocal: suspend () -> List<Station>,
+        fetchRemote: suspend () -> List<Station>,
+    ): Flow<List<Station>> = flow {
+        val now = System.currentTimeMillis()
+        val local = runCatching { loadLocal() }.getOrDefault(emptyList())
         if (local.isNotEmpty()) {
             emit(local)
         }
 
-        val fresh = runCatching { api.searchByTag(tag).map { it.toDomain() } }
-            .onSuccess { stations ->
-                cacheStations(stations)
+        val cached = listCache[cacheKey]
+        if (cached != null && now - cached.timestampMs <= listCacheTtlMs) {
+            emit(mergeByUuid(primary = cached.stations, secondary = local))
+            return@flow
+        }
+
+        val fresh = runCatching { fetchRemote() }
+            .onFailure {
+                android.util.Log.w("RadioWave", "list fetch '$cacheKey' failed: ${it.message}")
+                _directoryAvailable.value = false
             }
-            .getOrDefault(local)
+            .onSuccess { stations ->
+                _directoryAvailable.value = true
+                cacheStations(stations)
+                listCache[cacheKey] = SearchCacheEntry(timestampMs = now, stations = stations)
+            }
+            .getOrDefault(cached?.stations ?: local)
         emit(mergeByUuid(primary = fresh, secondary = local))
     }
 
@@ -192,7 +226,11 @@ class OfflineFirstStationRepository @Inject constructor(
             return@flow
         }
         val fresh = runCatching { api.getTags().map { it.toDomain() } }
-            .onFailure { android.util.Log.w("RadioWave", "getTags failed: ${it.message}") }
+            .onFailure {
+                android.util.Log.w("RadioWave", "getTags failed: ${it.message}")
+                _directoryAvailable.value = false
+            }
+            .onSuccess { _directoryAvailable.value = true }
             .getOrDefault(emptyList())
         if (fresh.isNotEmpty()) {
             cachedTags = fresh
@@ -209,7 +247,11 @@ class OfflineFirstStationRepository @Inject constructor(
             return@flow
         }
         val fresh = runCatching { api.getCountries().map { it.toDomain() } }
-            .onFailure { android.util.Log.w("RadioWave", "getCountries failed: ${it.message}") }
+            .onFailure {
+                android.util.Log.w("RadioWave", "getCountries failed: ${it.message}")
+                _directoryAvailable.value = false
+            }
+            .onSuccess { _directoryAvailable.value = true }
             .getOrDefault(emptyList())
         if (fresh.isNotEmpty()) {
             cachedCountries = fresh
@@ -262,16 +304,155 @@ class OfflineFirstStationRepository @Inject constructor(
         override fun removeEldestEntry(eldest: Map.Entry<String, SearchCacheEntry>?) = size > 64
     }
 
+    // Browse lists (top / by-country / by-tag) — same entry shape as the search
+    // cache, 30-min TTL, bounded LRU.
+    private val listCache = object : java.util.LinkedHashMap<String, SearchCacheEntry>(16, 0.75f, true) {
+        override fun removeEldestEntry(eldest: Map.Entry<String, SearchCacheEntry>?) = size > 32
+    }
+
     /** Clears the in-memory search cache. Called from SettingsViewModel on user request. */
-    fun clearSearchCache() = searchCache.clear()
+    fun clearSearchCache() {
+        searchCache.clear()
+        listCache.clear()
+        invalidateNameIndex()
+    }
+
+    // ─── Fuzzy search ────────────────────────────────────────────────────────────
+    //
+    // In-memory (uuid, normalizedName) index over the whole Room stations table —
+    // with the full mirror enabled that's the complete directory (~50k rows, a few
+    // MB). Built lazily off the query path's dispatcher, rebuilt after a mirror
+    // sync or when its TTL lapses so freshly cached stations become findable.
+
+    private data class NameIndexEntry(val uuid: String, val normalizedName: String)
+
+    @Volatile private var nameIndex: List<NameIndexEntry>? = null
+    @Volatile private var nameIndexBuiltAtMs = 0L
+
+    private fun invalidateNameIndex() {
+        nameIndex = null
+    }
+
+    private suspend fun ensureNameIndex(): List<NameIndexEntry> {
+        val existing = nameIndex
+        val now = System.currentTimeMillis()
+        if (existing != null && now - nameIndexBuiltAtMs < nameIndexTtlMs) return existing
+        val built = stationDao.getNameIndex()
+            .mapNotNull { row ->
+                val normalized = normalizeForFuzzy(row.name)
+                if (normalized.isBlank()) null else NameIndexEntry(row.uuid, normalized)
+            }
+        nameIndex = built
+        nameIndexBuiltAtMs = now
+        return built
+    }
+
+    /**
+     * Typo-tolerant match of [normalizedQuery] against the local name index.
+     * Scoring: normalized-substring hit = 0 (catches diacritics/punctuation variants
+     * SQL LIKE misses); otherwise the best token-wise Levenshtein distance, allowed
+     * up to 1 edit for 4–5 letter queries and 2 edits from 6 letters. Queries under
+     * 4 letters skip fuzzy entirely — too ambiguous.
+     */
+    private suspend fun fuzzySearchLocal(normalizedQuery: String): List<Station> {
+        val query = normalizeForFuzzy(normalizedQuery)
+        if (query.length < fuzzyMinQueryLength) return emptyList()
+        val maxEdits = if (query.length >= 6) 2 else 1
+
+        val scored = ArrayList<Pair<NameIndexEntry, Int>>()
+        for (entry in ensureNameIndex()) {
+            val name = entry.normalizedName
+            val score = if (name.contains(query)) {
+                0
+            } else {
+                var best = Int.MAX_VALUE
+                for (token in name.split(' ')) {
+                    if (kotlin.math.abs(token.length - query.length) > maxEdits) continue
+                    val d = boundedLevenshtein(token, query, maxEdits)
+                    if (d < best) best = d
+                    if (best == 0) break
+                }
+                best
+            }
+            if (score <= maxEdits) {
+                scored += entry to score
+            }
+        }
+        if (scored.isEmpty()) return emptyList()
+
+        val topUuids = scored
+            .sortedBy { it.second }
+            .take(fuzzyResultLimit)
+            .map { it.first.uuid }
+        val byUuid = stationDao.getStationsByUuids(topUuids)
+            .associateBy { it.uuid }
+        // Preserve score order — Room's IN() gives no ordering guarantee.
+        return topUuids.mapNotNull { byUuid[it]?.toDomain() }
+    }
+
+    /** lowercase, strip diacritics, collapse everything non-alphanumeric to single spaces. */
+    private fun normalizeForFuzzy(value: String): String {
+        val decomposed = java.text.Normalizer.normalize(value.lowercase(), java.text.Normalizer.Form.NFD)
+        val sb = StringBuilder(decomposed.length)
+        var lastWasSpace = true
+        for (c in decomposed) {
+            when {
+                c.isLetterOrDigit() && c.code < 128 -> {
+                    sb.append(c); lastWasSpace = false
+                }
+                c.isLetterOrDigit() -> {
+                    // Non-ASCII letter that NFD didn't decompose (e.g. ø, ß) — keep as-is.
+                    sb.append(c); lastWasSpace = false
+                }
+                Character.getType(c) == Character.NON_SPACING_MARK.toInt() -> Unit // dropped diacritic
+                else -> {
+                    if (!lastWasSpace) { sb.append(' '); lastWasSpace = true }
+                }
+            }
+        }
+        return sb.toString().trim()
+    }
+
+    /**
+     * Levenshtein distance with early exit: returns a value > [max] as soon as the
+     * distance provably exceeds it, so the 50k-row scan stays cheap.
+     */
+    private fun boundedLevenshtein(a: String, b: String, max: Int): Int {
+        if (a == b) return 0
+        if (kotlin.math.abs(a.length - b.length) > max) return max + 1
+        var previous = IntArray(b.length + 1) { it }
+        var current = IntArray(b.length + 1)
+        for (i in 1..a.length) {
+            current[0] = i
+            var rowMin = current[0]
+            for (j in 1..b.length) {
+                val cost = if (a[i - 1] == b[j - 1]) 0 else 1
+                current[j] = minOf(
+                    previous[j] + 1,
+                    current[j - 1] + 1,
+                    previous[j - 1] + cost,
+                )
+                if (current[j] < rowMin) rowMin = current[j]
+            }
+            if (rowMin > max) return max + 1
+            val tmp = previous
+            previous = current
+            current = tmp
+        }
+        return previous[b.length]
+    }
 
     private companion object {
         const val searchCacheTtlMs: Long = 15 * 60 * 1000L
+        const val listCacheTtlMs: Long = 30 * 60 * 1000L
+        const val nameIndexTtlMs: Long = 15 * 60 * 1000L
         const val searchResultLimit = 120
         const val topStationsLimit = 100
         const val countryStationsLimit = 160
         const val tagStationsLimit = 160
         const val mergeResultLimit = 180
+        const val fuzzyMinQueryLength = 4
+        const val fuzzyResultLimit = 30
     }
 }
 

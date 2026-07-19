@@ -17,6 +17,7 @@ import de.darksoon.radiowave.core.data.repository.FavoriteRepository
 import de.darksoon.radiowave.core.data.repository.OfflineFirstStationRepository
 import de.darksoon.radiowave.core.data.repository.RecentRepository
 import de.darksoon.radiowave.core.data.repository.SettingsRepository
+import de.darksoon.radiowave.core.data.repository.StationMirrorRepository
 import de.darksoon.radiowave.core.database.dao.StationDao
 import de.darksoon.radiowave.core.model.FavoritesImportOutcome
 import de.darksoon.radiowave.core.model.Station
@@ -46,8 +47,12 @@ class SettingsViewModel @Inject constructor(
     private val favoriteRepository: FavoriteRepository,
     private val customStationRepository: CustomStationRepository,
     private val coverArtRepository: CoverArtRepository,
+    private val stationMirrorRepository: StationMirrorRepository,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
+
+    /** Live progress of the local station-directory mirror sync (settings UI). */
+    val mirrorSyncState: StateFlow<StationMirrorRepository.SyncState> = stationMirrorRepository.syncState
 
     /** Snapshot of all settings — observed reactively by the UI. */
     val settings: StateFlow<AppSettingsState> = settingsRepository.data
@@ -74,6 +79,15 @@ class SettingsViewModel @Inject constructor(
     fun setAutoPlayOnAndroidAutoConnect(v: Boolean) = viewModelScope.launch { settingsRepository.setAutoPlayOnAndroidAutoConnect(v) }
     fun setLimitAndroidAutoQuality(v: Boolean) = viewModelScope.launch { settingsRepository.setLimitAndroidAutoQuality(v) }
     fun setConfirmRemoveFavorite(v: Boolean) = viewModelScope.launch { settingsRepository.setConfirmRemoveFavorite(v) }
+    fun setStationMirrorEnabled(v: Boolean) = viewModelScope.launch {
+        settingsRepository.setStationMirrorEnabled(v)
+        // First enable → kick off the initial download right away so the user sees
+        // the mirror fill instead of waiting for the next app start.
+        if (v) stationMirrorRepository.syncNow()
+    }
+    fun setStationMirrorIntervalHours(v: Int) = viewModelScope.launch { settingsRepository.setStationMirrorIntervalHours(v) }
+    fun setStationMirrorWifiOnly(v: Boolean) = viewModelScope.launch { settingsRepository.setStationMirrorWifiOnly(v) }
+    fun syncStationMirrorNow() = viewModelScope.launch { stationMirrorRepository.syncNow() }
 
     fun clearHistory() {
         viewModelScope.launch {

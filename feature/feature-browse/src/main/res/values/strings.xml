@@ -54,4 +54,6 @@
     <string name="browse_empty_subtitle">Try a different search or remove filters</string>
     <string name="browse_error_load">Failed to load: %1$s</string>
     <string name="browse_error_search">Search failed: %1$s</string>
+    <string name="browse_directory_offline_banner">Station directory is currently unreachable — showing saved results. Favorites and playback are not affected.</string>
+    <string name="browse_mirror_hint">Tip: enable "Store station directory locally" in Settings for instant, typo-tolerant search.</string>
 </resources>

@@ -7,6 +7,8 @@ import androidx.datastore.preferences.SharedPreferencesMigration
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -49,6 +51,12 @@ data class AppSettingsState(
     val limitAndroidAutoQuality: Boolean = true,
     val confirmRemoveFavorite: Boolean = false,
     val firstRunOnboardingDone: Boolean = false,
+    // Local station-directory mirror (full Radio Browser dump in Room).
+    val stationMirrorEnabled: Boolean = false,
+    val stationMirrorIntervalHours: Int = 168, // 24 = daily, 168 = weekly, 0 = manual only
+    val stationMirrorWifiOnly: Boolean = true,
+    val stationMirrorLastSyncAtMs: Long = 0L,
+    val stationMirrorStationCount: Int = 0,
     val lastStationUuid: String? = null,
     val lastStationName: String? = null,
     val lastStationStreamUrl: String? = null,
@@ -100,6 +108,11 @@ open class SettingsRepository @Inject constructor(
         val LAST_STATION_STREAM_URL = stringPreferencesKey(AppSettings.KEY_LAST_STATION_STREAM_URL)
         val LAST_STATION_FAVICON_URL = stringPreferencesKey(AppSettings.KEY_LAST_STATION_FAVICON_URL)
         val LAST_STATION_COUNTRY = stringPreferencesKey(AppSettings.KEY_LAST_STATION_COUNTRY)
+        val STATION_MIRROR_ENABLED = booleanPreferencesKey(AppSettings.KEY_STATION_MIRROR_ENABLED)
+        val STATION_MIRROR_INTERVAL_HOURS = intPreferencesKey(AppSettings.KEY_STATION_MIRROR_INTERVAL_HOURS)
+        val STATION_MIRROR_WIFI_ONLY = booleanPreferencesKey(AppSettings.KEY_STATION_MIRROR_WIFI_ONLY)
+        val STATION_MIRROR_LAST_SYNC_AT = longPreferencesKey(AppSettings.KEY_STATION_MIRROR_LAST_SYNC_AT)
+        val STATION_MIRROR_STATION_COUNT = intPreferencesKey(AppSettings.KEY_STATION_MIRROR_STATION_COUNT)
     }
 
     /** Single source of truth — all values bundled in one Flow. */
@@ -168,6 +181,13 @@ open class SettingsRepository @Inject constructor(
     suspend fun setLimitAndroidAutoQuality(v: Boolean) = edit { it[Keys.LIMIT_ANDROID_AUTO_QUALITY] = v }
     suspend fun setConfirmRemoveFavorite(v: Boolean) = edit { it[Keys.CONFIRM_REMOVE_FAVORITE] = v }
     suspend fun setFirstRunOnboardingDone(v: Boolean) = edit { it[Keys.FIRST_RUN_ONBOARDING_DONE] = v }
+    suspend fun setStationMirrorEnabled(v: Boolean) = edit { it[Keys.STATION_MIRROR_ENABLED] = v }
+    suspend fun setStationMirrorIntervalHours(v: Int) = edit { it[Keys.STATION_MIRROR_INTERVAL_HOURS] = v }
+    suspend fun setStationMirrorWifiOnly(v: Boolean) = edit { it[Keys.STATION_MIRROR_WIFI_ONLY] = v }
+    suspend fun setStationMirrorSyncResult(syncedAtMs: Long, stationCount: Int) = edit {
+        it[Keys.STATION_MIRROR_LAST_SYNC_AT] = syncedAtMs
+        it[Keys.STATION_MIRROR_STATION_COUNT] = stationCount
+    }
 
     /** Atomically persist the last played station's identification fields. */
     open suspend fun setLastStation(
@@ -210,6 +230,11 @@ open class SettingsRepository @Inject constructor(
         limitAndroidAutoQuality = this[Keys.LIMIT_ANDROID_AUTO_QUALITY] ?: true,
         confirmRemoveFavorite = this[Keys.CONFIRM_REMOVE_FAVORITE] ?: false,
         firstRunOnboardingDone = this[Keys.FIRST_RUN_ONBOARDING_DONE] ?: false,
+        stationMirrorEnabled = this[Keys.STATION_MIRROR_ENABLED] ?: false,
+        stationMirrorIntervalHours = this[Keys.STATION_MIRROR_INTERVAL_HOURS] ?: 168,
+        stationMirrorWifiOnly = this[Keys.STATION_MIRROR_WIFI_ONLY] ?: true,
+        stationMirrorLastSyncAtMs = this[Keys.STATION_MIRROR_LAST_SYNC_AT] ?: 0L,
+        stationMirrorStationCount = this[Keys.STATION_MIRROR_STATION_COUNT] ?: 0,
         lastStationUuid = this[Keys.LAST_STATION_UUID],
         lastStationName = this[Keys.LAST_STATION_NAME],
         lastStationStreamUrl = this[Keys.LAST_STATION_STREAM_URL],

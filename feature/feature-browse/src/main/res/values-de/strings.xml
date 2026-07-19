@@ -54,4 +54,6 @@
     <string name="browse_empty_subtitle">Andere Suchbegriffe oder Filter ausprobieren</string>
     <string name="browse_error_load">Laden fehlgeschlagen: %1$s</string>
     <string name="browse_error_search">Suche fehlgeschlagen: %1$s</string>
+    <string name="browse_directory_offline_banner">Senderverzeichnis gerade nicht erreichbar — gespeicherte Ergebnisse werden angezeigt. Favoriten und Wiedergabe funktionieren normal.</string>
+    <string name="browse_mirror_hint">Tipp: „Senderverzeichnis lokal speichern" in den Einstellungen aktivieren für sofortige, tippfehlertolerante Suche.</string>
 </resources>

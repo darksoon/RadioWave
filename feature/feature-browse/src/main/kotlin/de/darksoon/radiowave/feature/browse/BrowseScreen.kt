@@ -174,6 +174,8 @@ fun BrowseScreen(
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedCountry by viewModel.selectedCountry.collectAsStateWithLifecycle()
     val showInsecureStreams by viewModel.showInsecureStreams.collectAsStateWithLifecycle()
+    val directoryAvailable by viewModel.directoryAvailable.collectAsStateWithLifecycle()
+    val stationMirrorEnabled by viewModel.stationMirrorEnabled.collectAsStateWithLifecycle()
     var selectedGenre by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(initialGenre) {
@@ -204,6 +206,8 @@ fun BrowseScreen(
             selectedCountry = selectedCountry,
             selectedGenre = selectedGenre,
             showInsecureStreams = showInsecureStreams,
+            directoryAvailable = directoryAvailable,
+            stationMirrorEnabled = stationMirrorEnabled,
             onSearchQueryChange = { query ->
                 selectedGenre = null
                 viewModel.onSearchQueryChange(query)
@@ -238,6 +242,8 @@ private fun BrowseContent(
     selectedCountry: String?,
     selectedGenre: String?,
     showInsecureStreams: Boolean,
+    directoryAvailable: Boolean,
+    stationMirrorEnabled: Boolean,
     onSearchQueryChange: (String) -> Unit,
     onGenreSelected: (String?) -> Unit,
     onCountrySelected: (String?) -> Unit,
@@ -342,6 +348,31 @@ private fun BrowseContent(
                     cursorColor = RadioAccent,
                 ),
             )
+
+            // Directory-outage banner — the station DIRECTORY (search/browse) is down;
+            // favorites and playback keep working, so say exactly that instead of
+            // showing inexplicably empty lists.
+            if (!directoryAvailable) {
+                Text(
+                    text = stringResource(R.string.browse_directory_offline_banner),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 6.dp),
+                )
+            } else if (!stationMirrorEnabled && searchQuery.isNotBlank()) {
+                // Subtle pointer to the local-mirror setting — only while actually
+                // searching, gone entirely once the mirror is on.
+                Text(
+                    text = stringResource(R.string.browse_mirror_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 6.dp),
+                )
+            }
 
             AnimatedVisibility(
                 visible = showHeader,

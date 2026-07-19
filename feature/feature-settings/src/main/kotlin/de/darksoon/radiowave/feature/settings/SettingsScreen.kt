@@ -91,11 +91,13 @@ import de.darksoon.radiowave.core.model.AppSettings
 import de.darksoon.radiowave.core.model.DataUsageEstimate
 import de.darksoon.radiowave.core.model.FavoritesImportOutcome
 import kotlin.math.roundToInt
+import de.darksoon.radiowave.core.data.repository.StationMirrorRepository
 import de.darksoon.radiowave.core.data.update.LocalIssueReporter
 import de.darksoon.radiowave.core.ui.theme.DarkCardBackground
 import de.darksoon.radiowave.core.ui.theme.DarkOnSurfaceVariant
 import de.darksoon.radiowave.core.ui.theme.RadioAccent
 import de.darksoon.radiowave.feature.settings.R
+import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -588,6 +590,58 @@ fun SettingsScreen(
                                 viewModel.setShowInsecureStreams(checked)
                             },
                         )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingToggleRow(
+                            title = stringResource(R.string.settings_station_mirror_title),
+                            subtitle = stringResource(R.string.settings_station_mirror_subtitle),
+                            checked = settings.stationMirrorEnabled,
+                            onCheckedChange = { checked ->
+                                viewModel.setStationMirrorEnabled(checked)
+                            },
+                        )
+                        if (settings.stationMirrorEnabled) {
+                            SettingChoiceRow(
+                                title = stringResource(R.string.settings_station_mirror_interval_title),
+                                options = listOf(
+                                    ThemeOption("24", stringResource(R.string.settings_station_mirror_interval_daily)),
+                                    ThemeOption("168", stringResource(R.string.settings_station_mirror_interval_weekly)),
+                                    ThemeOption("0", stringResource(R.string.settings_station_mirror_interval_manual)),
+                                ),
+                                selectedValue = settings.stationMirrorIntervalHours.toString(),
+                                onSelected = { value ->
+                                    value.toIntOrNull()?.let(viewModel::setStationMirrorIntervalHours)
+                                },
+                            )
+                            SettingToggleRow(
+                                title = stringResource(R.string.settings_station_mirror_wifi_only_title),
+                                subtitle = stringResource(R.string.settings_station_mirror_wifi_only_subtitle),
+                                checked = settings.stationMirrorWifiOnly,
+                                onCheckedChange = { checked ->
+                                    viewModel.setStationMirrorWifiOnly(checked)
+                                },
+                            )
+                            val mirrorSyncState by viewModel.mirrorSyncState.collectAsStateWithLifecycle()
+                            val syncStatusText = when (val state = mirrorSyncState) {
+                                is StationMirrorRepository.SyncState.Running ->
+                                    stringResource(R.string.settings_station_mirror_syncing, state.stationsSynced)
+                                else -> if (settings.stationMirrorLastSyncAtMs > 0L) {
+                                    stringResource(
+                                        R.string.settings_station_mirror_last_sync,
+                                        settings.stationMirrorStationCount,
+                                        DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
+                                            .format(Date(settings.stationMirrorLastSyncAtMs)),
+                                    )
+                                } else {
+                                    stringResource(R.string.settings_station_mirror_never_synced)
+                                }
+                            }
+                            SettingActionRow(
+                                title = stringResource(R.string.settings_station_mirror_status_title),
+                                subtitle = syncStatusText,
+                                actionLabel = stringResource(R.string.settings_station_mirror_sync_now),
+                                onActionClick = { viewModel.syncStationMirrorNow() },
+                            )
+                        }
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingActionRow(
                             title = stringResource(R.string.settings_battery_optimization_title),

@@ -14,6 +14,7 @@ import de.darksoon.radiowave.core.data.repository.FavoriteRepository
 import de.darksoon.radiowave.feature.home.R
 import de.darksoon.radiowave.core.data.repository.RecentRepository
 import de.darksoon.radiowave.core.data.repository.SettingsRepository
+import de.darksoon.radiowave.core.data.repository.StationMirrorRepository
 import de.darksoon.radiowave.core.data.repository.StationRepository
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.player.RadioPlayerManager
@@ -49,6 +50,7 @@ class HomeViewModel @Inject constructor(
     private val recentRepository: RecentRepository,
     private val playerManager: RadioPlayerManager,
     private val settingsRepository: SettingsRepository,
+    private val stationMirrorRepository: StationMirrorRepository,
 ) : ViewModel() {
     private val playbackHistory = ArrayDeque<Station>()
     private val maxPlaybackHistorySize = 40
@@ -95,6 +97,14 @@ class HomeViewModel @Inject constructor(
      */
     fun setFirstRunOnboardingDone(done: Boolean = true) {
         viewModelScope.launch { settingsRepository.setFirstRunOnboardingDone(done) }
+    }
+
+    /** Onboarding opt-in: enable the local directory mirror and start its first download. */
+    fun enableStationMirror() {
+        viewModelScope.launch {
+            settingsRepository.setStationMirrorEnabled(true)
+            stationMirrorRepository.syncNow()
+        }
     }
 
     init {

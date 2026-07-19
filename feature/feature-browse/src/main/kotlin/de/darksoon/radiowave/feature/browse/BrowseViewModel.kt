@@ -12,6 +12,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.darksoon.radiowave.core.data.repository.FavoriteRepository
+import de.darksoon.radiowave.core.data.repository.OfflineFirstStationRepository
 import de.darksoon.radiowave.core.data.repository.RecentRepository
 import de.darksoon.radiowave.core.data.repository.SettingsRepository
 import de.darksoon.radiowave.core.data.repository.StationRepository
@@ -92,6 +93,21 @@ class BrowseViewModel @Inject constructor(
     /** Live flag for showing HTTP-only streams — drives the visible-stations filter. */
     val showInsecureStreams: StateFlow<Boolean> = settingsRepository.showInsecureStreams
         .stateIn(viewModelScope, SharingStarted.Eagerly, settingsRepository.initialSnapshotBlocking().showInsecureStreams)
+
+    /** False while the Radio Browser directory is unreachable — drives the offline banner. */
+    val directoryAvailable: StateFlow<Boolean> =
+        (stationRepository as? OfflineFirstStationRepository)?.directoryAvailable
+            ?: MutableStateFlow(true)
+
+    /** Whether the local directory mirror is enabled — hides the search hint once it is. */
+    val stationMirrorEnabled: StateFlow<Boolean> = settingsRepository.data
+        .map { it.stationMirrorEnabled }
+        .distinctUntilChanged()
+        .stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            settingsRepository.initialSnapshotBlocking().stationMirrorEnabled,
+        )
 
     // Read directly from the favorites repository — no cross-VM state sharing required.
     val favoriteStationIds: StateFlow<Set<String>> = favoriteRepository.getFavorites()

@@ -43,5 +43,21 @@ interface StationDao {
 
     @Query("SELECT * FROM stations WHERE tags LIKE '%' || :tag || '%' ORDER BY cachedAt DESC LIMIT :limit")
     suspend fun getStationsByTag(tag: String, limit: Int = 200): List<StationEntity>
+
+    /** Lightweight uuid+name projection for the in-memory fuzzy-search index. */
+    @Query("SELECT uuid, name FROM stations")
+    suspend fun getNameIndex(): List<StationNameRow>
+
+    @Query("SELECT * FROM stations WHERE uuid IN (:uuids)")
+    suspend fun getStationsByUuids(uuids: List<String>): List<StationEntity>
+
+    @Query("SELECT COUNT(*) FROM stations")
+    suspend fun countStations(): Int
 }
+
+/** Projection row for [StationDao.getNameIndex]. */
+data class StationNameRow(
+    val uuid: String,
+    val name: String,
+)
 

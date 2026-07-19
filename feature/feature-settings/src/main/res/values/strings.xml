@@ -134,4 +134,17 @@
     <string name="settings_confirm_remove_favorite_title">Confirm removing favorites</string>
     <string name="settings_confirm_remove_favorite_subtitle">Show a confirmation dialog before removing a station from favorites.</string>
     <string name="settings_sound_section_android_auto">Android Auto</string>
+    <string name="settings_station_mirror_title">Store station directory locally</string>
+    <string name="settings_station_mirror_subtitle">Download the full Radio Browser directory (~15 MB) for instant, typo-tolerant search that also works offline.</string>
+    <string name="settings_station_mirror_interval_title">Update interval</string>
+    <string name="settings_station_mirror_interval_daily">Daily</string>
+    <string name="settings_station_mirror_interval_weekly">Weekly</string>
+    <string name="settings_station_mirror_interval_manual">Manual</string>
+    <string name="settings_station_mirror_wifi_only_title">Update over Wi-Fi only</string>
+    <string name="settings_station_mirror_wifi_only_subtitle">Skip scheduled directory updates on mobile data.</string>
+    <string name="settings_station_mirror_status_title">Directory status</string>
+    <string name="settings_station_mirror_syncing">Downloading… %1$d stations so far</string>
+    <string name="settings_station_mirror_last_sync">%1$d stations · last updated %2$s</string>
+    <string name="settings_station_mirror_never_synced">Not downloaded yet</string>
+    <string name="settings_station_mirror_sync_now">Update now</string>
 </resources>
