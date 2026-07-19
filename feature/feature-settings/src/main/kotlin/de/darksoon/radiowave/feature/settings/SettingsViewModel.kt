@@ -11,6 +11,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.darksoon.radiowave.core.data.playlist.PlaylistParser
 import de.darksoon.radiowave.core.data.repository.AppSettingsState
+import de.darksoon.radiowave.core.data.repository.CoverArtRepository
 import de.darksoon.radiowave.core.data.repository.CustomStationRepository
 import de.darksoon.radiowave.core.data.repository.FavoriteRepository
 import de.darksoon.radiowave.core.data.repository.OfflineFirstStationRepository
@@ -44,6 +45,7 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val favoriteRepository: FavoriteRepository,
     private val customStationRepository: CustomStationRepository,
+    private val coverArtRepository: CoverArtRepository,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -84,6 +86,9 @@ class SettingsViewModel @Inject constructor(
             stationDao.deleteAllStations()
             // Also clear the in-memory search cache so results are visibly gone
             stationRepository.clearSearchCache()
+            // ... and the in-memory cover-art cache (was never wired here — audit
+            // 2026-07-18, M1).
+            coverArtRepository.clearCache()
         }
     }
 

@@ -534,7 +534,12 @@ class PlayerControllerImpl @Inject constructor(
                 // Low-load note: artwork is deliberately NOT nulled in automotive/thermal
                 // mode anymore — the car is exactly where the user wants covers, and the
                 // per-song iTunes cache keeps the cost to one lookup per track.
-                val albumArtUrl = metadata.artworkUri?.toString()
+                // Scheme guard at the SOURCE: in-stream artwork URIs are untrusted input
+                // (same trust level as the stream itself). Without this, a file:// or
+                // content:// URI would flow into StreamMetadata.albumArtUrl and reach
+                // Coil raw in PlayerScreen — the exact sink class closed everywhere else
+                // (audit 2026-07-18, H1).
+                val albumArtUrl = safeHttpUriOrNull(metadata.artworkUri?.toString())?.toString()
                     ?.takeUnless { it == station?.faviconUrl }
                 val hasUsefulMetadata = (!title.isNullOrBlank() && !title.equals(stationName, ignoreCase = true)) ||
                     !artist.isNullOrBlank() ||
@@ -804,8 +809,10 @@ class PlayerControllerImpl @Inject constructor(
 
         coverArtFetchJob = controllerScope.launch {
             delay(coverArtFetchDebounceMs)
+            // Scheme guard also on the iTunes result — API responses are parsed JSON
+            // and should always be https, but albumArtUrl is a load-bearing sink.
             val coverUrl = runCatching { coverArtRepository.fetchCoverArt(artist, title) }
-                .getOrNull() ?: return@launch
+                .getOrNull()?.let { safeHttpUriOrNull(it)?.toString() } ?: return@launch
             var applied = false
             _playerState.update {
                 // Station or song may have moved on while the lookup ran — never
@@ -1107,15 +1114,22 @@ class PlayerControllerImpl @Inject constructor(
     private suspend fun ensureStationPoolLoaded(): List<Station> {
         if (stationPool.isNotEmpty()) return stationPool
 
+        // Deduplicate concurrent loads: the first caller launches the fetch, later
+        // callers join the same job. (The job was historically never assigned, making
+        // this guard a silent no-op — audit 2026-07-18, L1.)
         stationPoolJob?.join()
         if (stationPool.isNotEmpty()) return stationPool
 
-        val loaded = stationRepository.getTopStations().firstOrNull().orEmpty()
-            .filter { it.streamUrl.isNotBlank() }
-            .distinctBy { it.uuid }
-        if (loaded.isNotEmpty()) {
-            stationPool = loaded
+        val job = controllerScope.launch {
+            val loaded = stationRepository.getTopStations().firstOrNull().orEmpty()
+                .filter { it.streamUrl.isNotBlank() }
+                .distinctBy { it.uuid }
+            if (loaded.isNotEmpty()) {
+                stationPool = loaded
+            }
         }
+        stationPoolJob = job
+        job.join()
         return stationPool
     }
 
@@ -1744,7 +1758,7 @@ private class RadioLoadErrorHandlingPolicy : DefaultLoadErrorHandlingPolicy() {
     }
 
     override fun getMinimumLoadableRetryCount(dataType: Int): Int {
-        return if (dataType == C.DATA_TYPE_MEDIA) 3 else 3
+        return 3
     }
 }
 

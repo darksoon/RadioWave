@@ -15,8 +15,19 @@ class CoverArtRepositoryImpl @Inject constructor(
     private val iTunesSearchApi: ITunesSearchApi,
 ) : CoverArtRepository {
 
-    private val cache = mutableMapOf<String, String?>()
+    // Bounded, access-ordered LRU — a @Singleton in a radio app that streams for
+    // hours would otherwise grow by one entry per unique song forever (incl. the
+    // negative-cache nulls). 300 entries ≈ many hours of listening across stations
+    // while keeping re-lookups for recently repeated tracks free.
+    private val cache = object : LinkedHashMap<String, String?>(64, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String?>): Boolean =
+            size > MAX_CACHE_ENTRIES
+    }
     private val cacheLock = Any()
+
+    private companion object {
+        const val MAX_CACHE_ENTRIES = 300
+    }
 
     override suspend fun fetchCoverArt(artist: String?, title: String?): String? {
         if (artist.isNullOrBlank() || title.isNullOrBlank()) {

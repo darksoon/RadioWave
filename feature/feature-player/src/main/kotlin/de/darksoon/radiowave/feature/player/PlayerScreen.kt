@@ -88,6 +88,7 @@ import com.google.android.gms.cast.framework.CastButtonFactory
 import de.darksoon.radiowave.core.model.PlayerError
 import de.darksoon.radiowave.core.model.PlayerState
 import de.darksoon.radiowave.core.ui.components.MarqueeText
+import de.darksoon.radiowave.core.ui.components.asSafeHttpImageUrl
 import de.darksoon.radiowave.core.ui.components.StreamQualityBadge
 import de.darksoon.radiowave.core.ui.theme.DarkBackground
 import de.darksoon.radiowave.core.ui.theme.DarkSurface
@@ -119,17 +120,21 @@ fun PlayerScreen(
     val isPlaying = playerState.isPlaying
     val metadataTitle = playerState.metadata?.title?.trim().takeUnless { it.isNullOrBlank() }
     val metadataArtist = playerState.metadata?.artist?.trim().takeUnless { it.isNullOrBlank() }
-    val streamCoverUrl = playerState.metadata?.albumArtUrl?.trim().takeUnless { it.isNullOrBlank() }
-    val fallbackLogoUrl = station.faviconUrl?.trim().takeUnless { it.isNullOrBlank() }
+    // Scheme-guard every URL that reaches Coil below — this screen bypasses
+    // StationLogoImage and calls SubcomposeAsyncImage directly, so the http/https
+    // filter must be applied here (audit 2026-07-18, H1).
+    val streamCoverUrl = playerState.metadata?.albumArtUrl?.trim().asSafeHttpImageUrl()
+    val fallbackLogoUrl = station.faviconUrl?.trim().asSafeHttpImageUrl()
 
     val iTunesCoverUrl by viewModel.coverArtUrl.collectAsStateWithLifecycle()
+    val safeITunesCoverUrl = iTunesCoverUrl.asSafeHttpImageUrl()
 
     LaunchedEffect(metadataArtist, metadataTitle) {
         viewModel.loadCoverArt(metadataArtist, metadataTitle)
     }
 
-    val artworkUrl = iTunesCoverUrl ?: streamCoverUrl ?: fallbackLogoUrl
-    val blurArtworkUrl = iTunesCoverUrl ?: streamCoverUrl
+    val artworkUrl = safeITunesCoverUrl ?: streamCoverUrl ?: fallbackLogoUrl
+    val blurArtworkUrl = safeITunesCoverUrl ?: streamCoverUrl
 
     val titleLine = metadataTitle ?: station.name
     val artistLine = metadataArtist

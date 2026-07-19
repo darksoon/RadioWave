@@ -23,10 +23,14 @@ import coil.size.Scale
  * same trust level as `streamUrl` — but unlike `streamUrl`, this field was historically never
  * scheme-checked before reaching Coil, whose default loader also resolves `file://`/`content://`
  * URIs. A malicious/misconfigured `favicon` value could otherwise read local app files or
- * another app's exported content provider into the rendered image. This is the single
- * composable every screen uses to render station art, so filtering here covers every caller.
+ * another app's exported content provider into the rendered image.
+ *
+ * Public because it is THE scheme guard for every image URL handed to Coil — screens that
+ * call SubcomposeAsyncImage directly (e.g. the fullscreen player's cover/blur background)
+ * must funnel their URLs through this same helper instead of growing private copies
+ * (audit 2026-07-18, H1/D1).
  */
-private fun String?.asSafeHttpImageUrl(): String? {
+fun String?.asSafeHttpImageUrl(): String? {
     if (isNullOrBlank()) return null
     val scheme = runCatching { Uri.parse(this).scheme }.getOrNull()?.lowercase()
     return if (scheme == "http" || scheme == "https") this else null
