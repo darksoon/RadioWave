@@ -129,6 +129,7 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Mehr Transitions, Motion und Shimmer
 - Mehr Unit- und UI-Tests
 - Baseline Profiles fuer schnelleren Kaltstart
+- Play-Console-R8-Empfehlung pruefen (Resource Shrinking + R8-Full/Optimized-Modus) — R8-Minification ist bereits aktiv; die Zusatzstufen brauchen Geraetetests gegen reflection-lastige Deps (Hilt, Media3, Serialization) vor dem Ausliefern
 - Echte adaptive Bitrate-Neuwahl bei Netzwerkwechsel (WLAN<->Mobilfunk), nicht nur beim initialen Senderwechsel
 
 ## Maybe

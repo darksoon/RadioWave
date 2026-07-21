@@ -131,6 +131,7 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - More transitions, motion, and shimmer
 - More unit and UI tests
 - Baseline Profiles for cold-start performance
+- Evaluate the Play Console R8 recommendation (resource shrinking + R8 full/optimized mode) — R8 minification is already enabled; the extra stages need on-device testing against reflection-heavy deps (Hilt, Media3, serialization) before shipping
 - True adaptive bitrate reselection on network-type change (WiFi<->cellular), not just at initial station switch
 
 ## Maybe
