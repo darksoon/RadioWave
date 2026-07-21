@@ -2,7 +2,7 @@
 
 [Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Status: 2026-07-09
+Status: 2026-07-21
 
 This roadmap is intended for GitHub and keeps the public product status compact. RadioWave is live on Google Play, so the roadmap prioritizes stability, supportability, and targeted UX polish.
 
@@ -98,6 +98,14 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - Favorites export/import (JSON) — additive/merge restore, not destructive, backed by a versioned envelope for forward compatibility
 - Custom stations M3U/PLS playlist import, alongside the existing single-URL add flow
 - Bitrate-based data usage estimate shown live under the default-quality picker
+- Song cover art in the media notification and Android Auto (station-logo fallback, never blank)
+- Live ICY song metadata + station name as third line on the Android Auto player screen
+- "Pause on car disconnect" hardened via `androidx.car.app`'s `CarConnection` OS-level projection signal (closes the wireless-AA timing hole; verified in-car)
+- Swipe-away from Recents stops playback (guarded so an active Android Auto session survives)
+- Optional local mirror of the full station directory (opt-in, interval + Wi-Fi-only, onboarding step) — search/browse work over all stations, even offline
+- Typo-tolerant fuzzy search merged with directory search
+- TTL caching for browse lists + graceful degradation with "directory unreachable" banner during outages
+- Content-policy blocklist: stations of designated terrorist organizations excluded from every directory surface and purged from local data (Google Play Violent Extremism compliance)
 
 ## In Progress
 
@@ -106,8 +114,6 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 
 ## Planned Next
 
-- Android Auto smoke test on real head unit
-- Harden the "pause on car disconnect" fix with `androidx.car.app`'s `CarConnection` (debounced OS-level car-connection-type signal) instead of inferring disconnect/reconnect purely from MediaSession controller churn + a tuned timeout (`DISCONNECT_RESUME_GUARD_MS`, currently 2.5s) — this bug has now had four separate fix attempts (commits `3df6347`, `b717153`/`131fad5`, and the 2026-07-09 guard rewrite); the current fix is a real improvement but is still a timing heuristic. Needs a new dependency + real head-unit testing to verify before shipping, hence not done inline during the 2026-07-09 pass. Bundle with the smoke-test item above.
 - Radio timeshift beyond MVP (longer buffer, optional seek/live)
 - Migrate `SharedPreferences` to a single `SettingsRepository` (DataStore) — bigger refactor
 
@@ -135,11 +141,6 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - Separate podcast source:
   - Radio Browser is station-focused, not episode-focused
   - podcasts likely need a dedicated provider
-- Cache DB for browse/search:
-  - `cached_stations` as central Room source
-  - cache-first flow with local emit plus network refresh
-  - TTL metadata via `search_cache_meta`
-  - clean links between cache, favorites, and recents
 - Optional volume slider in addition to mute
 - Local-only listening stats (on-device only, no server) — fits the privacy-first positioning better than the account-gated insights competitors offer
 - "Similar stations" / discover row using Radio Browser tag/country/language metadata — no tracking or account needed, unlike most competitors' recommendation features

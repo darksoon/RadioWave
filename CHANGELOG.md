@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.17] - 2026-07-21
+
+### Added
+- Song cover art in the media notification and on the Android Auto player screen — looked up per song (debounced, cached including negative results), always falling back to the station logo so artwork is never blank.
+- Android Auto player shows the station name as a third line while a song title/artist is displayed, so you always know which station is playing.
+- Live ICY song metadata (artist/title from the stream) now reaches Android Auto and the notification, not just the in-app player.
+- Optional local mirror of the full station directory (~50k stations, opt-in): Settings > Data toggle with sync interval (daily/weekly/manual) and Wi-Fi-only option, plus an onboarding step for new installs. With the mirror, search and browse work across the entire directory — even offline or during a directory outage.
+- Typo-tolerant search: "texhnobase" now finds "TechnoBase" — a local fuzzy index (diacritic-insensitive, bounded edit distance) is merged with the regular directory search.
+- Browse lists (top stations, by country, by genre) are cached with a 30-minute TTL — tab-hopping no longer refetches over the network every time.
+- When the station directory is unreachable, search and browse now fall back to locally cached results and show a "directory currently unreachable" banner instead of appearing empty; the search screen hints at the local-mirror option.
+
+### Fixed
+- **Android Auto:** playback no longer keeps running on the phone after leaving the car with wireless Android Auto — the app now uses the OS-level `CarConnection` projection signal as the authoritative disconnect source instead of inferring it from connection churn.
+- Swiping the app away from Recents now stops playback and the notification (an active Android Auto session is deliberately unaffected, so clearing Recents while driving doesn't silence the car).
+- Failed directory searches are no longer cached as empty results for the cache TTL.
+- Explicit sort order in Browse is honoured again instead of being overridden by the default ranking.
+- Media session is rebound after internal player recreation (quality change, etc.) — fixes stale notification/Auto controls.
+- Sleep-timer countdown in Settings ticks correctly again.
+- Station artwork URLs are scheme-validated (`http`/`https`) at every image sink, now including fetched song covers.
+- Cover-art memory cache is bounded (LRU) instead of growing for the session's lifetime.
+- Station pool for prev/next navigation could be loaded twice concurrently on first use.
+- Transient stream failures retry up to 3 times before surfacing an error.
+
+### Removed
+- Stations operated by organizations designated as terrorist (e.g. under the US SDGT program) are now excluded from all directory surfaces — search, browse, similar stations, and the local mirror — and purged from local caches. The underlying community directory (Radio Browser) is open and unmoderated; this filter enforces the Google Play Violent Extremism policy and sanctions compliance.
+
+### Changed
+- Dependency updates: Hilt 2.60, Compose BOM 2026.06.00.
+
 ## [1.0.16] - 2026-07-09
 
 ### Added

@@ -2,7 +2,7 @@
 
 [Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Stand: 2026-07-09
+Stand: 2026-07-21
 
 Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus kompakt. RadioWave ist live auf Google Play; die Roadmap priorisiert deshalb Stabilitaet, Supportfaehigkeit und gezieltes UX-Polishing.
 
@@ -97,6 +97,14 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Favoriten Export/Import (JSON) — additiver Merge-Restore statt destruktiv, versioniertes Format fuer Abwaertskompatibilitaet
 - Custom Stations M3U/PLS-Playlist-Import, zusaetzlich zum bestehenden Einzel-URL-Hinzufuegen
 - Bitrate-basierte Datenverbrauchs-Schaetzung, live angezeigt unter der Standard-Qualitaets-Auswahl
+- Song-Cover in Medien-Benachrichtigung und Android Auto (Sender-Logo als Fallback, nie leer)
+- Live-ICY-Songmetadaten + Sendername als dritte Zeile im Android-Auto-Player
+- "Pause bei Auto-Trennung" ueber `androidx.car.app`s `CarConnection`-OS-Signal gehaertet (schliesst das Wireless-AA-Timing-Loch; im Auto verifiziert)
+- Wegwischen aus den Recents stoppt die Wiedergabe (aktive Android-Auto-Session bleibt bewusst unberuehrt)
+- Optionaler lokaler Spiegel des kompletten Senderverzeichnisses (Opt-in, Intervall + nur WLAN, Onboarding-Schritt) — Suche/Browse ueber alle Sender, auch offline
+- Tippfehler-tolerante Fuzzy-Suche, gemischt mit der Verzeichnis-Suche
+- TTL-Caching fuer Browse-Listen + Offline-Banner bei Verzeichnis-Ausfaellen
+- Content-Policy-Blockliste: Sender designierter Terror-Organisationen auf allen Verzeichnis-Oberflaechen ausgeschlossen und aus lokalen Daten entfernt (Google-Play-Violent-Extremism-Compliance)
 
 ## In Arbeit
 
@@ -104,8 +112,6 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Laufende Live-App-Stabilisierung nach echten Geraete- und Nutzerfaellen
 
 ## Als Naechstes
-- Android Auto Smoke-Test auf echtem Head-Unit
-- Den "Pause bei Auto-Trennung"-Fix mit `androidx.car.app`s `CarConnection` haerten (entprelltes OS-Signal fuer den Auto-Verbindungstyp) statt Trennung/Reconnect rein aus MediaSession-Controller-Churn + einem getunten Timeout (`DISCONNECT_RESUME_GUARD_MS`, aktuell 2,5s) abzuleiten — dieser Bug hatte jetzt vier separate Fix-Versuche (Commits `3df6347`, `b717153`/`131fad5` und der Guard-Rewrite vom 2026-07-09); der aktuelle Fix ist eine echte Verbesserung, bleibt aber eine Timing-Heuristik. Braucht eine neue Abhaengigkeit + echten Head-Unit-Test zur Verifikation, deshalb nicht direkt im 2026-07-09-Durchgang umgesetzt. Zusammen mit dem Smoke-Test-Punkt oben angehen.
 - Radio-Timeshift ueber MVP hinaus (laengerer Buffer, optionaler Seek/LIVE)
 - SharedPreferences zu zentralem SettingsRepository migrieren (DataStore) — groesserer Refactor
 
@@ -133,11 +139,6 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Separate Podcast-Quelle:
   - Radio Browser ist senderzentriert, nicht episodenbasiert
   - Podcasts brauchen voraussichtlich einen eigenen Provider
-- Cache-DB fuer Browse/Suche:
-  - `cached_stations` als zentrale Room-Quelle
-  - Cache-first-Flow mit lokalem Emit und Netzwerk-Refresh
-  - TTL-Metadaten ueber `search_cache_meta`
-  - saubere Verknuepfung zwischen Cache, Favoriten und Recents
 - Optionaler Lautstaerke-Slider zusaetzlich zu Mute
 - Rein lokale Hoerstatistiken (nur auf dem Geraet, kein Server) — passt besser zur Privacy-first-Ausrichtung als die account-gebundenen Insights der Konkurrenz
 - "Aehnliche Sender" / Discover-Zeile ueber Radio-Browser-Tag-/Land-/Sprach-Metadaten — kein Tracking oder Account noetig, anders als bei den meisten Empfehlungsfunktionen der Konkurrenz
