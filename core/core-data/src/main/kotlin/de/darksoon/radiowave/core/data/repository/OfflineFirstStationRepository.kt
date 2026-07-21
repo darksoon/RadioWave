@@ -4,6 +4,7 @@ package de.darksoon.radiowave.core.data.repository
 
 import de.darksoon.radiowave.core.data.mapper.toDomain
 import de.darksoon.radiowave.core.data.mapper.toEntity
+import de.darksoon.radiowave.core.data.policy.StationDirectoryBlocklist
 import de.darksoon.radiowave.core.database.dao.StationDao
 import de.darksoon.radiowave.core.model.Country
 import de.darksoon.radiowave.core.model.Genre
@@ -50,6 +51,7 @@ class OfflineFirstStationRepository @Inject constructor(
             // suspend variant — no Flow subscription churn on every keystroke
             stationDao.searchStations(normalizedQuery, limit = searchResultLimit)
                 .map { it.toDomain() }
+                .scrubbed()
         }.getOrDefault(emptyList())
         // Fuzzy pass over the local name index — catches typos ("texhnobase" →
         // "TechnoBase") and diacritic variants the SQL LIKE above can't see. With the
@@ -71,7 +73,7 @@ class OfflineFirstStationRepository @Inject constructor(
             return@flow
         }
 
-        val fresh = runCatching { api.searchByName(query).map { it.toDomain() } }
+        val fresh = runCatching { api.searchByName(query).map { it.toDomain() }.scrubbed() }
             .onFailure {
                 android.util.Log.w("RadioWave", "searchByName failed: ${it.message}")
                 _directoryAvailable.value = false
@@ -132,7 +134,7 @@ class OfflineFirstStationRepository @Inject constructor(
         fetchRemote: suspend () -> List<Station>,
     ): Flow<List<Station>> = flow {
         val now = System.currentTimeMillis()
-        val local = runCatching { loadLocal() }.getOrDefault(emptyList())
+        val local = runCatching { loadLocal().scrubbed() }.getOrDefault(emptyList())
         if (local.isNotEmpty()) {
             emit(local)
         }
@@ -143,7 +145,7 @@ class OfflineFirstStationRepository @Inject constructor(
             return@flow
         }
 
-        val fresh = runCatching { fetchRemote() }
+        val fresh = runCatching { fetchRemote().scrubbed() }
             .onFailure {
                 android.util.Log.w("RadioWave", "list fetch '$cacheKey' failed: ${it.message}")
                 _directoryAvailable.value = false
@@ -166,7 +168,7 @@ class OfflineFirstStationRepository @Inject constructor(
             api.searchByNameExact(
                 name = stationName,
                 limit = 100,
-            ).map { it.toDomain() }
+            ).map { it.toDomain() }.scrubbed()
         }.getOrDefault(emptyList())
 
         val exactNameCandidates = remoteCandidates.filter {
@@ -205,6 +207,7 @@ class OfflineFirstStationRepository @Inject constructor(
             }.getOrDefault(emptyList())
         }
         return candidates
+            .scrubbed()
             .filter { it.uuid != station.uuid }
             .distinctBy { it.uuid }
             .take(15)
@@ -289,6 +292,12 @@ class OfflineFirstStationRepository @Inject constructor(
         if (stations.isEmpty()) return
         runCatching { stationDao.insertStations(stations.map { it.toEntity() }) }
     }
+
+    // Content-policy filter (see StationDirectoryBlocklist) — applied to every list
+    // that reaches the UI, the caches, or Room, so blocked stations can't surface
+    // through any directory path.
+    private fun List<Station>.scrubbed(): List<Station> =
+        filterNot(StationDirectoryBlocklist::isBlocked)
 
     private fun mergeByUuid(primary: List<Station>, secondary: List<Station>): List<Station> {
         return (primary + secondary)
@@ -387,7 +396,7 @@ class OfflineFirstStationRepository @Inject constructor(
         val byUuid = stationDao.getStationsByUuids(topUuids)
             .associateBy { it.uuid }
         // Preserve score order — Room's IN() gives no ordering guarantee.
-        return topUuids.mapNotNull { byUuid[it]?.toDomain() }
+        return topUuids.mapNotNull { byUuid[it]?.toDomain() }.scrubbed()
     }
 
     /** lowercase, strip diacritics, collapse everything non-alphanumeric to single spaces. */

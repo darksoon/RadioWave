@@ -8,6 +8,7 @@ import android.net.NetworkCapabilities
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.darksoon.radiowave.core.data.mapper.toDomain
 import de.darksoon.radiowave.core.data.mapper.toEntity
+import de.darksoon.radiowave.core.data.policy.StationDirectoryBlocklist
 import de.darksoon.radiowave.core.database.dao.StationDao
 import de.darksoon.radiowave.core.network.RadioBrowserApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -87,6 +88,7 @@ class StationMirrorRepository @Inject constructor(
                 val valid = page
                     .map { it.toDomain() }
                     .filter { it.uuid.isNotBlank() && it.streamUrl.isNotBlank() }
+                    .filterNot(StationDirectoryBlocklist::isBlocked)
                 if (valid.isNotEmpty()) {
                     stationDao.insertStations(valid.map { it.toEntity() })
                     synced += valid.size
