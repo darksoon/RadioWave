@@ -5,6 +5,7 @@ package de.darksoon.radiowave.feature.favorites
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.darksoon.radiowave.core.data.policy.StationInputValidator
 import de.darksoon.radiowave.core.data.repository.CustomStationRepository
 import de.darksoon.radiowave.core.data.repository.FavoriteRepository
 import de.darksoon.radiowave.core.data.repository.SettingsRepository
@@ -117,32 +118,25 @@ class FavoritesViewModel @Inject constructor(
     }
 
     /**
-     * Returns true if [streamUrl] is a valid http/https URL — usable for UI validation.
-     *
-     * Uri.parse is lax: "https:" or "http://" alone parse successfully and yield
-     * the right scheme, so the previous scheme-only check let through obviously
-     * broken inputs that then crashed ExoPlayer at play time. We now also
-     * require a non-blank host.
+     * Returns true if [streamUrl] is a valid http/https URL with a host — usable for UI
+     * validation. Delegates to [StationInputValidator], the gate shared with the
+     * playlist and favorites imports.
      */
-    fun isValidStreamUrl(streamUrl: String): Boolean {
-        val trimmed = streamUrl.trim()
-        if (trimmed.isBlank()) return false
-        val uri = runCatching { android.net.Uri.parse(trimmed) }.getOrNull() ?: return false
-        val scheme = uri.scheme?.lowercase()
-        val host = uri.host
-        return (scheme == "http" || scheme == "https") && !host.isNullOrBlank()
-    }
+    fun isValidStreamUrl(streamUrl: String): Boolean = StationInputValidator.isValidStreamUrl(streamUrl)
 
     fun addCustomStation(name: String, streamUrl: String) {
-        if (!isValidStreamUrl(streamUrl)) return
-        val trimmedName = name.trim()
-        if (trimmedName.isBlank()) return
+        if (name.isBlank()) return
+        val candidate = Station(
+            uuid = "custom-${UUID.randomUUID()}",
+            name = name,
+            streamUrl = streamUrl,
+        )
+        // Invalid or content-policy-blocked input is dropped; the dialog already
+        // explains both cases before enabling "Add".
+        val station = (StationInputValidator.validate(candidate) as? StationInputValidator.Result.Valid)
+            ?.station
+            ?: return
         viewModelScope.launch {
-            val station = Station(
-                uuid = "custom-${UUID.randomUUID()}",
-                name = trimmedName,
-                streamUrl = streamUrl.trim(),
-            )
             customStationRepository.addCustomStation(station)
             favoriteRepository.toggleFavorite(station.copy(isFavorite = false))
         }

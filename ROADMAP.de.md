@@ -2,7 +2,7 @@
 
 [Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Stand: 2026-07-21
+Stand: 2026-09-21
 
 Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus kompakt. RadioWave ist live auf Google Play; die Roadmap priorisiert deshalb Stabilitaet, Supportfaehigkeit und gezieltes UX-Polishing.
 
@@ -105,6 +105,8 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Tippfehler-tolerante Fuzzy-Suche, gemischt mit der Verzeichnis-Suche
 - TTL-Caching fuer Browse-Listen + Offline-Banner bei Verzeichnis-Ausfaellen
 - Content-Policy-Blockliste: Sender designierter Terror-Organisationen auf allen Verzeichnis-Oberflaechen ausgeschlossen und aus lokalen Daten entfernt (Google-Play-Violent-Extremism-Compliance)
+- Einstellungen auf DataStore (`SettingsRepository`) mit automatischer Migration aus den alten SharedPreferences
+- Stabilitaetsrunde nach dem Audit 2026-09: Sleep-Timer laeuft auf dem Player-Thread und stoppt auch Cast; Mobildaten-Sperre gilt auch bei Fortsetzen, Neustart und Netzwechsel; CI fuehrt die Unit-Tests der Core-Module aus; Sender starten mit ihrer bekannten URL ohne Warten auf das Verzeichnis (Qualitaetsvarianten einmal mit kurzem Zeitlimit geholt und gecacht); Offline-Verzeichnis beachtet "nur WLAN" schon beim ersten Aktivieren, uebersteht "Cache leeren" und entfernt upstream geloeschte Sender; Fuzzy-Suche abseits des Main-Threads; eine gemeinsame Pruefung fuer manuelles Hinzufuegen, Playlist- und Favoriten-Import (http(s) + Host, Groessen-/Eintragslimits, Content-Policy-Blockliste)
 
 ## In Arbeit
 
@@ -113,7 +115,8 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 
 ## Als Naechstes
 - Radio-Timeshift ueber MVP hinaus (laengerer Buffer, optionaler Seek/LIVE)
-- SharedPreferences zu zentralem SettingsRepository migrieren (DataStore) — groesserer Refactor
+- Kaltstart liest die Einstellungen noch einmal synchron (`initialSnapshotBlocking`); der Lesevorgang wird jetzt abseits des Main-Threads vorgewaermt. Den Fallback zu entfernen braucht einen per Splash abgewarteten ersten Frame, weil Theme, Onboarding und die Datenrichtlinie des Players nicht mit Standardwerten starten duerfen
+- Sleep-Timer verfeinern: eigene Dauer und sanftes Ausblenden
 
 ## Spaeter
 
@@ -126,6 +129,8 @@ Diese Roadmap ist fuer GitHub gedacht und zeigt den oeffentlichen Produktstatus 
 - Android TV / Google TV Basis (Leanback-Launcher, D-Pad-/Focus-Navigation, TV-Layout-MVP)
 - Chromecast-Ausbau
 - Schneller Playback-Widget-Zugriff — als favoriten-waehlbar konzipieren (uebersichtliche Liste/Grid zur Auswahl eines beliebigen Favoriten), nicht nur ein "letzten Sender fortsetzen"-Knopf; diese engere Variante ist eine wiederkehrende Beschwerde bei anderen Radio-App-Widgets
+- Favoritengruppen (z. B. Auto, Arbeit, Entspannung), gleich auch in Android Auto
+- Lokale Song-Merkliste: gehoerte Titel (Metadaten mit Sender und Zeit) merken und teilen — optional, loeschbar, keine Audioaufnahme
 - Mehr Transitions, Motion und Shimmer
 - Mehr Unit- und UI-Tests
 - Baseline Profiles fuer schnelleren Kaltstart

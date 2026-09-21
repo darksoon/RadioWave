@@ -29,7 +29,10 @@ sealed interface FavoritesImportOutcome {
     data class Success(
         val imported: Int,
         val skippedExisting: Int,
+        /** Every entry rejected by validation, including the [skippedBlocked] ones. */
         val skippedInvalid: Int,
+        /** Subset of [skippedInvalid] rejected by the content-policy blocklist. */
+        val skippedBlocked: Int = 0,
     ) : FavoritesImportOutcome
 
     /** The file didn't parse as a [FavoritesExport] at all (corrupt/foreign JSON). */
