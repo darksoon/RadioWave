@@ -66,6 +66,7 @@ import de.darksoon.radiowave.core.ui.components.ErrorState
 import de.darksoon.radiowave.core.ui.components.FavoritesSkeletonLoader
 import de.darksoon.radiowave.core.ui.components.LoadingState
 import de.darksoon.radiowave.core.ui.components.StationLogoImage
+import de.darksoon.radiowave.core.ui.components.StationNameText
 import de.darksoon.radiowave.core.ui.components.StreamQualityBadge
 import de.darksoon.radiowave.core.ui.theme.RadioAccent
 import de.darksoon.radiowave.feature.favorites.R
@@ -401,12 +402,11 @@ private fun FavoriteStationCard(
                         modifier = Modifier.size(64.dp),
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = station.name,
+                    StationNameText(
+                        name = station.name,
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
                     )
                     val subtitle = listOfNotNull(
                         station.country?.takeIf { it.isNotBlank() },
