@@ -2,7 +2,7 @@
 
 [Deutsch](ROADMAP.de.md) | [English](ROADMAP.md)
 
-Status: 2026-07-21
+Status: 2026-09-21
 
 This roadmap is intended for GitHub and keeps the public product status compact. RadioWave is live on Google Play, so the roadmap prioritizes stability, supportability, and targeted UX polish.
 
@@ -106,6 +106,8 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - Typo-tolerant fuzzy search merged with directory search
 - TTL caching for browse lists + graceful degradation with "directory unreachable" banner during outages
 - Content-policy blocklist: stations of designated terrorist organizations excluded from every directory surface and purged from local data (Google Play Violent Extremism compliance)
+- Settings on DataStore (`SettingsRepository`) with automatic migration from the old SharedPreferences
+- Stability pass after the 2026-09 audit: sleep timer runs on the player thread and also stops Cast; mobile-data policy enforced on resume, restart and network change; CI runs the core module unit tests; stations start from their known URL without waiting for the directory (quality variants fetched once with a short cap and cached); offline directory honours Wi-Fi-only on first enable, survives "clear cache" and drops stations removed upstream; fuzzy search off the main thread; one shared validation for manual add, playlist and favorites import (http(s) + host, size/entry limits, content-policy blocklist)
 
 ## In Progress
 
@@ -115,7 +117,8 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 ## Planned Next
 
 - Radio timeshift beyond MVP (longer buffer, optional seek/live)
-- Migrate `SharedPreferences` to a single `SettingsRepository` (DataStore) — bigger refactor
+- Cold start still reads settings once synchronously (`initialSnapshotBlocking`); the read is now pre-warmed off the main thread. Removing the fallback needs a splash-gated first frame, because theme, onboarding and the player's data policy must not start from defaults
+- Sleep timer refinements: custom duration and gentle fade-out
 
 ## Later
 
@@ -128,6 +131,8 @@ This roadmap is intended for GitHub and keeps the public product status compact.
 - Android TV / Google TV base (Leanback launcher, D-pad/focus navigation, TV layout MVP)
 - Chromecast expansion
 - Quick-access playback widget — scope as favorites-selectable (a glanceable list/grid to pick any favorite), not just a resume-last button; that narrower version is a recurring complaint about other radio-app widgets
+- Favorite groups (e.g. Car, Work, Relax), offered the same way in Android Auto
+- Local song bookmarks: save heard titles (metadata with station and time) to a list and share them — optional, deletable, no audio recording
 - More transitions, motion, and shimmer
 - More unit and UI tests
 - Baseline Profiles for cold-start performance
