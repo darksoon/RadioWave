@@ -77,6 +77,9 @@ jobs:
       - name: Grant gradlew execute permission
         run: chmod +x ./gradlew
 
+      - name: Test and lint before signing
+        run: ./gradlew testDebugUnitTest testPlayDebugUnitTest lintPlayDebug --stacktrace --build-cache
+
       - name: Decode keystore from secret
         env:
           SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}

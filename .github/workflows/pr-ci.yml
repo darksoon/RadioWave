@@ -59,4 +59,4 @@ jobs:
         run: ./gradlew lintGithubDebug --stacktrace --build-cache
 
       - name: Test
-        run: ./gradlew testGithubDebugUnitTest --stacktrace --build-cache
+        run: ./gradlew testDebugUnitTest testGithubDebugUnitTest --stacktrace --build-cache

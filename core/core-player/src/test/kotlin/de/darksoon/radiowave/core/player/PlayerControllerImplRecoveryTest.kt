@@ -39,6 +39,9 @@ import java.lang.reflect.Proxy
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class PlayerControllerImplRecoveryTest {
+    private val controllers = mutableListOf<PlayerControllerImpl>()
+
+    @org.junit.After fun releaseControllers() = controllers.forEach { it.release() }
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -117,7 +120,7 @@ class PlayerControllerImplRecoveryTest {
 
     private fun createController(): PlayerControllerImpl {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        return PlayerControllerImpl(context, FakeStationRepository(), fakeSettingsRepository, FakeCoverArtRepository())
+        return PlayerControllerImpl(context, FakeStationRepository(), fakeSettingsRepository, FakeCoverArtRepository()).also(controllers::add)
     }
 
     private fun createBufferingPlayerProxy(): ExoPlayer {
@@ -217,4 +220,3 @@ class MainDispatcherRule(
         Dispatchers.resetMain()
     }
 }
-

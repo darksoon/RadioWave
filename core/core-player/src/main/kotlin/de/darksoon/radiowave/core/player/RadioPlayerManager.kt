@@ -6,6 +6,7 @@ import android.os.SystemClock
 import de.darksoon.radiowave.core.model.PlayerState
 import de.darksoon.radiowave.core.model.Station
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -31,8 +32,9 @@ class RadioPlayerManager @Inject constructor(
     // playback itself — unlike a sleep timer implemented as Activity/Compose state, this
     // survives the hosting Activity being finished (e.g. swiped away from Recents) while the
     // foreground playback service keeps running, which is exactly when a sleep timer matters.
-    private val managerScope = CoroutineScope(SupervisorJob())
+    private val managerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var sleepTimerJob: Job? = null
+    private var externalPlaybackStopper: (() -> Unit)? = null
 
     private val _sleepTimerEndsAtElapsedMs = MutableStateFlow<Long?>(null)
     val sleepTimerEndsAtElapsedMs: StateFlow<Long?> = _sleepTimerEndsAtElapsedMs.asStateFlow()
@@ -40,7 +42,7 @@ class RadioPlayerManager @Inject constructor(
     /** Pass `null` to cancel an active timer. */
     fun setSleepTimer(minutes: Int?) {
         sleepTimerJob?.cancel()
-        if (minutes == null) {
+        if (minutes == null || minutes <= 0) {
             _sleepTimerEndsAtElapsedMs.value = null
             return
         }
@@ -48,8 +50,7 @@ class RadioPlayerManager @Inject constructor(
         _sleepTimerEndsAtElapsedMs.value = endsAt
         sleepTimerJob = managerScope.launch {
             delay((endsAt - SystemClock.elapsedRealtime()).coerceAtLeast(0L))
-            _sleepTimerEndsAtElapsedMs.value = null
-            playerController.stop()
+            stop()
         }
     }
 
@@ -74,7 +75,17 @@ class RadioPlayerManager @Inject constructor(
 
 
     fun stop() {
-        playerController.stop()
+        setSleepTimer(null)
+        try {
+            externalPlaybackStopper?.invoke()
+        } finally {
+            playerController.stop()
+        }
+    }
+
+    /** The active remote output registers its stop command without a Cast dependency here. */
+    fun setExternalPlaybackStopper(stopper: (() -> Unit)?) {
+        externalPlaybackStopper = stopper
     }
 
     fun togglePlayPause() {
@@ -94,4 +105,3 @@ class RadioPlayerManager @Inject constructor(
         playerController.release()
     }
 }
-

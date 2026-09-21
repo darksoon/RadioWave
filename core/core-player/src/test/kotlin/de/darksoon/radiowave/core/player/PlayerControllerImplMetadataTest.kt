@@ -31,6 +31,9 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class PlayerControllerImplMetadataTest {
+    private val controllers = mutableListOf<PlayerControllerImpl>()
+
+    @org.junit.After fun releaseControllers() = controllers.forEach { it.release() }
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -126,7 +129,7 @@ class PlayerControllerImplMetadataTest {
 
     private fun createController(): PlayerControllerImpl {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        return PlayerControllerImpl(context, FakeStationRepository(), FakeSettingsRepository(), FakeCoverArtRepository())
+        return PlayerControllerImpl(context, FakeStationRepository(), FakeSettingsRepository(), FakeCoverArtRepository()).also(controllers::add)
     }
 
     private fun station(uuid: String, favicon: String?): Station =

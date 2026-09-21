@@ -195,6 +195,9 @@ class CastManager @Inject constructor(
     }
 
     private fun attachRemoteMediaClient(remoteMediaClient: RemoteMediaClient?) {
+        radioPlayerManager.setExternalPlaybackStopper(
+            remoteMediaClient?.let { client -> { client.stop(); Unit } },
+        )
         if (attachedRemoteMediaClient === remoteMediaClient) {
             updateRemotePlaybackState(remoteMediaClient)
             _isCasting.value = remoteMediaClient != null
@@ -208,6 +211,7 @@ class CastManager @Inject constructor(
     }
 
     private fun detachRemoteMediaClient() {
+        radioPlayerManager.setExternalPlaybackStopper(null)
         attachedRemoteMediaClient?.unregisterCallback(remoteMediaClientCallback)
         attachedRemoteMediaClient = null
         _isCasting.value = false
