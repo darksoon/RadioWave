@@ -16,4 +16,9 @@
     <string name="home_error_api">API error: %1$s</string>
     <string name="home_error_unknown">Unknown error</string>
     <string name="home_empty_cta">Discover stations</string>
+    <string name="home_favorite_now_playing">Now playing</string>
+    <plurals name="home_favorites_show_all">
+        <item quantity="one">Show all %1$d favorite</item>
+        <item quantity="other">Show all %1$d favorites</item>
+    </plurals>
 </resources>

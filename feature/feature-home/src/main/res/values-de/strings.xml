@@ -16,4 +16,9 @@
     <string name="home_error_api">API-Fehler: %1$s</string>
     <string name="home_error_unknown">Unbekannter Fehler</string>
     <string name="home_empty_cta">Sender entdecken</string>
+    <string name="home_favorite_now_playing">Läuft gerade</string>
+    <plurals name="home_favorites_show_all">
+        <item quantity="one">Alle %1$d Favoriten anzeigen</item>
+        <item quantity="other">Alle %1$d Favoriten anzeigen</item>
+    </plurals>
 </resources>
