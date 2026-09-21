@@ -25,6 +25,13 @@
     <string name="player_error_network">Connection lost — check your network</string>
     <string name="player_error_stream_broken">Stream unavailable — try another station</string>
     <string name="player_error_retry">Retry</string>
+    <string name="player_error_wifi_required_hint">Streaming over mobile data is turned off in Settings. Connect to Wi-Fi or allow mobile data, then tap Retry.</string>
+    <string name="player_status_connected_for">Connected for %1$s</string>
+    <string name="player_status_connecting">Connecting…</string>
+    <string name="player_status_reconnecting">Reconnecting…</string>
+    <string name="player_status_paused">Paused</string>
+    <string name="player_status_wifi_required">Wi-Fi only – mobile data is off</string>
+    <string name="player_status_disconnected">Not connected</string>
     <string name="player_cd_favorite_add">Add to favorites</string>
     <string name="player_cd_favorite_remove">Remove from favorites</string>
     <string name="player_cd_skip_previous">Previous station</string>

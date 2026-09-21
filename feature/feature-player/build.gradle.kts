@@ -13,4 +13,7 @@ dependencies {
     implementation(project(":core:core-cast"))
 
     implementation(libs.media3.cast)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
