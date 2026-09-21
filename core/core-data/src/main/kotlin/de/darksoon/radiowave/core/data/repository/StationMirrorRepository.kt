@@ -88,7 +88,10 @@ class StationMirrorRepository @Inject constructor(
         }
         var synced = 0
         try {
-            if (!settingsRepository.data.first().stationMirrorEnabled) return@withContext false
+            val initialSettings = settingsRepository.data.first()
+            if (!initialSettings.stationMirrorEnabled) return@withContext false
+            val previousCount = initialSettings.stationMirrorStationCount
+            val syncStartedAtMs = System.currentTimeMillis()
             _syncState.value = SyncState.Running(0)
             var offset = 0
             while (true) {
@@ -114,6 +117,11 @@ class StationMirrorRepository @Inject constructor(
                 if (page.size < PAGE_SIZE) break // last page
                 offset += PAGE_SIZE
                 check(offset < MAX_STATIONS_SAFETY_CAP) { "Directory pagination exceeded safety cap" }
+            }
+            // Only a run that plausibly covered the whole directory may prune: a truncated
+            // or empty response must not wipe stations that were merely not listed this time.
+            if (synced > 0 && synced >= previousCount * MIN_COMPLETE_SYNC_RATIO) {
+                stationDao.deleteStationsNotRefreshedSince(syncStartedAtMs)
             }
             val now = System.currentTimeMillis()
             val count = stationDao.countStations()
@@ -155,5 +163,7 @@ class StationMirrorRepository @Inject constructor(
         const val PAGE_SIZE = 5000
         // Backstop against a misbehaving/looping API — well above the ~50k real total.
         const val MAX_STATIONS_SAFETY_CAP = 200_000
+        // Share of the previous mirror size a sync must reach before stale entries are pruned.
+        const val MIN_COMPLETE_SYNC_RATIO = 0.8
     }
 }

@@ -8,6 +8,7 @@ import android.net.NetworkInfo
 import androidx.test.core.app.ApplicationProvider
 import de.darksoon.radiowave.core.database.dao.StationDao
 import de.darksoon.radiowave.core.network.RadioBrowserApi
+import de.darksoon.radiowave.core.network.dto.RadioBrowserStation
 import java.lang.reflect.Proxy
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,16 +29,20 @@ class StationMirrorRepositoryTest {
     private var pageRequests = 0
     private var deletes = 0
     private var cancelDownload = false
+    private var directory = emptyList<RadioBrowserStation>()
+    private var prunes = 0
     private val api = Proxy.newProxyInstance(RadioBrowserApi::class.java.classLoader, arrayOf(RadioBrowserApi::class.java)) { _, method, _ ->
         check(method.name == "getStationsPage")
         pageRequests++
         if (cancelDownload) throw CancellationException("Leaving screen")
-        emptyList<Any>()
+        directory
     } as RadioBrowserApi
     private val dao = Proxy.newProxyInstance(StationDao::class.java.classLoader, arrayOf(StationDao::class.java)) { _, method, _ ->
         when (method.name) {
             "countStations" -> 12
             "deleteAllStations" -> { deletes++; Unit }
+            "insertStations" -> Unit
+            "deleteStationsNotRefreshedSince" -> { prunes++; 0 }
             else -> error("Unexpected DAO operation: ${method.name}")
         }
     } as StationDao
@@ -60,6 +65,28 @@ class StationMirrorRepositoryTest {
         assertEquals(1, pageRequests)
         assertEquals(12, settings.data.value.stationMirrorStationCount)
         assertTrue(mirror.syncState.value is StationMirrorRepository.SyncState.Done)
+    }
+
+    @Test fun `complete sync prunes stations removed upstream`() = runTest {
+        setNetwork(NetworkCapabilities.TRANSPORT_WIFI)
+        settings.update { it.copy(stationMirrorStationCount = 3) }
+        directory = stations(3)
+        assertTrue(mirror().syncNow())
+        assertEquals(1, prunes)
+    }
+
+    @Test fun `truncated or empty directory never prunes the mirror`() = runTest {
+        setNetwork(NetworkCapabilities.TRANSPORT_WIFI)
+        settings.update { it.copy(stationMirrorStationCount = 100) }
+        directory = stations(3)
+        assertTrue(mirror().syncNow())
+        directory = emptyList()
+        assertTrue(mirror().syncNow())
+        assertEquals(0, prunes)
+    }
+
+    private fun stations(n: Int) = (1..n).map {
+        RadioBrowserStation(uuid = "uuid-$it", name = "Radio $it", url = "https://example.test/$it")
     }
 
     @Test fun `cache clear preserves enabled offline directory and sync status`() = runTest {
