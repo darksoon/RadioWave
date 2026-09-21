@@ -127,14 +127,15 @@ class BrowseViewModel @Inject constructor(
         setupSearch()
     }
 
-    private fun loadInitial() {
+    /** [forceRefresh]: explicit user refresh — bypass the repository's TTL cache once. */
+    private fun loadInitial(forceRefresh: Boolean = false) {
         // If no search/country active, show top stations as the default browse landing.
         if (_searchQuery.value.isBlank() && _selectedCountry.value == null) {
-            loadTopStations()
+            loadTopStations(forceRefresh)
         } else if (_selectedCountry.value != null) {
-            loadStationsByCountry(_selectedCountry.value!!, _searchQuery.value)
+            loadStationsByCountry(_selectedCountry.value!!, _searchQuery.value, forceRefresh)
         } else {
-            searchStations(_searchQuery.value)
+            searchStations(_searchQuery.value, forceRefresh)
         }
     }
 
@@ -157,9 +158,9 @@ class BrowseViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    private fun loadTopStations() {
+    private fun loadTopStations(forceRefresh: Boolean = false) {
         resultsJob?.cancel()
-        resultsJob = stationRepository.getTopStations()
+        resultsJob = stationRepository.getTopStations(forceRefresh)
             .onStart { _uiState.update { it.copy(isLoading = true) } }
             .onEach { stations ->
                 val sorted = withContext(Dispatchers.Default) {
@@ -186,9 +187,9 @@ class BrowseViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    private fun loadStationsByCountry(countryCode: String, query: String) {
+    private fun loadStationsByCountry(countryCode: String, query: String, forceRefresh: Boolean = false) {
         resultsJob?.cancel()
-        resultsJob = stationRepository.getStationsByCountry(countryCode)
+        resultsJob = stationRepository.getStationsByCountry(countryCode, forceRefresh)
             .onStart { _uiState.update { it.copy(isLoading = true) } }
             .onEach { stations ->
                 val sorted = withContext(Dispatchers.Default) {
@@ -223,9 +224,9 @@ class BrowseViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    private fun searchStations(query: String) {
+    private fun searchStations(query: String, forceRefresh: Boolean = false) {
         resultsJob?.cancel()
-        resultsJob = stationRepository.searchStations(query)
+        resultsJob = stationRepository.searchStations(query, forceRefresh)
             .onStart { _uiState.update { it.copy(isLoading = true) } }
             .onEach { stations ->
                 val sorted = withContext(Dispatchers.Default) {
@@ -280,7 +281,7 @@ class BrowseViewModel @Inject constructor(
         val now = SystemClock.elapsedRealtime()
         if (now - lastRefreshAtElapsedMs < minRefreshIntervalMs) return
         lastRefreshAtElapsedMs = now
-        loadInitial()
+        loadInitial(forceRefresh = true)
     }
 
     fun playStation(station: Station) {

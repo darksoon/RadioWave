@@ -113,12 +113,13 @@ class HomeViewModel @Inject constructor(
     }
 
 
-    private fun loadData() {
+    /** [forceRefresh]: explicit user refresh — bypass the repository's TTL cache once. */
+    private fun loadData(forceRefresh: Boolean = false) {
         dataLoadJob?.cancel()
         dataLoadJob = combine(
             recentRepository.getRecentStations(limit = 10),
             favoriteRepository.getFavorites(),
-            stationRepository.getTopStations(),
+            stationRepository.getTopStations(forceRefresh = forceRefresh),
         ) { recent, favorites, top ->
             Triple(recent, favorites.take(6), top.take(30))
         }
@@ -162,7 +163,7 @@ class HomeViewModel @Inject constructor(
         val now = SystemClock.elapsedRealtime()
         if (now - lastRefreshAtElapsedMs < minRefreshIntervalMs) return
         lastRefreshAtElapsedMs = now
-        loadData()
+        loadData(forceRefresh = true)
     }
 
     fun playStation(station: Station) {
