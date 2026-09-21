@@ -104,11 +104,9 @@ fun FloatingPlayerBar(
             }
         }
 
-        val livePlayedDurationMs = playedDurationMs + if (isPlaying) {
-            (nowElapsedMs - (playerState.sessionStartedAtElapsedMs ?: nowElapsedMs)).coerceAtLeast(0L)
-        } else {
-            0L
-        }
+        // While playing: time since the station went live (same as the full player).
+        // Adding playedDurationMs on top of that double-counted after a pause/resume.
+        val livePlayedDurationMs = connectedDurationMs(playerState, nowElapsedMs) ?: playedDurationMs
         val sessionDurationLabel = formatStreamDuration(livePlayedDurationMs.coerceAtLeast(0L))
 
         val liveDotTransition = rememberInfiniteTransition(label = "miniLiveDot")

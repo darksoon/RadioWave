@@ -560,6 +560,15 @@ fun RadioWaveMainScreen(
     val shortcutPlayerUnavailableText = stringResource(R.string.shortcut_player_unavailable)
     val favoriteAddedText = stringResource(R.string.toast_favorite_added)
     val favoriteRemovedText = stringResource(R.string.toast_favorite_removed)
+    val castLoadFailedText = stringResource(R.string.cast_load_failed)
+
+    // The receiver refused the stream; CastManager kept playback on the phone. Always
+    // shown (not gated by showQuickToasts) — it explains why the TV stays silent.
+    LaunchedEffect(castManager) {
+        castManager.loadFailures.collect {
+            Toast.makeText(context, castLoadFailedText, Toast.LENGTH_LONG).show()
+        }
+    }
 
     BackHandler(enabled = showFullscreenPlayer) {
         showFullscreenPlayer = false
@@ -823,6 +832,7 @@ fun RadioWaveMainScreen(
                         onPreviousStationClick = { homeViewModel.playPreviousStation() },
                         onVolumeToggle = { homeViewModel.toggleMute() },
                         onRandomStationClick = { homeViewModel.playRandomStation() },
+                        onSimilarStationClick = { station -> homeViewModel.playStation(station) },
                         onSleepTimerClick = { minutes ->
                             homeViewModel.setSleepTimer(minutes)
                         },

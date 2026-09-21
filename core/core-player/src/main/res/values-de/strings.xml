@@ -2,6 +2,5 @@
 <resources>
     <string name="notification_channel_name">Radio-Wiedergabe</string>
     <string name="player_error_unknown">Unbekannter Fehler</string>
-    <string name="player_error_wifi_required">WLAN erforderlich (mobile Daten deaktiviert)</string>
     <string name="player_error_audio_focus_unavailable">Audio-Fokus nicht verfuegbar</string>
 </resources>

@@ -20,6 +20,9 @@ interface StationDao {
     @Query("SELECT * FROM stations WHERE uuid = :uuid LIMIT 1")
     suspend fun getStationByUuid(uuid: String): StationEntity?
 
+    @Query("SELECT * FROM stations WHERE name = :name COLLATE NOCASE LIMIT 100")
+    suspend fun getStationsByExactName(name: String): List<StationEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStation(station: StationEntity)
 
@@ -31,6 +34,17 @@ interface StationDao {
 
     @Query("DELETE FROM stations")
     suspend fun deleteAllStations()
+
+    /**
+     * Drops cached stations a completed mirror sync did not deliver again (removed upstream
+     * or now blocked). Stations referenced by favorites or history are kept.
+     */
+    @Query(
+        "DELETE FROM stations WHERE cachedAt < :syncStartedAtMs " +
+            "AND uuid NOT IN (SELECT stationUuid FROM favorites) " +
+            "AND uuid NOT IN (SELECT stationUuid FROM recent_stations)",
+    )
+    suspend fun deleteStationsNotRefreshedSince(syncStartedAtMs: Long): Int
 
     @Query("SELECT * FROM stations WHERE name LIKE '%' || :query || '%' ORDER BY cachedAt DESC LIMIT :limit")
     suspend fun searchStations(query: String, limit: Int = 50): List<StationEntity>
@@ -60,4 +74,3 @@ data class StationNameRow(
     val uuid: String,
     val name: String,
 )
-

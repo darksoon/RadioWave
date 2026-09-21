@@ -2,6 +2,7 @@
 
 package de.darksoon.radiowave.core.data.repository
 
+import de.darksoon.radiowave.core.data.policy.StationInputValidator
 import de.darksoon.radiowave.core.database.dao.CustomStationDao
 import de.darksoon.radiowave.core.database.dao.FavoriteDao
 import de.darksoon.radiowave.core.database.entity.CustomStationEntity
@@ -176,6 +177,58 @@ class FavoriteRepositoryImplTest {
         assertEquals(0, success.skippedExisting)
         assertEquals(1, success.skippedInvalid)
         assertEquals(1, favoriteDao.currentFavorites().size)
+    }
+
+    @Test
+    fun `importFavoritesJson applies the shared url validation and the blocklist`() = runBlocking {
+        val favoriteDao = FakeFavoriteDao()
+        val repository = FavoriteRepositoryImpl(favoriteDao, FakeCustomStationDao(), testJson)
+        val export = FavoritesExport(
+            exportedAt = 0L,
+            stations = listOf(
+                Station(uuid = "ok", name = "  OK  ", streamUrl = " https://ok.example/live "),
+                Station(uuid = "file", name = "File", streamUrl = "file:///sdcard/a.mp3"),
+                Station(uuid = "nohost", name = "No host", streamUrl = "https://"),
+                Station(uuid = "blocked", name = "Blocked", streamUrl = "https://stream.alnour.com.lb/live"),
+            ),
+        )
+
+        val outcome = repository.importFavoritesJson(testJson.encodeToString(FavoritesExport.serializer(), export))
+
+        assertEquals(
+            FavoritesImportOutcome.Success(imported = 1, skippedExisting = 0, skippedInvalid = 3, skippedBlocked = 1),
+            outcome,
+        )
+        val stored = favoriteDao.currentFavorites().single()
+        assertEquals("OK", stored.stationName)
+        assertEquals("https://ok.example/live", stored.streamUrl)
+    }
+
+    @Test
+    fun `importFavoritesJson caps the number of imported entries`() = runBlocking {
+        val favoriteDao = FakeFavoriteDao()
+        val repository = FavoriteRepositoryImpl(favoriteDao, FakeCustomStationDao(), testJson)
+        val total = StationInputValidator.MAX_IMPORT_ENTRIES + 3
+        val export = FavoritesExport(
+            exportedAt = 0L,
+            stations = List(total) { Station(uuid = "id-$it", name = "S$it", streamUrl = "https://s$it.example") },
+        )
+
+        val outcome = repository.importFavoritesJson(testJson.encodeToString(FavoritesExport.serializer(), export))
+
+        val success = outcome as FavoritesImportOutcome.Success
+        assertEquals(StationInputValidator.MAX_IMPORT_ENTRIES, success.imported)
+        assertEquals(3, success.skippedInvalid)
+        assertEquals(StationInputValidator.MAX_IMPORT_ENTRIES, favoriteDao.currentFavorites().size)
+    }
+
+    @Test
+    fun `importFavoritesJson rejects oversized input without parsing`() = runBlocking {
+        val repository = FavoriteRepositoryImpl(FakeFavoriteDao(), FakeCustomStationDao(), testJson)
+        val oversized = """{"version":1,"exportedAt":0,"stations":[]}""" +
+            " ".repeat(StationInputValidator.MAX_IMPORT_BYTES)
+
+        assertEquals(FavoritesImportOutcome.ParseError, repository.importFavoritesJson(oversized))
     }
 
     @Test

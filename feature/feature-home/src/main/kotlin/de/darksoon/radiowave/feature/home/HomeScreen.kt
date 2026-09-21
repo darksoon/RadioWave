@@ -5,7 +5,6 @@ package de.darksoon.radiowave.feature.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
@@ -17,16 +16,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.gestures.snapping.SnapPosition
-import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -54,34 +48,35 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.util.lerp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.ui.components.ErrorState
 import de.darksoon.radiowave.core.ui.components.HomeSkeletonLoader
-import de.darksoon.radiowave.core.ui.components.LoadingState
 import de.darksoon.radiowave.core.ui.components.StationLogoImage
+import de.darksoon.radiowave.core.ui.components.StationNameText
 
 import de.darksoon.radiowave.core.ui.theme.CardBodyStyle
 import de.darksoon.radiowave.core.ui.theme.CardCaptionStyle
-import de.darksoon.radiowave.core.ui.theme.DarkOnSurfaceVariant
-import de.darksoon.radiowave.core.ui.theme.DarkSurfaceVariant
 
 import de.darksoon.radiowave.core.ui.theme.SectionTitleStyle
 import de.darksoon.radiowave.core.ui.theme.RadioAccent
 import de.darksoon.radiowave.feature.home.R
-import kotlin.math.abs
 
 import kotlin.random.Random
 
@@ -190,9 +185,11 @@ private fun HomeContent(
                             actionLabel = stringResource(R.string.home_section_all),
                             onActionClick = onViewAllFavorites,
                         )
-                        FavoriteStationCarousel(
+                        FavoriteStationGrid(
                             stations = favoriteStations,
+                            currentStationUuid = currentStation?.uuid,
                             onStationClick = onStationClick,
+                            onViewAllFavorites = onViewAllFavorites,
                         )
                     }
 
@@ -262,173 +259,190 @@ private fun HomeContent(
     }
 }
 
+/**
+ * Compact favorites grid: small logo tiles in up to [FAVORITE_GRID_MAX_ROWS] rows, so a
+ * phone shows eight favorites at once without horizontal swiping. When there are more
+ * favorites than fit, the last cell becomes a "+N" tile that opens the full list.
+ */
 @Composable
-private fun FavoriteHeroCard(
-    station: Station,
-    onClick: () -> Unit,
-    cardWidth: Dp = 140.dp,
-    cardHeight: Dp = 156.dp,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier
-            .height(cardHeight)
-            .width(cardWidth),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.22f)),
-        onClick = onClick,
-    ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.16f),
-                                Color.White.copy(alpha = 0.06f),
-                                Color.White.copy(alpha = 0.1f),
-                            ),
-                        ),
-                    ),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .offset(x = (-8).dp, y = (-10).dp)
-                    .blur(24.dp)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.16f),
-                                RadioAccent.copy(alpha = 0.1f),
-                                Color.Transparent,
-                            ),
-                            radius = 320f,
-                        ),
-                    ),
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .blur(12.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.2f),
-                                Color.Transparent,
-                                Color.Black.copy(alpha = 0.18f),
-                            ),
-                        ),
-                    ),
-            )
-            StationArtwork(
-                imageUrl = station.faviconUrl,
-                stationName = station.name,
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.fillMaxSize(),
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Transparent,
-                                Color.Black.copy(alpha = 0.8f),
-                            ),
-                        ),
-                    ),
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .border(
-                        width = 1.dp,
-                        brush = Brush.linearGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.42f),
-                                Color.White.copy(alpha = 0.1f),
-                                Color.White.copy(alpha = 0.26f),
-                            ),
-                        ),
-                        shape = RoundedCornerShape(20.dp),
-                    ),
-            )
-            Text(
-                text = station.name,
-                color = Color.White,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontWeight = FontWeight.SemiBold,
-                ),
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(horizontal = 12.dp, vertical = 12.dp),
-            )
-        }
-    }
-}
-
-@Composable
-private fun FavoriteStationCarousel(
+private fun FavoriteStationGrid(
     stations: List<Station>,
+    currentStationUuid: String?,
     onStationClick: (Station) -> Unit,
+    onViewAllFavorites: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val listState = rememberLazyListState()
-    val itemWidth = 140.dp
-    val itemSpacing = 10.dp
     BoxWithConstraints(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
     ) {
-        val sidePadding = ((maxWidth - itemWidth) / 2).coerceAtLeast(20.dp)
-        LazyRow(
-            state = listState,
-            flingBehavior = rememberSnapFlingBehavior(
-                lazyListState = listState,
-                snapPosition = SnapPosition.Center,
-            ),
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = sidePadding),
-            horizontalArrangement = Arrangement.spacedBy(itemSpacing),
-        ) {
-            items(stations, key = { station -> station.uuid }, contentType = { "station" }) { station ->
-                // Compute transform INSIDE graphicsLayer so scroll updates only re-run the
-                // draw/layout phases — NOT the composition phase. This avoids recomposing
-                // FavoriteHeroCard (with all its Brush allocations) on every scroll frame.
-                FavoriteHeroCard(
-                    station = station,
-                    onClick = { onStationClick(station) },
-                    cardWidth = itemWidth,
-                    modifier = Modifier.graphicsLayer {
-                        val info = listState.layoutInfo.visibleItemsInfo
-                            .firstOrNull { (it.key as? String) == station.uuid }
-                        if (info == null) {
-                            scaleX = 0.86f; scaleY = 0.86f
-                            alpha = 0.72f
+        val columns = ((maxWidth + FavoriteGridSpacing) / (FavoriteTileMinWidth + FavoriteGridSpacing))
+            .toInt()
+            .coerceIn(3, 6)
+        val capacity = columns * FAVORITE_GRID_MAX_ROWS
+        val hiddenCount = if (stations.size > capacity) stations.size - (capacity - 1) else 0
+        // A null cell stands for the trailing "+N" tile.
+        val rows = remember(stations, columns, hiddenCount) {
+            val cells: List<Station?> = if (hiddenCount > 0) {
+                stations.take(capacity - 1) + null
+            } else {
+                stations
+            }
+            cells.chunked(columns)
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            rows.forEach { rowCells ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(FavoriteGridSpacing),
+                ) {
+                    rowCells.forEach { station ->
+                        if (station != null) {
+                            FavoriteStationTile(
+                                station = station,
+                                isActive = station.uuid == currentStationUuid,
+                                onClick = { onStationClick(station) },
+                                modifier = Modifier.weight(1f),
+                            )
                         } else {
-                            val viewportCenter =
-                                (listState.layoutInfo.viewportStartOffset + listState.layoutInfo.viewportEndOffset) / 2f
-                            val itemCenter = info.offset + info.size / 2f
-                            val distance = itemCenter - viewportCenter
-                            val normalized = (kotlin.math.abs(distance) / (info.size * 1.4f)).coerceIn(0f, 1f)
-                            val s = androidx.compose.ui.util.lerp(1.02f, 0.84f, normalized)
-                            scaleX = s; scaleY = s
-                            alpha = androidx.compose.ui.util.lerp(1f, 0.62f, normalized)
-                            rotationY = ((distance / info.size) * 10f).coerceIn(-10f, 10f)
+                            MoreFavoritesTile(
+                                hiddenCount = hiddenCount,
+                                totalCount = stations.size,
+                                onClick = onViewAllFavorites,
+                                modifier = Modifier.weight(1f),
+                            )
                         }
-                    },
-                )
+                    }
+                    // Keep tile widths identical in a partially filled last row.
+                    repeat(columns - rowCells.size) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
             }
         }
     }
 }
 
-// rememberCarouselTransform removed — transform is now computed inside graphicsLayer
-// at the call site to avoid per-frame recompositions during carousel scroll.
+@Composable
+private fun FavoriteStationTile(
+    station: Station,
+    isActive: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val nowPlayingDescription = stringResource(R.string.home_favorite_now_playing)
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            // clickable merges the tile's semantics: TalkBack reads the name once as a button.
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics {
+                if (isActive) stateDescription = nowPlayingDescription
+            }
+            .padding(bottom = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(16.dp))
+                .border(
+                    width = if (isActive) 1.5.dp else 1.dp,
+                    color = if (isActive) RadioAccent.copy(alpha = 0.75f) else Color.White.copy(alpha = 0.18f),
+                    shape = RoundedCornerShape(16.dp),
+                ),
+        ) {
+            StationArtwork(
+                imageUrl = station.faviconUrl,
+                stationName = station.name,
+                contentDescription = null,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxSize(),
+            )
+            if (isActive) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
+                        .size(8.dp)
+                        .background(RadioAccent, CircleShape)
+                        .border(1.dp, Color.Black.copy(alpha = 0.35f), CircleShape),
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        StationNameText(
+            name = station.name,
+            style = CardBodyStyle.copy(fontSize = 12.sp, lineHeight = 15.sp),
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 2,
+            minLines = 2,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 2.dp),
+        )
+    }
+}
+
+@Composable
+private fun MoreFavoritesTile(
+    hiddenCount: Int,
+    totalCount: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val description = pluralStringResource(R.plurals.home_favorites_show_all, totalCount, totalCount)
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(role = Role.Button, onClick = onClick)
+            .clearAndSetSemantics {
+                contentDescription = description
+                role = Role.Button
+            }
+            .padding(bottom = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(16.dp))
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            RadioAccent.copy(alpha = 0.16f),
+                            Color.White.copy(alpha = 0.05f),
+                        ),
+                    ),
+                )
+                .border(1.dp, RadioAccent.copy(alpha = 0.3f), RoundedCornerShape(16.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "+$hiddenCount",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = RadioAccent,
+            )
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.home_section_all),
+            style = CardBodyStyle.copy(fontSize = 12.sp, lineHeight = 15.sp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+private val FavoriteTileMinWidth = 72.dp
+private val FavoriteGridSpacing = 10.dp
+private const val FAVORITE_GRID_MAX_ROWS = 2
 
 @Composable
 private fun SectionTitle(
@@ -546,13 +560,13 @@ private fun RecentStationCard(
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = station.name,
+                StationNameText(
+                    name = station.name,
                     style = CardBodyStyle,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
                     minLines = 2,
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 station.country?.let { country ->
                     Spacer(modifier = Modifier.height(3.dp))
@@ -574,6 +588,7 @@ private fun StationArtwork(
     imageUrl: String?,
     stationName: String,
     shape: Shape,
+    contentDescription: String? = stationName,
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
     fallbackColors: List<Color> = defaultFallbackColors,
@@ -592,7 +607,7 @@ private fun StationArtwork(
         } else {
             StationLogoImage(
                 imageUrl = imageUrl,
-                contentDescription = stationName,
+                contentDescription = contentDescription,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = contentScale,
                 loading = {

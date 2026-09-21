@@ -50,6 +50,10 @@ data class AppSettingsState(
     val autoPlayOnAndroidAutoConnect: Boolean = true,
     val limitAndroidAutoQuality: Boolean = true,
     val confirmRemoveFavorite: Boolean = false,
+    // Outbound requests that aren't needed for playback itself — both on by default so
+    // behaviour doesn't change silently for existing users; see README "Privacy".
+    val reportStationClicks: Boolean = true,
+    val onlineCoverLookup: Boolean = true,
     val firstRunOnboardingDone: Boolean = false,
     // Local station-directory mirror (full Radio Browser dump in Room).
     val stationMirrorEnabled: Boolean = false,
@@ -102,6 +106,8 @@ open class SettingsRepository @Inject constructor(
         val AUTO_PLAY_ON_ANDROID_AUTO_CONNECT = booleanPreferencesKey(AppSettings.KEY_AUTO_PLAY_ON_ANDROID_AUTO_CONNECT)
         val LIMIT_ANDROID_AUTO_QUALITY = booleanPreferencesKey(AppSettings.KEY_LIMIT_ANDROID_AUTO_QUALITY)
         val CONFIRM_REMOVE_FAVORITE = booleanPreferencesKey(AppSettings.KEY_CONFIRM_REMOVE_FAVORITE)
+        val REPORT_STATION_CLICKS = booleanPreferencesKey(AppSettings.KEY_REPORT_STATION_CLICKS)
+        val ONLINE_COVER_LOOKUP = booleanPreferencesKey(AppSettings.KEY_ONLINE_COVER_LOOKUP)
         val FIRST_RUN_ONBOARDING_DONE = booleanPreferencesKey(AppSettings.KEY_FIRST_RUN_ONBOARDING_DONE)
         val LAST_STATION_UUID = stringPreferencesKey(AppSettings.KEY_LAST_STATION_UUID)
         val LAST_STATION_NAME = stringPreferencesKey(AppSettings.KEY_LAST_STATION_NAME)
@@ -146,6 +152,21 @@ open class SettingsRepository @Inject constructor(
         }
     }
 
+    /**
+     * Fills the [initialSnapshotBlocking] cache from a background coroutine. Called
+     * from `Application.onCreate` so the first ViewModel/service on the main thread
+     * normally finds the snapshot ready instead of waiting on DataStore's first read
+     * (and a possible SharedPreferences migration). The blocking path stays as the
+     * fallback when a consumer is faster than this warm-up.
+     */
+    suspend fun warmUpInitialSnapshot() {
+        if (cachedInitialSnapshot != null) return
+        val snapshot = data.first()
+        synchronized(this) {
+            if (cachedInitialSnapshot == null) cachedInitialSnapshot = snapshot
+        }
+    }
+
     // Granular Flow projections — these distinctUntilChanged so consumers only
     // react to the slice they care about.
     val themeMode: Flow<String> = data.map { it.themeMode }.distinctUntilChanged()
@@ -180,11 +201,13 @@ open class SettingsRepository @Inject constructor(
     suspend fun setAutoPlayOnAndroidAutoConnect(v: Boolean) = edit { it[Keys.AUTO_PLAY_ON_ANDROID_AUTO_CONNECT] = v }
     suspend fun setLimitAndroidAutoQuality(v: Boolean) = edit { it[Keys.LIMIT_ANDROID_AUTO_QUALITY] = v }
     suspend fun setConfirmRemoveFavorite(v: Boolean) = edit { it[Keys.CONFIRM_REMOVE_FAVORITE] = v }
+    suspend fun setReportStationClicks(v: Boolean) = edit { it[Keys.REPORT_STATION_CLICKS] = v }
+    suspend fun setOnlineCoverLookup(v: Boolean) = edit { it[Keys.ONLINE_COVER_LOOKUP] = v }
     suspend fun setFirstRunOnboardingDone(v: Boolean) = edit { it[Keys.FIRST_RUN_ONBOARDING_DONE] = v }
     suspend fun setStationMirrorEnabled(v: Boolean) = edit { it[Keys.STATION_MIRROR_ENABLED] = v }
     suspend fun setStationMirrorIntervalHours(v: Int) = edit { it[Keys.STATION_MIRROR_INTERVAL_HOURS] = v }
     suspend fun setStationMirrorWifiOnly(v: Boolean) = edit { it[Keys.STATION_MIRROR_WIFI_ONLY] = v }
-    suspend fun setStationMirrorSyncResult(syncedAtMs: Long, stationCount: Int) = edit {
+    open suspend fun setStationMirrorSyncResult(syncedAtMs: Long, stationCount: Int) = edit {
         it[Keys.STATION_MIRROR_LAST_SYNC_AT] = syncedAtMs
         it[Keys.STATION_MIRROR_STATION_COUNT] = stationCount
     }
@@ -229,6 +252,8 @@ open class SettingsRepository @Inject constructor(
         autoPlayOnAndroidAutoConnect = this[Keys.AUTO_PLAY_ON_ANDROID_AUTO_CONNECT] ?: true,
         limitAndroidAutoQuality = this[Keys.LIMIT_ANDROID_AUTO_QUALITY] ?: true,
         confirmRemoveFavorite = this[Keys.CONFIRM_REMOVE_FAVORITE] ?: false,
+        reportStationClicks = this[Keys.REPORT_STATION_CLICKS] ?: true,
+        onlineCoverLookup = this[Keys.ONLINE_COVER_LOOKUP] ?: true,
         firstRunOnboardingDone = this[Keys.FIRST_RUN_ONBOARDING_DONE] ?: false,
         stationMirrorEnabled = this[Keys.STATION_MIRROR_ENABLED] ?: false,
         stationMirrorIntervalHours = this[Keys.STATION_MIRROR_INTERVAL_HOURS] ?: 168,

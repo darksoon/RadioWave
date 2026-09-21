@@ -12,4 +12,6 @@ dependencies {
     implementation(project(":core:core-model"))
     
     implementation(libs.media3.cast)
+
+    testImplementation(libs.junit)
 }

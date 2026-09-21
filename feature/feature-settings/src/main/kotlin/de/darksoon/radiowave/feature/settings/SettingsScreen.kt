@@ -196,11 +196,7 @@ fun SettingsScreen(
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         coroutineScope.launch {
-            val fileContent = withContext(Dispatchers.IO) {
-                runCatching {
-                    context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
-                }.getOrNull()
-            }
+            val fileContent = withContext(Dispatchers.IO) { viewModel.readImportText(uri) }
             if (fileContent == null) {
                 Toast.makeText(
                     context,
@@ -591,6 +587,30 @@ fun SettingsScreen(
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        Text(
+                            text = stringResource(R.string.settings_data_section_privacy),
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = RadioAccent,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        )
+                        SettingToggleRow(
+                            title = stringResource(R.string.settings_report_station_clicks_title),
+                            subtitle = stringResource(R.string.settings_report_station_clicks_subtitle),
+                            checked = settings.reportStationClicks,
+                            onCheckedChange = { checked ->
+                                viewModel.setReportStationClicks(checked)
+                            },
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingToggleRow(
+                            title = stringResource(R.string.settings_online_cover_lookup_title),
+                            subtitle = stringResource(R.string.settings_online_cover_lookup_subtitle),
+                            checked = settings.onlineCoverLookup,
+                            onCheckedChange = { checked ->
+                                viewModel.setOnlineCoverLookup(checked)
+                            },
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingToggleRow(
                             title = stringResource(R.string.settings_station_mirror_title),
                             subtitle = stringResource(R.string.settings_station_mirror_subtitle),
@@ -622,6 +642,10 @@ fun SettingsScreen(
                             )
                             val mirrorSyncState by viewModel.mirrorSyncState.collectAsStateWithLifecycle()
                             val syncStatusText = when (val state = mirrorSyncState) {
+                                StationMirrorRepository.SyncState.WaitingForWifi ->
+                                    stringResource(R.string.settings_station_mirror_waiting_wifi)
+                                is StationMirrorRepository.SyncState.Failed ->
+                                    stringResource(R.string.settings_station_mirror_failed)
                                 is StationMirrorRepository.SyncState.Running ->
                                     stringResource(R.string.settings_station_mirror_syncing, state.stationsSynced)
                                 else -> if (settings.stationMirrorLastSyncAtMs > 0L) {
@@ -672,7 +696,14 @@ fun SettingsScreen(
                             OutlinedButton(
                                 onClick = {
                                     viewModel.clearStationCache()
-                                    Toast.makeText(context, resources.getString(R.string.settings_station_cache_cleared), Toast.LENGTH_SHORT).show()
+                                    // With the offline directory on, only search/cover caches go —
+                                    // say so instead of claiming the stations were deleted.
+                                    val clearedMessage = if (settings.stationMirrorEnabled) {
+                                        R.string.settings_station_cache_cleared_mirror_kept
+                                    } else {
+                                        R.string.settings_station_cache_cleared
+                                    }
+                                    Toast.makeText(context, resources.getString(clearedMessage), Toast.LENGTH_LONG).show()
                                 },
                                 modifier = Modifier.weight(1f),
                             ) {
@@ -1388,4 +1419,3 @@ private fun startActivitySafely(context: Context, intent: Intent): Boolean {
         true
     }.getOrDefault(false)
 }
-

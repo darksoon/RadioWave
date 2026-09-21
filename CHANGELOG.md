@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Stability pass after the 2026-09 audit: sleep timer thread safety (also stops Cast), mobile-data policy enforced on resume/restart/network change, CI runs all core unit tests, faster station start without waiting for the directory, consistent offline-directory lifecycle, fuzzy search off the main thread, one shared validation (http(s) + host, 2 MB / 5,000-entry limits, content-policy blocklist) for manual add, playlist and favorites import, and settings pre-loaded off the main thread at cold start.
+
 ## [1.0.17] - 2026-07-21
 
 ### Added

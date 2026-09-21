@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.darksoon.radiowave.core.data.playlist.PlaylistParser
+import de.darksoon.radiowave.core.data.policy.StationInputValidator
 import de.darksoon.radiowave.core.data.repository.AppSettingsState
 import de.darksoon.radiowave.core.data.repository.CoverArtRepository
 import de.darksoon.radiowave.core.data.repository.CustomStationRepository
@@ -18,30 +19,33 @@ import de.darksoon.radiowave.core.data.repository.OfflineFirstStationRepository
 import de.darksoon.radiowave.core.data.repository.RecentRepository
 import de.darksoon.radiowave.core.data.repository.SettingsRepository
 import de.darksoon.radiowave.core.data.repository.StationMirrorRepository
-import de.darksoon.radiowave.core.database.dao.StationDao
 import de.darksoon.radiowave.core.model.FavoritesImportOutcome
 import de.darksoon.radiowave.core.model.Station
 import java.io.BufferedReader
-import java.io.InputStreamReader
+import java.io.StringReader
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Outcome of a playlist import, used to summarize the result to the user. */
 data class PlaylistImportResult(
     val imported: Int,
+    /** All skipped entries (invalid, duplicate, over the cap), including [blocked]. */
     val skipped: Int,
     val totalFound: Int,
+    /** Subset of [skipped] rejected by the content-policy blocklist. */
+    val blocked: Int = 0,
 )
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val recentRepository: RecentRepository,
-    private val stationDao: StationDao,
     private val stationRepository: OfflineFirstStationRepository,
     private val settingsRepository: SettingsRepository,
     private val favoriteRepository: FavoriteRepository,
@@ -79,6 +83,8 @@ class SettingsViewModel @Inject constructor(
     fun setAutoPlayOnAndroidAutoConnect(v: Boolean) = viewModelScope.launch { settingsRepository.setAutoPlayOnAndroidAutoConnect(v) }
     fun setLimitAndroidAutoQuality(v: Boolean) = viewModelScope.launch { settingsRepository.setLimitAndroidAutoQuality(v) }
     fun setConfirmRemoveFavorite(v: Boolean) = viewModelScope.launch { settingsRepository.setConfirmRemoveFavorite(v) }
+    fun setReportStationClicks(v: Boolean) = viewModelScope.launch { settingsRepository.setReportStationClicks(v) }
+    fun setOnlineCoverLookup(v: Boolean) = viewModelScope.launch { settingsRepository.setOnlineCoverLookup(v) }
     fun setStationMirrorEnabled(v: Boolean) = viewModelScope.launch {
         settingsRepository.setStationMirrorEnabled(v)
         // First enable → kick off the initial download right away so the user sees
@@ -97,7 +103,7 @@ class SettingsViewModel @Inject constructor(
 
     fun clearStationCache() {
         viewModelScope.launch {
-            stationDao.deleteAllStations()
+            stationMirrorRepository.clearCachedStations()
             // Also clear the in-memory search cache so results are visibly gone
             stationRepository.clearSearchCache()
             // ... and the in-memory cover-art cache (was never wired here — audit
@@ -125,38 +131,33 @@ class SettingsViewModel @Inject constructor(
     }
 
     /**
-     * Same validation as the manual "add custom station" flow in feature-favorites
-     * (kept as a separate copy rather than shared code — the two features live in
-     * different Gradle modules with no existing shared dependency for it). A
-     * malformed URL here would otherwise reach ExoPlayer at play time and crash it.
+     * Reads a picked import file as text, or null if it can't be opened or exceeds
+     * [StationInputValidator.MAX_IMPORT_BYTES] (enforced while reading, so a huge file
+     * is never buffered completely). Blocking — call from an IO dispatcher.
      */
-    private fun isValidStreamUrl(streamUrl: String): Boolean {
-        val trimmed = streamUrl.trim()
-        if (trimmed.isBlank()) return false
-        val uri = runCatching { Uri.parse(trimmed) }.getOrNull() ?: return false
-        val scheme = uri.scheme?.lowercase()
-        val host = uri.host
-        return (scheme == "http" || scheme == "https") && !host.isNullOrBlank()
-    }
+    fun readImportText(uri: Uri): String? = runCatching {
+        context.contentResolver.openInputStream(uri)?.use { StationInputValidator.readBoundedText(it) }
+    }.getOrNull()
 
     /**
      * Imports custom stations from an M3U/M3U8/PLS playlist file picked via SAF.
-     * Reuses [isValidStreamUrl] so imported streams go through the same validation
-     * as the manual "add custom station" flow, skips entries that are invalid
-     * individually rather than failing the whole import, and dedupes both within
-     * the playlist itself and against custom stations that already exist.
+     * Every entry goes through [StationInputValidator] — the same gate as the manual
+     * "add custom station" flow and the favorites JSON import — and is skipped
+     * individually if invalid or blocked. Dedupes both within the playlist itself and
+     * against custom stations that already exist; at most
+     * [StationInputValidator.MAX_IMPORT_ENTRIES] entries are imported.
      *
-     * Never throws — file I/O and parsing errors are treated as "no entries found"
-     * so a bad file can't crash the caller.
+     * Never throws — file I/O and parsing errors (including an oversized file) are
+     * treated as "no entries found" so a bad file can't crash the caller.
      */
     suspend fun importPlaylist(uri: Uri): PlaylistImportResult {
-        val entries = runCatching {
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                BufferedReader(InputStreamReader(input)).use { reader ->
-                    PlaylistParser.parse(queryFileName(uri), reader)
+        val entries = withContext(Dispatchers.IO) {
+            runCatching {
+                readImportText(uri)?.let { text ->
+                    PlaylistParser.parse(queryFileName(uri), BufferedReader(StringReader(text)))
                 }
-            }
-        }.getOrNull().orEmpty()
+            }.getOrNull().orEmpty()
+        }
 
         if (entries.isEmpty()) {
             return PlaylistImportResult(imported = 0, skipped = 0, totalFound = 0)
@@ -165,24 +166,35 @@ class SettingsViewModel @Inject constructor(
         val existingUrls = customStationRepository.getCustomStations().first().map { it.streamUrl }.toSet()
         val seenUrlsInBatch = mutableSetOf<String>()
         var imported = 0
-        var skipped = 0
-        for (entry in entries) {
-            val streamUrl = entry.streamUrl.trim()
-            val isNewInBatch = seenUrlsInBatch.add(streamUrl)
-            if (!isValidStreamUrl(streamUrl) || !isNewInBatch || streamUrl in existingUrls) {
+        var skipped = (entries.size - StationInputValidator.MAX_IMPORT_ENTRIES).coerceAtLeast(0)
+        var blocked = 0
+        for (entry in entries.take(StationInputValidator.MAX_IMPORT_ENTRIES)) {
+            val candidate = Station(
+                uuid = "custom-${UUID.randomUUID()}",
+                name = entry.name,
+                streamUrl = entry.streamUrl,
+            )
+            val station = when (val result = StationInputValidator.validate(candidate)) {
+                is StationInputValidator.Result.Valid -> result.station
+                StationInputValidator.Result.Invalid -> {
+                    skipped++
+                    continue
+                }
+                StationInputValidator.Result.Blocked -> {
+                    skipped++
+                    blocked++
+                    continue
+                }
+            }
+            if (!seenUrlsInBatch.add(station.streamUrl) || station.streamUrl in existingUrls) {
                 skipped++
                 continue
             }
-            val station = Station(
-                uuid = "custom-${UUID.randomUUID()}",
-                name = entry.name.trim().ifBlank { streamUrl },
-                streamUrl = streamUrl,
-            )
             customStationRepository.addCustomStation(station)
             favoriteRepository.toggleFavorite(station.copy(isFavorite = false))
             imported++
         }
-        return PlaylistImportResult(imported = imported, skipped = skipped, totalFound = entries.size)
+        return PlaylistImportResult(imported = imported, skipped = skipped, totalFound = entries.size, blocked = blocked)
     }
 
     /** Best-effort display name lookup for a SAF `Uri`, used for format detection by extension. */

@@ -4,6 +4,7 @@ package de.darksoon.radiowave.core.cast
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import com.google.android.gms.cast.MediaInfo
 import com.google.android.gms.cast.MediaLoadRequestData
 import com.google.android.gms.cast.MediaMetadata
@@ -21,9 +22,13 @@ import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -37,10 +42,21 @@ class CastManager @Inject constructor(
     private var castContext: CastContext? = null
     private var didRegisterListener = false
     private var didStartObservingPlayerState = false
-    private var lastLoadedStationUuid: String? = null
+    private val loadTracker = CastLoadTracker()
     private var attachedRemoteMediaClient: RemoteMediaClient? = null
     private val _isCasting = MutableStateFlow(false)
+    /**
+     * True while a Cast session is connected and the receiver accepted the current station.
+     * Goes false again after a failed load so the in-app controls drive the local player,
+     * which keeps playing in that case.
+     */
     val isCasting: StateFlow<Boolean> = _isCasting.asStateFlow()
+    private val _loadFailures = MutableSharedFlow<Station>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+    /** One event per station the receiver refused to load; playback stayed on the phone. */
+    val loadFailures: SharedFlow<Station> = _loadFailures.asSharedFlow()
     private val _isRemotePlaying = MutableStateFlow(false)
     val isRemotePlaying: StateFlow<Boolean> = _isRemotePlaying.asStateFlow()
 
@@ -54,7 +70,7 @@ class CastManager @Inject constructor(
         override fun onSessionStarting(session: CastSession) = Unit
 
         override fun onSessionStarted(session: CastSession, sessionId: String) {
-            lastLoadedStationUuid = null
+            loadTracker.reset()
             attachRemoteMediaClient(session.remoteMediaClient)
             loadCurrentStationIntoSession(session)
         }
@@ -64,7 +80,7 @@ class CastManager @Inject constructor(
         override fun onSessionResuming(session: CastSession, sessionId: String) = Unit
 
         override fun onSessionResumed(session: CastSession, wasSuspended: Boolean) {
-            lastLoadedStationUuid = null
+            loadTracker.reset()
             attachRemoteMediaClient(session.remoteMediaClient)
             loadCurrentStationIntoSession(session)
         }
@@ -78,7 +94,7 @@ class CastManager @Inject constructor(
         override fun onSessionEnding(session: CastSession) = Unit
 
         override fun onSessionEnded(session: CastSession, error: Int) {
-            lastLoadedStationUuid = null
+            loadTracker.reset()
             detachRemoteMediaClient()
         }
     }
@@ -141,18 +157,61 @@ class CastManager @Inject constructor(
         force: Boolean = false,
     ) {
         val station = playerState.currentStation ?: return
-        if (!force && lastLoadedStationUuid == station.uuid) return
+        if (!loadTracker.shouldLoad(station.uuid, force, isLocalLoading = playerState.isLoading)) return
 
         val remoteMediaClient = session.remoteMediaClient ?: return
         val mediaInfo = buildMediaInfo(station)
-        remoteMediaClient.load(
-            MediaLoadRequestData.Builder()
-                .setMediaInfo(mediaInfo)
-                .setAutoplay(true)
-                .build(),
-        )
-        lastLoadedStationUuid = station.uuid
-        radioPlayerManager.pauseForExternalPlayback()
+        val token = loadTracker.onLoadRequested(station.uuid)
+        // Local playback keeps running until the receiver confirmed the load — pausing it
+        // up front left the user in silence whenever the receiver rejected the stream
+        // (unsupported codec, HTTP-only URL, receiver app crash, ...).
+        val pendingResult = try {
+            remoteMediaClient.load(
+                MediaLoadRequestData.Builder()
+                    .setMediaInfo(mediaInfo)
+                    .setAutoplay(true)
+                    .build(),
+            )
+        } catch (e: RuntimeException) {
+            Log.w(LOG_TAG, "Cast load request for ${station.uuid} threw", e)
+            onLoadResult(remoteMediaClient, station, token, success = false)
+            return
+        }
+        // Delivered on the main looper, like every Cast SDK callback.
+        pendingResult.setResultCallback { result ->
+            val success = result.status.isSuccess
+            if (!success) {
+                Log.w(LOG_TAG, "Cast load for ${station.uuid} failed: ${result.status}")
+            }
+            onLoadResult(remoteMediaClient, station, token, success)
+        }
+    }
+
+    private fun onLoadResult(
+        remoteMediaClient: RemoteMediaClient,
+        station: Station,
+        token: Long,
+        success: Boolean,
+    ) {
+        // Session ended/switched meanwhile — the answer belongs to a client we no longer use.
+        if (attachedRemoteMediaClient !== remoteMediaClient) return
+        if (!loadTracker.onLoadResult(token, success)) return
+        publishCastingState()
+        if (success) {
+            radioPlayerManager.pauseForExternalPlayback()
+            return
+        }
+        // Keep (or bring back) the phone as output. After a forced load on session
+        // start/resume the local player may already be paused for the previous cast.
+        val playerState = radioPlayerManager.playerState.value
+        if (
+            playerState.currentStation?.uuid == station.uuid &&
+            !playerState.isPlaying &&
+            !playerState.isLoading
+        ) {
+            radioPlayerManager.togglePlayPause()
+        }
+        _loadFailures.tryEmit(station)
     }
 
     private fun buildMediaInfo(station: Station): MediaInfo {
@@ -190,24 +249,32 @@ class CastManager @Inject constructor(
         attachedRemoteMediaClient?.stop()
         castContext?.sessionManager?.endCurrentSession(true)
         detachRemoteMediaClient()
-        lastLoadedStationUuid = null
+        loadTracker.reset()
         radioPlayerManager.stop()
     }
 
     private fun attachRemoteMediaClient(remoteMediaClient: RemoteMediaClient?) {
+        radioPlayerManager.setExternalPlaybackStopper(
+            remoteMediaClient?.let { client -> { client.stop(); Unit } },
+        )
         if (attachedRemoteMediaClient === remoteMediaClient) {
             updateRemotePlaybackState(remoteMediaClient)
-            _isCasting.value = remoteMediaClient != null
+            publishCastingState()
             return
         }
         attachedRemoteMediaClient?.unregisterCallback(remoteMediaClientCallback)
         attachedRemoteMediaClient = remoteMediaClient
         remoteMediaClient?.registerCallback(remoteMediaClientCallback)
-        _isCasting.value = remoteMediaClient != null
+        publishCastingState()
         updateRemotePlaybackState(remoteMediaClient)
     }
 
+    private fun publishCastingState() {
+        _isCasting.value = attachedRemoteMediaClient != null && !loadTracker.lastLoadFailed
+    }
+
     private fun detachRemoteMediaClient() {
+        radioPlayerManager.setExternalPlaybackStopper(null)
         attachedRemoteMediaClient?.unregisterCallback(remoteMediaClientCallback)
         attachedRemoteMediaClient = null
         _isCasting.value = false
@@ -216,6 +283,10 @@ class CastManager @Inject constructor(
 
     private fun updateRemotePlaybackState(remoteMediaClient: RemoteMediaClient?) {
         _isRemotePlaying.value = remoteMediaClient?.isPlaying == true || remoteMediaClient?.isBuffering == true
+    }
+
+    private companion object {
+        const val LOG_TAG = "CastManager"
     }
 
     private fun inferContentType(station: Station): String {

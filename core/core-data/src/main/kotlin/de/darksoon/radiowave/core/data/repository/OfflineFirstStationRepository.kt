@@ -15,6 +15,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,6 +27,7 @@ class OfflineFirstStationRepository @Inject constructor(
     private val api: RadioBrowserApi,
     private val stationDao: StationDao,
     mirrorRepository: StationMirrorRepository,
+    private val topStationsStore: TopStationsStore,
 ) : StationRepository {
 
     // ─── Directory availability (drives the "Senderverzeichnis nicht erreichbar"
@@ -31,20 +36,25 @@ class OfflineFirstStationRepository @Inject constructor(
     private val _directoryAvailable = MutableStateFlow(true)
     val directoryAvailable: StateFlow<Boolean> = _directoryAvailable.asStateFlow()
 
+    /** Wall clock of the search/list TTL caches; replaceable in tests. */
+    internal var nowMs: () -> Long = System::currentTimeMillis
+
     init {
         // Rebuild the fuzzy name index right after a mirror sync instead of waiting
         // for its TTL to lapse.
         mirrorRepository.onMirrorUpdated = { invalidateNameIndex() }
     }
 
-    override fun searchStations(query: String): Flow<List<Station>> = flow {
+    override fun searchStations(query: String): Flow<List<Station>> = searchStations(query, forceRefresh = false)
+
+    override fun searchStations(query: String, forceRefresh: Boolean): Flow<List<Station>> = flow {
         val normalizedQuery = query.trim().lowercase()
         if (normalizedQuery.isBlank()) {
             emit(emptyList())
             return@flow
         }
 
-        val now = System.currentTimeMillis()
+        val now = nowMs()
         var hasEmitted = false
 
         val exactLocal = runCatching {
@@ -65,7 +75,7 @@ class OfflineFirstStationRepository @Inject constructor(
         }
 
         val cached = searchCache[normalizedQuery]
-        if (cached != null && now - cached.timestampMs <= searchCacheTtlMs) {
+        if (cached != null && isCacheFresh(cached, now, forceRefresh, searchCacheTtlMs)) {
             val merged = mergeByUuid(primary = cached.stations, secondary = local)
             if (merged.isNotEmpty() || !hasEmitted) {
                 emit(merged)
@@ -94,14 +104,38 @@ class OfflineFirstStationRepository @Inject constructor(
         }
     }
 
-    override fun getTopStations(): Flow<List<Station>> = listWithTtl(
+    override fun getTopStations(): Flow<List<Station>> = getTopStations(forceRefresh = false)
+
+    override fun getTopStations(forceRefresh: Boolean): Flow<List<Station>> = listWithTtl(
         cacheKey = "top",
-        loadLocal = { stationDao.getLatestStations(limit = topStationsLimit).map { it.toDomain() } },
-        fetchRemote = { api.getTopStations(100).map { it.toDomain() } },
+        forceRefresh = forceRefresh,
+        loadLocal = { loadPersistedTopStations() },
+        fetchRemote = { api.getTopStations(topStationsLimit).map { it.toDomain() } },
+        onFetched = { stations -> topStationsStore.write(stations.map { it.uuid }) },
     )
 
-    override fun getStationsByCountry(countryCode: String): Flow<List<Station>> = listWithTtl(
+    /**
+     * Offline copy of the top list: the stations of the last successful fetch, in
+     * their ranking order. Rows the cache no longer has (cleared, pruned upstream)
+     * are skipped; with no stored list yet — first run offline, or a list stored
+     * before this existed — the most recently cached stations stand in as before.
+     */
+    private suspend fun loadPersistedTopStations(): List<Station> {
+        val uuids = topStationsStore.read().take(topStationsLimit)
+        if (uuids.isNotEmpty()) {
+            val byUuid = stationDao.getStationsByUuids(uuids).associateBy { it.uuid }
+            val ranked = uuids.mapNotNull { byUuid[it]?.toDomain() }
+            if (ranked.isNotEmpty()) return ranked
+        }
+        return stationDao.getLatestStations(limit = topStationsLimit).map { it.toDomain() }
+    }
+
+    override fun getStationsByCountry(countryCode: String): Flow<List<Station>> =
+        getStationsByCountry(countryCode, forceRefresh = false)
+
+    override fun getStationsByCountry(countryCode: String, forceRefresh: Boolean): Flow<List<Station>> = listWithTtl(
         cacheKey = "country:${countryCode.trim().uppercase()}",
+        forceRefresh = forceRefresh,
         loadLocal = {
             stationDao.getStationsByCountryCode(
                 countryCode = countryCode.trim().uppercase(),
@@ -111,8 +145,11 @@ class OfflineFirstStationRepository @Inject constructor(
         fetchRemote = { api.searchByCountry(countryCode).map { it.toDomain() } },
     )
 
-    override fun getStationsByTag(tag: String): Flow<List<Station>> = listWithTtl(
+    override fun getStationsByTag(tag: String): Flow<List<Station>> = getStationsByTag(tag, forceRefresh = false)
+
+    override fun getStationsByTag(tag: String, forceRefresh: Boolean): Flow<List<Station>> = listWithTtl(
         cacheKey = "tag:${tag.trim().lowercase()}",
+        forceRefresh = forceRefresh,
         loadLocal = {
             stationDao.getStationsByTag(
                 tag = tag.trim().lowercase(),
@@ -127,20 +164,23 @@ class OfflineFirstStationRepository @Inject constructor(
      * either serve the in-memory TTL cache (no network on tab-hopping within
      * [listCacheTtlMs]) or fetch fresh. A fetch failure keeps whatever we have,
      * never poisons the cache, and flips [directoryAvailable] for the UI banner.
+     * [forceRefresh] (explicit pull-to-refresh) skips the TTL once — see [isCacheFresh].
      */
     private fun listWithTtl(
         cacheKey: String,
+        forceRefresh: Boolean,
         loadLocal: suspend () -> List<Station>,
         fetchRemote: suspend () -> List<Station>,
+        onFetched: suspend (List<Station>) -> Unit = {},
     ): Flow<List<Station>> = flow {
-        val now = System.currentTimeMillis()
+        val now = nowMs()
         val local = runCatching { loadLocal().scrubbed() }.getOrDefault(emptyList())
         if (local.isNotEmpty()) {
             emit(local)
         }
 
         val cached = listCache[cacheKey]
-        if (cached != null && now - cached.timestampMs <= listCacheTtlMs) {
+        if (cached != null && isCacheFresh(cached, now, forceRefresh, listCacheTtlMs)) {
             emit(mergeByUuid(primary = cached.stations, secondary = local))
             return@flow
         }
@@ -154,9 +194,18 @@ class OfflineFirstStationRepository @Inject constructor(
                 _directoryAvailable.value = true
                 cacheStations(stations)
                 listCache[cacheKey] = SearchCacheEntry(timestampMs = now, stations = stations)
+                if (stations.isNotEmpty()) onFetched(stations)
             }
             .getOrDefault(cached?.stations ?: local)
         emit(mergeByUuid(primary = fresh, secondary = local))
+    }
+
+    override suspend fun getCachedStationVariants(station: Station): List<Station> {
+        if (station.isCustom || station.uuid.startsWith("custom-")) return listOf(station)
+        val candidates = stationDao.getStationsByExactName(station.name.trim())
+            .map { it.toDomain() }.scrubbed()
+            .filter { it.countryCode.equals(station.countryCode, ignoreCase = true) }
+        return (listOf(station) + candidates).filter { it.streamUrl.isNotBlank() }.distinctBy { it.streamUrl }
     }
 
     override suspend fun getStationVariants(station: Station): List<Station> {
@@ -170,6 +219,8 @@ class OfflineFirstStationRepository @Inject constructor(
                 limit = 100,
             ).map { it.toDomain() }.scrubbed()
         }.getOrDefault(emptyList())
+        // Keeps the variants for the next start, which then needs no lookup.
+        cacheStations(remoteCandidates)
 
         val exactNameCandidates = remoteCandidates.filter {
             normalizeName(it.name) == normalizedName
@@ -271,12 +322,16 @@ class OfflineFirstStationRepository @Inject constructor(
         }
     }
 
-    override suspend fun reportBrokenStream(stationUuid: String) {
-        try {
-            api.reportBrokenStream(stationUuid)
-        } catch (e: Exception) {
-            // Silently fail - not critical
-        }
+
+    /**
+     * A cache entry is served while its TTL runs. A forced refresh bypasses that,
+     * except for an entry fetched within [forceRefreshMinIntervalMs] — repeated
+     * pulls (or Home and Browse refreshing together) reuse the fresh result
+     * instead of hammering the directory.
+     */
+    private fun isCacheFresh(entry: SearchCacheEntry, now: Long, forceRefresh: Boolean, ttlMs: Long): Boolean {
+        val age = now - entry.timestampMs
+        return if (forceRefresh) age < forceRefreshMinIntervalMs else age <= ttlMs
     }
 
     private data class SearchCacheEntry(
@@ -363,13 +418,14 @@ class OfflineFirstStationRepository @Inject constructor(
      * up to 1 edit for 4–5 letter queries and 2 edits from 6 letters. Queries under
      * 4 letters skip fuzzy entirely — too ambiguous.
      */
-    private suspend fun fuzzySearchLocal(normalizedQuery: String): List<Station> {
+    private suspend fun fuzzySearchLocal(normalizedQuery: String): List<Station> = withContext(Dispatchers.Default) {
         val query = normalizeForFuzzy(normalizedQuery)
-        if (query.length < fuzzyMinQueryLength) return emptyList()
+        if (query.length < fuzzyMinQueryLength) return@withContext emptyList()
         val maxEdits = if (query.length >= 6) 2 else 1
 
         val scored = ArrayList<Pair<NameIndexEntry, Int>>()
         for (entry in ensureNameIndex()) {
+            currentCoroutineContext().ensureActive()
             val name = entry.normalizedName
             val score = if (name.contains(query)) {
                 0
@@ -387,7 +443,7 @@ class OfflineFirstStationRepository @Inject constructor(
                 scored += entry to score
             }
         }
-        if (scored.isEmpty()) return emptyList()
+        if (scored.isEmpty()) return@withContext emptyList()
 
         val topUuids = scored
             .sortedBy { it.second }
@@ -396,7 +452,7 @@ class OfflineFirstStationRepository @Inject constructor(
         val byUuid = stationDao.getStationsByUuids(topUuids)
             .associateBy { it.uuid }
         // Preserve score order — Room's IN() gives no ordering guarantee.
-        return topUuids.mapNotNull { byUuid[it]?.toDomain() }.scrubbed()
+        topUuids.mapNotNull { byUuid[it]?.toDomain() }.scrubbed()
     }
 
     /** lowercase, strip diacritics, collapse everything non-alphanumeric to single spaces. */
@@ -454,6 +510,7 @@ class OfflineFirstStationRepository @Inject constructor(
     private companion object {
         const val searchCacheTtlMs: Long = 15 * 60 * 1000L
         const val listCacheTtlMs: Long = 30 * 60 * 1000L
+        const val forceRefreshMinIntervalMs: Long = 10 * 1000L
         const val nameIndexTtlMs: Long = 15 * 60 * 1000L
         const val searchResultLimit = 120
         const val topStationsLimit = 100
@@ -464,4 +521,3 @@ class OfflineFirstStationRepository @Inject constructor(
         const val fuzzyResultLimit = 30
     }
 }
-

@@ -26,6 +26,9 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class PlayerControllerImplBehaviorTest {
+    private val controllers = mutableListOf<PlayerControllerImpl>()
+
+    @org.junit.After fun releaseControllers() = controllers.forEach { it.release() }
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -121,9 +124,9 @@ class PlayerControllerImplBehaviorTest {
         return PlayerControllerImpl(
             context = context,
             stationRepository = LocalStationRepositoryFake(stations),
-            settingsRepository = de.darksoon.radiowave.core.data.repository.SettingsRepository(context),
+            settingsRepository = PlaybackTestSettings(),
             coverArtRepository = FakeCoverArtRepository(),
-        )
+        ).also(controllers::add)
     }
 }
 
@@ -139,6 +142,4 @@ private class LocalStationRepositoryFake(
     override fun getTags(): Flow<List<Genre>> = flowOf(emptyList())
     override fun getCountries(): Flow<List<Country>> = flowOf(emptyList())
     override suspend fun registerClick(stationUuid: String) = Unit
-    override suspend fun reportBrokenStream(stationUuid: String) = Unit
 }
-

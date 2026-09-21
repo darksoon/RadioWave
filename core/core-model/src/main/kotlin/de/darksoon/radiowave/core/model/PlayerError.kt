@@ -8,6 +8,8 @@ package de.darksoon.radiowave.core.model
 sealed class PlayerError {
     data object NetworkError : PlayerError()
     data object StreamBroken : PlayerError()
+    /** Playback refused because mobile data is off in settings and no Wi-Fi is active. */
+    data object MobileDataBlocked : PlayerError()
     data class Unknown(val message: String) : PlayerError()
 }
 
