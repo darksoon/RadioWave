@@ -64,7 +64,9 @@ class RadioBrowserFailoverInterceptorTest {
 
     @Test fun `connection failure falls through to a working server`() {
         val (first, second) = order()
-        first.shutdown()
+        // Dropping the connection instead of shutdown(): MockWebServer.shutdown() can itself
+        // throw after a 5 s executor wait inside CI containers.
+        first.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START))
         second.enqueue(MockResponse().setBody("ok"))
 
         get().use { assertEquals("ok", it.body!!.string()) }
@@ -117,7 +119,7 @@ class RadioBrowserFailoverInterceptorTest {
     }
 
     @Test fun `every server failing surfaces the io error`() {
-        servers.forEach { it.shutdown() }
+        servers.forEach { it.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START)) }
         val error = runCatching { get() }.exceptionOrNull()
         assertTrue(error is IOException)
     }
