@@ -205,7 +205,6 @@ private class FakeStationRepository : StationRepository {
     override fun getTags() = flowOf(emptyList<Genre>())
     override fun getCountries() = flowOf(emptyList<Country>())
     override suspend fun registerClick(stationUuid: String) = Unit
-    override suspend fun reportBrokenStream(stationUuid: String) = Unit
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)

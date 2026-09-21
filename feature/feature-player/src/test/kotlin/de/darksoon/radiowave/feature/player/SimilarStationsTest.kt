@@ -116,6 +116,5 @@ class SimilarStationsTest {
         override fun getTags(): Flow<List<Genre>> = emptyFlow()
         override fun getCountries(): Flow<List<Country>> = emptyFlow()
         override suspend fun registerClick(stationUuid: String) = Unit
-        override suspend fun reportBrokenStream(stationUuid: String) = Unit
     }
 }

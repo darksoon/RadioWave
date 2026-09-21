@@ -142,5 +142,4 @@ private class LocalStationRepositoryFake(
     override fun getTags(): Flow<List<Genre>> = flowOf(emptyList())
     override fun getCountries(): Flow<List<Country>> = flowOf(emptyList())
     override suspend fun registerClick(stationUuid: String) = Unit
-    override suspend fun reportBrokenStream(stationUuid: String) = Unit
 }

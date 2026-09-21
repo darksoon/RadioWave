@@ -86,10 +86,5 @@ interface RadioBrowserApi {
     suspend fun registerClick(
         @Path("stationuuid") uuid: String,
     )
-
-    @POST("json/vote/station/{stationuuid}")
-    suspend fun reportBrokenStream(
-        @Path("stationuuid") uuid: String,
-    )
 }
 

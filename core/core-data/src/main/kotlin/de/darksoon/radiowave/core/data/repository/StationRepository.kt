@@ -32,5 +32,4 @@ interface StationRepository {
     fun getTags(): Flow<List<Genre>>
     fun getCountries(): Flow<List<Country>>
     suspend fun registerClick(stationUuid: String)
-    suspend fun reportBrokenStream(stationUuid: String)
 }

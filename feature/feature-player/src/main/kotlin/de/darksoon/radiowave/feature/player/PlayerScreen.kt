@@ -102,7 +102,6 @@ import de.darksoon.radiowave.core.ui.components.StreamQualityBadge
 import de.darksoon.radiowave.core.ui.theme.DarkBackground
 import de.darksoon.radiowave.core.ui.theme.DarkSurface
 import de.darksoon.radiowave.feature.player.R
-import de.darksoon.radiowave.core.player.R as CorePlayerR
 import kotlinx.coroutines.delay
 
 @Composable
@@ -183,8 +182,7 @@ fun PlayerScreen(
     }
 
     // The controller reports the mobile-data block as a generic error with this message.
-    val wifiRequiredMessage = stringResource(CorePlayerR.string.player_error_wifi_required)
-    val isWifiRequiredError = (playerState.error as? PlayerError.Unknown)?.message == wifiRequiredMessage
+    val isWifiRequiredError = playerState.error is PlayerError.MobileDataBlocked
     val liveStatus = resolveLiveStatus(playerState, isWifiRequiredError)
     val connectedForMs = connectedDurationMs(playerState, nowElapsedMs)
     val liveBarTransition = rememberInfiniteTransition(label = "liveBar")

@@ -6,6 +6,5 @@
          button labels and status text from the session/player itself. -->
     <string name="notification_channel_name">Radio playback</string>
     <string name="player_error_unknown">Unknown error</string>
-    <string name="player_error_wifi_required">Wi-Fi required (mobile data disabled)</string>
     <string name="player_error_audio_focus_unavailable">Audio focus not available</string>
 </resources>

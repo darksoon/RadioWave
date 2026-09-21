@@ -366,7 +366,7 @@ class PlayerControllerImpl @Inject constructor(
         _playerState.update {
             it.copy(
                 currentStation = station,
-                error = PlayerError.Unknown(context.getString(R.string.player_error_wifi_required)),
+                error = PlayerError.MobileDataBlocked,
                 isPlaying = false,
                 isLoading = false,
                 isBuffering = false,
@@ -553,8 +553,8 @@ class PlayerControllerImpl @Inject constructor(
                 }
 
                 // Reconnect attempts exhausted. Deliberately NOT reported to Radio Browser:
-                // its API has no "broken" endpoint — reportBrokenStream() POSTs to
-                // json/vote/station, which *upvotes* the dead station. Radio Browser's own
+                // its API has no "broken" endpoint — the former reportBrokenStream() POSTed to
+                // json/vote/station, which *upvoted* the dead station. Radio Browser's own
                 // health checks flag unreachable streams (lastcheckok) without our help.
                 val mappedFinalError = mapPlayerError(error)
 

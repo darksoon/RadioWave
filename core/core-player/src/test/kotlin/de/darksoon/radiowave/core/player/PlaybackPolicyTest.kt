@@ -11,6 +11,7 @@ import androidx.test.core.app.ApplicationProvider
 import de.darksoon.radiowave.core.data.repository.AppSettingsState
 import de.darksoon.radiowave.core.data.repository.SettingsRepository
 import de.darksoon.radiowave.core.data.repository.StationRepository
+import de.darksoon.radiowave.core.model.PlayerError
 import de.darksoon.radiowave.core.model.Country
 import de.darksoon.radiowave.core.model.Genre
 import de.darksoon.radiowave.core.model.PlayerState
@@ -98,7 +99,7 @@ class PlaybackPolicyTest {
             runCurrent()
             assertFalse(player.playWhenReady)
             assertFalse(controller.playerState.value.isLoading)
-            assertNotNull(controller.playerState.value.error)
+            assertEquals(PlayerError.MobileDataBlocked, controller.playerState.value.error)
             setNetwork(NetworkCapabilities.TRANSPORT_WIFI)
             shadowOf(connectivity).networkCallbacks.toList().forEach { it.onAvailable(connectivity.activeNetwork!!) }
             runCurrent()
@@ -117,7 +118,7 @@ class PlaybackPolicyTest {
             settings.update { it.copy(allowMobileData = false) }
             runCurrent()
             assertFalse(player.playWhenReady)
-            assertNotNull(controller.playerState.value.error)
+            assertEquals(PlayerError.MobileDataBlocked, controller.playerState.value.error)
         } finally { controller.release() }
     }
 
@@ -135,7 +136,7 @@ class PlaybackPolicyTest {
             shadowOf(Looper.getMainLooper()).idle()
             runCurrent()
             assertFalse(player.playWhenReady)
-            assertNotNull(controller.playerState.value.error)
+            assertEquals(PlayerError.MobileDataBlocked, controller.playerState.value.error)
         } finally { controller.release() }
     }
 
@@ -164,7 +165,7 @@ class PlaybackPolicyTest {
             runCurrent()
             assertEquals(0, player.mediaItemCount)
             assertFalse(player.playWhenReady)
-            assertNotNull(controller.playerState.value.error)
+            assertEquals(PlayerError.MobileDataBlocked, controller.playerState.value.error)
         } finally { controller.release() }
     }
 
@@ -194,5 +195,4 @@ internal open class PlaybackTestStations : StationRepository {
     override fun getTags() = flowOf(emptyList<Genre>())
     override fun getCountries() = flowOf(emptyList<Country>())
     override suspend fun registerClick(stationUuid: String) = Unit
-    override suspend fun reportBrokenStream(stationUuid: String) = Unit
 }

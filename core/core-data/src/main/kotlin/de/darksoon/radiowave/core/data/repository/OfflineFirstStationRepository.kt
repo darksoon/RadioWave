@@ -322,13 +322,6 @@ class OfflineFirstStationRepository @Inject constructor(
         }
     }
 
-    override suspend fun reportBrokenStream(stationUuid: String) {
-        try {
-            api.reportBrokenStream(stationUuid)
-        } catch (e: Exception) {
-            // Silently fail - not critical
-        }
-    }
 
     /**
      * A cache entry is served while its TTL runs. A forced refresh bypasses that,
