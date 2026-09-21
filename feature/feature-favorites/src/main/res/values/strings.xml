@@ -24,5 +24,6 @@
     <string name="favorites_cd_play">Play station</string>
     <string name="favorites_cd_pause">Pause</string>
     <string name="favorites_cd_add">Add station</string>
-    <string name="favorites_add_custom_url_invalid">Must start with http:// or https://</string>
+    <string name="favorites_add_custom_url_invalid">Enter a valid http:// or https:// URL</string>
+    <string name="favorites_add_custom_blocked">This station can\'t be added</string>
 </resources>

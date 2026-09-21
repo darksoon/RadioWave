@@ -61,6 +61,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.darksoon.radiowave.core.data.policy.StationInputValidator
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.ui.components.ErrorState
 import de.darksoon.radiowave.core.ui.components.FavoritesSkeletonLoader
@@ -302,13 +303,15 @@ private fun AddCustomStationDialog(
     var name by remember { mutableStateOf("") }
     var url by remember { mutableStateOf("") }
     val urlValid = remember(url) {
-        if (url.isBlank()) true // don't show error until user types something
-        else {
-            val scheme = runCatching { android.net.Uri.parse(url.trim()).scheme?.lowercase() }.getOrNull()
-            scheme == "http" || scheme == "https"
-        }
+        // don't show error until user types something
+        url.isBlank() || StationInputValidator.isValidStreamUrl(url)
     }
-    val canConfirm = name.isNotBlank() && url.isNotBlank() && urlValid
+    val blocked = remember(name, url) {
+        name.isNotBlank() && url.isNotBlank() && urlValid &&
+            StationInputValidator.validate(Station(uuid = "preview", name = name, streamUrl = url)) ==
+            StationInputValidator.Result.Blocked
+    }
+    val canConfirm = name.isNotBlank() && url.isNotBlank() && urlValid && !blocked
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -317,21 +320,27 @@ private fun AddCustomStationDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it },
+                    onValueChange = { name = it.take(StationInputValidator.MAX_NAME_LENGTH) },
                     label = { Text(stringResource(R.string.favorites_add_custom_name_hint)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = url,
-                    onValueChange = { url = it },
+                    onValueChange = { url = it.take(StationInputValidator.MAX_URL_LENGTH) },
                     label = { Text(stringResource(R.string.favorites_add_custom_url_hint)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                    isError = !urlValid,
-                    supportingText = if (!urlValid) {
-                        { Text(stringResource(R.string.favorites_add_custom_url_invalid)) }
-                    } else null,
+                    isError = !urlValid || blocked,
+                    supportingText = when {
+                        !urlValid -> {
+                            { Text(stringResource(R.string.favorites_add_custom_url_invalid)) }
+                        }
+                        blocked -> {
+                            { Text(stringResource(R.string.favorites_add_custom_blocked)) }
+                        }
+                        else -> null
+                    },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

@@ -196,11 +196,7 @@ fun SettingsScreen(
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         coroutineScope.launch {
-            val fileContent = withContext(Dispatchers.IO) {
-                runCatching {
-                    context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
-                }.getOrNull()
-            }
+            val fileContent = withContext(Dispatchers.IO) { viewModel.readImportText(uri) }
             if (fileContent == null) {
                 Toast.makeText(
                     context,

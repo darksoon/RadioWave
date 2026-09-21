@@ -4,6 +4,7 @@ package de.darksoon.radiowave.core.data.repository
 
 import de.darksoon.radiowave.core.data.mapper.toDomain
 import de.darksoon.radiowave.core.data.mapper.toFavoriteEntity
+import de.darksoon.radiowave.core.data.policy.StationInputValidator
 import de.darksoon.radiowave.core.database.dao.CustomStationDao
 import de.darksoon.radiowave.core.database.dao.FavoriteDao
 import de.darksoon.radiowave.core.database.entity.FavoriteEntity
@@ -105,6 +106,11 @@ class FavoriteRepositoryImpl @Inject constructor(
     }
 
     override suspend fun importFavoritesJson(jsonString: String): FavoritesImportOutcome {
+        // Callers read the file with StationInputValidator.readBoundedText; this is the
+        // backstop for any other caller (UTF-8 is at least one byte per char).
+        if (jsonString.length > StationInputValidator.MAX_IMPORT_BYTES) {
+            return FavoritesImportOutcome.ParseError
+        }
         val export = try {
             json.decodeFromString(FavoritesExport.serializer(), jsonString)
         } catch (_: SerializationException) {
@@ -119,24 +125,33 @@ class FavoriteRepositoryImpl @Inject constructor(
 
         var imported = 0
         var skippedExisting = 0
-        var skippedInvalid = 0
-        for (station in export.stations) {
-            // Mirror the same "playable station" validation used elsewhere (e.g.
-            // FavoritesViewModel.isValidStreamUrl / AddCustomStationDialog): a blank uuid or
-            // streamUrl means the entry can't be turned into a usable favorite, so skip it
-            // individually rather than failing the whole import.
-            if (station.uuid.isBlank() || station.streamUrl.isBlank()) {
-                skippedInvalid++
-                continue
+        // Entries beyond the cap count as skipped so the result still adds up.
+        var skippedInvalid = (export.stations.size - StationInputValidator.MAX_IMPORT_ENTRIES).coerceAtLeast(0)
+        var skippedBlocked = 0
+        for (station in export.stations.take(StationInputValidator.MAX_IMPORT_ENTRIES)) {
+            // Same gate as the manual "add custom station" flow and the playlist import:
+            // http(s) URL with a host, length limits, content-policy blocklist. Bad
+            // entries are skipped individually rather than failing the whole import.
+            val valid = when (val result = StationInputValidator.validate(station)) {
+                is StationInputValidator.Result.Valid -> result.station
+                StationInputValidator.Result.Invalid -> {
+                    skippedInvalid++
+                    continue
+                }
+                StationInputValidator.Result.Blocked -> {
+                    skippedInvalid++
+                    skippedBlocked++
+                    continue
+                }
             }
-            val added = favoriteDao.addFavoriteIfAbsent(station.toFavoriteEntity())
+            val added = favoriteDao.addFavoriteIfAbsent(valid.toFavoriteEntity())
             if (added) imported++ else skippedExisting++
         }
         return FavoritesImportOutcome.Success(
             imported = imported,
             skippedExisting = skippedExisting,
             skippedInvalid = skippedInvalid,
+            skippedBlocked = skippedBlocked,
         )
     }
 }
-
