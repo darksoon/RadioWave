@@ -82,6 +82,11 @@
     <string name="settings_thermal_mode_subtitle">Reduziert die Last: kleines Pufferprofil und weniger Metadaten- sowie Cover-Aktualisierungen.</string>
     <string name="settings_insecure_streams_title">Unsichere HTTP-Streams anzeigen</string>
     <string name="settings_insecure_streams_subtitle">Wenn deaktiviert, werden HTTP-Sender ausgeblendet.</string>
+    <string name="settings_data_section_privacy">Datenschutz</string>
+    <string name="settings_report_station_clicks_title">Senderaufrufe an Radio Browser melden</string>
+    <string name="settings_report_station_clicks_subtitle">Zählt einen erfolgreichen Senderstart einmal für die Beliebtheitsliste der Community. Übermittelt nur die Sender-ID.</string>
+    <string name="settings_online_cover_lookup_title">Song-Cover online suchen</string>
+    <string name="settings_online_cover_lookup_subtitle">Sendet Interpret und Titel des laufenden Songs an die iTunes Search API. Wenn deaktiviert, wird das Senderlogo angezeigt.</string>
     <string name="settings_battery_optimization_title">Akku-Optimierung</string>
     <string name="settings_battery_optimization_disabled">Für RadioWave deaktiviert. Die Hintergrundwiedergabe ist besser abgesichert.</string>
     <string name="settings_battery_optimization_enabled">Aktiv. Kann auf manchen Geräten die Audiowiedergabe im Hintergrund aggressiv beenden.</string>

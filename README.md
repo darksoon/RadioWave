@@ -44,7 +44,7 @@ The public roadmap is available in [ROADMAP.md](./ROADMAP.md).
 
 ## Highlights
 
-- No account required, everything stays on the device
+- No account required; favorites, history and settings stay on the device
 - Completely ad-free, no analytics, no behavior tracking
 - 45,000+ stations via Radio Browser
 - Album art lookup via the iTunes Search API
@@ -209,10 +209,23 @@ Available under `Actions -> Manual Android Build -> Run workflow`.
 
 ## Privacy
 
-- No analytics
-- No ads
-- No hidden telemetry
+- No analytics, no ads, no account, no tracking SDKs
+- Favorites, history, custom stations and settings are stored only on the device
 - Crash reports are stored locally only and shared explicitly by the user
+
+An internet radio app has to talk to the internet. These are all connections RadioWave makes:
+
+| Destination | When | What is sent | How to turn it off |
+|---|---|---|---|
+| Radio Browser API (`all.api.radio-browser.info`) | Browsing, search, top list, genres/countries, station-quality lookup, offline directory sync | Search terms, filters and station IDs, plus your IP address | Required for the directory; the offline directory (Settings -> Storage & Data) reduces live requests |
+| Radio Browser click counter (`json/url/<station-id>`) | Once per station session after the stream started playing | The station ID (and your IP address) — feeds the community popularity ranking | Settings -> Storage & Data -> Privacy -> "Report station plays to Radio Browser" |
+| iTunes Search API (`itunes.apple.com`) | When a station sends artist/title and no own cover | Artist and title of the current song (and your IP address) | Settings -> Storage & Data -> Privacy -> "Look up song covers online" (the station logo is shown instead) |
+| Station stream hosts | While playing | A normal HTTP(S) request for the stream (IP address, `RadioWave/1.0` user agent) | Inherent to playback; plain-HTTP stations can be hidden in Settings -> Storage & Data |
+| Station logo / cover image hosts | When a list, the player, the notification or Android Auto shows a logo or cover | An image request to the host named in the directory entry (IP address) | Not configurable |
+| Google Cast (Google Play services, Default Media Receiver) | Only when you open the Cast dialog or cast | Device discovery on the local network; while casting, the stream URL, station name and logo URL go to the Cast device, which then connects to the stream host itself | Don't use Cast |
+| GitHub | Only when you tap a GitHub link or "Open GitHub issue" | Whatever you choose to submit there | Don't tap it |
+
+The app does not send playback history, favorites or device identifiers anywhere.
 
 ## License
 

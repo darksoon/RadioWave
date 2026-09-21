@@ -503,9 +503,14 @@ class PlayerControllerImpl @Inject constructor(
                         bufferingWatchdogJob?.cancel()
                         playbackLostRecoveryJob?.cancel()
                         // Report click to Radio Browser once per station session so the
-                        // community "topclick" rankings reflect actual usage.
+                        // community "topclick" rankings reflect actual usage. Opt-out via
+                        // Settings -> Storage & Data -> Privacy (on by default).
                         val stationUuid = _playerState.value.currentStation?.uuid
-                        if (stationUuid != null && !clickRegisteredForCurrentSession) {
+                        if (
+                            stationUuid != null &&
+                            !clickRegisteredForCurrentSession &&
+                            settingsState.value.reportStationClicks
+                        ) {
                             clickRegisteredForCurrentSession = true
                             controllerScope.launch {
                                 runCatching { stationRepository.registerClick(stationUuid) }
@@ -547,14 +552,11 @@ class PlayerControllerImpl @Inject constructor(
                     return
                 }
 
-                // Reconnect attempts exhausted — report broken stream to Radio Browser
-                // so the community can flag/remove dead stations from the index.
+                // Reconnect attempts exhausted. Deliberately NOT reported to Radio Browser:
+                // its API has no "broken" endpoint — reportBrokenStream() POSTs to
+                // json/vote/station, which *upvotes* the dead station. Radio Browser's own
+                // health checks flag unreachable streams (lastcheckok) without our help.
                 val mappedFinalError = mapPlayerError(error)
-                if (station != null && mappedFinalError is PlayerError.StreamBroken) {
-                    controllerScope.launch {
-                        runCatching { stationRepository.reportBrokenStream(station.uuid) }
-                    }
-                }
 
                 _playerState.update {
                     it.copy(
@@ -838,8 +840,9 @@ class PlayerControllerImpl @Inject constructor(
 
     /**
      * Debounced lookup of the current song's cover via [coverArtRepository] (iTunes Search,
-     * memory-cached per artist|title — including negative results, so a no-cover song costs
-     * exactly one network call ever).
+     * memory-cached per artist|title — genuine "no match" results for 30 min, so a no-cover
+     * song doesn't re-hit the network on every ICY repeat). The repository itself returns
+     * null without any request when the user disabled online cover lookup.
      *
      * Runs in ALL modes including automotive/thermal low-load — the car is precisely where
      * the user wants covers in the now-playing screen. The debounce collapses the ICY

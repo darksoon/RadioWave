@@ -82,6 +82,11 @@
     <string name="settings_thermal_mode_subtitle">Reduces load: smaller buffer profile + fewer metadata/artwork updates.</string>
     <string name="settings_insecure_streams_title">Show insecure HTTP streams</string>
     <string name="settings_insecure_streams_subtitle">If disabled, HTTP stations are hidden.</string>
+    <string name="settings_data_section_privacy">Privacy</string>
+    <string name="settings_report_station_clicks_title">Report station plays to Radio Browser</string>
+    <string name="settings_report_station_clicks_subtitle">Counts a successful station start once for the community popularity ranking. Sends only the station ID.</string>
+    <string name="settings_online_cover_lookup_title">Look up song covers online</string>
+    <string name="settings_online_cover_lookup_subtitle">Sends artist and title of the current song to the iTunes Search API. If disabled, the station logo is shown.</string>
     <string name="settings_battery_optimization_title">Battery optimization</string>
     <string name="settings_battery_optimization_disabled">Disabled for RadioWave. Background playback is better protected.</string>
     <string name="settings_battery_optimization_enabled">Enabled. Can aggressively stop background audio on some devices.</string>

@@ -83,6 +83,8 @@ class SettingsViewModel @Inject constructor(
     fun setAutoPlayOnAndroidAutoConnect(v: Boolean) = viewModelScope.launch { settingsRepository.setAutoPlayOnAndroidAutoConnect(v) }
     fun setLimitAndroidAutoQuality(v: Boolean) = viewModelScope.launch { settingsRepository.setLimitAndroidAutoQuality(v) }
     fun setConfirmRemoveFavorite(v: Boolean) = viewModelScope.launch { settingsRepository.setConfirmRemoveFavorite(v) }
+    fun setReportStationClicks(v: Boolean) = viewModelScope.launch { settingsRepository.setReportStationClicks(v) }
+    fun setOnlineCoverLookup(v: Boolean) = viewModelScope.launch { settingsRepository.setOnlineCoverLookup(v) }
     fun setStationMirrorEnabled(v: Boolean) = viewModelScope.launch {
         settingsRepository.setStationMirrorEnabled(v)
         // First enable → kick off the initial download right away so the user sees
