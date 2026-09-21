@@ -146,6 +146,21 @@ open class SettingsRepository @Inject constructor(
         }
     }
 
+    /**
+     * Fills the [initialSnapshotBlocking] cache from a background coroutine. Called
+     * from `Application.onCreate` so the first ViewModel/service on the main thread
+     * normally finds the snapshot ready instead of waiting on DataStore's first read
+     * (and a possible SharedPreferences migration). The blocking path stays as the
+     * fallback when a consumer is faster than this warm-up.
+     */
+    suspend fun warmUpInitialSnapshot() {
+        if (cachedInitialSnapshot != null) return
+        val snapshot = data.first()
+        synchronized(this) {
+            if (cachedInitialSnapshot == null) cachedInitialSnapshot = snapshot
+        }
+    }
+
     // Granular Flow projections — these distinctUntilChanged so consumers only
     // react to the slice they care about.
     val themeMode: Flow<String> = data.map { it.themeMode }.distinctUntilChanged()

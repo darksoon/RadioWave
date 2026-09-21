@@ -5,6 +5,7 @@ package de.darksoon.radiowave
 import android.app.Application
 import de.darksoon.radiowave.core.cast.CastManager
 import de.darksoon.radiowave.core.data.policy.BlockedStationPurger
+import de.darksoon.radiowave.core.data.repository.SettingsRepository
 import de.darksoon.radiowave.core.data.repository.StationMirrorRepository
 import de.darksoon.radiowave.core.data.update.LocalIssueReporter
 import dagger.hilt.android.HiltAndroidApp
@@ -28,6 +29,9 @@ class RadioWaveApp : Application() {
     @Inject
     lateinit var blockedStationPurger: BlockedStationPurger
 
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
+
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
@@ -36,6 +40,11 @@ class RadioWaveApp : Application() {
         appLanguageManager.applyPersistedLanguage()
         AppShortcuts.sync(this)
         castManager.initialize()
+        // Start the first DataStore read now, off the main thread, so the first
+        // initialSnapshotBlocking() (HomeViewModel, PlayerController) usually hits the
+        // cache. Must stay after applyPersistedLanguage(): the first DataStore access
+        // runs the SharedPreferences migration, which deletes the legacy file it reads.
+        applicationScope.launch { settingsRepository.warmUpInitialSnapshot() }
         // Refresh the local station-directory mirror when it's enabled and due
         // (interval + Wi-Fi-only constraints checked inside; cheap no-op otherwise).
         applicationScope.launch {
