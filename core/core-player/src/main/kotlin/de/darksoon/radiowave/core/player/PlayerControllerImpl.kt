@@ -503,9 +503,14 @@ class PlayerControllerImpl @Inject constructor(
                         bufferingWatchdogJob?.cancel()
                         playbackLostRecoveryJob?.cancel()
                         // Report click to Radio Browser once per station session so the
-                        // community "topclick" rankings reflect actual usage.
+                        // community "topclick" rankings reflect actual usage. Opt-out via
+                        // Settings -> Storage & Data -> Privacy (on by default).
                         val stationUuid = _playerState.value.currentStation?.uuid
-                        if (stationUuid != null && !clickRegisteredForCurrentSession) {
+                        if (
+                            stationUuid != null &&
+                            !clickRegisteredForCurrentSession &&
+                            settingsState.value.reportStationClicks
+                        ) {
                             clickRegisteredForCurrentSession = true
                             controllerScope.launch {
                                 runCatching { stationRepository.registerClick(stationUuid) }

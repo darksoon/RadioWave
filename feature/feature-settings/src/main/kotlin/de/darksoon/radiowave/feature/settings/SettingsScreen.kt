@@ -591,6 +591,30 @@ fun SettingsScreen(
                             },
                         )
                         HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        Text(
+                            text = stringResource(R.string.settings_data_section_privacy),
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = RadioAccent,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        )
+                        SettingToggleRow(
+                            title = stringResource(R.string.settings_report_station_clicks_title),
+                            subtitle = stringResource(R.string.settings_report_station_clicks_subtitle),
+                            checked = settings.reportStationClicks,
+                            onCheckedChange = { checked ->
+                                viewModel.setReportStationClicks(checked)
+                            },
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingToggleRow(
+                            title = stringResource(R.string.settings_online_cover_lookup_title),
+                            subtitle = stringResource(R.string.settings_online_cover_lookup_subtitle),
+                            checked = settings.onlineCoverLookup,
+                            onCheckedChange = { checked ->
+                                viewModel.setOnlineCoverLookup(checked)
+                            },
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
                         SettingToggleRow(
                             title = stringResource(R.string.settings_station_mirror_title),
                             subtitle = stringResource(R.string.settings_station_mirror_subtitle),

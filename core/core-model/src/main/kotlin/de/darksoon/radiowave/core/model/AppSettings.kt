@@ -30,6 +30,8 @@ object AppSettings {
     const val KEY_AUTO_PLAY_ON_ANDROID_AUTO_CONNECT = "auto_play_on_android_auto_connect"
     const val KEY_LIMIT_ANDROID_AUTO_QUALITY = "limit_android_auto_quality"
     const val KEY_CONFIRM_REMOVE_FAVORITE = "confirm_remove_favorite"
+    const val KEY_REPORT_STATION_CLICKS = "report_station_clicks"
+    const val KEY_ONLINE_COVER_LOOKUP = "online_cover_lookup"
     const val KEY_FIRST_RUN_ONBOARDING_DONE = "first_run_onboarding_done"
     const val KEY_STATION_MIRROR_ENABLED = "station_mirror_enabled"
     const val KEY_STATION_MIRROR_INTERVAL_HOURS = "station_mirror_interval_hours"
