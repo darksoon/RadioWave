@@ -182,6 +182,8 @@ class OfflineFirstStationRepository @Inject constructor(
                 limit = 100,
             ).map { it.toDomain() }.scrubbed()
         }.getOrDefault(emptyList())
+        // Keeps the variants for the next start, which then needs no lookup.
+        cacheStations(remoteCandidates)
 
         val exactNameCandidates = remoteCandidates.filter {
             normalizeName(it.name) == normalizedName

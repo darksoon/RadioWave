@@ -8,6 +8,8 @@ import de.darksoon.radiowave.core.model.AppSettings
 import de.darksoon.radiowave.core.model.Station
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withTimeoutOrNull
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.abs
@@ -17,6 +19,10 @@ class StreamQualityResolver @Inject constructor(
     private val stationRepository: StationRepository,
     private val settingsRepository: SettingsRepository,
 ) {
+    // Stations already looked up in the directory this process — a station with only one
+    // stream must not pay the lookup on every start.
+    private val directoryCheckedUuids = ConcurrentHashMap.newKeySet<String>()
+
     suspend fun resolve(
         station: Station,
         automotiveMode: Boolean,
@@ -30,7 +36,7 @@ class StreamQualityResolver @Inject constructor(
         } catch (_: Exception) {
             listOf(station)
         }
-        val variants = cached
+        val variants = (if (cached.size > 1) cached else directoryVariantsQuickly(station) ?: cached)
             .filter { it.streamUrl.isNotBlank() }
             .ifEmpty { listOf(station) }
         return selectVariant(
@@ -40,6 +46,25 @@ class StreamQualityResolver @Inject constructor(
             automotiveMode = automotiveMode,
             limitAndroidAutoQuality = state.limitAndroidAutoQuality,
         )
+    }
+
+    /**
+     * Without a local mirror the cache rarely knows other streams of a station, so the
+     * quality setting would never apply. One bounded directory lookup per station keeps
+     * that working; a slow or unreachable directory only costs [DIRECTORY_LOOKUP_TIMEOUT_MS].
+     */
+    private suspend fun directoryVariantsQuickly(station: Station): List<Station>? {
+        if (!directoryCheckedUuids.add(station.uuid)) return null
+        return try {
+            withTimeoutOrNull(DIRECTORY_LOOKUP_TIMEOUT_MS) {
+                stationRepository.getStationVariants(station)
+            }?.takeIf { it.size > 1 }
+        } catch (cancelled: CancellationException) {
+            directoryCheckedUuids.remove(station.uuid)
+            throw cancelled
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun selectVariant(
@@ -79,5 +104,9 @@ class StreamQualityResolver @Inject constructor(
             isCustom = originalStation.isCustom,
             clickCount = selected.clickCount.takeIf { it > 0 } ?: originalStation.clickCount,
         )
+    }
+
+    private companion object {
+        const val DIRECTORY_LOOKUP_TIMEOUT_MS = 1_500L
     }
 }
