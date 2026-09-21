@@ -552,14 +552,11 @@ class PlayerControllerImpl @Inject constructor(
                     return
                 }
 
-                // Reconnect attempts exhausted — report broken stream to Radio Browser
-                // so the community can flag/remove dead stations from the index.
+                // Reconnect attempts exhausted. Deliberately NOT reported to Radio Browser:
+                // its API has no "broken" endpoint — reportBrokenStream() POSTs to
+                // json/vote/station, which *upvotes* the dead station. Radio Browser's own
+                // health checks flag unreachable streams (lastcheckok) without our help.
                 val mappedFinalError = mapPlayerError(error)
-                if (station != null && mappedFinalError is PlayerError.StreamBroken) {
-                    controllerScope.launch {
-                        runCatching { stationRepository.reportBrokenStream(station.uuid) }
-                    }
-                }
 
                 _playerState.update {
                     it.copy(
