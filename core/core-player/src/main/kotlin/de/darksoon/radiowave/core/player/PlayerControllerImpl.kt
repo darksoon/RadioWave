@@ -843,8 +843,9 @@ class PlayerControllerImpl @Inject constructor(
 
     /**
      * Debounced lookup of the current song's cover via [coverArtRepository] (iTunes Search,
-     * memory-cached per artist|title — including negative results, so a no-cover song costs
-     * exactly one network call ever).
+     * memory-cached per artist|title — genuine "no match" results for 30 min, so a no-cover
+     * song doesn't re-hit the network on every ICY repeat). The repository itself returns
+     * null without any request when the user disabled online cover lookup.
      *
      * Runs in ALL modes including automotive/thermal low-load — the car is precisely where
      * the user wants covers in the now-playing screen. The debounce collapses the ICY
