@@ -89,6 +89,7 @@
     <string name="settings_battery_set_exception">Ausnahme setzen</string>
     <string name="settings_battery_settings">Akku-Einstellungen</string>
     <string name="settings_station_cache_cleared">Sender-Cache geleert</string>
+    <string name="settings_station_cache_cleared_mirror_kept">Such- und Cover-Cache geleert. Das Offline-Verzeichnis bleibt erhalten – zum Entfernen erst abschalten, dann erneut leeren.</string>
     <string name="settings_clear_cache">Cache leeren</string>
     <string name="settings_history_cleared">Verlauf gelöscht</string>
     <string name="settings_clear_history">Verlauf löschen</string>

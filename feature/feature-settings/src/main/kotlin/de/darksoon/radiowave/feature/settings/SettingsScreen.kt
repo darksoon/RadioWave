@@ -676,7 +676,14 @@ fun SettingsScreen(
                             OutlinedButton(
                                 onClick = {
                                     viewModel.clearStationCache()
-                                    Toast.makeText(context, resources.getString(R.string.settings_station_cache_cleared), Toast.LENGTH_SHORT).show()
+                                    // With the offline directory on, only search/cover caches go —
+                                    // say so instead of claiming the stations were deleted.
+                                    val clearedMessage = if (settings.stationMirrorEnabled) {
+                                        R.string.settings_station_cache_cleared_mirror_kept
+                                    } else {
+                                        R.string.settings_station_cache_cleared
+                                    }
+                                    Toast.makeText(context, resources.getString(clearedMessage), Toast.LENGTH_LONG).show()
                                 },
                                 modifier = Modifier.weight(1f),
                             ) {

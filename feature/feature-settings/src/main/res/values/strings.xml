@@ -89,6 +89,7 @@
     <string name="settings_battery_set_exception">Set exception</string>
     <string name="settings_battery_settings">Battery settings</string>
     <string name="settings_station_cache_cleared">Station cache cleared</string>
+    <string name="settings_station_cache_cleared_mirror_kept">Search and cover cache cleared. The offline directory is kept – to remove it, turn it off and clear the cache again.</string>
     <string name="settings_clear_cache">Clear cache</string>
     <string name="settings_history_cleared">History cleared</string>
     <string name="settings_clear_history">Clear history</string>
