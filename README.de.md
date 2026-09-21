@@ -44,7 +44,7 @@ Die oeffentliche Roadmap liegt in [ROADMAP.de.md](./ROADMAP.de.md).
 
 ## Highlights
 
-- Kein Account noetig, alles bleibt lokal auf dem Geraet
+- Kein Account noetig; Favoriten, Verlauf und Einstellungen bleiben auf dem Geraet
 - Komplett werbefrei, keine Analytics, kein Verhaltenstracking
 - 45.000+ Sender ueber Radio Browser
 - Album-Cover ueber die iTunes Search API
@@ -209,10 +209,23 @@ Unter `Actions -> Manual Android Build -> Run workflow`.
 
 ## Datenschutz
 
-- Keine Analytics
-- Keine Werbung
-- Keine versteckte Telemetrie
+- Keine Analytics, keine Werbung, kein Account, keine Tracking-SDKs
+- Favoriten, Verlauf, eigene Sender und Einstellungen werden nur auf dem Geraet gespeichert
 - Crash-Reports werden nur lokal gespeichert und nur aktiv vom Nutzer geteilt
+
+Eine Internetradio-App muss mit dem Internet sprechen. Das sind alle Verbindungen, die RadioWave aufbaut:
+
+| Ziel | Wann | Was wird uebertragen | Abschalten |
+|---|---|---|---|
+| Radio-Browser-API (`all.api.radio-browser.info`) | Stoebern, Suche, Topliste, Genres/Laender, Abfrage der Stream-Qualitaeten, Sync des Offline-Verzeichnisses | Suchbegriffe, Filter und Sender-IDs, dazu die IP-Adresse | Fuer das Verzeichnis noetig; das Offline-Verzeichnis (Einstellungen -> Speicher & Daten) reduziert Live-Anfragen |
+| Radio-Browser-Klickzaehler (`json/url/<sender-id>`) | Einmal pro Sendersitzung, nachdem der Stream laeuft | Die Sender-ID (und die IP-Adresse) — fliesst in die Beliebtheitsliste der Community | Einstellungen -> Speicher & Daten -> Datenschutz -> „Senderaufrufe an Radio Browser melden“ |
+| iTunes Search API (`itunes.apple.com`) | Wenn ein Sender Interpret/Titel, aber kein eigenes Cover liefert | Interpret und Titel des laufenden Songs (und die IP-Adresse) | Einstellungen -> Speicher & Daten -> Datenschutz -> „Song-Cover online suchen“ (dann erscheint das Senderlogo) |
+| Stream-Server der Sender | Waehrend der Wiedergabe | Eine normale HTTP(S)-Anfrage fuer den Stream (IP-Adresse, User-Agent `RadioWave/1.0`) | Gehoert zur Wiedergabe; reine HTTP-Sender lassen sich unter Einstellungen -> Speicher & Daten ausblenden |
+| Server fuer Senderlogos/Cover | Wenn eine Liste, der Player, die Benachrichtigung oder Android Auto ein Logo oder Cover zeigt | Eine Bildanfrage an den im Verzeichniseintrag genannten Server (IP-Adresse) | Nicht einstellbar |
+| Google Cast (Google-Play-Dienste, Default Media Receiver) | Nur beim Oeffnen des Cast-Dialogs oder beim Casten | Geraetesuche im lokalen Netz; beim Casten gehen Stream-URL, Sendername und Logo-URL an das Cast-Geraet, das sich dann selbst mit dem Stream-Server verbindet | Cast nicht nutzen |
+| GitHub | Nur beim Antippen eines GitHub-Links oder von „GitHub-Issue oeffnen“ | Was du dort selbst absendest | Nicht antippen |
+
+Wiedergabeverlauf, Favoriten und Geraetekennungen werden nirgendwohin gesendet.
 
 ## Lizenz
 
