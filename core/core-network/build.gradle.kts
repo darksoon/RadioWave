@@ -13,7 +13,10 @@ android {
 
 dependencies {
     implementation(project(":core:core-model"))
-    
+
     implementation(libs.bundles.network)
     implementation(libs.hilt.android)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.okhttp.mockwebserver)
 }
