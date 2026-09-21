@@ -20,6 +20,9 @@ interface StationDao {
     @Query("SELECT * FROM stations WHERE uuid = :uuid LIMIT 1")
     suspend fun getStationByUuid(uuid: String): StationEntity?
 
+    @Query("SELECT * FROM stations WHERE name = :name COLLATE NOCASE LIMIT 100")
+    suspend fun getStationsByExactName(name: String): List<StationEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStation(station: StationEntity)
 
@@ -60,4 +63,3 @@ data class StationNameRow(
     val uuid: String,
     val name: String,
 )
-

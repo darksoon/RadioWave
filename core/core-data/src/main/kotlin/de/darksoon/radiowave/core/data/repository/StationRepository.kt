@@ -16,10 +16,11 @@ interface StationRepository {
     fun getStationsByCountry(countryCode: String): Flow<List<Station>>
     fun getStationsByTag(tag: String): Flow<List<Station>>
     suspend fun getStationVariants(station: Station): List<Station>
+    /** Playback must not wait for a directory request. */
+    suspend fun getCachedStationVariants(station: Station): List<Station> = listOf(station)
     suspend fun getSimilarStations(station: Station): List<Station>
     fun getTags(): Flow<List<Genre>>
     fun getCountries(): Flow<List<Country>>
     suspend fun registerClick(stationUuid: String)
     suspend fun reportBrokenStream(stationUuid: String)
 }
-

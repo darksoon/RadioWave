@@ -622,6 +622,10 @@ fun SettingsScreen(
                             )
                             val mirrorSyncState by viewModel.mirrorSyncState.collectAsStateWithLifecycle()
                             val syncStatusText = when (val state = mirrorSyncState) {
+                                StationMirrorRepository.SyncState.WaitingForWifi ->
+                                    stringResource(R.string.settings_station_mirror_waiting_wifi)
+                                is StationMirrorRepository.SyncState.Failed ->
+                                    stringResource(R.string.settings_station_mirror_failed)
                                 is StationMirrorRepository.SyncState.Running ->
                                     stringResource(R.string.settings_station_mirror_syncing, state.stationsSynced)
                                 else -> if (settings.stationMirrorLastSyncAtMs > 0L) {
@@ -1388,4 +1392,3 @@ private fun startActivitySafely(context: Context, intent: Intent): Boolean {
         true
     }.getOrDefault(false)
 }
-

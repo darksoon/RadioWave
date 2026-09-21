@@ -18,7 +18,6 @@ import de.darksoon.radiowave.core.data.repository.OfflineFirstStationRepository
 import de.darksoon.radiowave.core.data.repository.RecentRepository
 import de.darksoon.radiowave.core.data.repository.SettingsRepository
 import de.darksoon.radiowave.core.data.repository.StationMirrorRepository
-import de.darksoon.radiowave.core.database.dao.StationDao
 import de.darksoon.radiowave.core.model.FavoritesImportOutcome
 import de.darksoon.radiowave.core.model.Station
 import java.io.BufferedReader
@@ -41,7 +40,6 @@ data class PlaylistImportResult(
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val recentRepository: RecentRepository,
-    private val stationDao: StationDao,
     private val stationRepository: OfflineFirstStationRepository,
     private val settingsRepository: SettingsRepository,
     private val favoriteRepository: FavoriteRepository,
@@ -97,7 +95,7 @@ class SettingsViewModel @Inject constructor(
 
     fun clearStationCache() {
         viewModelScope.launch {
-            stationDao.deleteAllStations()
+            stationMirrorRepository.clearCachedStations()
             // Also clear the in-memory search cache so results are visibly gone
             stationRepository.clearSearchCache()
             // ... and the in-memory cover-art cache (was never wired here — audit

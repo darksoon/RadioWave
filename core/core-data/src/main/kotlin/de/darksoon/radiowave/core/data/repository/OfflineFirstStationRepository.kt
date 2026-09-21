@@ -15,6 +15,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -157,6 +161,14 @@ class OfflineFirstStationRepository @Inject constructor(
             }
             .getOrDefault(cached?.stations ?: local)
         emit(mergeByUuid(primary = fresh, secondary = local))
+    }
+
+    override suspend fun getCachedStationVariants(station: Station): List<Station> {
+        if (station.isCustom || station.uuid.startsWith("custom-")) return listOf(station)
+        val candidates = stationDao.getStationsByExactName(station.name.trim())
+            .map { it.toDomain() }.scrubbed()
+            .filter { it.countryCode.equals(station.countryCode, ignoreCase = true) }
+        return (listOf(station) + candidates).filter { it.streamUrl.isNotBlank() }.distinctBy { it.streamUrl }
     }
 
     override suspend fun getStationVariants(station: Station): List<Station> {
@@ -363,13 +375,14 @@ class OfflineFirstStationRepository @Inject constructor(
      * up to 1 edit for 4–5 letter queries and 2 edits from 6 letters. Queries under
      * 4 letters skip fuzzy entirely — too ambiguous.
      */
-    private suspend fun fuzzySearchLocal(normalizedQuery: String): List<Station> {
+    private suspend fun fuzzySearchLocal(normalizedQuery: String): List<Station> = withContext(Dispatchers.Default) {
         val query = normalizeForFuzzy(normalizedQuery)
-        if (query.length < fuzzyMinQueryLength) return emptyList()
+        if (query.length < fuzzyMinQueryLength) return@withContext emptyList()
         val maxEdits = if (query.length >= 6) 2 else 1
 
         val scored = ArrayList<Pair<NameIndexEntry, Int>>()
         for (entry in ensureNameIndex()) {
+            currentCoroutineContext().ensureActive()
             val name = entry.normalizedName
             val score = if (name.contains(query)) {
                 0
@@ -387,7 +400,7 @@ class OfflineFirstStationRepository @Inject constructor(
                 scored += entry to score
             }
         }
-        if (scored.isEmpty()) return emptyList()
+        if (scored.isEmpty()) return@withContext emptyList()
 
         val topUuids = scored
             .sortedBy { it.second }
@@ -396,7 +409,7 @@ class OfflineFirstStationRepository @Inject constructor(
         val byUuid = stationDao.getStationsByUuids(topUuids)
             .associateBy { it.uuid }
         // Preserve score order — Room's IN() gives no ordering guarantee.
-        return topUuids.mapNotNull { byUuid[it]?.toDomain() }.scrubbed()
+        topUuids.mapNotNull { byUuid[it]?.toDomain() }.scrubbed()
     }
 
     /** lowercase, strip diacritics, collapse everything non-alphanumeric to single spaces. */
@@ -464,4 +477,3 @@ class OfflineFirstStationRepository @Inject constructor(
         const val fuzzyResultLimit = 30
     }
 }
-

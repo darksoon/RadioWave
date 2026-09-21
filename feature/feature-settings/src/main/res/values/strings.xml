@@ -141,7 +141,9 @@
     <string name="settings_station_mirror_interval_weekly">Weekly</string>
     <string name="settings_station_mirror_interval_manual">Manual</string>
     <string name="settings_station_mirror_wifi_only_title">Update over Wi-Fi only</string>
-    <string name="settings_station_mirror_wifi_only_subtitle">Skip scheduled directory updates on mobile data.</string>
+    <string name="settings_station_mirror_wifi_only_subtitle">Use Wi-Fi for all directory downloads, including the initial download.</string>
+    <string name="settings_station_mirror_waiting_wifi">No Wi-Fi. Update again on Wi-Fi or restart the app.</string>
+    <string name="settings_station_mirror_failed">Update failed. Previously saved stations are still available.</string>
     <string name="settings_station_mirror_status_title">Directory status</string>
     <string name="settings_station_mirror_syncing">Downloading… %1$d stations so far</string>
     <string name="settings_station_mirror_last_sync">%1$d stations · last updated %2$s</string>

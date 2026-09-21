@@ -184,7 +184,7 @@ open class SettingsRepository @Inject constructor(
     suspend fun setStationMirrorEnabled(v: Boolean) = edit { it[Keys.STATION_MIRROR_ENABLED] = v }
     suspend fun setStationMirrorIntervalHours(v: Int) = edit { it[Keys.STATION_MIRROR_INTERVAL_HOURS] = v }
     suspend fun setStationMirrorWifiOnly(v: Boolean) = edit { it[Keys.STATION_MIRROR_WIFI_ONLY] = v }
-    suspend fun setStationMirrorSyncResult(syncedAtMs: Long, stationCount: Int) = edit {
+    open suspend fun setStationMirrorSyncResult(syncedAtMs: Long, stationCount: Int) = edit {
         it[Keys.STATION_MIRROR_LAST_SYNC_AT] = syncedAtMs
         it[Keys.STATION_MIRROR_STATION_COUNT] = stationCount
     }

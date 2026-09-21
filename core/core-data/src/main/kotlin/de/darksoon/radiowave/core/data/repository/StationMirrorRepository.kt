@@ -17,6 +17,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -33,7 +36,7 @@ import javax.inject.Singleton
  *
  * Scheduling is deliberately simple (no WorkManager dependency): [syncIfDue] is
  * called on app start and applies the user's interval + Wi-Fi-only constraints
- * from Settings. Manual sync is always allowed via [syncNow].
+ * from Settings. [syncNow] ignores the interval but always respects Wi-Fi-only.
  */
 @Singleton
 class StationMirrorRepository @Inject constructor(
@@ -45,6 +48,7 @@ class StationMirrorRepository @Inject constructor(
 
     sealed interface SyncState {
         data object Idle : SyncState
+        data object WaitingForWifi : SyncState
         /** [stationsSynced] grows page by page while the sync runs. */
         data class Running(val stationsSynced: Int) : SyncState
         data class Done(val stationCount: Int, val atMs: Long) : SyncState
@@ -70,20 +74,33 @@ class StationMirrorRepository @Inject constructor(
         if (settings.stationMirrorIntervalHours <= 0) return // manual only
         val intervalMs = settings.stationMirrorIntervalHours * 60L * 60L * 1000L
         if (System.currentTimeMillis() - settings.stationMirrorLastSyncAtMs < intervalMs) return
-        if (settings.stationMirrorWifiOnly && !isOnUnmeteredNetwork()) return
         syncNow()
     }
 
     /**
-     * Full mirror sync now, ignoring interval/connectivity constraints (user-initiated
-     * or first-enable). Returns true on success. Concurrent calls collapse into one run.
+     * Full sync ignoring the interval, including first enable. Connectivity restrictions
+     * still apply. Concurrent callers wait for the current run instead of downloading again.
      */
-    suspend fun syncNow(): Boolean = syncMutex.withLock {
+    suspend fun syncNow(): Boolean = withContext(Dispatchers.IO) {
+        if (!syncMutex.tryLock()) {
+            syncMutex.withLock { /* wait for the running operation */ }
+            return@withContext _syncState.value is SyncState.Done
+        }
         var synced = 0
-        _syncState.value = SyncState.Running(0)
-        val result = runCatching {
+        try {
+            if (!settingsRepository.data.first().stationMirrorEnabled) return@withContext false
+            _syncState.value = SyncState.Running(0)
             var offset = 0
             while (true) {
+                val settings = settingsRepository.data.first()
+                if (!settings.stationMirrorEnabled) {
+                    _syncState.value = SyncState.Idle
+                    return@withContext false
+                }
+                if (settings.stationMirrorWifiOnly && !isOnWifiNetwork()) {
+                    _syncState.value = SyncState.WaitingForWifi
+                    return@withContext false
+                }
                 val page = api.getStationsPage(offset = offset, limit = PAGE_SIZE)
                 val valid = page
                     .map { it.toDomain() }
@@ -96,27 +113,42 @@ class StationMirrorRepository @Inject constructor(
                 }
                 if (page.size < PAGE_SIZE) break // last page
                 offset += PAGE_SIZE
-                if (offset >= MAX_STATIONS_SAFETY_CAP) break
+                check(offset < MAX_STATIONS_SAFETY_CAP) { "Directory pagination exceeded safety cap" }
             }
-        }
-        return if (result.isSuccess) {
             val now = System.currentTimeMillis()
-            val count = runCatching { stationDao.countStations() }.getOrDefault(synced)
+            val count = stationDao.countStations()
             settingsRepository.setStationMirrorSyncResult(syncedAtMs = now, stationCount = count)
             _syncState.value = SyncState.Done(stationCount = count, atMs = now)
             onMirrorUpdated?.invoke()
             true
-        } else {
-            android.util.Log.w("RadioWave", "Station mirror sync failed: ${result.exceptionOrNull()?.message}")
+        } catch (cancelled: CancellationException) {
+            _syncState.value = SyncState.Failed(stationsSynced = synced)
+            throw cancelled
+        } catch (error: Exception) {
+            android.util.Log.w("RadioWave", "Station mirror sync failed: ${error.message}")
             _syncState.value = SyncState.Failed(stationsSynced = synced)
             false
+        } finally {
+            syncMutex.unlock()
         }
     }
 
-    private fun isOnUnmeteredNetwork(): Boolean {
+    /** The optional offline directory is user data, not a disposable browse cache. */
+    suspend fun clearCachedStations() = syncMutex.withLock {
+        if (!settingsRepository.data.first().stationMirrorEnabled) {
+            stationDao.deleteAllStations()
+            settingsRepository.setStationMirrorSyncResult(syncedAtMs = 0, stationCount = 0)
+            _syncState.value = SyncState.Idle
+            onMirrorUpdated?.invoke()
+        }
+    }
+
+    private fun isOnWifiNetwork(): Boolean {
         val manager = context.getSystemService(ConnectivityManager::class.java) ?: return false
         val capabilities = manager.getNetworkCapabilities(manager.activeNetwork) ?: return false
-        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+        return !capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) &&
+            (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET))
     }
 
     private companion object {

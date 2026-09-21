@@ -141,7 +141,9 @@
     <string name="settings_station_mirror_interval_weekly">Wöchentlich</string>
     <string name="settings_station_mirror_interval_manual">Manuell</string>
     <string name="settings_station_mirror_wifi_only_title">Nur über WLAN aktualisieren</string>
-    <string name="settings_station_mirror_wifi_only_subtitle">Geplante Verzeichnis-Updates bei mobilen Daten überspringen.</string>
+    <string name="settings_station_mirror_wifi_only_subtitle">Alle Verzeichnis-Downloads auf WLAN beschränken, auch beim ersten Aktivieren.</string>
+    <string name="settings_station_mirror_waiting_wifi">Kein WLAN. Im WLAN erneut aktualisieren oder die App neu starten.</string>
+    <string name="settings_station_mirror_failed">Aktualisierung fehlgeschlagen. Vorhandene Sender bleiben erhalten.</string>
     <string name="settings_station_mirror_status_title">Verzeichnis-Status</string>
     <string name="settings_station_mirror_syncing">Wird geladen… bisher %1$d Sender</string>
     <string name="settings_station_mirror_last_sync">%1$d Sender · zuletzt aktualisiert %2$s</string>

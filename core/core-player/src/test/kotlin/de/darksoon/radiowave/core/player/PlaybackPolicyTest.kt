@@ -184,7 +184,7 @@ internal class PlaybackTestSettings : SettingsRepository(ApplicationProvider.get
     override suspend fun setLastStation(uuid: String?, name: String?, streamUrl: String?, faviconUrl: String?, country: String?) = Unit
 }
 
-internal class PlaybackTestStations : StationRepository {
+internal open class PlaybackTestStations : StationRepository {
     override fun searchStations(query: String) = flowOf(emptyList<Station>())
     override fun getTopStations() = flowOf(emptyList<Station>())
     override fun getStationsByCountry(countryCode: String) = flowOf(emptyList<Station>())

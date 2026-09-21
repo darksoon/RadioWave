@@ -7,6 +7,7 @@ import de.darksoon.radiowave.core.data.repository.StationRepository
 import de.darksoon.radiowave.core.model.AppSettings
 import de.darksoon.radiowave.core.model.Station
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.abs
@@ -20,8 +21,16 @@ class StreamQualityResolver @Inject constructor(
         station: Station,
         automotiveMode: Boolean,
     ): Station {
+        if (station.isCustom || station.uuid.startsWith("custom-")) return station
         val state = settingsRepository.data.first()
-        val variants = stationRepository.getStationVariants(station)
+        val cached = try {
+            stationRepository.getCachedStationVariants(station)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            listOf(station)
+        }
+        val variants = cached
             .filter { it.streamUrl.isNotBlank() }
             .ifEmpty { listOf(station) }
         return selectVariant(
@@ -72,4 +81,3 @@ class StreamQualityResolver @Inject constructor(
         )
     }
 }
-
