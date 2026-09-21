@@ -80,6 +80,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.darksoon.radiowave.core.ui.components.BrowseSkeletonLoader
 import de.darksoon.radiowave.core.ui.components.StationLogoImage
+import de.darksoon.radiowave.core.ui.components.StationNameText
 import de.darksoon.radiowave.core.ui.components.PopularityBadge
 import de.darksoon.radiowave.core.ui.components.StreamQualityBadge
 import de.darksoon.radiowave.core.model.Station
@@ -906,11 +907,10 @@ private fun StationGridCard(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                Text(
-                    text = station.name,
+                StationNameText(
+                    name = station.name,
                     style = CardBodyStyle,
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.fillMaxWidth(),
                 )

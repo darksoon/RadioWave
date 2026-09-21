@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.ui.components.StationLogoImage
+import de.darksoon.radiowave.core.ui.components.StationNameText
 import de.darksoon.radiowave.core.ui.theme.DarkCardBackground
 import de.darksoon.radiowave.core.ui.theme.DarkSurfaceVariant
 import de.darksoon.radiowave.core.ui.theme.RadioAccent
@@ -92,15 +93,15 @@ fun StationCard(
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 horizontalAlignment = Alignment.Start,
             ) {
-                Text(
-                    text = station.name,
+                StationNameText(
+                    name = station.name,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 13.sp,
                     ),
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
                     color = Color.White,
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 if (country != null) {
