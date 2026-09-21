@@ -32,6 +32,8 @@
     <string name="player_status_paused">Pausiert</string>
     <string name="player_status_wifi_required">Nur WLAN – mobile Daten sind aus</string>
     <string name="player_status_disconnected">Nicht verbunden</string>
+    <string name="player_similar_based_on_tags">Passend zu %1$s</string>
+    <string name="player_similar_based_on_country">Ebenfalls aus %1$s</string>
     <string name="player_cd_favorite_add">Zu Favoriten hinzufügen</string>
     <string name="player_cd_favorite_remove">Aus Favoriten entfernen</string>
     <string name="player_cd_skip_previous">Vorheriger Sender</string>

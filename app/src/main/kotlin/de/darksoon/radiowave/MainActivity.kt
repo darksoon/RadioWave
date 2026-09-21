@@ -823,6 +823,7 @@ fun RadioWaveMainScreen(
                         onPreviousStationClick = { homeViewModel.playPreviousStation() },
                         onVolumeToggle = { homeViewModel.toggleMute() },
                         onRandomStationClick = { homeViewModel.playRandomStation() },
+                        onSimilarStationClick = { station -> homeViewModel.playStation(station) },
                         onSleepTimerClick = { minutes ->
                             homeViewModel.setSleepTimer(minutes)
                         },

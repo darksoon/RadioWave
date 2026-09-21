@@ -7,6 +7,9 @@ import android.os.SystemClock
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,6 +65,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -77,6 +82,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -87,7 +93,10 @@ import coil.compose.SubcomposeAsyncImage
 import com.google.android.gms.cast.framework.CastButtonFactory
 import de.darksoon.radiowave.core.model.PlayerError
 import de.darksoon.radiowave.core.model.PlayerState
+import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.ui.components.MarqueeText
+import de.darksoon.radiowave.core.ui.components.StationLogoImage
+import de.darksoon.radiowave.core.ui.components.StationNameText
 import de.darksoon.radiowave.core.ui.components.asSafeHttpImageUrl
 import de.darksoon.radiowave.core.ui.components.StreamQualityBadge
 import de.darksoon.radiowave.core.ui.theme.DarkBackground
@@ -110,6 +119,7 @@ fun PlayerScreen(
     onSleepTimerClick: (Int?) -> Unit,
     sleepTimerEndsAtElapsedMs: Long?,
     modifier: Modifier = Modifier,
+    onSimilarStationClick: ((Station) -> Unit)? = null,
     viewModel: PlayerViewModel = hiltViewModel(),
 ) {
     val station = playerState.currentStation ?: return
@@ -133,6 +143,14 @@ fun PlayerScreen(
     LaunchedEffect(metadataArtist, metadataTitle) {
         viewModel.loadCoverArt(metadataArtist, metadataTitle)
     }
+
+    val similarStations by viewModel.similarStations.collectAsStateWithLifecycle()
+    // Keyed on the station only: one directory lookup per station, not per recomposition.
+    // The ViewModel also keeps the result when the player is closed and reopened.
+    LaunchedEffect(station.uuid, onSimilarStationClick != null) {
+        if (onSimilarStationClick != null) viewModel.loadSimilarStations(station)
+    }
+    val visibleSimilarStations = similarStations.takeIf { it.sourceStationUuid == station.uuid }
 
     val artworkUrl = safeITunesCoverUrl ?: streamCoverUrl ?: fallbackLogoUrl
     val blurArtworkUrl = safeITunesCoverUrl ?: streamCoverUrl
@@ -511,6 +529,15 @@ fun PlayerScreen(
                                 contentDescription = stringResource(R.string.player_cd_shuffle),
                             )
                         }
+                        if (onSimilarStationClick != null && visibleSimilarStations != null) {
+                            SimilarStationsSection(
+                                similar = visibleSimilarStations,
+                                onStationClick = onSimilarStationClick,
+                                modifier = Modifier.padding(top = 12.dp),
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
             } else {
                 // Portrait layout — scrollable for small screens / large font scale
@@ -671,6 +698,16 @@ fun PlayerScreen(
                         contentDescription = stringResource(R.string.player_cd_shuffle),
                     )
                 }
+                if (onSimilarStationClick != null && visibleSimilarStations != null) {
+                    SimilarStationsSection(
+                        similar = visibleSimilarStations,
+                        onStationClick = onSimilarStationClick,
+                        modifier = Modifier.padding(top = 16.dp),
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                } // end portrait scroll Column
+            }
         }
 
         if (showSleepTimerDialog) {
@@ -940,6 +977,109 @@ private fun LiveBadge(isLive: Boolean, dotAlpha: Float) {
             text = stringResource(R.string.player_live),
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
             color = Color.White.copy(alpha = if (isLive) 0.92f else 0.5f),
+        )
+    }
+}
+
+/**
+ * Compact horizontal row of stations related to the current one. Hidden while loading,
+ * offline or when nothing was found; the caption says what the picks are based on.
+ */
+@Composable
+private fun SimilarStationsSection(
+    similar: SimilarStations,
+    onStationClick: (Station) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (similar.stations.isEmpty()) return
+    val reason = when {
+        similar.matchedTags.isNotEmpty() -> stringResource(
+            R.string.player_similar_based_on_tags,
+            similar.matchedTags.joinToString(", "),
+        )
+        similar.matchedCountry != null -> stringResource(
+            R.string.player_similar_based_on_country,
+            similar.matchedCountry,
+        )
+        else -> null
+    }
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.player_similar_stations),
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+            color = Color.White,
+            modifier = Modifier.semantics { heading() },
+        )
+        if (reason != null) {
+            Text(
+                text = reason,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.55f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            items(similar.stations, key = { it.uuid }, contentType = { "similarStation" }) { item ->
+                SimilarStationTile(
+                    station = item,
+                    onClick = { onStationClick(item) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SimilarStationTile(
+    station: Station,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .width(76.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(bottom = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(76.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(Color(0xFF294252), Color(0xFF1A2234)),
+                    ),
+                )
+                .border(1.dp, Color.White.copy(alpha = 0.16f), RoundedCornerShape(14.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            // Initial underneath, so a missing or failed logo still leaves a readable tile.
+            Text(
+                text = station.name.firstOrNull()?.uppercase() ?: "?",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = Color.White.copy(alpha = 0.85f),
+            )
+            StationLogoImage(
+                imageUrl = station.faviconUrl,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        StationNameText(
+            name = station.name,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = Color.White.copy(alpha = 0.9f),
+            maxLines = 2,
+            minLines = 2,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }

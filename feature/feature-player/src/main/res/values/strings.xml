@@ -32,6 +32,8 @@
     <string name="player_status_paused">Paused</string>
     <string name="player_status_wifi_required">Wi-Fi only – mobile data is off</string>
     <string name="player_status_disconnected">Not connected</string>
+    <string name="player_similar_based_on_tags">Based on %1$s</string>
+    <string name="player_similar_based_on_country">Also from %1$s</string>
     <string name="player_cd_favorite_add">Add to favorites</string>
     <string name="player_cd_favorite_remove">Remove from favorites</string>
     <string name="player_cd_skip_previous">Previous station</string>
