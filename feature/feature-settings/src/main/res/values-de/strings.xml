@@ -62,6 +62,8 @@
     <string name="settings_android_auto_quality_limit_subtitle">Bevorzugt im Auto leichtere Streams bis etwa 128 kbps. Wenn deaktiviert, gilt auch im Auto deine normale Qualitätswahl.</string>
     <string name="settings_auto_play_title">Autoplay bei Android Auto Verbindung</string>
     <string name="settings_auto_play_subtitle">Startet den zuletzt gehörten Sender automatisch, sobald Android Auto verbunden ist.</string>
+    <string name="settings_auto_play_app_start_title">Autoplay beim App-Start</string>
+    <string name="settings_auto_play_app_start_subtitle">Startet den zuletzt gehörten Sender, sobald RadioWave geöffnet wird – praktisch auf Autoradios, die die App mit dem Motor starten.</string>
     <string name="settings_notification_play_pause_title">Wiedergabe/Pause-Schaltfläche</string>
     <string name="settings_notification_play_pause_subtitle">Steuerung direkt über die Medien-Benachrichtigung.</string>
     <string name="settings_notification_previous_title">Zurück-Schaltfläche</string>

@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
@@ -168,6 +169,18 @@ class HomeViewModel @Inject constructor(
 
     fun playStation(station: Station) {
         playStationInternal(station, addCurrentToHistory = true)
+    }
+
+    /** Called once per cold app start; plays the last station if the user opted in. */
+    fun autoPlayOnAppStart() {
+        viewModelScope.launch {
+            val station = stationForAppStartAutoPlay(
+                settings = settingsRepository.data.first(),
+                playerState = playerState.value,
+                recentStations = recentRepository.getRecentStations(limit = 10).first(),
+            ) ?: return@launch
+            playStationInternal(station, addCurrentToHistory = false)
+        }
     }
 
     fun playPreviousStation() {

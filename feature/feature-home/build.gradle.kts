@@ -10,4 +10,6 @@ android {
 // convention plugin — only declare additional/non-convention deps here.
 dependencies {
     implementation(project(":core:core-model"))
+
+    testImplementation(libs.junit)
 }

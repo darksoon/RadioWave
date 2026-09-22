@@ -48,6 +48,7 @@ data class AppSettingsState(
     val timeshiftGuard: Boolean = true,
     val thermalMode: Boolean = false,
     val autoPlayOnAndroidAutoConnect: Boolean = true,
+    val autoPlayOnAppStart: Boolean = false,
     val limitAndroidAutoQuality: Boolean = true,
     val confirmRemoveFavorite: Boolean = false,
     // Outbound requests that aren't needed for playback itself — both on by default so
@@ -104,6 +105,7 @@ open class SettingsRepository @Inject constructor(
         val TIMESHIFT_GUARD = booleanPreferencesKey(AppSettings.KEY_TIMESHIFT_GUARD)
         val THERMAL_MODE = booleanPreferencesKey(AppSettings.KEY_THERMAL_MODE)
         val AUTO_PLAY_ON_ANDROID_AUTO_CONNECT = booleanPreferencesKey(AppSettings.KEY_AUTO_PLAY_ON_ANDROID_AUTO_CONNECT)
+        val AUTO_PLAY_ON_APP_START = booleanPreferencesKey(AppSettings.KEY_AUTO_PLAY_ON_APP_START)
         val LIMIT_ANDROID_AUTO_QUALITY = booleanPreferencesKey(AppSettings.KEY_LIMIT_ANDROID_AUTO_QUALITY)
         val CONFIRM_REMOVE_FAVORITE = booleanPreferencesKey(AppSettings.KEY_CONFIRM_REMOVE_FAVORITE)
         val REPORT_STATION_CLICKS = booleanPreferencesKey(AppSettings.KEY_REPORT_STATION_CLICKS)
@@ -199,6 +201,7 @@ open class SettingsRepository @Inject constructor(
     suspend fun setTimeshiftGuard(v: Boolean) = edit { it[Keys.TIMESHIFT_GUARD] = v }
     suspend fun setThermalMode(v: Boolean) = edit { it[Keys.THERMAL_MODE] = v }
     suspend fun setAutoPlayOnAndroidAutoConnect(v: Boolean) = edit { it[Keys.AUTO_PLAY_ON_ANDROID_AUTO_CONNECT] = v }
+    suspend fun setAutoPlayOnAppStart(v: Boolean) = edit { it[Keys.AUTO_PLAY_ON_APP_START] = v }
     suspend fun setLimitAndroidAutoQuality(v: Boolean) = edit { it[Keys.LIMIT_ANDROID_AUTO_QUALITY] = v }
     suspend fun setConfirmRemoveFavorite(v: Boolean) = edit { it[Keys.CONFIRM_REMOVE_FAVORITE] = v }
     suspend fun setReportStationClicks(v: Boolean) = edit { it[Keys.REPORT_STATION_CLICKS] = v }
@@ -250,6 +253,7 @@ open class SettingsRepository @Inject constructor(
         timeshiftGuard = this[Keys.TIMESHIFT_GUARD] ?: true,
         thermalMode = this[Keys.THERMAL_MODE] ?: false,
         autoPlayOnAndroidAutoConnect = this[Keys.AUTO_PLAY_ON_ANDROID_AUTO_CONNECT] ?: true,
+        autoPlayOnAppStart = this[Keys.AUTO_PLAY_ON_APP_START] ?: false,
         limitAndroidAutoQuality = this[Keys.LIMIT_ANDROID_AUTO_QUALITY] ?: true,
         confirmRemoveFavorite = this[Keys.CONFIRM_REMOVE_FAVORITE] ?: false,
         reportStationClicks = this[Keys.REPORT_STATION_CLICKS] ?: true,

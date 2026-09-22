@@ -28,6 +28,7 @@ object AppSettings {
     const val KEY_TIMESHIFT_GUARD = "timeshift_guard"
     const val KEY_THERMAL_MODE = "thermal_mode"
     const val KEY_AUTO_PLAY_ON_ANDROID_AUTO_CONNECT = "auto_play_on_android_auto_connect"
+    const val KEY_AUTO_PLAY_ON_APP_START = "auto_play_on_app_start"
     const val KEY_LIMIT_ANDROID_AUTO_QUALITY = "limit_android_auto_quality"
     const val KEY_CONFIRM_REMOVE_FAVORITE = "confirm_remove_favorite"
     const val KEY_REPORT_STATION_CLICKS = "report_station_clicks"

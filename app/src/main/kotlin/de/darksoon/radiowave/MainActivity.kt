@@ -129,6 +129,11 @@ class MainActivity : AppCompatActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         shortcutTarget = intent.shortcutTarget
+        // Only a fresh launcher start may auto-play — not rotation/process restore
+        // (savedInstanceState) and not shortcuts, which carry their own intent.
+        val isColdLauncherStart = savedInstanceState == null &&
+            intent?.action == Intent.ACTION_MAIN &&
+            shortcutTarget == null
         enableEdgeToEdge()
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
@@ -150,6 +155,10 @@ class MainActivity : AppCompatActivity() {
             // that previously called AppLanguageManager.applyLanguage from MainActivity.
             LaunchedEffect(appLanguage) {
                 AppLanguageManager.applyLanguage(appLanguage)
+            }
+
+            LaunchedEffect(Unit) {
+                if (isColdLauncherStart) rootHomeViewModel.autoPlayOnAppStart()
             }
 
             RadioWaveTheme(
