@@ -4,7 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- For car head units (suggested by a user): optional auto-play of the last station when the app opens, optional "reopen the last view" (last tab and fullscreen player), and a larger mini-player with a 64 dp play/pause button in landscape.
+- Privacy settings to turn off play reports to Radio Browser and online cover lookup; the README now lists every outbound connection.
+- Similar stations in the fullscreen player, a LIVE status line ("connected for …", reconnecting, Wi-Fi only) instead of a fixed progress bar, and a compact favorites grid on Home.
+- Radio Browser API server failover, a persisted top list for offline use, and pull-to-refresh that really reloads.
+
 ### Fixed
+- Dead streams were reported through Radio Browser's vote endpoint and so received an upvote; the report is gone.
+- Cast only takes over after the receiver confirmed the load; on failure the phone keeps playing.
+- Failed cover lookups are no longer cached forever, and a cover is only used when the artist matches.
+- Station names no longer break mid-word.
 - Stability pass after the 2026-09 audit: sleep timer thread safety (also stops Cast), mobile-data policy enforced on resume/restart/network change, CI runs all core unit tests, faster station start without waiting for the directory, consistent offline-directory lifecycle, fuzzy search off the main thread, one shared validation (http(s) + host, 2 MB / 5,000-entry limits, content-policy blocklist) for manual add, playlist and favorites import, and settings pre-loaded off the main thread at cold start.
 
 ## [1.0.17] - 2026-07-21
