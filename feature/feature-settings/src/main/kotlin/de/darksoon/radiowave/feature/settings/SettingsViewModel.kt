@@ -82,6 +82,7 @@ class SettingsViewModel @Inject constructor(
     fun setThermalMode(v: Boolean) = viewModelScope.launch { settingsRepository.setThermalMode(v) }
     fun setAutoPlayOnAndroidAutoConnect(v: Boolean) = viewModelScope.launch { settingsRepository.setAutoPlayOnAndroidAutoConnect(v) }
     fun setAutoPlayOnAppStart(v: Boolean) = viewModelScope.launch { settingsRepository.setAutoPlayOnAppStart(v) }
+    fun setRestoreLastView(v: Boolean) = viewModelScope.launch { settingsRepository.setRestoreLastView(v) }
     fun setLimitAndroidAutoQuality(v: Boolean) = viewModelScope.launch { settingsRepository.setLimitAndroidAutoQuality(v) }
     fun setConfirmRemoveFavorite(v: Boolean) = viewModelScope.launch { settingsRepository.setConfirmRemoveFavorite(v) }
     fun setReportStationClicks(v: Boolean) = viewModelScope.launch { settingsRepository.setReportStationClicks(v) }

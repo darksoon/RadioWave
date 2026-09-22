@@ -64,6 +64,8 @@
     <string name="settings_auto_play_subtitle">Starts the last station automatically when Android Auto connects.</string>
     <string name="settings_auto_play_app_start_title">Auto-play when the app opens</string>
     <string name="settings_auto_play_app_start_subtitle">Starts the last station as soon as RadioWave is opened – handy on car head units that launch the app with the engine.</string>
+    <string name="settings_restore_last_view_title">Reopen the last view</string>
+    <string name="settings_restore_last_view_subtitle">On start, returns to the last tab and reopens the player if it was open.</string>
     <string name="settings_notification_play_pause_title">Play/pause button</string>
     <string name="settings_notification_play_pause_subtitle">Controls directly in the media notification.</string>
     <string name="settings_notification_previous_title">Previous button</string>

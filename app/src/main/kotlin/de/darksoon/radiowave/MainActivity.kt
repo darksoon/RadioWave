@@ -5,6 +5,7 @@ package de.darksoon.radiowave
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -70,12 +71,14 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -172,6 +175,7 @@ class MainActivity : AppCompatActivity() {
                     color = MaterialTheme.colorScheme.background,
                 ) {
                     RadioWaveMainScreen(
+                        isColdLauncherStart = isColdLauncherStart,
                         shortcutTarget = shortcutTarget,
                         shortcutRequestNonce = shortcutRequestNonce,
                         onShortcutConsumed = { shortcutTarget = null },
@@ -513,6 +517,7 @@ private fun OnboardingDialog(
 
 @Composable
 fun RadioWaveMainScreen(
+    isColdLauncherStart: Boolean = false,
     shortcutTarget: String? = null,
     shortcutRequestNonce: Int = 0,
     onShortcutConsumed: () -> Unit = {},
@@ -629,6 +634,45 @@ fun RadioWaveMainScreen(
             launchSingleTop = true
             restoreState = true
         }
+    }
+
+    // "Reopen the last view" (asked for by car head-unit users): restore the tab and the
+    // fullscreen player once per cold launcher start. Settings is never restored — users
+    // would otherwise land there right after enabling the option.
+    val restorableRoutes = remember {
+        setOf(BottomNavItem.Home.route, BottomNavItem.Browse.route, BottomNavItem.Favorites.route)
+    }
+    var lastViewRestoreDone by rememberSaveable { mutableStateOf(!isColdLauncherStart) }
+    var restorePlayerUntilElapsedMs by remember { mutableLongStateOf(0L) }
+    LaunchedEffect(Unit) {
+        if (lastViewRestoreDone) return@LaunchedEffect
+        val lastView = if (showOnboarding) null else homeViewModel.lastViewToRestore()
+        if (lastView != null) {
+            if (lastView.route in restorableRoutes && lastView.route != BottomNavItem.Home.route) {
+                navigateToTopLevel(lastView.route)
+            }
+            // The player needs a station; give auto-play a few seconds to provide one
+            // instead of popping the player open much later on an unrelated tap.
+            if (lastView.playerOpen) {
+                restorePlayerUntilElapsedMs = SystemClock.elapsedRealtime() + 10_000L
+            }
+        }
+        lastViewRestoreDone = true
+    }
+    LaunchedEffect(currentStation != null, restorePlayerUntilElapsedMs) {
+        if (restorePlayerUntilElapsedMs == 0L || currentStation == null) return@LaunchedEffect
+        if (SystemClock.elapsedRealtime() <= restorePlayerUntilElapsedMs) showFullscreenPlayer = true
+        restorePlayerUntilElapsedMs = 0L
+    }
+    val restorableTopLevelRoute = currentDestination?.hierarchy
+        ?.firstNotNullOfOrNull { destination ->
+            destination.route?.substringBefore('?')?.takeIf { it in restorableRoutes }
+        }
+    LaunchedEffect(restorableTopLevelRoute, showFullscreenPlayer, lastViewRestoreDone, appSettings.restoreLastView) {
+        // Not before the restore ran: the initial Home composition would overwrite the saved view.
+        if (!lastViewRestoreDone || !appSettings.restoreLastView) return@LaunchedEffect
+        val route = restorableTopLevelRoute ?: return@LaunchedEffect
+        homeViewModel.rememberLastView(route, showFullscreenPlayer)
     }
 
     LaunchedEffect(shortcutRequestNonce, shortcutTarget, currentStation) {
@@ -775,11 +819,15 @@ fun RadioWaveMainScreen(
             }
 
             if (showPlayerBar) {
+                // Landscape is where head units live: a taller bar with a much larger
+                // play/pause target that is easy to hit while driving.
+                val largeMiniPlayer = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
                 FloatingPlayerBar(
                     playerState = effectivePlayerState,
                     isFavorite = isCurrentFavorite,
                     showMetadata = showMiniPlayerMetadata,
                     isCasting = isCasting,
+                    large = largeMiniPlayer,
                     onFavoriteClick = {
                         currentStation.let { station ->
                             val willBeFavorite = !isCurrentFavorite
@@ -808,7 +856,7 @@ fun RadioWaveMainScreen(
                             bottom = innerPadding.calculateBottomPadding() + 12.dp,
                         )
                         .fillMaxWidth()
-                        .height(72.dp)
+                        .height(if (largeMiniPlayer) 92.dp else 72.dp)
                         .clip(RoundedCornerShape(32.dp)),
                 )
             }

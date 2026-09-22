@@ -171,6 +171,22 @@ class HomeViewModel @Inject constructor(
         playStationInternal(station, addCurrentToHistory = true)
     }
 
+    /** Last tab/player state to reopen on a cold start, or null when the option is off. */
+    suspend fun lastViewToRestore(): LastView? {
+        val settings = settingsRepository.data.first()
+        if (!settings.restoreLastView) return null
+        val route = settings.lastViewRoute?.takeIf { it.isNotBlank() } ?: return null
+        return LastView(route = route, playerOpen = settings.lastViewPlayerOpen)
+    }
+
+    fun rememberLastView(route: String, playerOpen: Boolean) {
+        viewModelScope.launch {
+            val settings = settingsRepository.data.first()
+            if (settings.lastViewRoute == route && settings.lastViewPlayerOpen == playerOpen) return@launch
+            settingsRepository.setLastView(route, playerOpen)
+        }
+    }
+
     /** Called once per cold app start; plays the last station if the user opted in. */
     fun autoPlayOnAppStart() {
         viewModelScope.launch {
@@ -258,3 +274,4 @@ class HomeViewModel @Inject constructor(
     }
 }
 
+data class LastView(val route: String, val playerOpen: Boolean)

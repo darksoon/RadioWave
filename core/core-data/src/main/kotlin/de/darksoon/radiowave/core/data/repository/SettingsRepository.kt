@@ -49,6 +49,9 @@ data class AppSettingsState(
     val thermalMode: Boolean = false,
     val autoPlayOnAndroidAutoConnect: Boolean = true,
     val autoPlayOnAppStart: Boolean = false,
+    val restoreLastView: Boolean = false,
+    val lastViewRoute: String? = null,
+    val lastViewPlayerOpen: Boolean = false,
     val limitAndroidAutoQuality: Boolean = true,
     val confirmRemoveFavorite: Boolean = false,
     // Outbound requests that aren't needed for playback itself — both on by default so
@@ -106,6 +109,9 @@ open class SettingsRepository @Inject constructor(
         val THERMAL_MODE = booleanPreferencesKey(AppSettings.KEY_THERMAL_MODE)
         val AUTO_PLAY_ON_ANDROID_AUTO_CONNECT = booleanPreferencesKey(AppSettings.KEY_AUTO_PLAY_ON_ANDROID_AUTO_CONNECT)
         val AUTO_PLAY_ON_APP_START = booleanPreferencesKey(AppSettings.KEY_AUTO_PLAY_ON_APP_START)
+        val RESTORE_LAST_VIEW = booleanPreferencesKey(AppSettings.KEY_RESTORE_LAST_VIEW)
+        val LAST_VIEW_ROUTE = stringPreferencesKey(AppSettings.KEY_LAST_VIEW_ROUTE)
+        val LAST_VIEW_PLAYER_OPEN = booleanPreferencesKey(AppSettings.KEY_LAST_VIEW_PLAYER_OPEN)
         val LIMIT_ANDROID_AUTO_QUALITY = booleanPreferencesKey(AppSettings.KEY_LIMIT_ANDROID_AUTO_QUALITY)
         val CONFIRM_REMOVE_FAVORITE = booleanPreferencesKey(AppSettings.KEY_CONFIRM_REMOVE_FAVORITE)
         val REPORT_STATION_CLICKS = booleanPreferencesKey(AppSettings.KEY_REPORT_STATION_CLICKS)
@@ -202,6 +208,11 @@ open class SettingsRepository @Inject constructor(
     suspend fun setThermalMode(v: Boolean) = edit { it[Keys.THERMAL_MODE] = v }
     suspend fun setAutoPlayOnAndroidAutoConnect(v: Boolean) = edit { it[Keys.AUTO_PLAY_ON_ANDROID_AUTO_CONNECT] = v }
     suspend fun setAutoPlayOnAppStart(v: Boolean) = edit { it[Keys.AUTO_PLAY_ON_APP_START] = v }
+    suspend fun setRestoreLastView(v: Boolean) = edit { it[Keys.RESTORE_LAST_VIEW] = v }
+    suspend fun setLastView(route: String, playerOpen: Boolean) = edit {
+        it[Keys.LAST_VIEW_ROUTE] = route
+        it[Keys.LAST_VIEW_PLAYER_OPEN] = playerOpen
+    }
     suspend fun setLimitAndroidAutoQuality(v: Boolean) = edit { it[Keys.LIMIT_ANDROID_AUTO_QUALITY] = v }
     suspend fun setConfirmRemoveFavorite(v: Boolean) = edit { it[Keys.CONFIRM_REMOVE_FAVORITE] = v }
     suspend fun setReportStationClicks(v: Boolean) = edit { it[Keys.REPORT_STATION_CLICKS] = v }
@@ -254,6 +265,9 @@ open class SettingsRepository @Inject constructor(
         thermalMode = this[Keys.THERMAL_MODE] ?: false,
         autoPlayOnAndroidAutoConnect = this[Keys.AUTO_PLAY_ON_ANDROID_AUTO_CONNECT] ?: true,
         autoPlayOnAppStart = this[Keys.AUTO_PLAY_ON_APP_START] ?: false,
+        restoreLastView = this[Keys.RESTORE_LAST_VIEW] ?: false,
+        lastViewRoute = this[Keys.LAST_VIEW_ROUTE],
+        lastViewPlayerOpen = this[Keys.LAST_VIEW_PLAYER_OPEN] ?: false,
         limitAndroidAutoQuality = this[Keys.LIMIT_ANDROID_AUTO_QUALITY] ?: true,
         confirmRemoveFavorite = this[Keys.CONFIRM_REMOVE_FAVORITE] ?: false,
         reportStationClicks = this[Keys.REPORT_STATION_CLICKS] ?: true,
