@@ -79,7 +79,14 @@ fun FloatingPlayerBar(
     onBarClick: () -> Unit,
     onDismissed: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Taller bar with a bigger play/pause target, used in landscape (car head units). */
+    large: Boolean = false,
 ) {
+    val barHeight = if (large) 92.dp else 72.dp
+    val logoSize = if (large) 60.dp else 44.dp
+    val playButtonSize = if (large) 64.dp else 32.dp
+    val playIconPadding = if (large) 12.dp else 6.dp
+    val bufferingRingSize = if (large) 72.dp else 40.dp
     val currentStation: Station? = playerState.currentStation
     val isPlaying: Boolean = playerState.isPlaying
     val isBuffering: Boolean = playerState.isBuffering
@@ -181,13 +188,13 @@ fun FloatingPlayerBar(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(72.dp)
+                            .height(barHeight)
                             .padding(horizontal = 10.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(44.dp)
+                                .size(logoSize)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(DarkSurfaceVariant),
                         ) {
@@ -309,7 +316,7 @@ fun FloatingPlayerBar(
                             ) {
                                 if (isBuffering) {
                                     CircularProgressIndicator(
-                                        modifier = Modifier.size(40.dp),
+                                        modifier = Modifier.size(bufferingRingSize),
                                         strokeWidth = 1.25.dp,
                                         color = RadioAccent.copy(alpha = 0.95f),
                                         trackColor = Color.White.copy(alpha = 0.2f),
@@ -335,8 +342,8 @@ fun FloatingPlayerBar(
                                         },
                                         tint = Color.White,
                                         modifier = Modifier
-                                            .size(32.dp)
-                                            .padding(6.dp)
+                                            .size(playButtonSize)
+                                            .padding(playIconPadding)
                                             .minimumInteractiveComponentSize(),
                                     )
                                 }

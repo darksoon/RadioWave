@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
@@ -170,6 +171,34 @@ class HomeViewModel @Inject constructor(
         playStationInternal(station, addCurrentToHistory = true)
     }
 
+    /** Last tab/player state to reopen on a cold start, or null when the option is off. */
+    suspend fun lastViewToRestore(): LastView? {
+        val settings = settingsRepository.data.first()
+        if (!settings.restoreLastView) return null
+        val route = settings.lastViewRoute?.takeIf { it.isNotBlank() } ?: return null
+        return LastView(route = route, playerOpen = settings.lastViewPlayerOpen)
+    }
+
+    fun rememberLastView(route: String, playerOpen: Boolean) {
+        viewModelScope.launch {
+            val settings = settingsRepository.data.first()
+            if (settings.lastViewRoute == route && settings.lastViewPlayerOpen == playerOpen) return@launch
+            settingsRepository.setLastView(route, playerOpen)
+        }
+    }
+
+    /** Called once per cold app start; plays the last station if the user opted in. */
+    fun autoPlayOnAppStart() {
+        viewModelScope.launch {
+            val station = stationForAppStartAutoPlay(
+                settings = settingsRepository.data.first(),
+                playerState = playerState.value,
+                recentStations = recentRepository.getRecentStations(limit = 10).first(),
+            ) ?: return@launch
+            playStationInternal(station, addCurrentToHistory = false)
+        }
+    }
+
     fun playPreviousStation() {
         val previousStation = playbackHistory.removeLastOrNull() ?: return
         playStationInternal(previousStation, addCurrentToHistory = false)
@@ -245,3 +274,4 @@ class HomeViewModel @Inject constructor(
     }
 }
 
+data class LastView(val route: String, val playerOpen: Boolean)

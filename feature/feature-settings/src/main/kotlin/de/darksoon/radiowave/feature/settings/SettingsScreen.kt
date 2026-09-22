@@ -150,6 +150,8 @@ fun SettingsScreen(
     val timeshiftGuard = settings.timeshiftGuard
     val thermalMode = settings.thermalMode
     val autoPlayOnAndroidAutoConnect = settings.autoPlayOnAndroidAutoConnect
+    val autoPlayOnAppStart = settings.autoPlayOnAppStart
+    val restoreLastView = settings.restoreLastView
     val limitAndroidAutoQuality = settings.limitAndroidAutoQuality
     val confirmRemoveFavorite = settings.confirmRemoveFavorite
     val appVersion = rememberAppVersion(context)
@@ -495,6 +497,24 @@ fun SettingsScreen(
                             checked = autoPlayOnAndroidAutoConnect,
                             onCheckedChange = { checked ->
                                 viewModel.setAutoPlayOnAndroidAutoConnect(checked)
+                            },
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingToggleRow(
+                            title = stringResource(R.string.settings_auto_play_app_start_title),
+                            subtitle = stringResource(R.string.settings_auto_play_app_start_subtitle),
+                            checked = autoPlayOnAppStart,
+                            onCheckedChange = { checked ->
+                                viewModel.setAutoPlayOnAppStart(checked)
+                            },
+                        )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                        SettingToggleRow(
+                            title = stringResource(R.string.settings_restore_last_view_title),
+                            subtitle = stringResource(R.string.settings_restore_last_view_subtitle),
+                            checked = restoreLastView,
+                            onCheckedChange = { checked ->
+                                viewModel.setRestoreLastView(checked)
                             },
                         )
                     }
