@@ -37,6 +37,8 @@
     <string name="player_cd_favorite_add">Add to favorites</string>
     <string name="player_cd_favorite_remove">Remove from favorites</string>
     <string name="player_cd_skip_previous">Previous station</string>
+    <string name="player_cd_previous_favorite">Previous favorite</string>
+    <string name="player_cd_next_favorite">Next favorite</string>
     <string name="player_cd_volume_mute">Mute</string>
     <string name="player_cd_volume_unmute">Unmute</string>
     <string name="player_cd_shuffle">Random station</string>

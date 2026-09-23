@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -119,6 +120,10 @@ fun PlayerScreen(
     sleepTimerEndsAtElapsedMs: Long?,
     modifier: Modifier = Modifier,
     onSimilarStationClick: ((Station) -> Unit)? = null,
+    /** Non-null while the current station is a favorite and another one exists. */
+    onPreviousFavoriteClick: (() -> Unit)? = null,
+    /** Non-null while any favorite exists; shows the "next" button. */
+    onNextFavoriteClick: (() -> Unit)? = null,
     viewModel: PlayerViewModel = hiltViewModel(),
 ) {
     val station = playerState.currentStation ?: return
@@ -128,6 +133,12 @@ fun PlayerScreen(
     val resources = LocalResources.current
     var showSleepTimerDialog by remember { mutableStateOf(false) }
     val isPlaying = playerState.isPlaying
+    // "Previous" walks the favorites while one plays, otherwise the playback history.
+    val previousDescription = if (onPreviousFavoriteClick != null) {
+        R.string.player_cd_previous_favorite
+    } else {
+        R.string.player_cd_skip_previous
+    }
     val metadataTitle = playerState.metadata?.title?.trim().takeUnless { it.isNullOrBlank() }
     val metadataArtist = playerState.metadata?.artist?.trim().takeUnless { it.isNullOrBlank() }
     // Scheme-guard every URL that reaches Coil below — this screen bypasses
@@ -507,10 +518,18 @@ fun PlayerScreen(
                             PlayerIconButton(
                                 icon = Icons.Filled.SkipPrevious,
                                 tint = Color.White.copy(alpha = 0.78f),
-                                onClick = onPreviousStationClick,
-                                contentDescription = stringResource(R.string.player_cd_skip_previous),
+                                onClick = onPreviousFavoriteClick ?: onPreviousStationClick,
+                                contentDescription = stringResource(previousDescription),
                             )
                             MainPlaybackButton(isPlaying = isPlaying, onClick = onPlayPauseClick)
+                            if (onNextFavoriteClick != null) {
+                                PlayerIconButton(
+                                    icon = Icons.Filled.SkipNext,
+                                    tint = Color.White.copy(alpha = 0.78f),
+                                    onClick = onNextFavoriteClick,
+                                    contentDescription = stringResource(R.string.player_cd_next_favorite),
+                                )
+                            }
                             PlayerIconButton(
                                 icon = if (playerState.isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
                                 tint = if (playerState.isMuted) Color.White.copy(alpha = 0.58f) else Color.White.copy(alpha = 0.78f),
@@ -673,13 +692,21 @@ fun PlayerScreen(
                     PlayerIconButton(
                         icon = Icons.Filled.SkipPrevious,
                         tint = Color.White.copy(alpha = 0.78f),
-                        onClick = onPreviousStationClick,
-                        contentDescription = stringResource(R.string.player_cd_skip_previous),
+                        onClick = onPreviousFavoriteClick ?: onPreviousStationClick,
+                        contentDescription = stringResource(previousDescription),
                     )
                     MainPlaybackButton(
                         isPlaying = isPlaying,
                         onClick = onPlayPauseClick,
                     )
+                    if (onNextFavoriteClick != null) {
+                        PlayerIconButton(
+                            icon = Icons.Filled.SkipNext,
+                            tint = Color.White.copy(alpha = 0.78f),
+                            onClick = onNextFavoriteClick,
+                            contentDescription = stringResource(R.string.player_cd_next_favorite),
+                        )
+                    }
                     PlayerIconButton(
                         icon = if (playerState.isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
                         tint = if (playerState.isMuted) Color.White.copy(alpha = 0.58f) else Color.White.copy(alpha = 0.78f),

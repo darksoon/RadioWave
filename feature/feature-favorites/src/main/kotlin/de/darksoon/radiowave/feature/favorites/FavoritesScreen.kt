@@ -2,6 +2,7 @@
 
 package de.darksoon.radiowave.feature.favorites
 
+import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -49,6 +50,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -83,6 +85,9 @@ fun FavoritesScreen(
     var pendingUnfavoriteUuid by remember { mutableStateOf<String?>(null) }
     var pendingDeleteCustomUuid by remember { mutableStateOf<String?>(null) }
     var showAddCustomDialog by remember { mutableStateOf(false) }
+    // Landscape is where car head units live: bigger targets, and removing a favorite always
+    // asks first — a mis-tap while driving would otherwise drop it silently.
+    val carLayout = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     when {
         uiState.isLoading -> FavoritesSkeletonLoader(modifier = modifier)
@@ -102,7 +107,7 @@ fun FavoritesScreen(
             isAudioPlaying = playerState.isPlaying,
             onPlayClick = viewModel::playStation,
             onToggleFavorite = { station ->
-                if (confirmRemove) {
+                if (confirmRemove || carLayout) {
                     pendingUnfavoriteUuid = station.uuid
                 } else {
                     viewModel.toggleFavorite(station)
@@ -112,6 +117,7 @@ fun FavoritesScreen(
             onMoveFavoriteToTop = viewModel::moveFavoriteToTop,
             onDeleteCustomStation = { station -> pendingDeleteCustomUuid = station.uuid },
             onAddCustomStation = { showAddCustomDialog = true },
+            carLayout = carLayout,
             modifier = modifier,
         )
     }
@@ -187,10 +193,12 @@ private fun FavoritesContent(
     onMoveFavoriteToTop: (Station) -> Unit,
     onDeleteCustomStation: (Station) -> Unit,
     onAddCustomStation: () -> Unit,
+    carLayout: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     LazyVerticalGrid(
-        columns = Adaptive(minSize = 148.dp),
+        // Fewer, larger cards in landscape so each target is easy to hit while driving.
+        columns = Adaptive(minSize = if (carLayout) 210.dp else 148.dp),
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -229,6 +237,7 @@ private fun FavoritesContent(
         items(stations, key = { it.uuid }) { station ->
             val isActive = station.uuid == playingUuid
             FavoriteStationCard(
+                large = carLayout,
                 station = station,
                 isActive = isActive,
                 isAudioPlaying = isAudioPlaying,
@@ -283,6 +292,7 @@ private fun FavoritesContent(
         items(customStations, key = { it.uuid }) { station ->
             val isActive = station.uuid == playingUuid
             FavoriteStationCard(
+                large = carLayout,
                 station = station,
                 isActive = isActive,
                 isAudioPlaying = isAudioPlaying,
@@ -369,13 +379,20 @@ private fun FavoriteStationCard(
     onMoveUpClick: () -> Unit,
     onMoveToTopClick: () -> Unit,
     isCustom: Boolean = false,
+    large: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
+    val cardHeight = if (large) 252.dp else 196.dp
+    val logoSize = if (large) 84.dp else 64.dp
+    val reorderButtonSize = if (large) 40.dp else 26.dp
+    val playButtonSize = if (large) 52.dp else 34.dp
+    val heartButtonSize = if (large) 44.dp else 30.dp
+    val actionSpacing = if (large) 12.dp else 6.dp
     Card(
         // Fixed height so all cards in the grid line up cleanly. Content inside
         // (logo + name + subtitle + actions) is sized to fit comfortably at 196dp;
         // longer names get ellipsised, tags are limited to one row.
-        modifier = modifier.fillMaxWidth().height(196.dp),
+        modifier = modifier.fillMaxWidth().height(cardHeight),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         border = if (isActive)
@@ -408,12 +425,13 @@ private fun FavoriteStationCard(
                         imageUrl = station.faviconUrl,
                         stationName = station.name,
                         isActive = isActive,
-                        modifier = Modifier.size(64.dp),
+                        modifier = Modifier.size(logoSize),
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     StationNameText(
                         name = station.name,
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                        style = (if (large) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelLarge)
+                            .copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 2,
                     )
@@ -438,7 +456,7 @@ private fun FavoriteStationCard(
                 }
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(actionSpacing),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (!isCustom) {
@@ -447,7 +465,7 @@ private fun FavoriteStationCard(
                             shape = CircleShape,
                             color = Color.White.copy(alpha = 0.06f),
                             border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
-                            modifier = Modifier.size(26.dp).minimumInteractiveComponentSize(),
+                            modifier = Modifier.size(reorderButtonSize).minimumInteractiveComponentSize(),
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.VerticalAlignTop,
@@ -461,7 +479,7 @@ private fun FavoriteStationCard(
                             shape = CircleShape,
                             color = Color.White.copy(alpha = 0.06f),
                             border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
-                            modifier = Modifier.size(26.dp).minimumInteractiveComponentSize(),
+                            modifier = Modifier.size(reorderButtonSize).minimumInteractiveComponentSize(),
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.KeyboardArrowUp,
@@ -481,7 +499,7 @@ private fun FavoriteStationCard(
                             color = if (isActive) RadioAccent.copy(alpha = 0.65f)
                             else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                         ),
-                        modifier = Modifier.size(34.dp).minimumInteractiveComponentSize(),
+                        modifier = Modifier.size(playButtonSize).minimumInteractiveComponentSize(),
                     ) {
                         Icon(
                             imageVector = if (isActive && isAudioPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
@@ -499,7 +517,7 @@ private fun FavoriteStationCard(
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.surface,
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
-                        modifier = Modifier.size(30.dp).minimumInteractiveComponentSize(),
+                        modifier = Modifier.size(heartButtonSize).minimumInteractiveComponentSize(),
                     ) {
                         Icon(
                             imageVector = if (isCustom) Icons.Filled.Delete else Icons.Filled.Favorite,

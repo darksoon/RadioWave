@@ -890,6 +890,17 @@ fun RadioWaveMainScreen(
                         onVolumeToggle = { homeViewModel.toggleMute() },
                         onRandomStationClick = { homeViewModel.playRandomStation() },
                         onSimilarStationClick = { station -> homeViewModel.playStation(station) },
+                        onPreviousFavoriteClick = if (isCurrentFavorite && favoriteStationIds.size > 1) {
+                            { homeViewModel.playAdjacentFavorite(-1) }
+                        } else {
+                            null
+                        },
+                        // Hidden when the only favorite is already playing — nothing to skip to.
+                        onNextFavoriteClick = if (favoriteStationIds.size > (if (isCurrentFavorite) 1 else 0)) {
+                            { homeViewModel.playAdjacentFavorite(+1) }
+                        } else {
+                            null
+                        },
                         onSleepTimerClick = { minutes ->
                             homeViewModel.setSleepTimer(minutes)
                         },
