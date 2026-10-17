@@ -4,6 +4,7 @@ package de.darksoon.radiowave.core.player
 
 import android.media.audiofx.Equalizer
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import de.darksoon.radiowave.core.model.AppSettings
 import kotlin.math.roundToInt
 
@@ -16,6 +17,12 @@ import kotlin.math.roundToInt
  * defensive: on any failure we log a warning and leave EQ inactive rather
  * than letting a broken effect take playback down with it.
  *
+ * The effect is only inserted while a preset actually changes the sound. With
+ * Flat (the default) no [Equalizer] exists at all: an enabled-but-flat effect
+ * adds nothing audible, yet it still sits in the platform effect chain — and
+ * on some OEM audio stacks (reported: Samsung with Bluetooth earbuds) that
+ * chain is exactly what goes silent.
+ *
  * Not a `@Singleton` / Hilt-managed type — [PlayerControllerImpl] owns a
  * single instance directly and drives its lifecycle (attach on session
  * change, release on player teardown).
@@ -24,43 +31,68 @@ internal class EqualizerController {
 
     private var equalizer: Equalizer? = null
 
+    /** Session of the live player — kept so a later preset change can attach on demand. */
+    private var audioSessionId: Int = 0
+
     /** Last preset requested via [applyPreset] — re-applied on the next [attach]. */
     private var currentPreset: String = AppSettings.EQ_PRESET_FLAT
 
+    /** True while an [Equalizer] is inserted into the session. */
+    @get:VisibleForTesting
+    internal val isAttached: Boolean get() = equalizer != null
+
     /**
-     * Releases any existing [Equalizer] and attaches a new one to
-     * [audioSessionId], then re-applies [currentPreset]'s band gains.
+     * Remembers [audioSessionId] and (re)creates the [Equalizer] for it when
+     * [currentPreset] needs one.
      *
      * A session id of `0` (Media3/AudioTrack's "unset" sentinel) is skipped —
      * there's no session to attach to yet.
      */
     fun attach(audioSessionId: Int) {
-        release()
-        if (audioSessionId == 0) return
+        releaseEffect()
+        this.audioSessionId = audioSessionId
+        syncEffect()
+    }
 
-        equalizer = try {
-            Equalizer(EQUALIZER_PRIORITY, audioSessionId).apply { enabled = true }
-        } catch (error: RuntimeException) {
-            logWarning("Unable to create Equalizer for session $audioSessionId: ${error.message}")
-            null
+    /**
+     * Applies [preset] (one of [AppSettings]'s `EQ_PRESET_*` constants): inserts
+     * the effect if it's now needed, removes it again for Flat. The preset is
+     * remembered even without a session, so the next [attach] picks it up.
+     */
+    fun applyPreset(preset: String) {
+        currentPreset = preset
+        syncEffect()
+    }
+
+    private fun syncEffect() {
+        if (!presetNeedsEffect(currentPreset) || audioSessionId == 0) {
+            releaseEffect()
+            return
+        }
+        if (equalizer == null) {
+            equalizer = try {
+                Equalizer(EQUALIZER_PRIORITY, audioSessionId).apply { enabled = true }
+            } catch (error: RuntimeException) {
+                logWarning("Unable to create Equalizer for session $audioSessionId: ${error.message}")
+                null
+            }
         }
         applyBandGains(currentPreset)
     }
 
+    private fun presetNeedsEffect(preset: String): Boolean = preset in EFFECTIVE_PRESETS
+
     /**
-     * Maps [preset] (one of [AppSettings]'s `EQ_PRESET_*` constants) to manual
-     * band-gain adjustments and applies them to the currently attached
-     * [Equalizer], if any. The preset is remembered regardless of whether an
-     * [Equalizer] is currently attached, so it's applied automatically on the
-     * next [attach] (e.g. after a station/session change).
+     * Player teardown: releases the [Equalizer] and forgets the session, which dies
+     * with the player — a preset change before the next [attach] must not touch it.
      */
-    fun applyPreset(preset: String) {
-        currentPreset = preset
-        applyBandGains(preset)
+    fun release() {
+        audioSessionId = 0
+        releaseEffect()
     }
 
     /** Releases the underlying [Equalizer], guarding against platform flakiness. */
-    fun release() {
+    private fun releaseEffect() {
         val current = equalizer ?: return
         equalizer = null
         try {
@@ -141,6 +173,14 @@ internal class EqualizerController {
         // AudioEffect priority — 0 is the default/neutral priority used elsewhere
         // in the platform APIs when there's no need to outrank other effects.
         const val EQUALIZER_PRIORITY = 0
+
+        // Presets that change the sound — everything else (Flat, unknown values)
+        // runs without an effect in the chain.
+        val EFFECTIVE_PRESETS = setOf(
+            AppSettings.EQ_PRESET_BASS_BOOST,
+            AppSettings.EQ_PRESET_TREBLE_BOOST,
+            AppSettings.EQ_PRESET_VOCAL,
+        )
 
         // Fractions of the available positive/negative gain range applied per
         // preset — kept comfortably below the device max so the effect is

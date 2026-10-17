@@ -216,7 +216,7 @@ class RadioWaveAutoService : MediaLibraryService() {
         // (reported: "app kept playing, had to hit pause in the notification").
         // Media3's default keeps the foreground service alive while playWhenReady is
         // true, which is right for music apps with queues but wrong for live radio.
-        // stop() tears down playback, the wake/wifi locks, audio focus and the
+        // stop() tears down playback, the wake lock, audio focus and the
         // foreground notification; stopSelf() then lets the (now background) service
         // shut down normally. NOT super.onTaskRemoved() first — the default would
         // see isPlaying and keep the service in the foreground.

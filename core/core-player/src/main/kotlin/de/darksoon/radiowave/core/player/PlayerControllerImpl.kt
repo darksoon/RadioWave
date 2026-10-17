@@ -12,7 +12,6 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.Uri
-import android.os.PowerManager
 import android.os.SystemClock
 import android.util.Log
 import androidx.annotation.VisibleForTesting
@@ -78,13 +77,12 @@ class PlayerControllerImpl @Inject constructor(
     private val coverArtFetchDebounceMs = 800L
     private var playbackLostRecoveryJob: Job? = null
     private var restartGuardJob: Job? = null
-    private var wakeLock: PowerManager.WakeLock? = null
     private var reconnectAttempts = 0
     private var playbackLostRecoveryAttempts = 0
     private var userPausedPlayback = false
     private var isStopping = false
-    // Guards against WakeLock re-acquisition after release() — prevents a permanent
-    // wakelock if a Player.Listener callback fires after controllerScope.cancel().
+    // Set by release(): late callbacks (Player.Listener, controller bind) must not
+    // re-register callbacks or restart the service after controllerScope.cancel().
     @Volatile private var isReleased = false
     // Tracks whether registerClick was already called for the current station session.
     private var clickRegisteredForCurrentSession = false
@@ -211,61 +209,17 @@ class PlayerControllerImpl @Inject constructor(
             setupPlayerListeners(player)
             registerNetworkCallbackIfNeeded()
             registerAudioDeviceCallbackIfNeeded()
-            initializePlaybackLocks()
             player.volume = if (_playerState.value.isMuted) 0f else 1f
             exoPlayer = player
+            // Media3 assigns the session id asynchronously and reports it through
+            // onAudioSessionIdChanged; if it is already known, hand it over now so a
+            // preset chosen later still finds the session.
+            if (player.audioSessionId != C.AUDIO_SESSION_ID_UNSET) {
+                equalizerController.attach(player.audioSessionId)
+            }
             // Notify the session so it re-binds to the freshly created player. Runs on the
             // controller (main) thread, the same looper the player and session use.
             onSessionPlayerChanged?.invoke(player)
-        }
-    }
-
-    private fun initializePlaybackLocks() {
-        if (wakeLock == null) {
-            val powerManager = context.getSystemService(PowerManager::class.java)
-            wakeLock = powerManager?.newWakeLock(
-                PowerManager.PARTIAL_WAKE_LOCK,
-                "RadioWave:PlayerWakeLock",
-            )?.apply {
-                setReferenceCounted(false)
-            }
-        }
-        // WifiLock removed: WIFI_MODE_FULL is a no-op since Android 10 (API 29).
-        // Modern Android keeps Wi-Fi awake for active streams without a lock.
-    }
-
-    private fun updatePlaybackLocks(player: ExoPlayer?) {
-        // Skip entirely after release() to avoid re-acquiring a lock whose reference
-        // will be nulled out and lost → permanent wakelock until reboot.
-        if (isReleased) return
-        val currentPlayer = player ?: return
-        val keepAwake = currentPlayer.playWhenReady &&
-            (currentPlayer.isPlaying || currentPlayer.playbackState == Player.STATE_BUFFERING)
-
-        if (keepAwake) {
-            try {
-                if (wakeLock?.isHeld != true) {
-                    wakeLock?.acquire(30 * 60 * 1000L)
-                }
-            } catch (error: SecurityException) {
-                logWarning("WakeLock acquire failed: ${error.message}")
-            }
-        } else {
-            releasePlaybackLocks()
-        }
-    }
-
-    private fun releasePlaybackLocks() {
-        releaseWakeLock()
-    }
-
-    private fun releaseWakeLock() {
-        try {
-            if (wakeLock?.isHeld == true) {
-                wakeLock?.release()
-            }
-        } catch (error: RuntimeException) {
-            logWarning("WakeLock release failed: ${error.message}")
         }
     }
 
@@ -302,6 +256,12 @@ class PlayerControllerImpl @Inject constructor(
                     .setLoadErrorHandlingPolicy(RadioLoadErrorHandlingPolicy()),
             )
             .setHandleAudioBecomingNoisy(true)
+            // CPU wake lock held by Media3 exactly while playing or buffering, released
+            // on pause/stop/release. Replaces our own lock, whose 30-min timeout was only
+            // renewed on player state changes — long sessions
+            // without state changes outlived it.
+            // WifiLock stays off on purpose (WIFI_MODE_FULL is a no-op since API 29).
+            .setWakeMode(C.WAKE_MODE_LOCAL)
             .build()
             .also { activeBufferProfile = bufferProfile }
     }
@@ -362,7 +322,6 @@ class PlayerControllerImpl @Inject constructor(
         exoPlayer?.playWhenReady = false
         exoPlayer?.stop()
         abandonAudioFocus()
-        releasePlaybackLocks()
         _playerState.update {
             it.copy(
                 currentStation = station,
@@ -478,7 +437,6 @@ class PlayerControllerImpl @Inject constructor(
                 // Notification updates on transient state changes are no longer needed —
                 // Media3's DefaultMediaNotificationProvider redraws automatically from
                 // the player's state listeners.
-                updatePlaybackLocks(player)
             }
 
             override fun onPlaybackStateChanged(state: Int) {
@@ -537,7 +495,6 @@ class PlayerControllerImpl @Inject constructor(
                         isLoading = state == Player.STATE_BUFFERING,
                     )
                 }
-                updatePlaybackLocks(player)
             }
 
             override fun onPlayerError(error: PlaybackException) {
@@ -1128,12 +1085,15 @@ class PlayerControllerImpl @Inject constructor(
         wasDuckedForAudioFocus = true
     }
 
+    private fun restoreVolumeAfterDuck() {
+        if (!wasDuckedForAudioFocus) return
+        exoPlayer?.volume = if (_playerState.value.isMuted) 0f else 1f
+        wasDuckedForAudioFocus = false
+    }
+
     private fun resumePlaybackAfterAudioFocusGainIfNeeded() {
         val player = exoPlayer ?: return
-        if (wasDuckedForAudioFocus) {
-            player.volume = if (_playerState.value.isMuted) 0f else 1f
-            wasDuckedForAudioFocus = false
-        }
+        restoreVolumeAfterDuck()
         if (!shouldResumeAfterAudioFocusGain) return
         shouldResumeAfterAudioFocusGain = false
 
@@ -1156,7 +1116,12 @@ class PlayerControllerImpl @Inject constructor(
     private fun requestAudioFocus(): AudioFocusResult {
         val manager = audioManager ?: return AudioFocusResult.GRANTED
         return when (manager.requestAudioFocus(audioFocusRequest)) {
-            AudioManager.AUDIOFOCUS_REQUEST_GRANTED -> AudioFocusResult.GRANTED
+            AudioManager.AUDIOFOCUS_REQUEST_GRANTED -> {
+                // An immediate grant arrives as a return value, not as GAIN — so the
+                // duck from an earlier CAN_DUCK would otherwise stick at 25 %.
+                restoreVolumeAfterDuck()
+                AudioFocusResult.GRANTED
+            }
             AudioManager.AUDIOFOCUS_REQUEST_DELAYED -> AudioFocusResult.DELAYED
             else -> AudioFocusResult.FAILED
         }
@@ -1522,9 +1487,12 @@ class PlayerControllerImpl @Inject constructor(
         playbackForwardStack.clear()
         unregisterNetworkCallbackIfNeeded()
         stopForegroundPlaybackServiceIfRunning()
-        releasePlaybackLocks()
         abandonAudioFocus()
         _playerState.update { PlayerState() }
+        // The player outlives stop() (it is a singleton), but PlayerState() just reset
+        // isMuted to false. Without this the next play() ran silently at volume 0 while
+        // the UI showed the speaker as on — and tapping it then muted for real.
+        exoPlayer?.volume = 1f
         isStopping = false
     }
 
@@ -1551,7 +1519,6 @@ class PlayerControllerImpl @Inject constructor(
         unregisterNetworkCallbackIfNeeded()
         unregisterAudioDeviceCallbackIfNeeded()
         stopForegroundPlaybackServiceIfRunning()
-        releasePlaybackLocks()
         abandonAudioFocus()
         // Detach listener before release to avoid callbacks during/after teardown.
         exoPlayer?.let { p -> exoPlayerListener?.let { p.removeListener(it) } }
@@ -1560,7 +1527,6 @@ class PlayerControllerImpl @Inject constructor(
         exoPlayer?.release()
         exoPlayer = null
         activeBufferProfile = null
-        wakeLock = null
         _playerState.update { PlayerState() }
         isStopping = false
     }
@@ -1683,6 +1649,21 @@ class PlayerControllerImpl @Inject constructor(
     internal fun testSetPlayerState(state: PlayerState) {
         _playerState.value = state
     }
+
+    @VisibleForTesting
+    internal suspend fun testHandleAudioFocusChange(focusChange: Int) {
+        handleAudioFocusChange(focusChange)
+    }
+
+    @VisibleForTesting
+    internal fun testRequestAudioFocusGranted(): Boolean =
+        requestAudioFocus() == AudioFocusResult.GRANTED
+
+    @VisibleForTesting
+    internal fun testPlayerVolume(): Float? = exoPlayer?.volume
+
+    @VisibleForTesting
+    internal fun testIsEqualizerAttached(): Boolean = equalizerController.isAttached
 
     @VisibleForTesting
     internal fun testSetPlaybackLostRecoveryAttempts(value: Int) {
