@@ -2,6 +2,7 @@
 
 package de.darksoon.radiowave.core.player
 
+import android.media.AudioManager
 import androidx.test.core.app.ApplicationProvider
 import de.darksoon.radiowave.core.data.repository.StationRepository
 import de.darksoon.radiowave.core.model.Country
@@ -14,8 +15,10 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -117,6 +120,69 @@ class PlayerControllerImplBehaviorTest {
         runCurrent()
 
         assertNotNull(controller.playerState.value.currentStation)
+    }
+
+    @Test
+    fun `stop leaves the reused player audible after a mute`() = runTest {
+        val controller = createController(stations = emptyList())
+        controller.ensureSessionPlayer()
+
+        controller.toggleMute()
+        assertEquals(0f, controller.testPlayerVolume())
+        assertEquals(true, controller.playerState.value.isMuted)
+
+        controller.stop()
+
+        assertEquals(false, controller.playerState.value.isMuted)
+        assertEquals(1f, controller.testPlayerVolume())
+    }
+
+    @Test
+    fun `immediately granted audio focus lifts an earlier duck`() = runTest {
+        val controller = createController(stations = emptyList())
+        controller.ensureSessionPlayer()
+
+        controller.testHandleAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK)
+        assertEquals(0.25f, controller.testPlayerVolume())
+
+        assertTrue(controller.testRequestAudioFocusGranted())
+
+        assertEquals(1f, controller.testPlayerVolume())
+    }
+
+    @Test
+    fun `pausing while ducked does not leave the next play at 25 percent`() = runTest {
+        val controller = createController(stations = emptyList())
+        controller.ensureSessionPlayer()
+
+        controller.testHandleAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK)
+        // Pause abandons focus and clears the duck flag, but used to keep volume at 0.25.
+        controller.pauseForExternalPlayback()
+        assertTrue(controller.testRequestAudioFocusGranted())
+
+        assertEquals(1f, controller.testPlayerVolume())
+    }
+
+    @Test
+    fun `granted focus keeps a user mute while lifting the duck`() = runTest {
+        val controller = createController(stations = emptyList())
+        controller.ensureSessionPlayer()
+        controller.toggleMute()
+
+        // Muted players are never ducked, so the grant must leave volume at 0.
+        controller.testHandleAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK)
+        assertTrue(controller.testRequestAudioFocusGranted())
+
+        assertEquals(0f, controller.testPlayerVolume())
+    }
+
+    @Test
+    fun `flat preset keeps the equalizer out of the audio chain`() = runTest {
+        val controller = createController(stations = emptyList())
+        controller.ensureSessionPlayer()
+        runCurrent()
+
+        assertFalse(controller.testIsEqualizerAttached())
     }
 
     private fun createController(stations: List<Station>): PlayerControllerImpl {
