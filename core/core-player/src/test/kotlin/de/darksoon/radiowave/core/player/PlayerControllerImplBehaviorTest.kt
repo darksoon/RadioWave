@@ -151,6 +151,19 @@ class PlayerControllerImplBehaviorTest {
     }
 
     @Test
+    fun `pausing while ducked does not leave the next play at 25 percent`() = runTest {
+        val controller = createController(stations = emptyList())
+        controller.ensureSessionPlayer()
+
+        controller.testHandleAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK)
+        // Pause abandons focus and clears the duck flag, but used to keep volume at 0.25.
+        controller.pauseForExternalPlayback()
+        assertTrue(controller.testRequestAudioFocusGranted())
+
+        assertEquals(1f, controller.testPlayerVolume())
+    }
+
+    @Test
     fun `granted focus keeps a user mute while lifting the duck`() = runTest {
         val controller = createController(stations = emptyList())
         controller.ensureSessionPlayer()

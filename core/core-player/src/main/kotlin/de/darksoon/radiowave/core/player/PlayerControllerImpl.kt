@@ -1087,6 +1087,16 @@ class PlayerControllerImpl @Inject constructor(
 
     private fun restoreVolumeAfterDuck() {
         if (!wasDuckedForAudioFocus) return
+        applyAudibleVolume()
+    }
+
+    /**
+     * Volume as the user set it: 0 when muted, full otherwise. Used on every focus
+     * grant without looking at [wasDuckedForAudioFocus] — pause and abandonAudioFocus()
+     * clear that flag but leave the player at the ducked 25 %, so the flag alone can't
+     * tell whether a duck is still in effect.
+     */
+    private fun applyAudibleVolume() {
         exoPlayer?.volume = if (_playerState.value.isMuted) 0f else 1f
         wasDuckedForAudioFocus = false
     }
@@ -1114,12 +1124,12 @@ class PlayerControllerImpl @Inject constructor(
     private enum class AudioFocusResult { GRANTED, DELAYED, FAILED }
 
     private fun requestAudioFocus(): AudioFocusResult {
-        val manager = audioManager ?: return AudioFocusResult.GRANTED
+        val manager = audioManager ?: return AudioFocusResult.GRANTED.also { applyAudibleVolume() }
         return when (manager.requestAudioFocus(audioFocusRequest)) {
             AudioManager.AUDIOFOCUS_REQUEST_GRANTED -> {
                 // An immediate grant arrives as a return value, not as GAIN — so the
                 // duck from an earlier CAN_DUCK would otherwise stick at 25 %.
-                restoreVolumeAfterDuck()
+                applyAudibleVolume()
                 AudioFocusResult.GRANTED
             }
             AudioManager.AUDIOFOCUS_REQUEST_DELAYED -> AudioFocusResult.DELAYED
