@@ -199,6 +199,19 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    /** Player skip buttons: step through the favorites list (see [adjacentFavorite]). */
+    fun playAdjacentFavorite(step: Int) {
+        viewModelScope.launch {
+            // The full list — uiState.favoriteStations only holds Home's first six.
+            val station = adjacentFavorite(
+                favorites = favoriteRepository.getFavorites().first(),
+                currentUuid = playerState.value.currentStation?.uuid,
+                step = step,
+            ) ?: return@launch
+            playStationInternal(station, addCurrentToHistory = true)
+        }
+    }
+
     fun playPreviousStation() {
         val previousStation = playbackHistory.removeLastOrNull() ?: return
         playStationInternal(previousStation, addCurrentToHistory = false)

@@ -37,6 +37,8 @@
     <string name="player_cd_favorite_add">Zu Favoriten hinzufügen</string>
     <string name="player_cd_favorite_remove">Aus Favoriten entfernen</string>
     <string name="player_cd_skip_previous">Vorheriger Sender</string>
+    <string name="player_cd_previous_favorite">Vorheriger Favorit</string>
+    <string name="player_cd_next_favorite">Nächster Favorit</string>
     <string name="player_cd_volume_mute">Stummschalten</string>
     <string name="player_cd_volume_unmute">Ton an</string>
     <string name="player_cd_shuffle">Zufälliger Sender</string>
