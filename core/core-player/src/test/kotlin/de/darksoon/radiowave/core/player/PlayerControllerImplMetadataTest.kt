@@ -2,6 +2,7 @@
 
 package de.darksoon.radiowave.core.player
 
+import de.darksoon.radiowave.core.player.visualizer.AudioVisualizerTap
 import androidx.media3.common.MediaMetadata
 import androidx.test.core.app.ApplicationProvider
 import de.darksoon.radiowave.core.data.repository.AppSettingsState
@@ -129,7 +130,7 @@ class PlayerControllerImplMetadataTest {
 
     private fun createController(): PlayerControllerImpl {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        return PlayerControllerImpl(context, FakeStationRepository(), FakeSettingsRepository(), FakeCoverArtRepository()).also(controllers::add)
+        return PlayerControllerImpl(context, FakeStationRepository(), FakeSettingsRepository(), FakeCoverArtRepository(), AudioVisualizerTap()).also(controllers::add)
     }
 
     private fun station(uuid: String, favicon: String?): Station =

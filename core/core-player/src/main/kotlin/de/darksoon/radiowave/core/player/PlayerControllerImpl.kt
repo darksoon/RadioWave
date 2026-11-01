@@ -12,6 +12,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.Uri
+import android.os.Build
 import android.os.SystemClock
 import android.util.Log
 import androidx.annotation.VisibleForTesting
@@ -27,7 +28,10 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.extractor.metadata.icy.IcyInfo
 import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy
 import androidx.media3.exoplayer.upstream.LoadErrorHandlingPolicy
@@ -38,6 +42,10 @@ import de.darksoon.radiowave.core.model.PlayerError
 import de.darksoon.radiowave.core.model.PlayerState
 import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.model.StreamMetadata
+import de.darksoon.radiowave.core.model.duplicateKey
+import de.darksoon.radiowave.core.player.visualizer.AudioVisualizerTap
+import de.darksoon.radiowave.core.player.visualizer.VisualizerAudioProcessor
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -52,6 +60,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.cancel
 import javax.inject.Inject
@@ -65,6 +74,9 @@ class PlayerControllerImpl @Inject constructor(
     private val stationRepository: StationRepository,
     private val settingsRepository: de.darksoon.radiowave.core.data.repository.SettingsRepository,
     private val coverArtRepository: de.darksoon.radiowave.core.data.repository.CoverArtRepository,
+    // REA 95fcb33: neuer fünfter Konstruktorparameter (cp3.f3405e = ll3), siehe
+    // visualizer/AudioVisualizerTap.kt. Wird in den RenderersFactory gereicht.
+    private val visualizerTap: AudioVisualizerTap,
 ) : PlayerController {
 
     private var exoPlayer: ExoPlayer? = null
@@ -79,6 +91,28 @@ class PlayerControllerImpl @Inject constructor(
     private var restartGuardJob: Job? = null
     private var reconnectAttempts = 0
     private var playbackLostRecoveryAttempts = 0
+    // REA 95fcb33: Stream-Ausweichlogik bei Wiedergabefehlern (bp3.mo1238z, wi0, cp3.m1899h).
+    // cp3.f3426s — fast retries of the same stream before looking for another stream
+    // variant; cp3.f3422o — stream URLs that already failed in this session; cp3.f3423p —
+    // set once an error is classified as permanent: no automatic recovery path may restart
+    // the stream after that until the user starts/resumes playback again; cp3.f3424q —
+    // bumped by every user/stop/pause action so a running failover lookup can tell that it
+    // is stale; cp3.f3425r — the failover lookup job.
+    // REA-UNSICHER: Namen geraten, Semantik aus den Zugriffen abgeleitet.
+    private var quickRetryCount = 0
+    private val maxQuickRetries = 2
+    private val failedStreamUrls = LinkedHashSet<String>()
+    private val maxFailedStreamUrls = 5
+    private var isPermanentPlaybackFailure = false
+    // FIX 2026-11-01: whether the CURRENT stream URL reached STATE_READY in this session.
+    // Container/decoder errors after that are glitches of a live stream, not a broken URL.
+    private var currentStreamReachedReady = false
+    private var playbackGeneration = 0L
+    private var streamFailoverJob: Job? = null
+    private val failoverRestartDelayMs = 250L
+    // REA 95fcb33: cp3.f3398a0 — re-checks the output route for the EQ every 3 s while
+    // playing (ba2 Fall 12).
+    private var equalizerRouteJob: Job? = null
     private var userPausedPlayback = false
     private var isStopping = false
     // Set by release(): late callbacks (Player.Listener, controller bind) must not
@@ -129,6 +163,14 @@ class PlayerControllerImpl @Inject constructor(
     private val maxPlaybackHistorySize = 40
     private val audioManager: AudioManager? = context.getSystemService(AudioManager::class.java)
     private var audioDeviceCallback: AudioDeviceCallback? = null
+    // REA 95fcb33: cp3.f3414i0 (lazy e52 Fall 21) — media attributes for
+    // AudioManager.getAudioDevicesForAttributes (API 33+).
+    private val mediaPlaybackAttributes: PlatformAudioAttributes by lazy {
+        PlatformAudioAttributes.Builder()
+            .setUsage(PlatformAudioAttributes.USAGE_MEDIA)
+            .setContentType(PlatformAudioAttributes.CONTENT_TYPE_MUSIC)
+            .build()
+    }
     private val isDebuggableApp: Boolean by lazy {
         (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
     }
@@ -215,7 +257,10 @@ class PlayerControllerImpl @Inject constructor(
             // onAudioSessionIdChanged; if it is already known, hand it over now so a
             // preset chosen later still finds the session.
             if (player.audioSessionId != C.AUDIO_SESSION_ID_UNSET) {
-                equalizerController.attach(player.audioSessionId)
+                equalizerController.attach(
+                    player.audioSessionId,
+                    outputAllowsEffect = isEqualizerAllowedOnCurrentOutput(),
+                )
             }
             // Notify the session so it re-binds to the freshly created player. Runs on the
             // controller (main) thread, the same looper the player and session use.
@@ -231,7 +276,22 @@ class PlayerControllerImpl @Inject constructor(
             .setAllowCrossProtocolRedirects(true)
         val bufferDurations = resolveBufferDurations(bufferProfile)
 
-        return ExoPlayer.Builder(context)
+        // REA 95fcb33: eigener RenderersFactory (p000/qq2.java Konstruktor (cp3, Context),
+        // buildRenderers inlined in qq2.m8241j): die Audio-Senke bekommt den
+        // VisualizerAudioProcessor in die Prozessorkette. Er reicht das Audio unverändert durch.
+        // REA-UNSICHER: ob buildAudioSink überschrieben oder setAudioProcessors benutzt wurde,
+        // ist im Bytecode nicht unterscheidbar (beides ergibt DefaultAudioProcessorChain(ap4)).
+        val renderersFactory = object : DefaultRenderersFactory(context) {
+            override fun buildAudioSink(
+                context: Context,
+                enableFloatOutput: Boolean,
+                enableAudioTrackPlaybackParams: Boolean,
+            ): AudioSink = DefaultAudioSink.Builder(context)
+                .setAudioProcessors(arrayOf(VisualizerAudioProcessor(visualizerTap)))
+                .build()
+        }
+
+        return ExoPlayer.Builder(context, renderersFactory)
             .setAudioAttributes(
                 AudioAttributes.Builder()
                     .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
@@ -313,11 +373,15 @@ class PlayerControllerImpl @Inject constructor(
     ): Boolean {
         if (!isPlaybackBlockedByMobileDataPolicy()) return false
         userPausedPlayback = true // returning Wi-Fi must not unexpectedly start playback
+        streamFailoverJob?.cancel()
         reconnectJob?.cancel()
         bufferingWatchdogJob?.cancel()
         playbackLostRecoveryJob?.cancel()
         restartGuardJob?.cancel()
         coverArtFetchJob?.cancel()
+        // REA 95fcb33: auch der EQ-Routen-Job endet (cp3.m1897e).
+        equalizerRouteJob?.cancel()
+        equalizerRouteJob = null
         shouldResumeAfterAudioFocusGain = false
         exoPlayer?.playWhenReady = false
         exoPlayer?.stop()
@@ -385,10 +449,35 @@ class PlayerControllerImpl @Inject constructor(
         val listener = object : Player.Listener {
             override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
                 // MediaSession commands can reach ExoPlayer without togglePlayPause().
-                if (playWhenReady) blockPlaybackIfMobileDataForbidden()
+                if (playWhenReady && blockPlaybackIfMobileDataForbidden()) return
+                // FIX 2026-11-01 (Review P1-2): Play from steering wheel, Android Auto,
+                // notification or a BT button bypasses togglePlayPause(). Treat it like a
+                // manual resume, otherwise isPermanentPlaybackFailure stays set and every
+                // later error is silently ignored (no reconnect after the next dead spot).
+                if (playWhenReady &&
+                    reason == Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST &&
+                    !isInternalRestartInProgress
+                ) {
+                    resetFailureStateForManualResume()
+                }
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
+                // REA 95fcb33 (bp3.mo1234V): the spectrum only runs while audio actually
+                // plays; the EQ follows the output route, re-checked every 3 s while playing.
+                visualizerTap.setPlaybackActive(isPlaying)
+                refreshEqualizerForOutput()
+                if (!isPlaying) {
+                    equalizerRouteJob?.cancel()
+                    equalizerRouteJob = null
+                } else if (equalizerRouteJob?.isActive != true) {
+                    equalizerRouteJob = controllerScope.launch {
+                        while (isActive) {
+                            delay(EQUALIZER_ROUTE_CHECK_INTERVAL_MS)
+                            refreshEqualizerForOutput()
+                        }
+                    }
+                }
                 if (isPlaying && blockPlaybackIfMobileDataForbidden()) return
                 val now = SystemClock.elapsedRealtime()
                 _playerState.update {
@@ -456,7 +545,14 @@ class PlayerControllerImpl @Inject constructor(
                         restartGuardJob?.cancel()
                         logDebug("Player: STATE_READY")
                         reconnectAttempts = 0
+                        quickRetryCount = 0
                         playbackLostRecoveryAttempts = 0
+                        // FIX 2026-11-01 (Review P1-2/P3): a working stream ends the failure
+                        // episode; earlier failed URLs get a new chance next time.
+                        isPermanentPlaybackFailure = false
+                        currentStreamReachedReady = true
+                        failedStreamUrls.clear()
+                        streamFailoverJob?.cancel()
                         reconnectJob?.cancel()
                         bufferingWatchdogJob?.cancel()
                         playbackLostRecoveryJob?.cancel()
@@ -498,32 +594,47 @@ class PlayerControllerImpl @Inject constructor(
             }
 
             override fun onPlayerError(error: PlaybackException) {
-                val station = _playerState.value.currentStation
+                // REA 95fcb33 (bp3.mo1238z): neue Fehlerbehandlung.
+                //  1. bis zu [maxQuickRetries] normale Reconnects (exponentiell, kein 350-ms-
+                //     Schnellversuch mehr) — außer der Fehler ist dauerhaft (4xx, Format …),
+                //  2. danach wird die URL als gescheitert gemerkt und eine andere Stream-
+                //     Variante desselben Senders gesucht ([launchStreamFailover]),
+                //  3. nach [maxFailedStreamUrls] URLs oder erschöpften Reconnects: Fehler.
+                if (isStopping || userPausedPlayback || isPermanentPlaybackFailure) return
+                val station = _playerState.value.currentStation ?: return
+                val generation = playbackGeneration
                 logError("Player error ${error.errorCode}: ${error.message}", error)
                 bufferingWatchdogJob?.cancel()
+                playbackLostRecoveryJob?.cancel()
+                reconnectJob?.cancel()
+                streamFailoverJob?.cancel()
 
-                if (station != null && reconnectAttempts < maxReconnectAttempts) {
-                    val mappedError = mapPlayerError(error)
-                    val fastRetryDelayMs = if (mappedError is PlayerError.NetworkError) 350L else null
-                    scheduleReconnect(station, delayOverrideMs = fastRetryDelayMs)
+                val permanent = isPermanentForCurrentStream(error)
+                if (!permanent &&
+                    quickRetryCount < maxQuickRetries &&
+                    reconnectAttempts < maxReconnectAttempts
+                ) {
+                    quickRetryCount++
+                    scheduleReconnect(station, delayOverrideMs = null, countAttempt = true)
                     return
                 }
 
-                // Reconnect attempts exhausted. Deliberately NOT reported to Radio Browser:
-                // its API has no "broken" endpoint — the former reportBrokenStream() POSTed to
-                // json/vote/station, which *upvoted* the dead station. Radio Browser's own
-                // health checks flag unreachable streams (lastcheckok) without our help.
-                val mappedFinalError = mapPlayerError(error)
-
+                // Deliberately NOT reported to Radio Browser: its API has no "broken"
+                // endpoint (the former reportBrokenStream() upvoted the dead station).
+                failedStreamUrls.add(station.streamUrl)
+                if (failedStreamUrls.size >= maxFailedStreamUrls || reconnectAttempts >= maxReconnectAttempts) {
+                    failPlayback(error, permanent)
+                    return
+                }
                 _playerState.update {
                     it.copy(
-                        error = mappedFinalError,
+                        error = null,
                         isPlaying = false,
-                        isBuffering = false,
-                        isLoading = false,
+                        isBuffering = true,
+                        isLoading = true,
                     )
                 }
-                reconnectAttempts = 0
+                launchStreamFailover(station, generation, error, permanent)
             }
 
             override fun onMediaMetadataChanged(metadata: MediaMetadata) {
@@ -596,7 +707,16 @@ class PlayerControllerImpl @Inject constructor(
             }
 
             override fun onAudioSessionIdChanged(audioSessionId: Int) {
-                equalizerController.attach(audioSessionId)
+                equalizerController.attach(
+                    audioSessionId,
+                    outputAllowsEffect = isEqualizerAllowedOnCurrentOutput(),
+                )
+            }
+
+            // REA 95fcb33 (bp3.mo1231C): stream volume changes accompany most route
+            // switches (BT connect/disconnect) — a cheap extra trigger for the EQ check.
+            override fun onDeviceVolumeChanged(volume: Int, muted: Boolean) {
+                refreshEqualizerForOutput()
             }
         }
         exoPlayerListener = listener
@@ -604,7 +724,7 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private fun maybeRecoverFromLostState(player: ExoPlayer, reason: String) {
-        if (isStopping || userPausedPlayback) return
+        if (isStopping || userPausedPlayback || isPermanentPlaybackFailure) return
         if (isInternalRestartInProgress) return
         if (!player.playWhenReady) return
         val station = _playerState.value.currentStation ?: return
@@ -629,7 +749,7 @@ class PlayerControllerImpl @Inject constructor(
 
             val currentStation = _playerState.value.currentStation ?: return@launch
             if (currentStation.uuid != stationUuid) return@launch
-            if (isStopping || userPausedPlayback) return@launch
+            if (isStopping || userPausedPlayback || isPermanentPlaybackFailure) return@launch
             if (!player.playWhenReady) return@launch
             if (player.playbackState != Player.STATE_BUFFERING) return@launch
 
@@ -641,7 +761,11 @@ class PlayerControllerImpl @Inject constructor(
     private fun triggerPlaybackLostRecovery(station: Station, reason: String) {
         if (playbackLostRecoveryJob?.isActive == true) return
         if (reconnectJob?.isActive == true) return
-        if (isStopping || userPausedPlayback) return
+        // FIX 2026-11-01 (Review P1-1): the IDLE that follows every player error must not
+        // start a second recovery next to the stream failover — it used to restart the old,
+        // broken URL 700 ms later and kill the freshly selected alternative.
+        if (streamFailoverJob?.isActive == true) return
+        if (isStopping || userPausedPlayback || isPermanentPlaybackFailure) return
         if (isInternalRestartInProgress) return
 
         if (playbackLostRecoveryAttempts >= maxPlaybackLostRecoveryAttempts) {
@@ -676,9 +800,12 @@ class PlayerControllerImpl @Inject constructor(
             val player = exoPlayer ?: return@launch
             val currentStation = _playerState.value.currentStation ?: return@launch
             if (currentStation.uuid != station.uuid) return@launch
-            if (isStopping || userPausedPlayback) return@launch
+            if (isStopping || userPausedPlayback || isPermanentPlaybackFailure) return@launch
+            if (streamFailoverJob?.isActive == true || reconnectJob?.isActive == true) return@launch
 
-            restartStream(player, station)
+            // FIX 2026-11-01: current state, not the captured object — after a failover the
+            // station carries a different streamUrl.
+            restartStream(player, currentStation)
         }
     }
 
@@ -902,7 +1029,7 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private suspend fun attemptRecoveryAfterNetworkReturn() {
-        if (isStopping || userPausedPlayback) return
+        if (isStopping || userPausedPlayback || isPermanentPlaybackFailure) return
         if (!networkLossObserved) return
 
         val now = SystemClock.elapsedRealtime()
@@ -919,6 +1046,9 @@ class PlayerControllerImpl @Inject constructor(
         if (!shouldRecover) return
 
         networkLossObserved = false
+        // REA 95fcb33 (vo3 Fall 2): a returning network gives every stream a new chance.
+        failedStreamUrls.clear()
+        quickRetryCount = 0
         logDebug("Network restored. Triggering fast stream recovery.")
         reconnectAttempts = 0
         scheduleReconnect(station, delayOverrideMs = networkRecoveryDelayMs, countAttempt = false)
@@ -952,9 +1082,100 @@ class PlayerControllerImpl @Inject constructor(
 
             val player = exoPlayer ?: return@launch
             if (_playerState.value.currentStation?.uuid != station.uuid) return@launch
-
-            restartStream(player, station)
+            // REA 95fcb33 (ap3 Fall 0): neue Abbruchbedingungen; neu gestartet wird der
+            // AKTUELLE Sender aus dem State — nach einem Failover hat er eine andere streamUrl.
+            if (isStopping || userPausedPlayback || isPermanentPlaybackFailure) return@launch
+            val current = _playerState.value.currentStation ?: return@launch
+            restartStream(player, current)
         }
+    }
+
+    /**
+     * REA 95fcb33: neu (cp3.m1899h). Ends the automatic recovery for this session and shows
+     * the mapped error. A permanent error additionally blocks all recovery paths until the
+     * user starts or resumes playback.
+     */
+    private fun failPlayback(
+        error: PlaybackException,
+        permanent: Boolean = isPermanentForCurrentStream(error),
+    ) {
+        isPermanentPlaybackFailure = permanent
+        reconnectJob?.cancel()
+        playbackLostRecoveryJob?.cancel()
+        bufferingWatchdogJob?.cancel()
+        exoPlayer?.playWhenReady = false
+        val mapped = mapPlayerError(error)
+        _playerState.update {
+            it.copy(
+                error = mapped,
+                isPlaying = false,
+                isBuffering = false,
+                isLoading = false,
+            )
+        }
+    }
+
+    /**
+     * REA 95fcb33: neu (p000/wi0.java, letzter Fall). Looks for another stream of the same
+     * station among the locally known variants and continues with it; gives up with
+     * [failPlayback] when none is left.
+     */
+    private fun launchStreamFailover(
+        station: Station,
+        generation: Long,
+        error: PlaybackException,
+        permanent: Boolean,
+    ) {
+        playbackLostRecoveryJob?.cancel()
+        streamFailoverJob = controllerScope.launch {
+            val variants = try {
+                stationRepository.getCachedStationVariants(station)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                emptyList()
+            }
+            if (!isActive) return@launch
+            if (generation != playbackGeneration) return@launch
+            if (isStopping || userPausedPlayback || isPermanentPlaybackFailure) return@launch
+            if (_playerState.value.currentStation?.streamUrl != station.streamUrl) return@launch
+
+            val alternative = selectFailoverStream(station, variants, failedStreamUrls)
+            if (alternative == null) {
+                // FIX 2026-11-01 (Review P2-1): most stations have no known alternative URL.
+                // For a transient error (dead spot, tunnel) keep the v1.0.19 behaviour:
+                // exponential backoff up to maxReconnectAttempts on the same URL.
+                if (!permanent && reconnectAttempts < maxReconnectAttempts) {
+                    scheduleReconnect(station, delayOverrideMs = null, countAttempt = true)
+                } else {
+                    failPlayback(error, permanent)
+                }
+                return@launch
+            }
+            val next = station.copy(
+                streamUrl = alternative.streamUrl,
+                codec = alternative.codec,
+                bitrate = alternative.bitrate,
+            )
+            quickRetryCount = 0
+            currentStreamReachedReady = false
+            coverArtFetchJob?.cancel()
+            _playerState.update { it.copy(currentStation = next) }
+            scheduleReconnect(next, delayOverrideMs = failoverRestartDelayMs, countAttempt = true)
+        }
+    }
+
+    /** FIX 2026-11-01 (Review P2-2): see [isPermanentStreamError]. */
+    private fun isPermanentForCurrentStream(error: PlaybackException): Boolean =
+        isPermanentStreamError(error, streamWasReady = currentStreamReachedReady)
+
+    /** A user-initiated resume gives every stream a new chance. */
+    private fun resetFailureStateForManualResume() {
+        isPermanentPlaybackFailure = false
+        failedStreamUrls.clear()
+        quickRetryCount = 0
+        reconnectAttempts = 0
+        playbackLostRecoveryAttempts = 0
     }
 
     private fun computeReconnectDelayMs(attempt: Int): Long {
@@ -1055,7 +1276,13 @@ class PlayerControllerImpl @Inject constructor(
             }
 
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-                duckPlaybackForAudioFocus()
+                // REA 95fcb33 (os1 Fall 2) paused here when the setting was on.
+                // FIX 2026-11-01: never pause for a duck request. Pausing a live stream
+                // left it a few seconds behind live after every navigation prompt (the
+                // buffer kept growing until the connection broke). With the setting on
+                // the stream now keeps running silently and is audible again, live, as
+                // soon as focus returns; otherwise it plays on at 25 %.
+                duckPlaybackForAudioFocus(silent = settingsState.value.pauseForNavigation)
             }
 
             AudioManager.AUDIOFOCUS_GAIN -> resumePlaybackAfterAudioFocusGainIfNeeded()
@@ -1063,6 +1290,9 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private fun pausePlaybackForAudioFocus(resumeWhenFocusReturns: Boolean) {
+        // REA 95fcb33 (cp3.m1907p): ein laufender Failover wird verworfen.
+        playbackGeneration++
+        streamFailoverJob?.cancel()
         val player = exoPlayer ?: return
         val shouldResume = resumeWhenFocusReturns &&
             !userPausedPlayback &&
@@ -1078,10 +1308,10 @@ class PlayerControllerImpl @Inject constructor(
         wasDuckedForAudioFocus = false
     }
 
-    private fun duckPlaybackForAudioFocus() {
+    private fun duckPlaybackForAudioFocus(silent: Boolean = false) {
         val player = exoPlayer ?: return
         if (_playerState.value.isMuted) return
-        player.volume = 0.25f
+        player.volume = if (silent) 0f else NAVIGATION_DUCK_VOLUME
         wasDuckedForAudioFocus = true
     }
 
@@ -1254,6 +1484,14 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private suspend fun startPlayback(station: Station) {
+        // REA 95fcb33 (cp3.m1916z): Spektrum zurücksetzen, Failover-Zustand neu beginnen.
+        visualizerTap.reset()
+        playbackGeneration++
+        streamFailoverJob?.cancel()
+        isPermanentPlaybackFailure = false
+        currentStreamReachedReady = false
+        failedStreamUrls.clear()
+        quickRetryCount = 0
         reconnectJob?.cancel()
         bufferingWatchdogJob?.cancel()
         playbackLostRecoveryJob?.cancel()
@@ -1327,7 +1565,15 @@ class PlayerControllerImpl @Inject constructor(
 
     override fun togglePlayPause() {
         exoPlayer?.let { player ->
-            if (player.isPlaying) {
+            // REA 95fcb33 (lx3.m6552d): also pauses while connecting/buffering — the UI now
+            // shows "pause" in that state too (MainPlaybackButton, mini player).
+            val state = _playerState.value
+            // FIX 2026-11-01 (Review P2-3): in an error state (recovery exhausted) playWhenReady
+            // may still be true — the first tap must restart, not "pause" a silent player.
+            val isActive = player.isPlaying ||
+                (state.error == null && !userPausedPlayback &&
+                    (state.isLoading || state.isBuffering || player.playWhenReady))
+            if (isActive) {
                 pauseForExternalPlayback(markAsUserPaused = true)
             } else {
                 if (blockPlaybackIfMobileDataForbidden()) return
@@ -1344,6 +1590,8 @@ class PlayerControllerImpl @Inject constructor(
                     return
                 }
                 userPausedPlayback = false
+                // REA 95fcb33: a manual resume gives every stream a new chance.
+                resetFailureStateForManualResume()
                 registerNetworkCallbackIfNeeded()
                 if (focus == AudioFocusResult.DELAYED) {
                     // Wait for the system to grant focus, then resume — see startPlayback.
@@ -1352,7 +1600,12 @@ class PlayerControllerImpl @Inject constructor(
                     return
                 }
                 val currentStation = _playerState.value.currentStation
-                if (currentStation != null && (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED)) {
+                if (currentStation != null && (
+                        state.error != null ||
+                            player.playbackState == Player.STATE_IDLE ||
+                            player.playbackState == Player.STATE_ENDED
+                        )
+                ) {
                     restartStream(player, currentStation)
                 } else {
                     player.playWhenReady = true
@@ -1367,6 +1620,9 @@ class PlayerControllerImpl @Inject constructor(
     }
 
     private fun pauseForExternalPlayback(markAsUserPaused: Boolean) {
+        // REA 95fcb33 (cp3.m1906o)
+        playbackGeneration++
+        streamFailoverJob?.cancel()
         val player = exoPlayer ?: return
         userPausedPlayback = markAsUserPaused
         shouldResumeAfterAudioFocusGain = false
@@ -1393,8 +1649,14 @@ class PlayerControllerImpl @Inject constructor(
         if (audioDeviceCallback != null) return
         val manager = audioManager ?: return
         val callback = object : AudioDeviceCallback() {
+            // REA 95fcb33 (C0760to Fall 1): neue Ausgabe → EQ-Freigabe neu prüfen.
+            override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>) {
+                refreshEqualizerForOutput()
+            }
+
             override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>) {
                 handleAudioOutputDevicesRemoved(removedDevices)
+                refreshEqualizerForOutput()
             }
         }
         // null handler => callbacks are delivered on the main thread, matching the
@@ -1448,6 +1710,29 @@ class PlayerControllerImpl @Inject constructor(
 
     private fun isExternalOutputType(type: Int): Boolean = type in EXTERNAL_OUTPUT_DEVICE_TYPES
 
+    /**
+     * REA 95fcb33: neu (cp3.m1902k, Smali-geprüft). The EQ stays off while media is routed to
+     * a Bluetooth sink: some BT stacks go silent with an effect in the chain
+     * (settings_eq_bluetooth_note). API 33+ asks for the actual media route; older devices
+     * (or an empty answer) fall back to "any connected output", which is stricter.
+     */
+    private fun isEqualizerAllowedOnCurrentOutput(): Boolean {
+        val manager = audioManager ?: return false
+        val routed: List<AudioDeviceInfo>? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            runCatching { manager.getAudioDevicesForAttributes(mediaPlaybackAttributes) }.getOrNull()
+        } else {
+            null
+        }
+        val devices = routed?.takeIf { it.isNotEmpty() }
+            ?: manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS).toList()
+        return devices.none { it.type in BLUETOOTH_OUTPUT_DEVICE_TYPES }
+    }
+
+    /** REA 95fcb33: neu (cp3.m1888c). */
+    private fun refreshEqualizerForOutput() {
+        equalizerController.setOutputAllowsEffect(isEqualizerAllowedOnCurrentOutput())
+    }
+
     override fun toggleMute() {
         val player = exoPlayer ?: return
         val shouldMute = !_playerState.value.isMuted
@@ -1479,7 +1764,10 @@ class PlayerControllerImpl @Inject constructor(
     override fun sessionPlayer(): Player? = exoPlayer
 
     override fun stop() {
+        // REA 95fcb33 (cp3.m1891A)
+        playbackGeneration++
         isStopping = true
+        streamFailoverJob?.cancel()
         reconnectJob?.cancel()
         bufferingWatchdogJob?.cancel()
         playbackLostRecoveryJob?.cancel()
@@ -1510,6 +1798,11 @@ class PlayerControllerImpl @Inject constructor(
         isReleased = true
         isStopping = true
         controllerScope.cancel()
+        // REA-UNSICHER: release() ist im Handy-Build nicht mehr vorhanden (von R8 entfernt,
+        // weil ungenutzt); die neuen Jobs werden hier der Vollständigkeit halber beendet.
+        streamFailoverJob?.cancel()
+        equalizerRouteJob?.cancel()
+        visualizerTap.reset()
         reconnectJob?.cancel()
         bufferingWatchdogJob?.cancel()
         playbackLostRecoveryJob?.cancel()
@@ -1676,6 +1969,11 @@ class PlayerControllerImpl @Inject constructor(
     internal fun testIsEqualizerAttached(): Boolean = equalizerController.isAttached
 
     @VisibleForTesting
+    internal fun testStartFakeStreamFailover() {
+        streamFailoverJob = controllerScope.launch { delay(60_000L) }
+    }
+
+    @VisibleForTesting
     internal fun testSetPlaybackLostRecoveryAttempts(value: Int) {
         playbackLostRecoveryAttempts = value
     }
@@ -1761,6 +2059,19 @@ class PlayerControllerImpl @Inject constructor(
             AudioDeviceInfo.TYPE_BUS,
         )
         const val thermalMetadataUpdateMinIntervalMs = 2_500L
+
+        /** REA 95fcb33: cp3.f3367l0 — Bluetooth outputs on which the EQ stays off. */
+        val BLUETOOTH_OUTPUT_DEVICE_TYPES = setOf(
+            AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
+            AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+            AudioDeviceInfo.TYPE_HEARING_AID,
+            AudioDeviceInfo.TYPE_BLE_HEADSET,
+            AudioDeviceInfo.TYPE_BLE_SPEAKER,
+            AudioDeviceInfo.TYPE_BLE_BROADCAST,
+        )
+
+        /** REA 95fcb33: ba2 Fall 12, delay(3000). */
+        const val EQUALIZER_ROUTE_CHECK_INTERVAL_MS = 3_000L
         // Hoisted regexes — compiled once, reused across all ICY metadata frames.
         val STREAM_TITLE_REGEX = Regex("(?i)StreamTitle='([^']*)'")
         val TITLE_SPLIT_REGEX = Regex("\\s[-–|]\\s")
@@ -1786,10 +2097,14 @@ private class RadioLoadErrorHandlingPolicy : DefaultLoadErrorHandlingPolicy() {
         val exception = loadErrorInfo.exception
         val errorCount = loadErrorInfo.errorCount
 
-        if (exception is HttpDataSource.InvalidResponseCodeException) {
-            if (exception.responseCode == 404 || exception.responseCode == 410) {
-                return C.TIME_UNSET
-            }
+        // REA 95fcb33 (p000/jx3.java): no load retries for any client error except
+        // 408 Request Timeout / 429 Too Many Requests (was: only 404 and 410).
+        if (exception is HttpDataSource.InvalidResponseCodeException &&
+            exception.responseCode in 400..499 &&
+            exception.responseCode != 408 &&
+            exception.responseCode != 429
+        ) {
+            return C.TIME_UNSET
         }
 
         val baseDelayMs = min(1_000L * errorCount, 8_000L)
@@ -1799,4 +2114,84 @@ private class RadioLoadErrorHandlingPolicy : DefaultLoadErrorHandlingPolicy() {
     override fun getMinimumLoadableRetryCount(dataType: Int): Int {
         return 3
     }
+}
+
+
+private const val NAVIGATION_DUCK_VOLUME = 0.25f
+
+/**
+ * REA 95fcb33: neu (p000/ch4.java m1641r). An error the stream won't recover from by itself:
+ * an HTTP client error (4xx except 408/429) anywhere in the first 12 causes, or a file-not-found,
+ * content-type, container or decoder error.
+ */
+@UnstableApi
+internal fun isPermanentStreamError(
+    error: PlaybackException,
+    streamWasReady: Boolean = false,
+): Boolean {
+    var cause: Throwable? = error
+    repeat(12) {
+        val current = cause ?: return@repeat
+        if (current is HttpDataSource.InvalidResponseCodeException) {
+            val code = current.responseCode
+            return code in 400..499 && code != 408 && code != 429
+        }
+        cause = current.cause.takeUnless { it === current }
+    }
+    // FIX 2026-11-01 (Review P2-2): live Icecast/Shoutcast streams produce occasional
+    // malformed-container / decode errors mid-stream (server hiccup, metadata glitch). Once
+    // this URL has played, those are retried like network errors.
+    if (streamWasReady && error.errorCode in TRANSIENT_AFTER_READY_ERROR_CODES) return false
+    return error.errorCode in PERMANENT_ERROR_CODES
+}
+
+private val TRANSIENT_AFTER_READY_ERROR_CODES = setOf(
+    PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED,
+    PlaybackException.ERROR_CODE_DECODING_FAILED,
+)
+
+private val PERMANENT_ERROR_CODES = setOf(
+    PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND,
+    PlaybackException.ERROR_CODE_IO_INVALID_HTTP_CONTENT_TYPE,
+    PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED,
+    PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED,
+    PlaybackException.ERROR_CODE_DECODER_INIT_FAILED,
+    PlaybackException.ERROR_CODE_DECODING_FAILED,
+    PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED,
+)
+
+/**
+ * REA 95fcb33: Kandidatenwahl aus p000/wi0.java (Filterkette tm0/px3/zr1/sd4/zb2, Sortierung
+ * e00/bg1). Same station identity ([duplicateKey]), not custom, not yet failed, never a
+ * scheme downgrade, at most the original bitrate; https first, then highest bitrate.
+ */
+internal fun selectFailoverStream(
+    station: Station,
+    variants: List<Station>,
+    failedStreamUrls: Set<String>,
+): Station? {
+    if (station.isCustom || station.uuid.startsWith("custom-")) return null
+    val identity = station.duplicateKey() ?: return null
+    val originalIsHttps = station.streamUrl.startsWith("https://", ignoreCase = true)
+    val originalBitrate = station.bitrate ?: 0
+    return variants.asSequence()
+        .filter { !it.isCustom && it.duplicateKey() == identity }
+        .filter { it.streamUrl != station.streamUrl && it.streamUrl !in failedStreamUrls }
+        .filter { candidate ->
+            val uri = runCatching { java.net.URI(candidate.streamUrl) }.getOrNull()
+            uri?.host != null && (
+                uri.scheme.equals("https", ignoreCase = true) ||
+                    (!originalIsHttps && uri.scheme.equals("http", ignoreCase = true))
+                )
+        }
+        .distinctBy { it.streamUrl }
+        .filter { candidate ->
+            val bitrate = candidate.bitrate ?: 0
+            originalBitrate <= 0 || bitrate in 1..originalBitrate
+        }
+        .sortedWith(
+            compareByDescending<Station> { it.streamUrl.startsWith("https://", ignoreCase = true) }
+                .thenByDescending { it.bitrate ?: 0 },
+        )
+        .firstOrNull()
 }

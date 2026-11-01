@@ -42,4 +42,15 @@
     <string name="player_cd_volume_mute">Mute</string>
     <string name="player_cd_volume_unmute">Unmute</string>
     <string name="player_cd_shuffle">Random station</string>
+
+    <!-- REA 95fcb33: neu im Handy-Build (aus resources.arsc rekonstruiert) -->
+    <string name="audio_bluetooth">Bluetooth settings</string>
+    <string name="audio_devices">Audio output</string>
+    <string name="audio_devices_help">Choose your output in Android. Use the Cast button in the player for Chromecast.</string>
+    <string name="audio_system_controls">Android audio controls</string>
+    <string name="audio_visualizer_cast">Spectrum is available during local playback.</string>
+    <string name="audio_visualizer_hint">Live audio spectrum · active only while this player is visible</string>
+    <string name="audio_visualizer_off">Disable spectrum</string>
+    <string name="audio_visualizer_on">Enable spectrum</string>
+    <!-- REA rest: saved_tracks_* liegen nur noch in feature-savedtracks/res (Duplikate entfernt). -->
 </resources>

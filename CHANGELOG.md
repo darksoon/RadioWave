@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.20] - 2026-11-01
+
+### Added
+- New design: new logo, header artwork, genre images, reworked colours and typography; light, dark and system theme.
+- Car mode: big station buttons, high contrast, screen stays on — for head units and phone mounts without Android Auto.
+- Audio spectrum in the player, computed from the decoded audio (no microphone), only while visible; off in Cast and thermal mode.
+- Customisable home screen: pick genres, sort favourites, “Continue listening” card, search across stations and genres.
+- Saved songs: keep up to 100 songs locally, copy or delete them.
+- Settings in categories with a search and an “Advanced & troubleshooting” section.
+- Separate auto quality for Wi-Fi and mobile data, Wi-Fi-only playback, Android Auto autoplay, online cover lookup can be switched off.
+- Stream failover: if a stream address fails, another known stream of the same station is tried (never a scheme downgrade, never a higher bitrate).
+- Equalizer is bypassed on Bluetooth headphones.
+
+### Fixed
+- Recovery after a failover no longer restarts the broken stream and kills the fallback stream.
+- Play from the steering wheel, Android Auto, notification or a Bluetooth button after an error re-enables automatic reconnects.
+- Without a fallback stream, transient errors reconnect with backoff (up to 10 attempts) again instead of giving up after 2.
+- Container/decoder glitches of a stream that already played are no longer treated as permanent.
+- Play button in the error state restarts on the first tap.
+- Navigation prompts never pause the stream (it used to fall behind live); the option now mutes instead of ducking.
+
+## [1.0.18 – 1.0.19] - 2026-10-17
+
 ### Added
 - For car head units (suggested by a user): optional auto-play of the last station when the app opens, optional "reopen the last view" (last tab and fullscreen player), and a larger mini-player with a 64 dp play/pause button in landscape.
 - Privacy settings to turn off play reports to Radio Browser and online cover lookup; the README now lists every outbound connection.

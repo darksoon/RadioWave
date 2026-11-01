@@ -44,4 +44,19 @@
     <string name="onboarding_step_mirror_title">Faster search, even offline</string>
     <string name="onboarding_step_mirror_body">RadioWave can store the full station directory (~15 MB, updated weekly over Wi-Fi) on your device. Search becomes instant and typo-tolerant — and keeps working when the directory server is down. You can change this anytime in Settings.</string>
     <string name="onboarding_mirror_opt_in_label">Store directory locally</string>
+
+    <!-- REA 95fcb33: neu im Handy-Build (aus resources.arsc rekonstruiert) -->
+    <string name="car_favorites">Favorites</string>
+    <string name="car_mode_close">Close car mode</string>
+    <string name="car_mode_connecting">Connecting…</string>
+    <string name="car_mode_empty">Play a station first — your favourites and recents will appear here.</string>
+    <string name="car_mode_error">Playback failed — tap to retry</string>
+    <string name="car_mode_now_playing">Now playing</string>
+    <string name="car_mode_pause">Pause</string>
+    <string name="car_mode_paused">Paused</string>
+    <string name="car_mode_play">Play</string>
+    <string name="car_mode_subtitle">Large targets, high contrast, screen stays on</string>
+    <string name="car_mode_title">Car mode</string>
+    <string name="car_mode_wifi_required">Wi-Fi required</string>
+    <string name="car_recent">Recently played</string>
 </resources>

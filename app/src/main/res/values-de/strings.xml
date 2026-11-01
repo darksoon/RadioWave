@@ -44,4 +44,19 @@
     <string name="onboarding_step_mirror_title">Schnellere Suche, auch offline</string>
     <string name="onboarding_step_mirror_body">RadioWave kann das komplette Senderverzeichnis (~15 MB, wöchentlich über WLAN aktualisiert) auf deinem Gerät speichern. Die Suche wird sofortig und tippfehlertolerant — und funktioniert auch, wenn der Verzeichnis-Server ausfällt. Jederzeit in den Einstellungen änderbar.</string>
     <string name="onboarding_mirror_opt_in_label">Verzeichnis lokal speichern</string>
+
+    <!-- REA 95fcb33: neu im Handy-Build (aus resources.arsc rekonstruiert) -->
+    <string name="car_favorites">Favoriten</string>
+    <string name="car_mode_close">Auto-Modus schließen</string>
+    <string name="car_mode_connecting">Verbinde …</string>
+    <string name="car_mode_empty">Spiele zuerst einen Sender — dann erscheinen hier Favoriten und Zuletzt gehört.</string>
+    <string name="car_mode_error">Wiedergabe fehlgeschlagen – erneut starten</string>
+    <string name="car_mode_now_playing">Läuft gerade</string>
+    <string name="car_mode_pause">Pausieren</string>
+    <string name="car_mode_paused">Pausiert</string>
+    <string name="car_mode_play">Abspielen</string>
+    <string name="car_mode_subtitle">Große Tasten, hoher Kontrast, Display bleibt an</string>
+    <string name="car_mode_title">Auto-Modus</string>
+    <string name="car_mode_wifi_required">WLAN erforderlich</string>
+    <string name="car_recent">Zuletzt gehört</string>
 </resources>

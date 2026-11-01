@@ -80,10 +80,10 @@
     <string name="settings_buffer_small">Klein</string>
     <string name="settings_buffer_medium">Mittel</string>
     <string name="settings_buffer_large">Groß</string>
-    <string name="settings_outage_buffer_title">Netzausfall-Puffer (MVP)</string>
+    <string name="settings_outage_buffer_title">Kurze Verbindungsabbrüche überbrücken</string> <!-- REA 95fcb33: Text geaendert -->
     <string name="settings_outage_buffer_subtitle">Erhöht den Puffer und wartet länger bei kurzen Verbindungsabbrüchen.</string>
     <string name="settings_thermal_mode_title">Hitzemodus (Auto/Laden)</string>
-    <string name="settings_thermal_mode_subtitle">Reduziert die Last: kleines Pufferprofil und weniger Metadaten- sowie Cover-Aktualisierungen.</string>
+    <string name="settings_thermal_mode_subtitle">Nutzt das kleine Pufferprofil, um die Last zu begrenzen. Titel und Cover bleiben verfügbar.</string> <!-- REA 95fcb33: Text geaendert -->
     <string name="settings_insecure_streams_title">Unsichere HTTP-Streams anzeigen</string>
     <string name="settings_insecure_streams_subtitle">Wenn deaktiviert, werden HTTP-Sender ausgeblendet.</string>
     <string name="settings_data_section_privacy">Datenschutz</string>
@@ -113,7 +113,7 @@
     <string name="settings_import_favorites_unsupported_version">Dieses Backup wurde mit einer neueren RadioWave-Version erstellt und kann noch nicht importiert werden</string>
     <string name="settings_import_favorites_result">%1$d Favoriten importiert (%2$d bereits vorhanden, %3$d ungültig oder nicht erlaubt)</string>
     <string name="settings_import_playlist_title">Sender aus Playlist importieren</string>
-    <string name="settings_import_playlist_subtitle">Custom-Sender im Bulk aus einer M3U/M3U8- oder PLS-Playlist-Datei hinzufügen.</string>
+    <string name="settings_import_playlist_subtitle">Mehrere eigene Sender aus einer M3U/M3U8- oder PLS-Datei hinzufügen.</string> <!-- REA 95fcb33: Text geaendert -->
     <string name="settings_import_playlist_action">Playlist importieren</string>
     <string name="settings_import_playlist_empty">Keine importierbaren Sender in dieser Datei gefunden (max. 2 MB)</string>
     <string name="settings_import_playlist_result">%1$d Sender importiert, %2$d übersprungen</string>
@@ -159,4 +159,40 @@
     <string name="settings_station_mirror_last_sync">%1$d Sender · zuletzt aktualisiert %2$s</string>
     <string name="settings_station_mirror_never_synced">Noch nicht heruntergeladen</string>
     <string name="settings_station_mirror_sync_now">Jetzt aktualisieren</string>
+
+    <!-- REA 95fcb33: neu im Handy-Build (aus resources.arsc rekonstruiert) -->
+    <string name="settings_advanced_category">Erweitert &amp; Fehlerhilfe</string>
+    <string name="settings_advanced_summary">Puffer, Akku &amp; Diagnose</string>
+    <string name="settings_auto_off">Android Auto: Autoplay aus</string>
+    <string name="settings_auto_on">Android Auto: Autoplay an</string>
+    <string name="settings_auto_quality_explanation">Gilt im Qualitätsmodus Auto beim Senderstart. Für Mobilfunk muss die Wiedergabe erlaubt sein.</string>
+    <string name="settings_auto_quality_help">Auto wählt beim Senderstart die WLAN- oder Mobilfunkpräferenz. Getaktetes WLAN nutzt die Mobilfunkpräferenz. Änderungen gelten ab dem nächsten Senderstart; laufende Wiedergabe wird nicht unterbrochen.</string>
+    <string name="settings_cache_explanation">Leert temporäre Such- und Cover-Suchdaten. Ein aktiviertes lokales Senderverzeichnis bleibt erhalten.</string>
+    <string name="settings_cancel">Abbrechen</string>
+    <string name="settings_car_category">Auto &amp; Geräte</string>
+    <string name="settings_car_mode_action">Öffnen</string>
+    <string name="settings_car_mode_subtitle">Große Bedienelemente fürs Armaturenbrett. Öffnet ohne Navigation und Mini-Player.</string>
+    <string name="settings_car_mode_title">Auto-Modus</string>
+    <string name="settings_covers_off">Online-Covers deaktiviert</string>
+    <string name="settings_covers_on">Online-Covers aktiviert</string>
+    <string name="settings_display_category">Darstellung &amp; Bedienung</string>
+    <string name="settings_eq_bluetooth_note">Auf Bluetooth-Kopfhörern bleibt der Equalizer aus Kompatibilitätsgründen aus. Das Preset greift wieder bei Lautsprecher, Kabel oder USB.</string>
+    <string name="settings_history_explanation">Deinen Hörverlauf löschen? Deine Favoriten bleiben erhalten. Das lässt sich nicht rückgängig machen.</string>
+    <string name="settings_info_category">Über RadioWave &amp; Support</string>
+    <string name="settings_mobile_allowed">Mobile Daten erlaubt</string>
+    <string name="settings_mobile_quality_title">Auto-Qualität: Mobilfunk / getaktet</string>
+    <string name="settings_navigation_help">Während Ansagen stumm statt leiser. Der Sender läuft weiter und ist danach sofort wieder live.</string>
+    <string name="settings_navigation_title">Bei Navigationsansagen stummschalten</string>
+    <string name="settings_network_category">Netzwerk &amp; Speicher</string>
+    <string name="settings_output_title">Audioausgabe</string>
+    <string name="settings_playback_category">Wiedergabe &amp; Klang</string>
+    <string name="settings_privacy_category">Datenschutz &amp; Daten</string>
+    <string name="settings_search">Einstellungen suchen</string>
+    <string name="settings_search_empty">Keine passenden Einstellungen</string>
+    <string name="settings_theme_light">Hell</string>
+    <string name="settings_theme_system">Systemeinstellung</string>
+    <string name="settings_visualizer_help">Live-Spektrum im Player anzeigen. Ohne Mikrofonzugriff.</string>
+    <string name="settings_visualizer_title">Audiospektrum</string>
+    <string name="settings_wifi_only">Wiedergabe nur über WLAN</string>
+    <string name="settings_wifi_quality_title">Auto-Qualität: WLAN / ungetaktet</string>
 </resources>

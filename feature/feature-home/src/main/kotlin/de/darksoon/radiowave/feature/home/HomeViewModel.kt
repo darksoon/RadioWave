@@ -46,6 +46,7 @@ import android.os.SystemClock
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
+    // REA 95fcb33: Konstruktor unverändert (qs1(Context, fd3, i91, j04, lx3, oh4, wr4)).
     private val stationRepository: StationRepository,
     private val favoriteRepository: FavoriteRepository,
     private val recentRepository: RecentRepository,
@@ -61,6 +62,19 @@ class HomeViewModel @Inject constructor(
     private val isDebuggable: Boolean by lazy {
         (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
     }
+
+    /**
+     * Genre strip on Home. Starts with the remembered "home_start_genre" so a cold start shows
+     * the last chosen genre without a visible switch.
+     * REA 95fcb33: p000/qs1.java Konstruktor — or1(stationRepository, viewModelScope,
+     * settingsRepository.initialSnapshotBlocking().homeStartGenre).
+     */
+    private val genreController = HomeGenreController(
+        stationRepository = stationRepository,
+        scope = viewModelScope,
+        initialGenre = settingsRepository.initialSnapshotBlocking().homeStartGenre,
+    )
+    val genreState: StateFlow<HomeGenreState> = genreController.state
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -165,6 +179,37 @@ class HomeViewModel @Inject constructor(
         if (now - lastRefreshAtElapsedMs < minRefreshIntervalMs) return
         lastRefreshAtElapsedMs = now
         loadData(forceRefresh = true)
+        // REA 95fcb33 (p000/rr1.java Fall 0/1): pull-to-refresh also reloads the genre strip.
+        genreController.select(genreState.value.selectedGenre, forceRefresh = true)
+    }
+
+    /**
+     * Genre tile tapped. Only genres the user enabled for Home are accepted; the choice is
+     * remembered as the start genre for the next launch.
+     * REA 95fcb33: "selectGenre(Ljava/lang/String;)V" (p000/C0661r.java Fall 4, C0624q Fall 28).
+     */
+    fun selectGenre(genre: String) {
+        if (genre !in appSettings.value.homeGenres) return
+        genreController.select(genre, forceRefresh = false)
+        viewModelScope.launch { settingsRepository.setHomeStartGenre(genre) }
+    }
+
+    /** "Try again" under a failed/empty genre. REA 95fcb33: "retryGenre()V" (p000/C0486m9.java Fall 4). */
+    fun retryGenre() {
+        genreController.select(genreState.value.selectedGenre, forceRefresh = true)
+    }
+
+    /**
+     * Saves the "Customize Home" dialog. Removing the selected genre makes the repository fall
+     * back to the first remaining one, which is then loaded.
+     * REA 95fcb33: "updateHome(Ljava/util/List;ZZ)V" (p000/ks1.java → p000/fn0.java Fall 1).
+     */
+    fun updateHome(genres: List<String>, showRecent: Boolean, showDiscover: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setHomeLayout(genres, showRecent, showDiscover)
+            val startGenre = settingsRepository.data.first().homeStartGenre
+            genreController.select(startGenre, forceRefresh = false)
+        }
     }
 
     fun playStation(station: Station) {

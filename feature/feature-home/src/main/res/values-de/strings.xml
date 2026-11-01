@@ -4,21 +4,38 @@
     <string name="home_section_all">Alle</string>
     <string name="home_section_recent">Zuletzt gehört</string>
     <string name="home_section_discover">Entdecken</string>
-    <string name="home_section_similar">Ähnliche Sender</string>
     <string name="home_section_similar_because">Weil du %1$s hörst</string>
-    <string name="home_empty_title">Baue deinen Radio-Feed</string>
-    <string name="home_empty_subtitle">Entdecke trendende Sender und starte deine erste Favoritenliste.</string>
-    <string name="home_play_station">Sender %1$s abspielen</string>
-    <string name="home_error_load">Fehler beim Laden: %1$s</string>
-    <string name="home_error_search">Fehler bei der Suche: %1$s</string>
     <string name="home_error_no_connection">Keine Internetverbindung oder DNS-Problem.</string>
     <string name="home_error_timeout">Zeitüberschreitung. Bitte versuche es erneut.</string>
     <string name="home_error_api">API-Fehler: %1$s</string>
     <string name="home_error_unknown">Unbekannter Fehler</string>
-    <string name="home_empty_cta">Sender entdecken</string>
     <string name="home_favorite_now_playing">Läuft gerade</string>
     <plurals name="home_favorites_show_all">
         <item quantity="one">Alle %1$d Favoriten anzeigen</item>
         <item quantity="other">Alle %1$d Favoriten anzeigen</item>
     </plurals>
+
+    <!-- REA 95fcb33: neu im Handy-Build (aus resources.arsc rekonstruiert). Entfernt, weil im
+         Handy-Build nicht mehr vorhanden: home_section_similar, home_empty_title/subtitle/cta,
+         home_play_station, home_error_load, home_error_search. -->
+    <string name="home_cancel">Abbrechen</string>
+    <string name="home_continue_connecting">Verbinde …</string>
+    <string name="home_continue_listening">Weiterhören</string>
+    <string name="home_continue_pause">Pausieren</string>
+    <string name="home_continue_play">Abspielen</string>
+    <string name="home_continue_playing">Läuft gerade</string>
+    <string name="home_customize">Startseite anpassen</string>
+    <string name="home_customize_help">Wähle mindestens ein Genre. Schiebe deine Favoriten nach oben. Das zuletzt gewählte Genre bleibt auf diesem Gerät gespeichert.</string>
+    <string name="home_genre_empty">Keine Sender für dieses Genre gefunden.</string>
+    <string name="home_genre_error">Dieses Genre konnte nicht geladen werden.</string>
+    <string name="home_genre_retry">Erneut versuchen</string>
+    <string name="home_genre_stations">%1$s-Sender</string>
+    <string name="home_move_up">%1$s nach oben verschieben</string>
+    <string name="home_save">Speichern</string>
+    <string name="home_search_hint">Sender und Genres suchen</string>
+    <string name="home_your_genres">Deine Genres</string>
+    <!-- REA rest: aus v1.0.19 wiederhergestellt. Im Handy-Build per Resource-Shrinking weg, weil
+         StationListItem.kt (ungenutzt, von R8 entfernt) der einzige Nutzer ist. Ohne den String
+         kompiliert StationListItem.kt nicht. -->
+    <string name="home_play_station">Sender %1$s abspielen</string>
 </resources>

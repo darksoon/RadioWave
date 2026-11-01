@@ -80,10 +80,10 @@
     <string name="settings_buffer_small">Small</string>
     <string name="settings_buffer_medium">Medium</string>
     <string name="settings_buffer_large">Large</string>
-    <string name="settings_outage_buffer_title">Outage buffer (MVP)</string>
+    <string name="settings_outage_buffer_title">Bridge short connection outages</string> <!-- REA 95fcb33: Text geaendert -->
     <string name="settings_outage_buffer_subtitle">Increases stream buffer and waits longer during short connection drops.</string>
     <string name="settings_thermal_mode_title">Thermal mode (car/charging)</string>
-    <string name="settings_thermal_mode_subtitle">Reduces load: smaller buffer profile + fewer metadata/artwork updates.</string>
+    <string name="settings_thermal_mode_subtitle">Uses the small buffer profile to limit load. Titles and covers remain available.</string> <!-- REA 95fcb33: Text geaendert -->
     <string name="settings_insecure_streams_title">Show insecure HTTP streams</string>
     <string name="settings_insecure_streams_subtitle">If disabled, HTTP stations are hidden.</string>
     <string name="settings_data_section_privacy">Privacy</string>
@@ -113,7 +113,7 @@
     <string name="settings_import_favorites_unsupported_version">This backup was created with a newer version of RadioWave and can\'t be imported yet</string>
     <string name="settings_import_favorites_result">Imported %1$d favorites (%2$d already existed, %3$d invalid or not allowed)</string>
     <string name="settings_import_playlist_title">Import stations from playlist</string>
-    <string name="settings_import_playlist_subtitle">Bulk-add custom stations from an M3U/M3U8 or PLS playlist file.</string>
+    <string name="settings_import_playlist_subtitle">Bulk-add custom stations from an M3U/M3U8 or PLS playlist file.</string> <!-- REA 95fcb33: nur values-de geaendert -->
     <string name="settings_import_playlist_action">Import playlist</string>
     <string name="settings_import_playlist_empty">No importable stations found in this file (max. 2 MB)</string>
     <string name="settings_import_playlist_result">Imported %1$d station(s), skipped %2$d</string>
@@ -159,4 +159,40 @@
     <string name="settings_station_mirror_last_sync">%1$d stations · last updated %2$s</string>
     <string name="settings_station_mirror_never_synced">Not downloaded yet</string>
     <string name="settings_station_mirror_sync_now">Update now</string>
+
+    <!-- REA 95fcb33: neu im Handy-Build (aus resources.arsc rekonstruiert) -->
+    <string name="settings_advanced_category">Advanced &amp; troubleshooting</string>
+    <string name="settings_advanced_summary">Buffer, battery &amp; diagnostics</string>
+    <string name="settings_auto_off">Android Auto: autoplay off</string>
+    <string name="settings_auto_on">Android Auto: autoplay on</string>
+    <string name="settings_auto_quality_explanation">Used in Auto quality mode when starting a station. Mobile streaming must be allowed.</string>
+    <string name="settings_auto_quality_help">Auto selects the Wi-Fi or mobile preference at station start. Metered Wi-Fi uses the mobile preference. Changes apply at the next station start; playback is not interrupted.</string>
+    <string name="settings_cache_explanation">Clears temporary search and cover lookup data. An enabled local station directory is kept.</string>
+    <string name="settings_cancel">Cancel</string>
+    <string name="settings_car_category">Car &amp; devices</string>
+    <string name="settings_car_mode_action">Open</string>
+    <string name="settings_car_mode_subtitle">Large controls for the dashboard. Opens without navigation or mini player.</string>
+    <string name="settings_car_mode_title">Car mode</string>
+    <string name="settings_covers_off">Online cover lookup disabled</string>
+    <string name="settings_covers_on">Online cover lookup enabled</string>
+    <string name="settings_display_category">Appearance &amp; controls</string>
+    <string name="settings_eq_bluetooth_note">On Bluetooth headphones the equalizer stays off for compatibility. The preset applies again on speaker, wired or USB.</string>
+    <string name="settings_history_explanation">Delete your listening history? Your favourites are kept. This cannot be undone.</string>
+    <string name="settings_info_category">About &amp; support</string>
+    <string name="settings_mobile_allowed">Mobile data allowed</string>
+    <string name="settings_mobile_quality_title">Automatic quality: mobile / metered</string>
+    <string name="settings_navigation_help">Silent instead of quieter during prompts. The station keeps playing and is live again right away.</string>
+    <string name="settings_navigation_title">Mute for navigation</string>
+    <string name="settings_network_category">Network &amp; storage</string>
+    <string name="settings_output_title">Audio output</string>
+    <string name="settings_playback_category">Playback &amp; sound</string>
+    <string name="settings_privacy_category">Privacy &amp; data</string>
+    <string name="settings_search">Search settings</string>
+    <string name="settings_search_empty">No matching settings</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_system">System default</string>
+    <string name="settings_visualizer_help">Show the live spectrum in the player. No microphone access.</string>
+    <string name="settings_visualizer_title">Audio spectrum</string>
+    <string name="settings_wifi_only">Wi-Fi playback only</string>
+    <string name="settings_wifi_quality_title">Automatic quality: Wi-Fi / unmetered</string>
 </resources>

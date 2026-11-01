@@ -3,11 +3,6 @@
 package de.darksoon.radiowave.feature.player
 
 import android.os.SystemClock
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -48,7 +43,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -90,6 +84,13 @@ fun FloatingPlayerBar(
     val currentStation: Station? = playerState.currentStation
     val isPlaying: Boolean = playerState.isPlaying
     val isBuffering: Boolean = playerState.isBuffering
+    // REA 95fcb33 (p000/AbstractC0395jt.java m5452J, Release p000/n52.java m7840d):
+    // Farbe des Covers aus dem Vollbild-Player (ArtworkColorCache) tönt den Hintergrund;
+    // Play/Pause zeigt "Pause" auch beim Verbinden; LIVE-Punkt pulsiert nicht mehr;
+    // die Unschärfe (blur 18 dp) über dem Glanz-Verlauf ist entfallen.
+    val artworkColor: Color? = (playerState.metadata?.albumArtUrl ?: currentStation?.faviconUrl)
+        ?.let { ArtworkColorCache[it] }
+    val isActive: Boolean = isPlaying || isBuffering || playerState.isLoading
     val compactMetadata: String? = buildCompactMetadata(
         stationName = currentStation?.name,
         metadataTitle = playerState.metadata?.title,
@@ -115,17 +116,6 @@ fun FloatingPlayerBar(
         // Adding playedDurationMs on top of that double-counted after a pause/resume.
         val livePlayedDurationMs = connectedDurationMs(playerState, nowElapsedMs) ?: playedDurationMs
         val sessionDurationLabel = formatStreamDuration(livePlayedDurationMs.coerceAtLeast(0L))
-
-        val liveDotTransition = rememberInfiniteTransition(label = "miniLiveDot")
-        val liveDotAlpha by liveDotTransition.animateFloat(
-            initialValue = 0.3f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 900),
-                repeatMode = RepeatMode.Reverse,
-            ),
-            label = "miniLiveDotAlpha",
-        )
 
         val playerShape = RoundedCornerShape(32.dp)
         val dismissState = rememberSwipeToDismissBoxState()
@@ -155,7 +145,7 @@ fun FloatingPlayerBar(
                         .background(
                             Brush.linearGradient(
                                 colors = listOf(
-                                    Color(0xE0202C3A),
+                                    artworkColor?.copy(alpha = 0.94f) ?: Color(0xE0202C3A),
                                     Color(0xCC161C2A),
                                 ),
                             ),
@@ -174,7 +164,6 @@ fun FloatingPlayerBar(
                     Box(
                         modifier = Modifier
                             .matchParentSize()
-                            .blur(18.dp)
                             .background(
                                 Brush.radialGradient(
                                     colors = listOf(
@@ -243,7 +232,7 @@ fun FloatingPlayerBar(
                                             modifier = Modifier
                                                 .size(5.dp)
                                                 .clip(CircleShape)
-                                                .background(Color(0xFFFF3B3B).copy(alpha = liveDotAlpha)),
+                                                .background(Color(0xFFFF3B3B)),
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                     }
@@ -334,8 +323,8 @@ fun FloatingPlayerBar(
                                     enabled = !isBuffering,
                                 ) {
                                     Icon(
-                                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                        contentDescription = if (isPlaying) {
+                                        imageVector = if (isActive) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                        contentDescription = if (isActive) {
                                             stringResource(R.string.player_pause)
                                         } else {
                                             stringResource(R.string.player_play)

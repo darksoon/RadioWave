@@ -4,21 +4,38 @@
     <string name="home_section_all">All</string>
     <string name="home_section_recent">Recently played</string>
     <string name="home_section_discover">Discover</string>
-    <string name="home_section_similar">Similar Stations</string>
     <string name="home_section_similar_because">Because you\'re listening to %1$s</string>
-    <string name="home_empty_title">Build your radio feed</string>
-    <string name="home_empty_subtitle">Discover trending stations and start your first favorites collection.</string>
-    <string name="home_play_station">Play %1$s</string>
-    <string name="home_error_load">Error loading: %1$s</string>
-    <string name="home_error_search">Search error: %1$s</string>
     <string name="home_error_no_connection">No internet connection or DNS problem.</string>
     <string name="home_error_timeout">Request timed out. Please try again.</string>
     <string name="home_error_api">API error: %1$s</string>
     <string name="home_error_unknown">Unknown error</string>
-    <string name="home_empty_cta">Discover stations</string>
     <string name="home_favorite_now_playing">Now playing</string>
     <plurals name="home_favorites_show_all">
         <item quantity="one">Show all %1$d favorite</item>
         <item quantity="other">Show all %1$d favorites</item>
     </plurals>
+
+    <!-- REA 95fcb33: neu im Handy-Build (aus resources.arsc rekonstruiert). Entfernt, weil im
+         Handy-Build nicht mehr vorhanden: home_section_similar, home_empty_title/subtitle/cta,
+         home_play_station, home_error_load, home_error_search. -->
+    <string name="home_cancel">Cancel</string>
+    <string name="home_continue_connecting">Connecting…</string>
+    <string name="home_continue_listening">Continue listening</string>
+    <string name="home_continue_pause">Pause</string>
+    <string name="home_continue_play">Play</string>
+    <string name="home_continue_playing">Playing now</string>
+    <string name="home_customize">Customize Home</string>
+    <string name="home_customize_help">Choose at least one genre. Move your favourites up. Your last selected genre is remembered on this device.</string>
+    <string name="home_genre_empty">No stations found for this genre.</string>
+    <string name="home_genre_error">Could not load this genre.</string>
+    <string name="home_genre_retry">Try again</string>
+    <string name="home_genre_stations">%1$s stations</string>
+    <string name="home_move_up">Move %1$s up</string>
+    <string name="home_save">Save</string>
+    <string name="home_search_hint">Search stations and genres</string>
+    <string name="home_your_genres">Your genres</string>
+    <!-- REA rest: aus v1.0.19 wiederhergestellt. Im Handy-Build per Resource-Shrinking weg, weil
+         StationListItem.kt (ungenutzt, von R8 entfernt) der einzige Nutzer ist. Ohne den String
+         kompiliert StationListItem.kt nicht. -->
+    <string name="home_play_station">Play %1$s</string>
 </resources>

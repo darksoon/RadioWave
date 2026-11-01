@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="saved_tracks_title">Gemerkte Titel</string>
+    <string name="saved_tracks_save">Titel merken</string>
+    <string name="saved_tracks_saved">Titel gemerkt</string>
+    <string name="saved_tracks_error">Titel konnten nicht gelesen oder gespeichert werden. Bitte erneut versuchen.</string>
+    <string name="saved_tracks_explanation">Bis zu 100 Titel werden nur auf diesem Gerät gemerkt. Es wird kein Audio aufgenommen.</string>
+    <string name="saved_tracks_empty">Merke dir einen Song im Player, sobald sein Titel verfügbar ist.</string>
+    <string name="saved_tracks_copy">Interpret und Titel kopieren</string>
+    <string name="saved_tracks_remove">%1$s entfernen</string>
+    <string name="saved_tracks_clear">Gemerkte Titel löschen</string>
+    <string name="saved_tracks_clear_confirm">Alle gemerkten Titel löschen? Deine Senderfavoriten bleiben erhalten.</string>
+    <string name="saved_tracks_close">Schließen</string>
+</resources>

@@ -63,6 +63,14 @@ class SettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, settingsRepository.initialSnapshotBlocking())
 
     // Setters — thin wrappers around SettingsRepository. UI dispatches onChange events here.
+    // REA 95fcb33: im Build alle in Lambdas inlined (p000/mi4.java = Boolean-Setter in
+    // alphabetischer Reihenfolge, p000/ni4.java = String-Setter); als Funktionsreferenzen
+    // namentlich belegt: setVisualizerEnabled, setPauseForNavigation, setWifiAudioQuality,
+    // setMobileAudioQuality (xa4-Referenzen in gc5.java / C0491me / aa1).
+    fun setVisualizerEnabled(v: Boolean) = viewModelScope.launch { settingsRepository.setVisualizerEnabled(v) }
+    fun setPauseForNavigation(v: Boolean) = viewModelScope.launch { settingsRepository.setPauseForNavigation(v) }
+    fun setWifiAudioQuality(v: String) = viewModelScope.launch { settingsRepository.setWifiAudioQuality(v) }
+    fun setMobileAudioQuality(v: String) = viewModelScope.launch { settingsRepository.setMobileAudioQuality(v) }
     fun setThemeMode(v: String) = viewModelScope.launch { settingsRepository.setThemeMode(v) }
     fun setAppLanguage(v: String) = viewModelScope.launch { settingsRepository.setAppLanguage(v) }
     fun setDynamicColors(v: Boolean) = viewModelScope.launch { settingsRepository.setDynamicColors(v) }

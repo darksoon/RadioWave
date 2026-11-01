@@ -17,6 +17,8 @@ import de.darksoon.radiowave.core.data.repository.RecentRepository
 import de.darksoon.radiowave.core.data.repository.SettingsRepository
 import de.darksoon.radiowave.core.data.repository.StationRepository
 import de.darksoon.radiowave.core.model.Station
+import de.darksoon.radiowave.core.model.collapseDuplicateStations
+import de.darksoon.radiowave.core.model.duplicateKey
 import de.darksoon.radiowave.core.player.RadioPlayerManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -27,9 +29,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -88,6 +90,12 @@ class BrowseViewModel @Inject constructor(
     private val _selectedCountry = MutableStateFlow<String?>(null)
     val selectedCountry: StateFlow<String?> = _selectedCountry.asStateFlow()
 
+    // REA 95fcb33 (p000/m00.java f12705h/f12706i): the quick-genre selection moved from the
+    // screen (remember) into the ViewModel. A selected genre is loaded by TAG instead of being
+    // typed into the search field.
+    private val _selectedGenre = MutableStateFlow<String?>(null)
+    val selectedGenre: StateFlow<String?> = _selectedGenre.asStateFlow()
+
     val playerState: StateFlow<de.darksoon.radiowave.core.model.PlayerState> = playerManager.playerState
 
     /** Live flag for showing HTTP-only streams — drives the visible-stations filter. */
@@ -115,6 +123,13 @@ class BrowseViewModel @Inject constructor(
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
+    // REA 95fcb33 (p000/m00.java f12722y, C0648qn Fall 2): duplicate keys of all favorites, so a
+    // directory variant of a favourite station (other stream URL/bitrate) also shows the heart.
+    val favoriteDuplicateKeys: StateFlow<Set<String>> = favoriteRepository.getFavorites()
+        .map { favs -> favs.mapNotNull { it.duplicateKey() }.toSet() }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
     // Recent station UUIDs — used as a ranking boost. Sourced from repo, not from a cross-VM uiState.
     private val recentBoostIds: StateFlow<Set<String>> = recentRepository.getRecentStations(limit = 20)
         .map { recents -> recents.mapTo(HashSet<String>(recents.size)) { it.uuid } as Set<String> }
@@ -123,14 +138,17 @@ class BrowseViewModel @Inject constructor(
 
     init {
         if (isDebuggable) Log.d("RadioWave", "BrowseViewModel initialized (q='${_searchQuery.value}')")
-        loadInitial()
         setupSearch()
     }
 
     /** [forceRefresh]: explicit user refresh — bypass the repository's TTL cache once. */
     private fun loadInitial(forceRefresh: Boolean = false) {
-        // If no search/country active, show top stations as the default browse landing.
-        if (_searchQuery.value.isBlank() && _selectedCountry.value == null) {
+        // REA 95fcb33 (p000/m00.java#m6587i): a selected quick genre wins over search/country.
+        val genre = _selectedGenre.value
+        if (genre != null) {
+            loadStationsByGenre(genre, forceRefresh)
+        } else if (_searchQuery.value.isBlank() && _selectedCountry.value == null) {
+            // If no search/country active, show top stations as the default browse landing.
             loadTopStations(forceRefresh)
         } else if (_selectedCountry.value != null) {
             loadStationsByCountry(_selectedCountry.value!!, _searchQuery.value, forceRefresh)
@@ -139,20 +157,64 @@ class BrowseViewModel @Inject constructor(
         }
     }
 
+    // REA 95fcb33 (p000/m00.java Konstruktor, Ende): query, country AND genre are combined and
+    // debounced together; the first emission performs the initial load (the explicit
+    // loadInitial() + drop(1) of v1.0.19 is gone).
+    // REA-UNSICHER: Reihenfolge debounce → distinctUntilChanged aus der Operator-Verschachtelung
+    // (ym0/td1 = debounce(250), n10.m6944t = distinctUntilChanged) abgeleitet.
     @OptIn(FlowPreview::class)
     private fun setupSearch() {
         combine(
-            _searchQuery.debounce(250),
+            _searchQuery,
             _selectedCountry,
-        ) { query, country -> query to country }
-            .drop(1)
-            .onEach { (query, country) ->
-                if (query.isBlank() && country == null) {
-                    loadTopStations()
-                } else if (country != null) {
-                    loadStationsByCountry(country, query)
-                } else {
-                    searchStations(query)
+            _selectedGenre,
+        ) { query, country, genre -> Triple(query, country, genre) }
+            .debounce(250)
+            .distinctUntilChanged()
+            .onEach { loadInitial(forceRefresh = false) }
+            .launchIn(viewModelScope)
+    }
+
+    /** Favourite uuids right now — used to prefer the favourite variant when collapsing. */
+    private suspend fun currentFavoriteIds(): Set<String> = withContext(Dispatchers.IO) {
+        favoriteRepository.getFavorites().first().mapTo(HashSet()) { it.uuid }
+    }
+
+    // REA 95fcb33 (p000/m00.java#m6587i Zweig 1, c00 Fall 0, b00 Fall 0, a00 Fall 1):
+    // genre = Radio-Browser tag, optionally narrowed to the selected country.
+    private fun loadStationsByGenre(genre: String, forceRefresh: Boolean = false) {
+        resultsJob?.cancel()
+        resultsJob = stationRepository.getStationsByTag(genre, forceRefresh)
+            .onStart { _uiState.update { it.copy(isLoading = true) } }
+            .onEach { stations ->
+                val favoriteIds = currentFavoriteIds()
+                val country = _selectedCountry.value
+                val sorted = withContext(Dispatchers.Default) {
+                    val filtered = if (country != null) {
+                        stations.filter { it.countryCode.equals(country, ignoreCase = true) }
+                    } else {
+                        stations
+                    }
+                    collapseDuplicateStations(
+                        rankAndSortStations(filtered, query = "", selectedCountryCode = country),
+                        favoriteIds,
+                    )
+                }
+                _uiState.update {
+                    it.copy(
+                        results = sorted.take(50),
+                        searchResultCount = sorted.size,
+                        isLoading = false,
+                        error = null,
+                    )
+                }
+            }
+            .catch { error ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = context.getString(R.string.browse_error_load, error.message ?: ""),
+                    )
                 }
             }
             .launchIn(viewModelScope)
@@ -163,8 +225,13 @@ class BrowseViewModel @Inject constructor(
         resultsJob = stationRepository.getTopStations(forceRefresh)
             .onStart { _uiState.update { it.copy(isLoading = true) } }
             .onEach { stations ->
+                // REA 95fcb33 (c00 Fall 1 → d00 Fall 0): variants collapsed, favourite preferred.
+                val favoriteIds = currentFavoriteIds()
                 val sorted = withContext(Dispatchers.Default) {
-                    rankAndSortStations(stations.take(60), query = "", selectedCountryCode = null)
+                    collapseDuplicateStations(
+                        rankAndSortStations(stations.take(60), query = "", selectedCountryCode = null),
+                        favoriteIds,
+                    )
                 }
                 _uiState.update {
                     it.copy(
@@ -192,6 +259,8 @@ class BrowseViewModel @Inject constructor(
         resultsJob = stationRepository.getStationsByCountry(countryCode, forceRefresh)
             .onStart { _uiState.update { it.copy(isLoading = true) } }
             .onEach { stations ->
+                // REA 95fcb33 (C0158dc Fall 2 → C0474ly Fall 1): + collapseDuplicateStations.
+                val favoriteIds = currentFavoriteIds()
                 val sorted = withContext(Dispatchers.Default) {
                     val filtered = if (query.isNotBlank()) {
                         stations.filter { station ->
@@ -201,7 +270,7 @@ class BrowseViewModel @Inject constructor(
                     } else {
                         stations
                     }
-                    rankAndSortStations(filtered, query, countryCode)
+                    collapseDuplicateStations(rankAndSortStations(filtered, query, countryCode), favoriteIds)
                 }
                 _uiState.update {
                     it.copy(
@@ -229,8 +298,13 @@ class BrowseViewModel @Inject constructor(
         resultsJob = stationRepository.searchStations(query, forceRefresh)
             .onStart { _uiState.update { it.copy(isLoading = true) } }
             .onEach { stations ->
+                // REA 95fcb33 (C0698s Fall 6 → b00 Fall 1): + collapseDuplicateStations.
+                val favoriteIds = currentFavoriteIds()
                 val sorted = withContext(Dispatchers.Default) {
-                    rankAndSortStations(stations, query, selectedCountryCode = null)
+                    collapseDuplicateStations(
+                        rankAndSortStations(stations, query, selectedCountryCode = null),
+                        favoriteIds,
+                    )
                 }
                 _uiState.update {
                     it.copy(
@@ -256,7 +330,18 @@ class BrowseViewModel @Inject constructor(
     // ─── Public actions ───────────────────────────────────────────────────────
 
     fun onSearchQueryChange(query: String) {
+        // REA 95fcb33 (AbstractC0920xz az Fall 0): typing leaves genre mode.
+        _selectedGenre.value = null
         _searchQuery.value = query
+    }
+
+    /**
+     * Selects (or clears with null/blank) a quick genre. Clears the search text.
+     * REA 95fcb33 (p000/m00.java#m6588j, smali geprüft). REA-UNSICHER: Name geraten.
+     */
+    fun selectGenre(genre: String?) {
+        _selectedGenre.value = genre?.trim()?.lowercase(Locale.ROOT)?.takeIf { it.isNotEmpty() }
+        _searchQuery.value = ""
     }
 
     fun onCountrySelected(countryCode: String?) {
@@ -292,7 +377,21 @@ class BrowseViewModel @Inject constructor(
     }
 
     fun toggleFavorite(station: Station) {
-        viewModelScope.launch { favoriteRepository.toggleFavorite(station) }
+        // REA 95fcb33 (p000/l00.java Fall 0): if any favourite is a variant of this station
+        // (same duplicateKey), remove all of those variants; otherwise toggle as before.
+        viewModelScope.launch {
+            val key = station.duplicateKey()
+            val matchingFavorites = if (key == null) {
+                emptyList()
+            } else {
+                favoriteRepository.getFavorites().first().filter { it.duplicateKey() == key }
+            }
+            if (matchingFavorites.isEmpty()) {
+                favoriteRepository.toggleFavorite(station)
+            } else {
+                matchingFavorites.forEach { favoriteRepository.removeFavorite(it.uuid) }
+            }
+        }
     }
 
     // ─── Ranking helpers (extracted from HomeViewModel) ───────────────────────

@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.VerticalAlignTop
@@ -38,6 +39,8 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -68,6 +71,7 @@ import de.darksoon.radiowave.core.model.Station
 import de.darksoon.radiowave.core.ui.components.ErrorState
 import de.darksoon.radiowave.core.ui.components.FavoritesSkeletonLoader
 import de.darksoon.radiowave.core.ui.components.LoadingState
+import de.darksoon.radiowave.core.ui.components.RadioWaveScreenHeader
 import de.darksoon.radiowave.core.ui.components.StationLogoImage
 import de.darksoon.radiowave.core.ui.components.StationNameText
 import de.darksoon.radiowave.core.ui.components.StreamQualityBadge
@@ -212,10 +216,10 @@ private fun FavoritesContent(
                     .padding(top = 12.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = stringResource(R.string.favorites_screen_title),
-                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White,
+                // REA 95fcb33 (C0255fz Fall 5): Titel jetzt über den Marken-Header aus core-ui
+                // (Header-Art + Wortmarke + Titel) statt headlineLarge-Text in Weiß.
+                RadioWaveScreenHeader(
+                    title = stringResource(R.string.favorites_screen_title),
                     modifier = Modifier.weight(1f),
                 )
                 if (stations.isNotEmpty()) {
@@ -226,7 +230,8 @@ private fun FavoritesContent(
                         Text(
                             text = stations.size.toString(),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = RadioAccent,
+                            // REA 95fcb33 (s91 Fall 0): Textfarbe colorScheme.primary statt RadioAccent.
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                         )
                     }
@@ -234,7 +239,9 @@ private fun FavoritesContent(
             }
         }
 
-        items(stations, key = { it.uuid }) { station ->
+        // REA 95fcb33 (a91 Fall 3): Item-Key mit Präfix, damit Favorit und eigener Sender mit
+        // gleicher UUID nicht kollidieren.
+        items(stations, key = { "favorite:${it.uuid}" }) { station ->
             val isActive = station.uuid == playingUuid
             FavoriteStationCard(
                 large = carLayout,
@@ -281,7 +288,8 @@ private fun FavoritesContent(
                         Text(
                             text = stringResource(R.string.favorites_add_custom_station),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = RadioAccent,
+                            // REA 95fcb33 (ke0 Fall 15): Text primary, Icon bleibt RadioAccent.
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(start = 4.dp),
                         )
                     }
@@ -289,7 +297,8 @@ private fun FavoritesContent(
             }
         }
 
-        items(customStations, key = { it.uuid }) { station ->
+        // REA 95fcb33 (a91 Fall 5)
+        items(customStations, key = { "custom:${it.uuid}" }) { station ->
             val isActive = station.uuid == playingUuid
             FavoriteStationCard(
                 large = carLayout,
@@ -388,6 +397,9 @@ private fun FavoriteStationCard(
     val playButtonSize = if (large) 52.dp else 34.dp
     val heartButtonSize = if (large) 44.dp else 30.dp
     val actionSpacing = if (large) 12.dp else 6.dp
+    // REA 95fcb33 (za0.m11522g): „Nach oben“/„Ganz nach oben“ stecken jetzt in einem
+    // „Mehr Aktionen“-Menü statt in zwei eigenen Kreisknöpfen.
+    var showActions by remember { mutableStateOf(false) }
     Card(
         // Fixed height so all cards in the grid line up cleanly. Content inside
         // (logo + name + subtitle + actions) is sized to fit comfortably at 196dp;
@@ -398,7 +410,8 @@ private fun FavoriteStationCard(
         border = if (isActive)
             BorderStroke(1.5.dp, RadioAccent.copy(alpha = 0.65f))
         else
-            BorderStroke(1.dp, Color.White.copy(alpha = 0.14f)),
+            // REA 95fcb33: outline α0.5 statt White α0.14 (Hell-Theme-tauglich).
+            BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
         onClick = onPlayClick,
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -407,12 +420,13 @@ private fun FavoriteStationCard(
                     .fillMaxSize()
                     .background(
                         Brush.linearGradient(
+                            // REA 95fcb33 (t91): Verlauf aus surfaceVariant statt Weiß-Transparenzen.
                             colors = if (isActive) listOf(
                                 RadioAccent.copy(alpha = 0.12f),
-                                Color.White.copy(alpha = 0.04f),
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                             ) else listOf(
-                                Color.White.copy(alpha = 0.10f),
-                                Color.White.copy(alpha = 0.04f),
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
                             ),
                         ),
                     )
@@ -460,33 +474,45 @@ private fun FavoriteStationCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (!isCustom) {
-                        Surface(
-                            onClick = onMoveToTopClick,
-                            shape = CircleShape,
-                            color = Color.White.copy(alpha = 0.06f),
-                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
-                            modifier = Modifier.size(reorderButtonSize).minimumInteractiveComponentSize(),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.VerticalAlignTop,
-                                contentDescription = stringResource(R.string.favorites_move_to_top),
-                                tint = Color.White.copy(alpha = 0.55f),
-                                modifier = Modifier.fillMaxSize().padding(5.dp),
-                            )
-                        }
-                        Surface(
-                            onClick = onMoveUpClick,
-                            shape = CircleShape,
-                            color = Color.White.copy(alpha = 0.06f),
-                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
-                            modifier = Modifier.size(reorderButtonSize).minimumInteractiveComponentSize(),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.KeyboardArrowUp,
-                                contentDescription = stringResource(R.string.favorites_move_up),
-                                tint = Color.White.copy(alpha = 0.55f),
-                                modifier = Modifier.fillMaxSize().padding(4.dp),
-                            )
+                        // REA 95fcb33 (t91, v91 Fall 0, ke0 Fälle 0/21–24, C0454le 13/14, ba1 0/1)
+                        Box {
+                            Surface(
+                                onClick = { showActions = true },
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
+                                modifier = Modifier.size(reorderButtonSize).minimumInteractiveComponentSize(),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.MoreVert,
+                                    contentDescription = stringResource(R.string.favorites_more_actions),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.fillMaxSize().padding(3.dp),
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = showActions,
+                                onDismissRequest = { showActions = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.favorites_move_to_top)) },
+                                    onClick = {
+                                        showActions = false
+                                        onMoveToTopClick()
+                                    },
+                                    leadingIcon = { Icon(Icons.Filled.VerticalAlignTop, contentDescription = null) },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.favorites_move_up)) },
+                                    onClick = {
+                                        showActions = false
+                                        onMoveUpClick()
+                                    },
+                                    // REA-UNSICHER: Icon über em2.m2967A() (Material-Icon-Getter) – vermutlich
+                                    // KeyboardArrowUp wie im bisherigen Knopf; Pfad nicht geprüft.
+                                    leadingIcon = { Icon(Icons.Filled.KeyboardArrowUp, contentDescription = null) },
+                                )
+                            }
                         }
                     }
 
@@ -523,7 +549,8 @@ private fun FavoriteStationCard(
                             imageVector = if (isCustom) Icons.Filled.Delete else Icons.Filled.Favorite,
                             contentDescription = if (isCustom)
                                 stringResource(R.string.favorites_delete_custom_station) else null,
-                            tint = Color(0xFFFF5A7A),
+                            // REA 95fcb33 (x91 Fall 0): Tint colorScheme.primary statt 0xFFFF5A7A.
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.fillMaxSize().padding(6.dp),
                         )
                     }
@@ -534,7 +561,8 @@ private fun FavoriteStationCard(
                 Surface(
                     modifier = Modifier.align(Alignment.TopEnd).padding(6.dp),
                     shape = RoundedCornerShape(6.dp),
-                    color = RadioAccent.copy(alpha = 0.88f),
+                    // REA 95fcb33: primary α0.88 statt RadioAccent α0.88.
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.88f),
                 ) {
                     Text(
                         text = "▶",
@@ -666,7 +694,8 @@ private fun EmptyFavorites(onAddCustom: () -> Unit, modifier: Modifier = Modifie
                     Text(
                         text = stringResource(R.string.favorites_add_custom_station),
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                        color = RadioAccent,
+                        // REA 95fcb33 (ke0 Fall 12): Text primary, Icon bleibt RadioAccent.
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(start = 8.dp),
                     )
                 }

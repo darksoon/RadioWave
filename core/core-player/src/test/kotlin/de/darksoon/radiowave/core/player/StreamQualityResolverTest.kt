@@ -73,4 +73,36 @@ class StreamQualityResolverTest {
         StreamQualityResolver(repository, PlaybackTestSettings()).resolve(original, false)
         Unit
     }
+
+    // REA 95fcb33: neue Auto-Logik — getaktetes Netz nimmt mobileAudioQuality, sonst wifiAudioQuality.
+    @Test fun `auto quality uses mobile preference on metered network`() = runTest {
+        val low = original.copy(uuid = "two", streamUrl = "https://example.test/low", bitrate = 64)
+        val repository = object : PlaybackTestStations() {
+            override suspend fun getCachedStationVariants(station: Station) = listOf(original, low)
+        }
+        val settings = PlaybackTestSettings().apply {
+            update { it.copy(defaultAudioQuality = AppSettings.QUALITY_AUTO, wifiAudioQuality = AppSettings.QUALITY_HIGH, mobileAudioQuality = AppSettings.QUALITY_LOW) }
+        }
+        assertEquals(low.streamUrl, StreamQualityResolver(repository, settings) { true }.resolve(original, false).streamUrl)
+        assertEquals(original.streamUrl, StreamQualityResolver(repository, settings) { false }.resolve(original, false).streamUrl)
+    }
+
+    @Test fun `https station is never switched to an http variant`() = runTest {
+        val insecure = original.copy(uuid = "two", streamUrl = "http://example.test/low", bitrate = 64)
+        val repository = object : PlaybackTestStations() {
+            override suspend fun getCachedStationVariants(station: Station) = listOf(original, insecure)
+        }
+        val settings = PlaybackTestSettings().apply { update { it.copy(defaultAudioQuality = AppSettings.QUALITY_LOW) } }
+        assertEquals(original.streamUrl, StreamQualityResolver(repository, settings).resolve(original, false).streamUrl)
+    }
+
+    @Test fun `selected variant keeps identity of the played station`() = runTest {
+        val low = Station(uuid = "mirror", name = "Mirror name", streamUrl = "https://example.test/low", bitrate = 64, codec = "AAC")
+        val repository = object : PlaybackTestStations() {
+            override suspend fun getCachedStationVariants(station: Station) = listOf(original, low)
+        }
+        val settings = PlaybackTestSettings().apply { update { it.copy(defaultAudioQuality = AppSettings.QUALITY_LOW) } }
+        val resolved = StreamQualityResolver(repository, settings).resolve(original, false)
+        assertEquals(original.copy(streamUrl = low.streamUrl, codec = "AAC", bitrate = 64), resolved)
+    }
 }

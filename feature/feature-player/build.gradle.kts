@@ -11,6 +11,8 @@ android {
 dependencies {
     implementation(project(":core:core-model"))
     implementation(project(":core:core-cast"))
+    // REA 95fcb33: "Titel merken"/"Gemerkte Titel" im Player (Modul vom Agenten "startseite").
+    implementation(project(":feature:feature-savedtracks"))
 
     implementation(libs.media3.cast)
 

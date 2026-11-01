@@ -37,6 +37,15 @@ internal class EqualizerController {
     /** Last preset requested via [applyPreset] — re-applied on the next [attach]. */
     private var currentPreset: String = AppSettings.EQ_PRESET_FLAT
 
+    /**
+     * REA 95fcb33: neues Feld (p000/j51.java f9563d, Startwert true in cp3-Konstruktor).
+     * False while the current output is a Bluetooth sink — the effect stays out of the
+     * chain there (string settings_eq_bluetooth_note); the preset is kept and applies again
+     * on speaker, wired or USB output.
+     * REA-UNSICHER: Name geraten.
+     */
+    private var outputAllowsEffect: Boolean = true
+
     /** True while an [Equalizer] is inserted into the session. */
     @get:VisibleForTesting
     internal val isAttached: Boolean get() = equalizer != null
@@ -48,9 +57,21 @@ internal class EqualizerController {
      * A session id of `0` (Media3/AudioTrack's "unset" sentinel) is skipped —
      * there's no session to attach to yet.
      */
-    fun attach(audioSessionId: Int) {
+    fun attach(audioSessionId: Int, outputAllowsEffect: Boolean = this.outputAllowsEffect) {
         releaseEffect()
         this.audioSessionId = audioSessionId
+        // REA 95fcb33: Ausgabe-Freigabe wird beim Anhängen mitgegeben (bp3.mo1236r, cp3.m1900i).
+        this.outputAllowsEffect = outputAllowsEffect
+        syncEffect()
+    }
+
+    /**
+     * REA 95fcb33: neu (cp3.m1888c). Re-evaluated on audio device changes, device-volume
+     * callbacks and every 3 s while playing; a no-op when nothing changed.
+     */
+    fun setOutputAllowsEffect(allowed: Boolean) {
+        if (outputAllowsEffect == allowed) return
+        outputAllowsEffect = allowed
         syncEffect()
     }
 
@@ -65,7 +86,7 @@ internal class EqualizerController {
     }
 
     private fun syncEffect() {
-        if (!presetNeedsEffect(currentPreset) || audioSessionId == 0) {
+        if (!outputAllowsEffect || !presetNeedsEffect(currentPreset) || audioSessionId == 0) {
             releaseEffect()
             return
         }
