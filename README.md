@@ -4,6 +4,8 @@
 
 <div align="center">
 
+  <img src="docs/assets/banner.jpg" alt="RadioWave" width="720" />
+
   <a href="https://github.com/darksoon/RadioWave/actions/workflows/pr-ci.yml">
     <img src="https://github.com/darksoon/RadioWave/actions/workflows/pr-ci.yml/badge.svg?branch=main" alt="CI" />
   </a>
@@ -11,7 +13,7 @@
     <img src="https://img.shields.io/github/v/release/darksoon/RadioWave?include_prereleases&label=release&color=4CAF50" alt="Latest Release" />
   </a>
   <img src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white" alt="Android 8.0+" />
-  <img src="https://img.shields.io/badge/Kotlin-2.1.0-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin 2.1.0" />
+  <img src="https://img.shields.io/badge/Kotlin-2.3-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin 2.3" />
   <a href="./LICENSE.txt">
     <img src="https://img.shields.io/badge/License-GPL--3.0--or--later-blue" alt="License GPL-3.0-or-later" />
   </a>
@@ -44,6 +46,8 @@ The public roadmap is available in [ROADMAP.md](./ROADMAP.md).
 
 ## Highlights
 
+**New in 1.0.20:** car mode with big buttons for the dashboard, an audio spectrum in the player, a home screen you can customise (genres, sorted favourites, “Continue listening”), saved songs, reorganised settings with search, light/dark/system theme, separate quality for Wi-Fi and mobile, Wi-Fi-only playback, fallback streams and a new design.
+
 - No account required; favorites, history and settings stay on the device
 - Completely ad-free, no analytics, no behavior tracking
 - 45,000+ stations via Radio Browser
@@ -58,13 +62,7 @@ The public roadmap is available in [ROADMAP.md](./ROADMAP.md).
 
 ## Screenshots
 
-| Home | Search |
-|---|---|
-| ![Home](docs/screenshots/home.jpg) | ![Search](docs/screenshots/search.jpg) |
-
-| Favorites | Fullscreen Player | Settings |
-|---|---|---|
-| ![Favorites](docs/screenshots/favorites.jpg) | ![Fullscreen Player](docs/screenshots/fullscreen_player.jpg) | ![Settings](docs/screenshots/settings.jpg) |
+A tour of the new design is on the [website](https://radiowave.sven-neurath.de).
 
 | Android Auto 1 | Android Auto 2 |
 |---|---|
@@ -76,8 +74,9 @@ The public roadmap is available in [ROADMAP.md](./ROADMAP.md).
 
 ## Tech Stack
 
-- Kotlin 2.1.0
+- Kotlin 2.3
 - Jetpack Compose + Material 3
+- DataStore
 - Clean Architecture + MVVM
 - Hilt
 - Media3 / ExoPlayer
@@ -158,7 +157,9 @@ https://play.google.com/store/apps/details?id=de.darksoon.radiowave
 
 ## Player Improvements
 
-- Short network interruptions are handled more gracefully with improved reconnect tuning
+- Dead spots and network switches: reconnects with growing pauses (up to 10 attempts), and switches to another stream address of the same station if one fails — never to a less secure or heavier stream
+- Navigation prompts duck the station (or mute it, if you prefer) instead of pausing, so it stays live
+- Separate quality for Wi-Fi and mobile data, optional Wi-Fi-only playback
 - The playback timer now reflects actual listening time and pauses during buffering
 - Fullscreen player includes a share action and a sleep timer
 - Favorites can be reordered more easily from the favorites screen
