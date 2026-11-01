@@ -40,7 +40,9 @@ private val skeletonBase = Color.White.copy(alpha = 0.06f)
  */
 @Composable
 private fun rememberShimmerBrush(): Brush {
-    val transition = rememberInfiniteTransition(label = "shimmer")
+    // REA 95fcb33 (p000/zl4.java:322): shimmer unchanged, but the animation labels
+    // "shimmer"/"shimmerAlpha" are no longer passed (literals gone from the dex).
+    val transition = rememberInfiniteTransition()
     val alpha by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
@@ -48,7 +50,6 @@ private fun rememberShimmerBrush(): Brush {
             animation = tween(durationMillis = 900, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse,
         ),
-        label = "shimmerAlpha",
     )
     return remember(alpha) {
         Brush.linearGradient(

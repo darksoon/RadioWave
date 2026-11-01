@@ -2,6 +2,7 @@
 
 package de.darksoon.radiowave.core.player
 
+import de.darksoon.radiowave.core.player.visualizer.AudioVisualizerTap
 import android.media.AudioManager
 import androidx.test.core.app.ApplicationProvider
 import de.darksoon.radiowave.core.data.repository.StationRepository
@@ -176,6 +177,21 @@ class PlayerControllerImplBehaviorTest {
         assertEquals(0f, controller.testPlayerVolume())
     }
 
+    // FIX 2026-11-01: navigation prompts mute instead of pausing the live stream.
+    @Test
+    fun `navigation setting mutes during a duck request and never pauses`() = runTest {
+        val settings = PlaybackTestSettings().apply { update { it.copy(pauseForNavigation = true) } }
+        val controller = createController(stations = emptyList(), settings = settings)
+        controller.ensureSessionPlayer()
+        runCurrent()
+
+        controller.testHandleAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK)
+        assertEquals(0f, controller.testPlayerVolume())
+
+        controller.testHandleAudioFocusChange(AudioManager.AUDIOFOCUS_GAIN)
+        assertEquals(1f, controller.testPlayerVolume())
+    }
+
     @Test
     fun `flat preset keeps the equalizer out of the audio chain`() = runTest {
         val controller = createController(stations = emptyList())
@@ -185,13 +201,17 @@ class PlayerControllerImplBehaviorTest {
         assertFalse(controller.testIsEqualizerAttached())
     }
 
-    private fun createController(stations: List<Station>): PlayerControllerImpl {
+    private fun createController(
+        stations: List<Station>,
+        settings: PlaybackTestSettings = PlaybackTestSettings(),
+    ): PlayerControllerImpl {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         return PlayerControllerImpl(
             context = context,
             stationRepository = LocalStationRepositoryFake(stations),
-            settingsRepository = PlaybackTestSettings(),
+            settingsRepository = settings,
             coverArtRepository = FakeCoverArtRepository(),
+            visualizerTap = AudioVisualizerTap(),
         ).also(controllers::add)
     }
 }

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="saved_tracks_title">Saved songs</string>
+    <string name="saved_tracks_save">Save song</string>
+    <string name="saved_tracks_saved">Song saved</string>
+    <string name="saved_tracks_error">Could not read or save bookmarks. Please try again.</string>
+    <string name="saved_tracks_explanation">Up to 100 song bookmarks stored only on this device. No audio is recorded.</string>
+    <string name="saved_tracks_empty">Save a song from the player when its title is available.</string>
+    <string name="saved_tracks_copy">Copy artist and title</string>
+    <string name="saved_tracks_remove">Remove %1$s</string>
+    <string name="saved_tracks_clear">Clear saved songs</string>
+    <string name="saved_tracks_clear_confirm">Delete all song bookmarks? Your station favourites stay unchanged.</string>
+    <string name="saved_tracks_close">Close</string>
+</resources>

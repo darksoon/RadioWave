@@ -2,6 +2,7 @@
 
 package de.darksoon.radiowave.core.player
 
+import de.darksoon.radiowave.core.player.visualizer.AudioVisualizerTap
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.test.core.app.ApplicationProvider
@@ -75,6 +76,17 @@ class PlayerControllerImplRecoveryTest {
         assertEquals(false, controller.playerState.value.isBuffering)
     }
 
+    // FIX 2026-11-01 (Review P1-1)
+    @Test
+    fun `triggerPlaybackLostRecovery is skipped while a stream failover runs`() = runTest {
+        val controller = createController()
+        val station = station(uuid = "s4")
+        controller.testStartFakeStreamFailover()
+        controller.testTriggerPlaybackLostRecovery(station = station, reason = "state-idle")
+
+        assertEquals(0, controller.testPlaybackLostRecoveryAttempts())
+    }
+
     @Test
     fun `triggerPlaybackLostRecovery schedules recovery and marks loading`() = runTest {
         val controller = createController()
@@ -120,7 +132,7 @@ class PlayerControllerImplRecoveryTest {
 
     private fun createController(): PlayerControllerImpl {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        return PlayerControllerImpl(context, FakeStationRepository(), fakeSettingsRepository, FakeCoverArtRepository()).also(controllers::add)
+        return PlayerControllerImpl(context, FakeStationRepository(), fakeSettingsRepository, FakeCoverArtRepository(), AudioVisualizerTap()).also(controllers::add)
     }
 
     private fun createBufferingPlayerProxy(): ExoPlayer {

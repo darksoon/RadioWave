@@ -105,9 +105,7 @@ import de.darksoon.radiowave.core.model.AppSettings
 import de.darksoon.radiowave.core.model.PlayerState
 import de.darksoon.radiowave.core.ui.components.AmbientBackground
 import de.darksoon.radiowave.core.ui.theme.DarkBackground
-import de.darksoon.radiowave.core.ui.theme.DarkSurface
 import de.darksoon.radiowave.core.ui.theme.RadioWaveTheme
-import de.darksoon.radiowave.core.ui.theme.RadioAccent
 import de.darksoon.radiowave.feature.browse.BrowseScreen
 import de.darksoon.radiowave.feature.favorites.FavoritesScreen
 import de.darksoon.radiowave.feature.home.HomeScreen
@@ -147,6 +145,8 @@ class MainActivity : AppCompatActivity() {
             val themeMode = appSettings.themeMode
             val dynamicColors = appSettings.dynamicColors
             val appLanguage = appSettings.appLanguage
+            // REA 95fcb33 (p000/vi2.java Fall 1): "light" -> hell, "dark" -> dunkel, sonst System
+            // (dort über Configuration.uiMode statt isSystemInDarkTheme() — gleichwertig).
             val systemInDark = isSystemInDarkTheme()
             val useDarkTheme = when (themeMode) {
                 AppSettings.THEME_LIGHT -> false
@@ -228,6 +228,13 @@ sealed class BottomNavItem(
         unselectedIcon = Icons.Outlined.Settings,
     )
 }
+
+/**
+ * Full-screen in-app car mode (big buttons, high contrast, screen stays on). Not a bottom-nav
+ * tab: opened from Settings, closed with its own close button / back.
+ * REA 95fcb33: Route-String "car" (p000/yi2.java, p000/nj2.java Fall 1, p000/rj2.java Z. 347).
+ */
+const val CAR_MODE_ROUTE = "car"
 
 val bottomNavItems = listOf(
     BottomNavItem.Home,
@@ -601,6 +608,9 @@ fun RadioWaveMainScreen(
     val isSettingsRoute = currentDestination
         ?.hierarchy
         ?.any { destination -> destination.route == BottomNavItem.Settings.route } == true
+    // REA 95fcb33: in the car mode the bottom bar and the mini player are hidden (rj2.java Z. 347,
+    // C0292gz Fall 3, xi2 "if (!showPlayerBar || isCarRoute)").
+    val isCarRoute = currentDestination?.route == CAR_MODE_ROUTE
 
     val currentStation = playerState.currentStation
     val showPlayerBar = currentStation != null && !isSettingsRoute
@@ -709,42 +719,47 @@ fun RadioWaveMainScreen(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.Transparent,
         bottomBar = {
-            NavigationBar(
-                containerColor = DarkSurface.copy(alpha = 0.92f),
-                tonalElevation = 0.dp,
-            ) {
-                bottomNavItems.forEach { item ->
-                    val title = stringResource(item.titleRes)
-                    val selected = currentDestination
-                        ?.hierarchy
-                        ?.any { it.route == item.route } == true
-                    NavigationBarItem(
-                        selected = selected,
-                        onClick = {
-                            navigateToTopLevel(item.route)
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-                                contentDescription = title,
-                                modifier = Modifier.size(24.dp),
-                            )
-                        },
-                        label = {
-                            Text(
-                                text = title,
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                                fontSize = 10.sp,
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = RadioAccent,
-                            selectedTextColor = RadioAccent,
-                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            indicatorColor = RadioAccent.copy(alpha = 0.18f),
-                        ),
-                    )
+            if (!isCarRoute) {
+                // REA 95fcb33 (p000/C0292gz.java Fall 3, C0993zy.java Fall 8): Farben jetzt aus dem
+                // MaterialTheme (Hell/System-Theme) statt fest DarkSurface/RadioAccent.
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    // REA-UNSICHER: tonalElevation von R8 wegkonstantiert, 0.dp aus v1.0.19 übernommen.
+                    tonalElevation = 0.dp,
+                ) {
+                    bottomNavItems.forEach { item ->
+                        val title = stringResource(item.titleRes)
+                        val selected = currentDestination
+                            ?.hierarchy
+                            ?.any { it.route?.substringBefore('?') == item.route } == true
+                        NavigationBarItem(
+                            selected = selected,
+                            onClick = {
+                                navigateToTopLevel(item.route)
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                                    contentDescription = title,
+                                    modifier = Modifier.size(24.dp),
+                                )
+                            },
+                            label = {
+                                Text(
+                                    text = title,
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 10.sp,
+                                )
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
+                        )
+                    }
                 }
             }
         }
@@ -782,6 +797,10 @@ fun RadioWaveMainScreen(
                                     restoreState = true
                                 }
                             },
+                            // REA 95fcb33 (p000/yi2.java Fall 0, fj2): Cast-bewusster Player-Zustand und
+                            // Play/Pause für die "Weiterhören"-Karte.
+                            playerState = effectivePlayerState,
+                            onTogglePlayPause = handlePlayPause,
                             viewModel = homeViewModel,
                         )
                     }
@@ -813,12 +832,28 @@ fun RadioWaveMainScreen(
                                 onboardingStep = 0
                                 showOnboarding = true
                             },
+                            // REA 95fcb33 (p000/nj2.java Fall 1): Einstieg in den Auto-Modus.
+                            // REA-UNSICHER: Parametername; SettingsScreen gehört dem Agenten "einstellungen".
+                            onOpenCarMode = { navController.navigate(CAR_MODE_ROUTE) },
+                        )
+                    }
+                    // REA 95fcb33 (p000/yi2.java, gj2 Fall 1 → C0299h5.java#m4110e).
+                    // REA-UNSICHER: Name/Ablage/Parameternamen von CarModeScreen — der Bildschirm wird
+                    // vom Auto-Modus-Agenten rekonstruiert. Reihenfolge laut Dekompilat:
+                    // (HomeViewModel, PlayerState, onPlayPause, onPlayStation, onClose, modifier).
+                    composable(CAR_MODE_ROUTE) {
+                        CarModeScreen(
+                            homeViewModel = homeViewModel,
+                            playerState = effectivePlayerState,
+                            onPlayPauseClick = handlePlayPause,
+                            onStationClick = { station -> homeViewModel.playStation(station) },
+                            onClose = { navController.popBackStack() },
                         )
                     }
                 }
             }
 
-            if (showPlayerBar) {
+            if (showPlayerBar && !isCarRoute) {
                 // Landscape is where head units live: a taller bar with a much larger
                 // play/pause target that is easy to hit while driving.
                 val largeMiniPlayer = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE

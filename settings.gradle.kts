@@ -32,6 +32,8 @@ include(":feature:feature-browse")
 include(":feature:feature-favorites")
 include(":feature:feature-player")
 include(":feature:feature-settings")
+// REA 95fcb33: neues Modul für "Gemerkte Titel" (Rekonstruktions-Entscheidung, siehe report/agenten/startseite.md)
+include(":feature:feature-savedtracks")
 
 // Android Auto
 include(":auto")

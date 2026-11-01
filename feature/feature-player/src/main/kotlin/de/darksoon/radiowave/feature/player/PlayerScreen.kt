@@ -3,8 +3,10 @@
 package de.darksoon.radiowave.feature.player
 
 import android.content.Intent
+import android.graphics.drawable.Drawable
 import android.os.SystemClock
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -49,12 +51,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -73,14 +70,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import android.content.res.Configuration
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -91,6 +87,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.mediarouter.app.MediaRouteButton
 import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import com.google.android.gms.cast.framework.CastButtonFactory
 import de.darksoon.radiowave.core.model.PlayerError
 import de.darksoon.radiowave.core.model.PlayerState
@@ -100,10 +97,27 @@ import de.darksoon.radiowave.core.ui.components.StationLogoImage
 import de.darksoon.radiowave.core.ui.components.StationNameText
 import de.darksoon.radiowave.core.ui.components.asSafeHttpImageUrl
 import de.darksoon.radiowave.core.ui.components.StreamQualityBadge
+import de.darksoon.radiowave.core.ui.R as CoreUiR
 import de.darksoon.radiowave.core.ui.theme.DarkBackground
 import de.darksoon.radiowave.core.ui.theme.DarkSurface
+import de.darksoon.radiowave.core.ui.theme.ErrorSoft
+import de.darksoon.radiowave.core.ui.theme.LiveRed
+import de.darksoon.radiowave.core.ui.theme.RadioAccent
+import de.darksoon.radiowave.core.ui.theme.RadioAccentDeep
+import de.darksoon.radiowave.core.ui.theme.RadioAccentLight
+import de.darksoon.radiowave.core.ui.theme.WarningAmber
 import de.darksoon.radiowave.feature.player.R
+import de.darksoon.radiowave.feature.savedtracks.SaveTrackButton
+import de.darksoon.radiowave.feature.savedtracks.SavedTracksButton
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+
+// REA 95fcb33: PlayerScreen = p000/C0299h5.java m4137s (3785-4759), Release p000/C0318h5.java
+// m4977l. Geändert: Hintergrund (Cover-Farbverlauf + Header-Grafik statt Unschärfe),
+// keine Endlos-Animationen mehr (Cover-"Atmen", pulsierender LIVE-Punkt, rotierender Ring),
+// neue Zeile "Titel merken"/"Gemerkte Titel", Audio-Spektrum + Audioausgabe, Cover im
+// Hochformat 82 % breit, Akzentfarben aus dem Theme statt Türkis/Pink-Literalen.
 
 @Composable
 fun PlayerScreen(
@@ -163,7 +177,6 @@ fun PlayerScreen(
     val visibleSimilarStations = similarStations.takeIf { it.sourceStationUuid == station.uuid }
 
     val artworkUrl = safeITunesCoverUrl ?: streamCoverUrl ?: fallbackLogoUrl
-    val blurArtworkUrl = safeITunesCoverUrl ?: streamCoverUrl
 
     val titleLine = metadataTitle ?: station.name
     val artistLine = metadataArtist
@@ -196,24 +209,22 @@ fun PlayerScreen(
     val isWifiRequiredError = playerState.error is PlayerError.MobileDataBlocked
     val liveStatus = resolveLiveStatus(playerState, isWifiRequiredError)
     val connectedForMs = connectedDurationMs(playerState, nowElapsedMs)
-    val liveBarTransition = rememberInfiniteTransition(label = "liveBar")
-    val liveDotAlpha by liveBarTransition.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 900),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "liveDotAlpha",
-    )
-    val artworkScale by liveBarTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.026f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2800, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "artworkScale",
+
+    // REA 95fcb33: Hintergrundfarbe aus dem Cover (C0825vf Fall 4, ArtworkColors.kt). Das
+    // geladene Drawable meldet PlayerArtwork über onArtworkLoaded; beide States hängen an der
+    // URL, damit ein Senderwechsel nicht kurz die alte Farbe zeigt.
+    var artworkDrawable by remember(artworkUrl) { mutableStateOf<Drawable?>(null) }
+    var artworkColor by remember(artworkUrl) { mutableStateOf(DarkBackground) }
+    LaunchedEffect(artworkUrl, artworkDrawable) {
+        val drawable = artworkDrawable ?: return@LaunchedEffect
+        val color = withContext(Dispatchers.Default) { extractArtworkColorOrDefault(drawable) }
+        artworkColor = color
+        rememberArtworkColor(artworkUrl, color)
+    }
+    val animatedArtworkColor by animateColorAsState(
+        targetValue = artworkColor,
+        animationSpec = tween(durationMillis = 300),
+        label = "artworkColor",
     )
 
     val configuration = LocalConfiguration.current
@@ -222,43 +233,23 @@ fun PlayerScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(DarkBackground),
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(DarkBackground, animatedArtworkColor, DarkBackground),
+                ),
+            ),
     ) {
-        // Blur background from cover art or fallback gradient
-        if (blurArtworkUrl != null) {
-            SubcomposeAsyncImage(
-                model = blurArtworkUrl,
-                contentDescription = null,
-                modifier = Modifier
-                    .matchParentSize()
-                    .blur(80.dp),
-                contentScale = ContentScale.Crop,
-                loading = { BlurFallbackBackground() },
-                error = { BlurFallbackBackground() },
-            )
-            // Dark overlay for better text readability
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(Color.Black.copy(alpha = 0.5f)),
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .blur(34.dp)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFF3FE6D0).copy(alpha = 0.24f),
-                                Color(0xFFCA4D95).copy(alpha = 0.14f),
-                                Color.Transparent,
-                            ),
-                            radius = 1200f,
-                        ),
-                    ),
-            )
-        }
+        Image(
+            painter = painterResource(CoreUiR.drawable.radiowave_header_art_v2),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(220.dp),
+            // REA-UNSICHER: ContentScale-Konstante fj0.f6094b — Crop angenommen.
+            contentScale = ContentScale.Crop,
+            alpha = 0.22f,
+        )
 
         Column(
             modifier = Modifier
@@ -303,7 +294,7 @@ fun PlayerScreen(
                         onClick = { showSleepTimerDialog = true },
                         shape = CircleShape,
                         color = if (sleepTimerRemainingMs != null) {
-                            Color(0xFF52E3D9).copy(alpha = 0.18f)
+                            RadioAccentLight.copy(alpha = 0.18f)
                         } else {
                             Color.White.copy(alpha = 0.06f)
                         },
@@ -386,6 +377,25 @@ fun PlayerScreen(
                 station.tags.filter { it.isNotBlank() && it.length <= 20 }.take(3)
             }
 
+            // REA 95fcb33: neu — "Titel merken" + Liste der gemerkten Titel (Modul
+            // feature-savedtracks, p000/z03.java m11364b / m11363a).
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SaveTrackButton(
+                    title = metadataTitle,
+                    artist = metadataArtist,
+                    stationName = station.name,
+                    tint = Color.White,
+                )
+                SavedTracksButton(tint = Color.White)
+            }
+
+            // REA 95fcb33: neu — Spektrum-Schalter, Audioausgabe und Spektrum (za0.m11516d).
+            AudioVisualizerSection(isPlaying = isPlaying, isCasting = isCasting)
+
             if (isLandscape) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
@@ -401,10 +411,10 @@ fun PlayerScreen(
                             .fillMaxHeight()
                             .aspectRatio(1f, matchHeightConstraintsFirst = true),
                         artworkUrl = artworkUrl,
+                        onArtworkLoaded = { artworkDrawable = it },
                         stationName = station.name,
                         isPlaying = isPlaying,
                         isBuffering = playerState.isBuffering,
-                        artworkScale = artworkScale,
                     )
 
                     // Controls — right column, scrollable for very small landscape heights
@@ -436,7 +446,7 @@ fun PlayerScreen(
                             Text(
                                 text = stringResource(R.string.player_casting_to_tv),
                                 style = MaterialTheme.typography.labelMedium,
-                                color = Color(0xFF52E3D9),
+                                color = RadioAccentLight,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(999.dp))
                                     .background(Color.White.copy(alpha = 0.08f))
@@ -498,7 +508,6 @@ fun PlayerScreen(
                             connectedForMs = connectedForMs,
                             isCasting = isCasting,
                             sleepTimerRemainingMs = sleepTimerRemainingMs,
-                            liveDotAlpha = liveDotAlpha,
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Row(
@@ -508,7 +517,7 @@ fun PlayerScreen(
                         ) {
                             PlayerIconButton(
                                 icon = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                                tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.9f),
+                                tint = if (isFavorite) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.9f),
                                 onClick = onFavoriteClick,
                                 contentDescription = stringResource(
                                     if (isFavorite) R.string.player_cd_favorite_remove
@@ -521,7 +530,10 @@ fun PlayerScreen(
                                 onClick = onPreviousFavoriteClick ?: onPreviousStationClick,
                                 contentDescription = stringResource(previousDescription),
                             )
-                            MainPlaybackButton(isPlaying = isPlaying, onClick = onPlayPauseClick)
+                            MainPlaybackButton(
+                                isPlaying = isPlaying || playerState.isLoading || playerState.isBuffering,
+                                onClick = onPlayPauseClick,
+                            )
                             if (onNextFavoriteClick != null) {
                                 PlayerIconButton(
                                     icon = Icons.Filled.SkipNext,
@@ -566,14 +578,16 @@ fun PlayerScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 PlayerArtwork(
+                    // REA 95fcb33: 82 % Breite, zentriert (vorher volle Breite).
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f),
+                        .fillMaxWidth(0.82f)
+                        .aspectRatio(1f)
+                        .align(Alignment.CenterHorizontally),
                     artworkUrl = artworkUrl,
+                    onArtworkLoaded = { artworkDrawable = it },
                     stationName = station.name,
                     isPlaying = isPlaying,
                     isBuffering = playerState.isBuffering,
-                    artworkScale = artworkScale,
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
@@ -600,7 +614,7 @@ fun PlayerScreen(
                     Text(
                         text = stringResource(R.string.player_casting_to_tv),
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color(0xFF52E3D9),
+                        color = RadioAccentLight,
                         modifier = Modifier
                             .clip(RoundedCornerShape(999.dp))
                             .background(Color.White.copy(alpha = 0.08f))
@@ -668,7 +682,6 @@ fun PlayerScreen(
                     connectedForMs = connectedForMs,
                     isCasting = isCasting,
                     sleepTimerRemainingMs = sleepTimerRemainingMs,
-                    liveDotAlpha = liveDotAlpha,
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -682,7 +695,7 @@ fun PlayerScreen(
                 ) {
                     PlayerIconButton(
                         icon = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                        tint = if (isFavorite) Color(0xFFFF5A7A) else Color.White.copy(alpha = 0.9f),
+                        tint = if (isFavorite) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.9f),
                         onClick = onFavoriteClick,
                         contentDescription = stringResource(
                             if (isFavorite) R.string.player_cd_favorite_remove
@@ -695,8 +708,10 @@ fun PlayerScreen(
                         onClick = onPreviousFavoriteClick ?: onPreviousStationClick,
                         contentDescription = stringResource(previousDescription),
                     )
+                    // REA 95fcb33: zeigt "Pause" auch beim Verbinden/Puffern (passend zu
+                    // togglePlayPause, das dann ebenfalls pausiert).
                     MainPlaybackButton(
-                        isPlaying = isPlaying,
+                        isPlaying = isPlaying || playerState.isLoading || playerState.isBuffering,
                         onClick = onPlayPauseClick,
                     )
                     if (onNextFavoriteClick != null) {
@@ -801,8 +816,8 @@ private fun PlayerErrorBanner(error: PlayerError?, isWifiRequired: Boolean, onRe
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(Color(0xFFFF3B3B).copy(alpha = 0.14f))
-            .border(1.dp, Color(0xFFFF3B3B).copy(alpha = 0.35f), RoundedCornerShape(14.dp))
+            .background(LiveRed.copy(alpha = 0.14f))
+            .border(1.dp, LiveRed.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
             .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -822,12 +837,12 @@ private fun PlayerErrorBanner(error: PlayerError?, isWifiRequired: Boolean, onRe
             },
             enabled = !retryCooldownActive,
             shape = RoundedCornerShape(10.dp),
-            color = Color(0xFFFF3B3B).copy(alpha = 0.18f),
+            color = LiveRed.copy(alpha = 0.18f),
         ) {
             Text(
                 text = stringResource(R.string.player_error_retry),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFFFF8A8A).copy(alpha = if (retryCooldownActive) 0.5f else 1f),
+                color = ErrorSoft.copy(alpha = if (retryCooldownActive) 0.5f else 1f),
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }
@@ -839,29 +854,39 @@ private fun PlayerErrorBanner(error: PlayerError?, isWifiRequired: Boolean, onRe
 private fun PlayerArtwork(
     modifier: Modifier,
     artworkUrl: String?,
+    onArtworkLoaded: (Drawable) -> Unit,
     stationName: String,
-    isPlaying: Boolean,
+    @Suppress("UNUSED_PARAMETER") isPlaying: Boolean,
     isBuffering: Boolean,
-    artworkScale: Float,
 ) {
+    // REA 95fcb33 (C0299h5.m4131p): eigener ImageRequest — Software-Bitmap (allowHardware
+    // false), damit ArtworkColors die Pixel lesen kann; 220-ms-Crossfade. Kein Skalieren
+    // mehr beim Abspielen; isPlaying wird nicht mehr ausgewertet.
+    // REA-UNSICHER: ob isPlaying als Parameter erhalten blieb, ist nicht sicher (im
+    // Dekompilat wird er übergeben, aber nicht in die Änderungsmaske aufgenommen).
+    val context = LocalContext.current
+    val request = remember(artworkUrl, context) {
+        ImageRequest.Builder(context)
+            .data(artworkUrl)
+            .allowHardware(false)
+            .crossfade(220)
+            .build()
+    }
+    val shape = RoundedCornerShape(28.dp)
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(22.dp))
-            .background(DarkSurface),
+            .clip(shape)
+            .background(DarkSurface)
+            .border(width = 1.dp, color = RadioAccent.copy(alpha = 0.35f), shape = shape),
     ) {
         SubcomposeAsyncImage(
-            model = artworkUrl,
+            model = request,
             contentDescription = stationName,
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer {
-                    val scale = if (isPlaying) artworkScale else 1f
-                    scaleX = scale
-                    scaleY = scale
-                },
+            modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,
             loading = { ArtworkFallback(stationName) },
             error = { ArtworkFallback(stationName) },
+            onSuccess = { state -> onArtworkLoaded(state.result.drawable) },
         )
         Box(
             modifier = Modifier
@@ -886,7 +911,7 @@ private fun PlayerArtwork(
                 CircularProgressIndicator(
                     modifier = Modifier.size(54.dp),
                     strokeWidth = 2.dp,
-                    color = Color(0xFF52E3D9).copy(alpha = 0.9f),
+                    color = RadioAccentLight.copy(alpha = 0.9f),
                     trackColor = Color.White.copy(alpha = 0.15f),
                 )
             }
@@ -905,7 +930,6 @@ private fun LiveStatusRow(
     connectedForMs: Long?,
     isCasting: Boolean,
     sleepTimerRemainingMs: Long?,
-    liveDotAlpha: Float,
     modifier: Modifier = Modifier,
 ) {
     val statusText = when (status) {
@@ -921,11 +945,11 @@ private fun LiveStatusRow(
         LiveStatus.Disconnected -> stringResource(R.string.player_status_disconnected)
     }
     val statusColor = when (status) {
-        LiveStatus.Live -> if (isCasting) Color(0xFF52E3D9) else Color.White.copy(alpha = 0.78f)
-        LiveStatus.Connecting, LiveStatus.Reconnecting -> Color(0xFF52E3D9)
+        LiveStatus.Live -> if (isCasting) RadioAccentLight else Color.White.copy(alpha = 0.78f)
+        LiveStatus.Connecting, LiveStatus.Reconnecting -> RadioAccentLight
         LiveStatus.Paused -> Color.White.copy(alpha = 0.55f)
-        LiveStatus.WifiRequired -> Color(0xFFFFC266)
-        LiveStatus.Disconnected -> Color(0xFFFF8A8A)
+        LiveStatus.WifiRequired -> WarningAmber
+        LiveStatus.Disconnected -> ErrorSoft
     }
     Row(
         modifier = modifier
@@ -934,7 +958,7 @@ private fun LiveStatusRow(
             .semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        LiveBadge(isLive = status == LiveStatus.Live, dotAlpha = liveDotAlpha)
+        LiveBadge(isLive = status == LiveStatus.Live)
         Spacer(modifier = Modifier.width(8.dp))
         when (status) {
             LiveStatus.Connecting, LiveStatus.Reconnecting -> {
@@ -977,8 +1001,9 @@ private fun LiveStatusRow(
 }
 
 @Composable
-private fun LiveBadge(isLive: Boolean, dotAlpha: Float) {
-    val red = Color(0xFFFF3B3B)
+private fun LiveBadge(isLive: Boolean) {
+    // REA 95fcb33 (C0299h5.m4126m): Punkt statisch (kein Pulsieren mehr), Farbe LiveRed.
+    val red = LiveRed
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(6.dp))
@@ -996,7 +1021,7 @@ private fun LiveBadge(isLive: Boolean, dotAlpha: Float) {
             modifier = Modifier
                 .size(6.dp)
                 .clip(CircleShape)
-                .background(if (isLive) red.copy(alpha = dotAlpha) else Color.White.copy(alpha = 0.35f)),
+                .background(if (isLive) red else Color.White.copy(alpha = 0.35f)),
         )
         Text(
             text = stringResource(R.string.player_live),
@@ -1132,20 +1157,8 @@ private fun MainPlaybackButton(
     isPlaying: Boolean,
     onClick: () -> Unit,
 ) {
-    val ringTransition = rememberInfiniteTransition(label = "playbackRing")
-    val ringRotation by ringTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 2800,
-                easing = LinearEasing,
-            ),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "playbackRingRotation",
-    )
-
+    // REA 95fcb33 (C0299h5.m4129o + p000/x91.java default-Fall): kein rotierender Ring mehr,
+    // Verlauf in den Akzentfarben des Themes, Innenkreis DarkBackground.
     Surface(
         onClick = onClick,
         shape = CircleShape,
@@ -1160,16 +1173,8 @@ private fun MainPlaybackButton(
             Box(
                 modifier = Modifier
                     .size(84.dp)
-                    .graphicsLayer {
-                        rotationZ = if (isPlaying) ringRotation else 0f
-                    }
                     .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                Color(0xFF52E3D9),
-                                Color(0xFFC94F99),
-                            ),
-                        ),
+                        Brush.linearGradient(colors = listOf(RadioAccentLight, RadioAccentDeep)),
                         CircleShape,
                     ),
             )
@@ -1177,7 +1182,7 @@ private fun MainPlaybackButton(
                 modifier = Modifier
                     .size(70.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF1A1D26)),
+                    .background(DarkBackground),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -1221,45 +1226,43 @@ private fun PlayerIconButton(
 
 @Composable
 private fun ArtworkFallback(text: String) {
+    // REA 95fcb33 (C0299h5.m4106c): statt Anfangsbuchstabe auf Türkis-Verlauf nun Header-Grafik
+    // unten, darüber Wortmarke und Sendername (max. 2 Zeilen).
+    // REA-UNSICHER: ContentScale beider Bilder (fj0.f6094b) — Crop angenommen.
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFF294252),
-                        Color(0xFF1A2234),
-                    ),
-                ),
-            ),
-        contentAlignment = Alignment.Center,
+            .background(DarkBackground),
     ) {
-        Text(
-            text = text.firstOrNull()?.uppercase() ?: "?",
-            style = MaterialTheme.typography.displaySmall.copy(
-                fontWeight = FontWeight.Bold,
-            ),
-            color = Color.White,
+        Image(
+            painter = painterResource(CoreUiR.drawable.radiowave_header_art_v2),
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter),
+            contentScale = ContentScale.Crop,
         )
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Image(
+                painter = painterResource(CoreUiR.drawable.radiowave_wordmark_v2),
+                contentDescription = null,
+                modifier = Modifier.fillMaxWidth(),
+                contentScale = ContentScale.Crop,
+            )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
-}
-
-@Composable
-private fun BlurFallbackBackground() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.radialGradient(
-                    colors = listOf(
-                        Color(0xFF3FE6D0).copy(alpha = 0.24f),
-                        Color(0xFFCA4D95).copy(alpha = 0.14f),
-                        Color.Transparent,
-                    ),
-                    radius = 1200f,
-                ),
-            ),
-    )
 }
 
 @Composable

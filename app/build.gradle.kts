@@ -56,6 +56,12 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
+            // REA 95fcb33: im Handy-Build fehlen gegenüber 944fec5 alle unreferenzierten
+            // Ressourcen komplett aus resources.arsc (u. a. 96 Layouts, 159 Drawables,
+            // 678 Styles, 229 Bibliotheks-Strings, bg_nebula) und die nur über Layouts
+            // gehaltenen View-Klassen (MaterialButton, TextInputLayout, MediaRouteButton …).
+            // Das ist das Muster von AGP 9 "optimized resource shrinking" → Sicherheit: hoch.
+            isShrinkResources = true
             ndk {
                 debugSymbolLevel = "FULL"
             }
@@ -65,6 +71,12 @@ android {
             )
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("release")
+            } else {
+                // REA-UNSICHER: handy-95fcb33.apk ist ein Release-Build (R8 9.2.14,
+                // compilation-mode release), aber mit dem Android-Debug-Zertifikat signiert
+                // (CN=Android Debug, SHA-256 52:B8:01:4B:…:3F:1B). Entweder stand hier dieser
+                // Fallback, oder die APK wurde nachträglich mit dem Debug-Keystore signiert.
+                signingConfig = signingConfigs.getByName("debug")
             }
         }
     }
@@ -86,6 +98,8 @@ dependencies {
     implementation(project(":feature:feature-browse"))
     implementation(project(":feature:feature-favorites"))
     implementation(project(":feature:feature-player"))
+    // REA 95fcb33: "Gemerkte Titel" (Hilt-ViewModel muss im App-Graph sichtbar sein).
+    implementation(project(":feature:feature-savedtracks"))
 implementation(project(":feature:feature-settings"))
     
     implementation(project(":auto"))

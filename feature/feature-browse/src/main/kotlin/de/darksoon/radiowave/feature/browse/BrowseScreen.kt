@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Waves
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.expandVertically
@@ -84,8 +85,10 @@ import de.darksoon.radiowave.core.ui.components.StationNameText
 import de.darksoon.radiowave.core.ui.components.PopularityBadge
 import de.darksoon.radiowave.core.ui.components.StreamQualityBadge
 import de.darksoon.radiowave.core.model.Station
+import de.darksoon.radiowave.core.model.duplicateKey
+import de.darksoon.radiowave.core.ui.components.RadioWaveScreenHeader
+import de.darksoon.radiowave.core.ui.theme.GenreGradient
 import de.darksoon.radiowave.core.ui.theme.CardBodyStyle
-import de.darksoon.radiowave.core.ui.theme.SectionTitleStyle
 import de.darksoon.radiowave.core.ui.theme.RadioAccent
 import de.darksoon.radiowave.feature.browse.R
 import kotlinx.coroutines.launch
@@ -137,30 +140,32 @@ private data class QuickGenreItem(
     val gradient: List<Color>,
 )
 
+// REA 95fcb33 (p000/AbstractC0920xz static, jb0.f9695t): all four quick genres now share the
+// theme's GenreGradient instead of individual colour pairs. Tags/icons unchanged.
 private val quickGenres = listOf(
     QuickGenreItem(
         labelRes = R.string.browse_genre_techno,
         tag = "techno",
         icon = Icons.Filled.Memory,
-        gradient = listOf(Color(0xFF5B4BFF), Color(0xFFB948FF)),
+        gradient = GenreGradient,
     ),
     QuickGenreItem(
         labelRes = R.string.browse_genre_rock,
         tag = "rock",
         icon = Icons.Filled.MusicNote,
-        gradient = listOf(Color(0xFF9F1C2B), Color(0xFFFF4D64)),
+        gradient = GenreGradient,
     ),
     QuickGenreItem(
         labelRes = R.string.browse_genre_jazz,
         tag = "jazz",
         icon = Icons.Filled.Piano,
-        gradient = listOf(Color(0xFF8A4E10), Color(0xFFFFB347)),
+        gradient = GenreGradient,
     ),
     QuickGenreItem(
         labelRes = R.string.browse_genre_chillout,
         tag = "chill",
         icon = Icons.Filled.Waves,
-        gradient = listOf(Color(0xFF0C666B), Color(0xFF2EE6D6)),
+        gradient = GenreGradient,
     ),
 )
 
@@ -177,12 +182,14 @@ fun BrowseScreen(
     val showInsecureStreams by viewModel.showInsecureStreams.collectAsStateWithLifecycle()
     val directoryAvailable by viewModel.directoryAvailable.collectAsStateWithLifecycle()
     val stationMirrorEnabled by viewModel.stationMirrorEnabled.collectAsStateWithLifecycle()
-    var selectedGenre by remember { mutableStateOf<String?>(null) }
+    // REA 95fcb33 (AbstractC0920xz#m11000b, m00.f12706i): genre selection lives in the ViewModel.
+    val selectedGenre by viewModel.selectedGenre.collectAsStateWithLifecycle()
 
+    // REA 95fcb33 (C0475lz Fall 1): an initial genre selects the genre (tag load) instead of
+    // being typed into the search field.
     LaunchedEffect(initialGenre) {
         if (initialGenre.isNotEmpty()) {
-            selectedGenre = initialGenre
-            viewModel.onSearchQueryChange(initialGenre)
+            viewModel.selectGenre(initialGenre)
         }
     }
 
@@ -200,9 +207,11 @@ fun BrowseScreen(
         modifier = modifier,
     ) {
         val favoriteIds by viewModel.favoriteStationIds.collectAsStateWithLifecycle()
+        val favoriteDuplicateKeys by viewModel.favoriteDuplicateKeys.collectAsStateWithLifecycle()
         BrowseContent(
             uiState = uiState,
             favoriteIds = favoriteIds,
+            favoriteDuplicateKeys = favoriteDuplicateKeys,
             searchQuery = searchQuery,
             selectedCountry = selectedCountry,
             selectedGenre = selectedGenre,
@@ -210,12 +219,10 @@ fun BrowseScreen(
             directoryAvailable = directoryAvailable,
             stationMirrorEnabled = stationMirrorEnabled,
             onSearchQueryChange = { query ->
-                selectedGenre = null
                 viewModel.onSearchQueryChange(query)
             },
             onGenreSelected = { genre ->
-                selectedGenre = genre
-                viewModel.onSearchQueryChange(genre ?: "")
+                viewModel.selectGenre(genre)
             },
             onCountrySelected = { countryCode ->
                 viewModel.onCountrySelected(countryCode)
@@ -239,6 +246,7 @@ fun BrowseScreen(
 private fun BrowseContent(
     uiState: BrowseUiState,
     favoriteIds: Set<String>,
+    favoriteDuplicateKeys: Set<String>,
     searchQuery: String,
     selectedCountry: String?,
     selectedGenre: String?,
@@ -296,16 +304,15 @@ private fun BrowseContent(
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut(),
             ) {
+                // REA 95fcb33 (p000/C0844vy Fall 0): brand header instead of the plain title.
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                        .padding(horizontal = 20.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = stringResource(R.string.browse_title),
-                        style = SectionTitleStyle,
-                        color = MaterialTheme.colorScheme.onBackground,
+                    RadioWaveScreenHeader(
+                        title = stringResource(R.string.browse_title),
                         modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = onRefresh) {
@@ -547,15 +554,16 @@ private fun BrowseContent(
                     ) {
                         val currentSortLabel = sortOptionsLocalized.find { it.first == uiState.sortOption }?.second
                             ?: stringResource(R.string.browse_sort_popularity)
+                        // REA 95fcb33: primary statt RadioAccent (Hell-Theme).
                         Text(
                             text = stringResource(R.string.browse_sort_prefix, currentSortLabel),
                             style = MaterialTheme.typography.labelMedium,
-                            color = RadioAccent,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                         Icon(
                             Icons.Default.KeyboardArrowDown,
                             contentDescription = stringResource(R.string.browse_choose_sort),
-                            tint = RadioAccent,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp),
                         )
                     }
@@ -642,7 +650,10 @@ private fun BrowseContent(
                             StationGridCard(
                                 station = station,
                                 showInsecureBadge = showInsecureStreams,
-                                isFavorite = station.uuid in favoriteIds,
+                                // REA 95fcb33 (p000/C0771tz): also a favourite when another
+                                // variant of the same station is.
+                                isFavorite = station.uuid in favoriteIds ||
+                                    station.duplicateKey() in favoriteDuplicateKeys,
                                 onToggleFavorite = { onToggleFavorite(station) },
                                 onClick = { onStationClick(station) },
                             )
@@ -903,6 +914,26 @@ private fun StationGridCard(
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop,
                     )
+                    // REA 95fcb33 (AbstractC0920xz#m11003e, Outlined.LockOpen): the orange
+                    // "HTTP" pill on the card corner became a small open-lock badge on the logo.
+                    if (showInsecureBadge && station.streamUrl.isInsecureHttpStream()) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(3.dp)
+                                .size(18.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.LockOpen,
+                                contentDescription = stringResource(R.string.browse_http_badge),
+                                modifier = Modifier.size(12.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -920,7 +951,7 @@ private fun StationGridCard(
                     style = MaterialTheme.typography.labelSmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = RadioAccent.copy(alpha = if (station.country.isNullOrBlank()) 0f else 0.8f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = if (station.country.isNullOrBlank()) 0f else 0.8f),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 2.dp),
@@ -934,28 +965,6 @@ private fun StationGridCard(
                 ) {
                     StreamQualityBadge(codec = station.codec, bitrate = station.bitrate)
                     PopularityBadge(clickCount = station.clickCount)
-                }
-            }
-            if (showInsecureBadge && station.streamUrl.isInsecureHttpStream()) {
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = Color(0xFFE65100).copy(alpha = 0.92f),
-                    border = BorderStroke(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
-                    ),
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(top = 8.dp, start = 8.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.browse_http_badge),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                        ),
-                        color = Color.White,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                    )
                 }
             }
             Surface(
@@ -976,7 +985,7 @@ private fun StationGridCard(
                         if (isFavorite) R.string.browse_cd_toggle_favorite_remove
                         else R.string.browse_cd_toggle_favorite_add,
                     ),
-                    tint = if (isFavorite) Color(0xFFFF5A7A) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .size(24.dp)
                         .padding(4.dp)

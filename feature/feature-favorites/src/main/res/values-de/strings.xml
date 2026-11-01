@@ -26,4 +26,7 @@
     <string name="favorites_cd_add">Sender hinzufügen</string>
     <string name="favorites_add_custom_url_invalid">Gültige http://- oder https://-URL eingeben</string>
     <string name="favorites_add_custom_blocked">Dieser Sender kann nicht hinzugefügt werden</string>
+
+    <!-- REA 95fcb33: neu im Handy-Build (aus resources.arsc rekonstruiert) -->
+    <string name="favorites_more_actions">Weitere Aktionen</string>
 </resources>

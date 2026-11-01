@@ -2,6 +2,7 @@
 
 package de.darksoon.radiowave.core.data.repository
 
+import de.darksoon.radiowave.core.data.mapper.cleanStationName
 import de.darksoon.radiowave.core.data.mapper.toDomain
 import de.darksoon.radiowave.core.data.mapper.toRecentEntity
 import de.darksoon.radiowave.core.database.dao.CustomStationDao
@@ -51,7 +52,7 @@ class RecentRepositoryImpl @Inject constructor(
 
 private fun RecentEntity.toStation(): Station = Station(
     uuid = stationUuid,
-    name = stationName,
+    name = cleanStationName(stationName), // REA 95fcb33 (oa1 Fall: tk2.m9638a)
     streamUrl = streamUrl,
     homepageUrl = homepageUrl,
     faviconUrl = faviconUrl,

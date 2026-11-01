@@ -12,4 +12,9 @@ dependencies {
     implementation(project(":core:core-model"))
     implementation(project(":core:core-database"))
     implementation(libs.androidx.appcompat)
+    // REA 95fcb33: für AudioOutputButton (Eintrag „Audioausgabe“, Kategorie Auto & Geräte).
+    // REA-UNSICHER: Im APK nicht unterscheidbar, ob die Komponente in feature-player oder
+    // core-ui liegt; ihre Strings (audio_*) wurden dem Player-Modul zugeordnet. Liegt sie
+    // in core-ui, diese Zeile entfernen (core-ui kommt über die Convention).
+    implementation(project(":feature:feature-player"))
 }

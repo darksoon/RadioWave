@@ -10,6 +10,8 @@ android {
 // convention plugin — only declare additional/non-convention deps here.
 dependencies {
     implementation(project(":core:core-model"))
+    // REA 95fcb33: Header der Startseite enthält den "Gemerkte Titel"-Knopf.
+    implementation(project(":feature:feature-savedtracks"))
 
     testImplementation(libs.junit)
 }

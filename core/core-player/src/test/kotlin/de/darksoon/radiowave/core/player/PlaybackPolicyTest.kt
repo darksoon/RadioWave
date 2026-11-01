@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package de.darksoon.radiowave.core.player
 
+import de.darksoon.radiowave.core.player.visualizer.AudioVisualizerTap
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -43,7 +44,7 @@ class PlaybackPolicyTest {
     private val stations = PlaybackTestStations()
     private val station = Station(uuid = "test", name = "Test", streamUrl = "https://example.test/radio")
 
-    private fun controller() = PlayerControllerImpl(context, stations, settings, FakeCoverArtRepository())
+    private fun controller() = PlayerControllerImpl(context, stations, settings, FakeCoverArtRepository(), AudioVisualizerTap())
 
     @Test fun `timer stops real player on its application thread and remote output`() = runTest {
         val controller = controller()

@@ -17,15 +17,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+// REA 95fcb33: beide Schemata aus p000/u25.java <clinit> rekonstruiert (Parameterreihenfolge
+// über die bekannte Release-Klasse p000/n65.java ↔ 1.0.19 Theme.kt verifiziert). Sicherheit: hoch.
+// Die Literale (0xFF3E285F usw.) stehen nicht in jb0 (Color.kt), sondern direkt in u25 → im
+// Original vermutlich inline im Aufruf. REA-UNSICHER: ob sie als private vals in Theme.kt standen.
 private val PremiumDarkColorScheme = darkColorScheme(
     primary = RadioAccent,
     onPrimary = Color.Black,
-    primaryContainer = RadioAccentLight,
-    onPrimaryContainer = Color.Black,
+    primaryContainer = Color(0xFF3E285F), // 1.0.19: RadioAccentLight
+    onPrimaryContainer = Color(0xFFECDDFF), // 1.0.19: Color.Black
     secondary = MintAccent,
     onSecondary = Color.Black,
-    secondaryContainer = MintLight,
-    onSecondaryContainer = Color.Black,
+    secondaryContainer = DarkSurfaceVariant, // 1.0.19: MintLight
+    onSecondaryContainer = DarkOnSurface, // 1.0.19: Color.Black
     tertiary = RadioAccent,
     background = DarkBackground,
     onBackground = DarkOnSurface,
@@ -37,16 +41,19 @@ private val PremiumDarkColorScheme = darkColorScheme(
     outlineVariant = DarkBorder,
 )
 
+// REA 95fcb33: Light-Schema komplett neu abgestimmt (1.0.19 benutzte die Dark-Akzente auch im
+// Hellmodus). Neu, weil Hell/System jetzt in den Einstellungen wählbar ist
+// (settings_theme_light / settings_theme_system statt settings_theme_dark_only).
 private val LightColorScheme = lightColorScheme(
-    primary = RadioAccent,
+    primary = Color(0xFF6A3FD6),
     onPrimary = Color.White,
-    primaryContainer = RadioAccentLight,
-    onPrimaryContainer = Color.Black,
-    secondary = MintAccent,
+    primaryContainer = Color(0xFFE9DDFF),
+    onPrimaryContainer = Color(0xFF2A1B4D),
+    secondary = Color(0xFF5B4B8A),
     onSecondary = Color.White,
-    secondaryContainer = MintLight,
-    onSecondaryContainer = Color.Black,
-    tertiary = RadioAccent,
+    secondaryContainer = Color(0xFFEDE7F6),
+    onSecondaryContainer = Color(0xFF1F1A2B), // Wert = LightOnSurface, aber als Literal in u25
+    tertiary = Color(0xFF7C4DFF), // Wert = RadioAccentDeep, aber als Literal in u25
     background = LightBackground,
     onBackground = LightOnSurface,
     surface = LightSurface,
@@ -57,6 +64,8 @@ private val LightColorScheme = lightColorScheme(
     outlineVariant = LightBorder,
 )
 
+// REA 95fcb33: Signatur, Dynamic-Color-Zweig, SideEffect (Status-/Navigationsleisten-Icons)
+// und MaterialTheme-Aufruf unverändert (p000/u25.m9906a ↔ p000/n65.m7871a; shapes = Default).
 @Composable
 fun RadioWaveTheme(
     darkTheme: Boolean = true,

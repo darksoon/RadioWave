@@ -17,11 +17,31 @@ import de.darksoon.radiowave.core.network.dto.RadioBrowserTag
  * Mappers for converting between domain models and entities/DTOs.
  */
 
+// REA 95fcb33 (tk2.f20493a/f20494b, tk2.m9638a): Codec-/Bitraten-Anhänge im
+// Sendernamen ("Radio X - MP3 128k", "Radio X | AAC+ 64 kbps", "Radio X - HLS")
+// werden für die Anzeige entfernt. Angewendet auf Radio-Browser-DTOs, den
+// Stations-Cache sowie die Fallback-Zuordnung von Favoriten/Zuletzt gehört –
+// NICHT auf eigene Sender. Name der Funktion/Konstanten geraten.
+private val CODEC_BITRATE_SUFFIX = Regex(
+    "(?i)\\s*[-–—|]?\\s*(?:aac(?:\\s*plus|\\+)?|mp3|ogg|opus|hls)\\s*(?:hd\\s*)?\\d{2,4}\\s*k(?:bps)?\\s*$",
+)
+private val CODEC_SUFFIX = Regex(
+    "(?i)\\s*[-–—|]\\s*(?:aac(?:\\s*plus|\\+)?|mp3|ogg|opus|hls)\\s*(?:hd)?\\s*$",
+)
+
+fun cleanStationName(name: String): String {
+    val trimmed = name.trim()
+    if (trimmed.isEmpty()) return name
+    val cleaned = CODEC_SUFFIX.replace(CODEC_BITRATE_SUFFIX.replace(trimmed, "").trim(), "").trim()
+    // Bestünde der Name nur aus dem Codec-Anhang, bleibt er erhalten.
+    return if (cleaned.isBlank()) trimmed else cleaned
+}
+
 // Network DTO to Domain Model
 fun RadioBrowserStation.toDomain(): Station {
     return Station(
         uuid = uuid ?: "",
-        name = name ?: "Unknown Station",
+        name = cleanStationName(name ?: "Unknown Station"),
         streamUrl = urlResolved ?: url ?: "",
         homepageUrl = homepage,
         faviconUrl = favicon,
@@ -114,7 +134,7 @@ fun Station.toRecentEntity(): RecentEntity = RecentEntity(
 // Station Entity Mappers
 fun StationEntity.toDomain(): Station = Station(
     uuid = uuid,
-    name = name,
+    name = cleanStationName(name),
     streamUrl = streamUrl,
     homepageUrl = homepageUrl,
     faviconUrl = faviconUrl,

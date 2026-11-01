@@ -2,6 +2,7 @@
 
 package de.darksoon.radiowave.core.data.repository
 
+import de.darksoon.radiowave.core.data.mapper.cleanStationName
 import de.darksoon.radiowave.core.data.mapper.toDomain
 import de.darksoon.radiowave.core.data.mapper.toFavoriteEntity
 import de.darksoon.radiowave.core.data.policy.StationInputValidator
@@ -39,7 +40,7 @@ class FavoriteRepositoryImpl @Inject constructor(
                     ?: run {
                         Station(
                             uuid = favorite.stationUuid,
-                            name = favorite.stationName,
+                            name = cleanStationName(favorite.stationName), // REA 95fcb33 (f91: tk2.m9638a)
                             streamUrl = favorite.streamUrl,
                             homepageUrl = favorite.homepageUrl,
                             faviconUrl = favorite.faviconUrl,
@@ -69,6 +70,11 @@ class FavoriteRepositoryImpl @Inject constructor(
         // Delegated to a single @Transaction-wrapped DAO call so the check-then-act can't
         // race with a concurrent toggle of the same station (see FavoriteDao.toggleFavorite).
         favoriteDao.toggleFavorite(station.toFavoriteEntity())
+    }
+
+    // REA 95fcb33 (p000/l00.java Fall 0): direkt FavoriteDao.deleteByUuid.
+    override suspend fun removeFavorite(uuid: String) {
+        favoriteDao.deleteByUuid(uuid)
     }
 
     override suspend fun reorderFavorites(stationIds: List<String>) {

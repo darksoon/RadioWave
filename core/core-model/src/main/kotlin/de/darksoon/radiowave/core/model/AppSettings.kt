@@ -8,6 +8,15 @@ package de.darksoon.radiowave.core.model
 object AppSettings {
     const val PREFS_NAME = "radiowave_settings"
 
+    // REA 95fcb33: neue Keys. Im Handy-Build stehen sie in der Key-Tabelle (jh4) und in
+    // AppSettingsState (C0646ql) VOR theme_mode — also oben ergänzt.
+    const val KEY_VISUALIZER_ENABLED = "visualizer_enabled"
+    const val KEY_PAUSE_FOR_NAVIGATION = "pause_for_navigation"
+    const val KEY_HOME_GENRES = "home_genres"
+    const val KEY_HOME_START_GENRE = "home_start_genre"
+    const val KEY_HOME_SHOW_RECENT = "home_show_recent"
+    const val KEY_HOME_SHOW_DISCOVER = "home_show_discover"
+
     const val KEY_THEME_MODE = "theme_mode"
     const val KEY_APP_LANGUAGE = "app_language"
     const val KEY_DYNAMIC_COLORS = "dynamic_colors"
@@ -22,6 +31,9 @@ object AppSettings {
     const val KEY_NOTIFICATION_SHOW_NEXT = "notification_show_next"
 
     const val KEY_DEFAULT_AUDIO_QUALITY = "default_audio_quality"
+    // REA 95fcb33: getrennte Auto-Qualität (nur low/medium/high erlaubt, siehe SettingsRepository).
+    const val KEY_WIFI_AUDIO_QUALITY = "wifi_audio_quality"
+    const val KEY_MOBILE_AUDIO_QUALITY = "mobile_audio_quality"
     const val KEY_EQ_PRESET = "eq_preset"
     const val KEY_ALLOW_MOBILE_DATA = "allow_mobile_data"
     const val KEY_BUFFER_PROFILE = "buffer_profile"

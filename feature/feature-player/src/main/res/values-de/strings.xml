@@ -42,4 +42,15 @@
     <string name="player_cd_volume_mute">Stummschalten</string>
     <string name="player_cd_volume_unmute">Ton an</string>
     <string name="player_cd_shuffle">Zufälliger Sender</string>
+
+    <!-- REA 95fcb33: neu im Handy-Build (aus resources.arsc rekonstruiert) -->
+    <string name="audio_bluetooth">Bluetooth-Einstellungen</string>
+    <string name="audio_devices">Audioausgabe</string>
+    <string name="audio_devices_help">Wähle deine Ausgabe in Android. Für Chromecast nutze die Cast-Taste im Player.</string>
+    <string name="audio_system_controls">Android-Audiosteuerung</string>
+    <string name="audio_visualizer_cast">Das Spektrum ist bei lokaler Wiedergabe verfügbar.</string>
+    <string name="audio_visualizer_hint">Live-Audiospektrum · nur bei sichtbarem Player aktiv</string>
+    <string name="audio_visualizer_off">Spektrum ausschalten</string>
+    <string name="audio_visualizer_on">Spektrum einschalten</string>
+    <!-- REA rest: saved_tracks_* liegen nur noch in feature-savedtracks/res (Duplikate entfernt). -->
 </resources>
